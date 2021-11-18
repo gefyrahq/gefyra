@@ -18,7 +18,8 @@ Gefyra is a toolkit written in Python to arrange a local development setup in or
 Kubernetes while having fun. It is installed on any development computer and starts its work if it is asked. Gefyra runs
 as user-space application and controls the local Docker host and Kubernetes via _Kubernetes Python Client_. 
 
-![Gefyra controls docker and kubeapi](docs/static/img/gefyra-intro.png)
+![Gefyra controls docker and kubeapi](docs/static/img/gefyra-intro.png)  
+
 (_Kubectl_ is not really required but makes sense to be in this picture)
 
 In order for this to work, a few requirements have to be satisfied:
@@ -49,7 +50,9 @@ distribution available to run everything locally. A cloud-based Kubernetes clust
 computer from blasting off.
 A working _KUBECONFIG_ connection is required with appropriate permissions which should always be the case for local clusters. Gefyra installs the required 
 cluster-side components by itself once a development setup is about to be established.
+
 ![Gefyra controls docker and kubeapi](docs/static/img/gefyra-overview.png)
+
 With these component, Gefyra is able to control a local development machine, and the development cluster, too. Both sides a now in the hand of 
 Gefyra.  
 Once the developer's work is done, Gefyra well and truly removes all components from the cluster without leaving a trace.  
@@ -84,18 +87,22 @@ in the cluster.
 
 ### Development environment
 ![Gefyra local development](docs/static/img/gefyra-development.png)
+
 Do the fancy stuff you already like.
 
 ### Before the switch operation
 ![Gefyra development workflow_step1](docs/static/img/gefyra-process-step-1.png)
+
 The calm before the storm.
 
 ### Preparing the switch operation
 ![Gefyra development workflow_step2](docs/static/img/gefyra-process-step-2.png)
+
 Everything will be installed to the development cluster.
 
 ### During the switch operation
 ![Gefyra development workflow_step2](docs/static/img/gefyra-process-step-3.png)
+
 Now the game is on. Write code and do what you're asked for.
 
 
