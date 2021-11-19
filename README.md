@@ -18,7 +18,9 @@ Gefyra is a toolkit written in Python to arrange a local development setup in or
 Kubernetes while having fun. It is installed on any development computer and starts its work if it is asked. Gefyra runs
 as user-space application and controls the local Docker host and Kubernetes via _Kubernetes Python Client_. 
 
-![Gefyra controls docker and kubeapi](docs/static/img/gefyra-intro.png)  
+<p align="center">
+  <img src="docs/static/img/gefyra-intro.png" alt="Gefyra controls docker and kubeapi"/>
+</p>
 
 (_Kubectl_ is not really required but makes kinda sense to be in this picture)
 
@@ -52,7 +54,7 @@ A working _KUBECONFIG_ connection is required with appropriate permissions which
 cluster-side components by itself once a development setup is about to be established.
 
 <p align="center">
-  <img src="docs/static/img/gefyra-overview.png" alt="Gefyra controls docker and kubeapi"/>
+  <img src="docs/static/img/gefyra-overview.png" alt="Gefyra connects to a Kubernetes cluster"/>
 </p>
 
 With these component, Gefyra is able to control a local development machine, and the development cluster, too. Both sides a now in the hand of 
