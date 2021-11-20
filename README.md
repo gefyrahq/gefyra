@@ -1,13 +1,13 @@
 # Gefyra
-Gefyra gives developers a completely new way of writing and testing their applications. Over are the times
-of custom Docker-compose setups, Vagrants, custom scrips or other scenarios in order to develop (micro-)services
+Gefyra gives Kubernetes-("cloud-native")-developers a completely new way of writing and testing their applications. 
+Over are the times of custom Docker-compose setups, Vagrants, custom scrips or other scenarios in order to develop (micro-)services
 for Kubernetes.  
 
 Gefyra offers you to:
 - run services locally on a developer machine
 - operate feature-branches in production-like Kubernetes environment with all adjacent services
 - write code in the IDE you already love, be fast, be confident
-- leverage all the neat development features, such as debugger, code-hot-reloading, override ENVs
+- leverage all the neat development features, such as debugger, code-hot-reloading, override environment variables
 - run high-level integration tests against all dependant services
 - keep peace-of-mind when pushing new code to the integration environment 
 
