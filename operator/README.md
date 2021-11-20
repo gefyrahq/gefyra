@@ -21,3 +21,8 @@ Operator is responsible for the following tasks within the cluster:
   <img src="../docs/static/img/gefyra-operator.png" alt="Operator runs the cluster-side components"/>
 </p>
 
+## Basics
+The Operator is written with the [Kopf framework](https://kopf.readthedocs.io/en/stable/).
+
+
+
