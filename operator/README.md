@@ -18,6 +18,6 @@ Operator is responsible for the following tasks within the cluster:
 - reset the cluster to original state if requested or upon connection disruption; removes everything and itself  
 
 <p align="center">
-  <img src="docs/static/img/gefyra-operator.png" alt="Operator runs the cluster-side components"/>
+  <img src="../docs/static/img/gefyra-operator.png" alt="Operator runs the cluster-side components"/>
 </p>
 
