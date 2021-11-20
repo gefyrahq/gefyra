@@ -1,15 +1,12 @@
+import asyncio
 import logging
-import os
-import datetime
-from os import path
-from time import sleep
 
 import kopf
 import kubernetes as k8s
-from decouple import config
 
-from resources.deployments import create_stowaway_deployment
-from resources.services import create_stowaway_nodeport_service
+from gefyra.stowaway import check_stowaway_ready, get_wireguard_connection_details
+from gefyra.resources.deployments import create_stowaway_deployment
+from gefyra.resources.services import create_stowaway_nodeport_service
 
 logger = logging.getLogger("gefyra")
 logger.info("Gefyra Operator startup")
@@ -74,4 +71,10 @@ async def check_gefyra_components(logger, **kwargs) -> None:
             raise e
 
 
+    # schedule startup tasks, work on them async
+    aw_stowaway_ready = asyncio.create_task(check_stowaway_ready(deployment_stowaway))
+    asyncio.create_task(get_wireguard_connection_details(aw_stowaway_ready))
+
+
+    logger.info("Gefyra components installed/patched")
 
