@@ -9,5 +9,5 @@ Cargo services all tasks that actually make the _bridge_ possible on Gefyra's lo
 ## Basics
 Cargo is based on [linuxserver/wireguard](https://docs.linuxserver.io/images/docker-wireguard) with a few 
 extensions, such as DNS configurations. Cargo's image is created on-the-fly since Wireguard's server part 
-[Stowaway](stowaway) generates the connection secrets dynamically. Gefyra retrieves the secrets and puts them into 
+[Stowaway](../stowaway) generates the connection secrets dynamically. Gefyra retrieves the secrets and puts them into 
 Cargo. A `docker build ...` creates the ephemeral container image which then will be able to connect to Stowaway. 

@@ -1,6 +1,6 @@
 # Gefyra Carrier
 The Gefyra _Carrier_ is installed to any Kubernetes Pod that is requested to be intercepted. Gefyra's 
-[Operator](operator) overrides the requested Pod's container in the associated namespace with Carrier and configures 
+[Operator](../operator) overrides the requested Pod's container in the associated namespace with Carrier and configures 
 it according to the specification.  
 Carrier itself provides a way for Operator to dynamically set the listening port to allow any port to be forwarded by
 Carrier to Stowaway.

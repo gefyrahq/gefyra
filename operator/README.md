@@ -5,7 +5,7 @@ all required Gefyra cluster-side components. The operator runs as a Kubernetes d
 ## Tasks
 Operator is responsible for the following tasks within the cluster:
 - install the Kubernetes service of type `nodeport` (protocol `UDP`) for the local environment to connect to the cluster
-- install Gefyra's Stowaway (Kubernetes deployment) in the matching version
+- install Gefyra's [Stowaway](../stowaway) (Kubernetes deployment) in the matching version
 - extract connection details and secrets from Stowaway
 - process container intercept requests (a Kubernetes custom resource definition) using Carrier
   - watch intercept requests (InterceptRequest)
@@ -18,7 +18,7 @@ Operator is responsible for the following tasks within the cluster:
 - reset the cluster to original state if requested or upon connection disruption; removes everything and itself  
 
 <p align="center">
-  <img src="../docs/static/img/gefyra-operator.old.png" alt="Operator runs the cluster-side components"/>
+  <img src="../docs/static/img/gefyra-operator.png" alt="Operator runs the cluster-side components"/>
 </p>
 
 ## Basics
