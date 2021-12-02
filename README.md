@@ -57,7 +57,7 @@ cluster-side components by itself once a development setup is about to be establ
   <img src="docs/static/img/gefyra-overview.png" alt="Gefyra connects to a Kubernetes cluster"/>
 </p>
 
-With these component, Gefyra is able to control a local development machine, and the development cluster, too. Both sides a now in the hand of 
+With these component, Gefyra is able to control a local development machine, and the development cluster, too. Both sides are now in the hand of 
 Gefyra.  
 Once the developer's work is done, Gefyra well and truly removes all components from the cluster without leaving a trace.  
 
