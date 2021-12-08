@@ -6,7 +6,7 @@ Carrier itself provides a way for Operator to dynamically set the listening port
 Carrier to Stowaway.
 
 ## Basics
-Carrier is implemented with Nginx. The default configuration is shipped with the container image. An simple addition
+Carrier is implemented with Nginx. The default configuration is shipped with the container image. A simple addition
 script rewrites Nginx's configuration and triggers the reload signal `nginx -s reload` at the end in order for Nginx
 so serve the required port.
 
