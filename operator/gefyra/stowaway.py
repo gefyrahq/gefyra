@@ -11,8 +11,11 @@ from gefyra.utils import stream_copy_from_pod, read_wireguard_config
 
 logger = logging.getLogger("gefyra")
 
+STOWAWAY_POD = None
+
 
 async def check_stowaway_ready(stowaway_deployment: k8s.client.V1Deployment):
+    global STOWAWAY_POD
     app = k8s.client.AppsV1Api()
     core_v1_api = k8s.client.CoreV1Api()
 
@@ -31,7 +34,8 @@ async def check_stowaway_ready(stowaway_deployment: k8s.client.V1Deployment):
                 logger.warning(f"Stowaway not yet ready, Pods: {len(stowaway_pod.items)} which is != 1")
                 await sleep(1)
                 continue
-            logger.info("Stowaway ready")
+            STOWAWAY_POD = stowaway_pod.items[0].metadata.name
+            logger.info(f"Stowaway ready: {STOWAWAY_POD}")
             return True
         else:
             logger.info(f"Waiting for Stowaway to become ready")

@@ -7,7 +7,8 @@ def create_stowaway_deployment(suffix: str = ""):
 
     container = k8s.client.V1Container(
         name="stowaway",
-        image=f"{configuration.STOWAWY_IMAGE}:{configuration.STOWAWY_TAG}",
+        image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",
+        image_pull_policy=configuration.STOWAWAY_IMAGE_PULLPOLICY,
         # Wireguard default port 51820 will be mapped by the nodeport service
         ports=[k8s.client.V1ContainerPort(container_port=51820, protocol="UDP")],
         resources=k8s.client.V1ResourceRequirements(
@@ -27,16 +28,32 @@ def create_stowaway_deployment(suffix: str = ""):
             capabilities=k8s.client.V1Capabilities(
                 add=["NET_ADMIN", "SYS_MODULE"]
             )
-        )
+        ),
+        volume_mounts=[
+            k8s.client.V1VolumeMount(name="proxyroutes", mount_path="/stowaway/proxyroutes")
+        ]
     )
 
     template = k8s.client.V1PodTemplateSpec(
         metadata=k8s.client.V1ObjectMeta(labels={"app": "stowaway"}),
-        spec=k8s.client.V1PodSpec(containers=[container]),
+        spec=k8s.client.V1PodSpec(
+            containers=[
+                container
+            ],
+            volumes=[
+                k8s.client.V1Volume(name="proxyroutes",
+                                    config_map=k8s.client.V1ConfigMapVolumeSource(
+                                        name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME)
+                                    )
+            ]
+        ),
     )
 
     spec = k8s.client.V1DeploymentSpec(
-        replicas=1, template=template, selector={"matchLabels": {"app": "stowaway"}})
+        replicas=1,
+        template=template,
+        selector={"matchLabels": {"app": "stowaway"}},
+    )
 
     deployment = k8s.client.V1Deployment(
         api_version="apps/v1",
