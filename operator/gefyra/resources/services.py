@@ -14,16 +14,16 @@ def create_stowaway_nodeport_service(stowaway_deployment: k8s.client.V1Deploymen
                 name="gefyra-wireguard",
                 node_port=configuration.WIREGUARD_EXT_PORT,
                 target_port=51820,
-                port=51820
+                port=51820,
             )
-        ]
+        ],
     )
 
     service = k8s.client.V1Service(
         api_version="v1",
         kind="Service",
         metadata=k8s.client.V1ObjectMeta(name="gefyra-stowaway-wireguard"),
-        spec=spec
+        spec=spec,
     )
 
     return service

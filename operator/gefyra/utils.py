@@ -36,8 +36,7 @@ class WSFileManager:
             if not self.ws_client.sock.connected:
                 self.ws_client._connected = False
             else:
-                r, _, _ = select.select(
-                    (self.ws_client.sock.sock, ), (), (), timeout)
+                r, _, _ = select.select((self.ws_client.sock.sock,), (), (), timeout)
                 if r:
                     op_code, frame = self.ws_client.sock.recv_data_frame(True)
                     if op_code == ABNF.OPCODE_CLOSE:
@@ -70,17 +69,19 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
 
     core_v1_api = k8s.client.CoreV1Api()
 
-    command_copy = ['tar', 'cf', '-', source_path]
+    command_copy = ["tar", "cf", "-", source_path]
     with TemporaryFile() as tar_buffer:
-        exec_stream = k8s.stream.stream(core_v1_api.connect_get_namespaced_pod_exec,
-                                        pod_name,
-                                        namespace,
-                                        command=command_copy,
-                                        stderr=True,
-                                        stdin=True,
-                                        stdout=True,
-                                        tty=False,
-                                        _preload_content=False)
+        exec_stream = k8s.stream.stream(
+            core_v1_api.connect_get_namespaced_pod_exec,
+            pod_name,
+            namespace,
+            command=command_copy,
+            stderr=True,
+            stdin=True,
+            stdout=True,
+            tty=False,
+            _preload_content=False,
+        )
         # Copy file to stream
         try:
             reader = WSFileManager(exec_stream)
@@ -89,7 +90,9 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
                 if out:
                     tar_buffer.write(out)
                 elif err:
-                    logger.debug("Error copying file {0}".format(err.decode("utf-8", "replace")))
+                    logger.debug(
+                        "Error copying file {0}".format(err.decode("utf-8", "replace"))
+                    )
                 if closed:
                     break
             exec_stream.close()

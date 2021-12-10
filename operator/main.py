@@ -2,7 +2,6 @@ import logging
 
 import kubernetes as k8s
 
-
 logger = logging.getLogger("gefyra")
 logger.info("Gefyra Operator startup")
 
@@ -15,4 +14,4 @@ except k8s.config.ConfigException:
     logger.info("Loaded KUBECONFIG config")
 
 
-from gefyra.handler import * # noqa
+from gefyra.handler import *  # noqa

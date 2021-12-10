@@ -26,8 +26,7 @@ def create_random_interceptrequest():
             "destinationPort": "8080",
             "targetPod": "my-nginx-hash2123-trololo",
             "targetContainer": "nginx",
-            "targetContainerPort": "8080"
-
+            "targetContainerPort": "8080",
         },
         group="gefyra.dev",
         plural="interceptrequests",

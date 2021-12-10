@@ -20,6 +20,6 @@ def create_wireguard_connection_secret(data: Dict):
         api_version="v1",
         metadata=k8s.client.V1ObjectMeta(name="gefyra-cargo-connection"),
         data=enc_values(data),
-        type="Opaque"
+        type="Opaque",
     )
     return secret
