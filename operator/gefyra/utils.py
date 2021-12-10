@@ -2,10 +2,13 @@ import logging
 import select
 import tarfile
 from collections import defaultdict
+from datetime import datetime
 from tempfile import TemporaryFile
 
 import kubernetes as k8s
 from websocket import ABNF
+
+from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger("gefyra.utils")
 
@@ -125,3 +128,25 @@ def read_wireguard_config(raw: str) -> dict:
         except Exception as e:
             logger.exception(e)
     return data
+
+
+def notify_stowaway_pod(
+    pod_name, core_v1_api: k8s.client.CoreV1Api, configuration: OperatorConfiguration
+):
+    # notify the Stowaway Pod about the update
+    logger.info(f"Notify {pod_name}")
+    try:
+        core_v1_api.patch_namespaced_pod(
+            name=pod_name,
+            body={
+                "metadata": {
+                    "annotations": {
+                        "operator": f"update-notification-"
+                        f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                    }
+                }
+            },
+            namespace=configuration.NAMESPACE,
+        )
+    except k8s.client.exceptions.ApiException as e:
+        logger.exception(e)

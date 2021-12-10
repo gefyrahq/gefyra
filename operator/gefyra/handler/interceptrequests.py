@@ -1,56 +1,66 @@
-from datetime import datetime
-
 import kopf
 import kubernetes as k8s
 
 from gefyra.configuration import configuration
-from gefyra.resources.configmaps import add_route
+from gefyra.resources.configmaps import add_route, remove_route
+from gefyra.utils import notify_stowaway_pod
+
+core_v1_api = k8s.client.CoreV1Api()
 
 
 @kopf.on.create("interceptrequest")
 async def interceptrequest_created(body, logger, **kwargs):
     from gefyra.stowaway import STOWAWAY_POD
 
-    core_v1_api = k8s.client.CoreV1Api()
-
     # is this connection already established
-    established = body.get("established")
+    # established = body.get("established")
     # destination host and port
-    destinationIP = body.get("destinationIP")
-    destinationPort = body.get("destinationPort")
+    destination_ip = body.get("destinationIP")
+    destination_port = body.get("destinationPort")
     # the target Pod information
-    targetPod = body.get("targetPod")
-    targetContainer = body.get("targetContainer")
-    targetContainerPort = body.get("targetContainerPort")
+    # target_pod = body.get("targetPod")
+    # target_workload = body.get("targetWorkload")
+    # target_container = body.get("targetContainer")
+    # target_container_port = body.get("targetContainerPort")
 
-    configmap_update = add_route(destinationIP, destinationPort)
-    logger.info(configmap_update)
+    configmap_update = add_route(destination_ip, destination_port)
     core_v1_api.replace_namespaced_config_map(
         name=configmap_update.metadata.name,
         body=configmap_update,
         namespace=configuration.NAMESPACE,
     )
-    logger.info("Stowaway proxy route configmap patched")
+    logger.info("Added intercept route: Stowaway proxy route configmap patched")
 
     if STOWAWAY_POD:
-        # notify the Stowaway Pod about the update
-        logger.info(f"Notify {STOWAWAY_POD} about the new proxy route configmap")
-        try:
-            core_v1_api.patch_namespaced_pod(
-                name=STOWAWAY_POD,
-                body={
-                    "metadata": {
-                        "annotations": {"operator": f"updated-proxyroute-" f"{datetime.now().strftime('%Y%m%d%H%M%S')}"}
-                    }
-                },
-                namespace=configuration.NAMESPACE,
-            )
-        except k8s.client.exceptions.ApiException as e:
-            logger.exception(e)
+        notify_stowaway_pod(STOWAWAY_POD, core_v1_api, configuration)
+    else:
+        logger.error("Could not notify Stowaway about the new intercept request")
 
-    print(established)
-    print(destinationIP)
-    print(destinationPort)
-    print(targetPod)
-    print(targetContainer)
-    print(targetContainerPort)
+
+@kopf.on.delete("interceptrequest")
+async def interceptrequest_deleted(body, logger, **kwargs):
+    from gefyra.stowaway import STOWAWAY_POD
+
+    # is this connection already established
+    # established = body.get("established")
+    # destination host and port
+    destination_ip = body.get("destinationIP")
+    destination_port = body.get("destinationPort")
+    # the target Pod information
+    # target_pod = body.get("targetPod")
+    # target_workload = body.get("targetWorkload")
+    # target_container = body.get("targetContainer")
+    # target_container_port = body.get("targetContainerPort")
+
+    configmap_update = remove_route(destination_ip, destination_port)
+    core_v1_api.replace_namespaced_config_map(
+        name=configmap_update.metadata.name,
+        body=configmap_update,
+        namespace=configuration.NAMESPACE,
+    )
+    logger.info("Remove intercept route: Stowaway proxy route configmap patched")
+
+    if STOWAWAY_POD:
+        notify_stowaway_pod(STOWAWAY_POD, core_v1_api, configuration)
+    else:
+        logger.error("Could not notify Stowaway about the new intercept request")

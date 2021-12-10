@@ -13,5 +13,5 @@ except k8s.config.ConfigException:
     k8s.config.load_kube_config()
     logger.info("Loaded KUBECONFIG config")
 
-
+# register all Kopf handler
 from gefyra.handler import *  # noqa
