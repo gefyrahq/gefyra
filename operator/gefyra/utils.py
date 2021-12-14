@@ -4,6 +4,7 @@ import tarfile
 from collections import defaultdict
 from datetime import datetime
 from tempfile import TemporaryFile
+from typing import List
 
 import kubernetes as k8s
 from websocket import ABNF
@@ -111,6 +112,10 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
 
 
 def read_wireguard_config(raw: str) -> dict:
+    """
+    :param raw: the wireguard config string; similar to TOML but does not comply with
+    :return: a parsed dict of the configuration
+    """
     data = defaultdict(dict)
     _prefix = "none"
     for line in raw.split("\n"):
@@ -131,9 +136,17 @@ def read_wireguard_config(raw: str) -> dict:
 
 
 def notify_stowaway_pod(
-    pod_name, core_v1_api: k8s.client.CoreV1Api, configuration: OperatorConfiguration
-):
-    # notify the Stowaway Pod about the update
+    core_v1_api: k8s.client.CoreV1Api,
+    pod_name: str,
+    configuration: OperatorConfiguration,
+) -> None:
+    """
+    Notify the Stowaway Pod; causes it to instantly reload mounted configmaps
+    :param core_v1_api:
+    :param pod_name:
+    :param configuration:
+    :return:
+    """
     logger.info(f"Notify {pod_name}")
     try:
         core_v1_api.patch_namespaced_pod(
@@ -150,3 +163,44 @@ def notify_stowaway_pod(
         )
     except k8s.client.exceptions.ApiException as e:
         logger.exception(e)
+
+
+def exec_command_pod(
+    api_instance: k8s.client.CoreV1Api,
+    pod_name: str,
+    namespace: str,
+    command: List[str],
+) -> str:
+    """
+    Exec a command on a Pod and exit
+    :param api_instance: a CoreV1Api instance
+    :param pod_name: the name of the Pod to exec this command on
+    :param namespace: the namespace this Pod is running in
+    :param command: command as List[str]
+    :return: the result output as str
+    """
+    resp = k8s.stream.stream(
+        api_instance.connect_get_namespaced_pod_exec,
+        pod_name,
+        namespace,
+        command=command,
+        stderr=True,
+        stdin=False,
+        stdout=True,
+        tty=False,
+    )
+    logger.debug("Response: " + resp)
+    return resp
+
+
+def get_deployment_of_pod(
+    api_instance: k8s.client.AppsV1Api, pod_name: str, namespace: str
+) -> k8s.client.V1Deployment:
+    """
+    Return a Deployment of a Pod by its name
+    :param api_instance: instance of k8s.client.AppsV1Api
+    :param pod_name: name of the Pod
+    :return: k8s.client.V1Deployment of the Pod
+    """
+    deployment_name = pod_name.rsplit("-", 2)[0]
+    return api_instance.read_namespaced_deployment(deployment_name, namespace=namespace)

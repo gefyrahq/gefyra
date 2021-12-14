@@ -107,3 +107,7 @@ RUN sed -i 's,listen       80;,listen       8080;,' /etc/nginx/conf.d/default.co
     && chmod -R g+w /var/cache/nginx \
     && chown -R $UID:0 /etc/nginx \
     && chmod -R g+w /etc/nginx
+
+COPY gefyra-stowaway.conf /etc/nginx/nginx.conf
+COPY generate-proxyroutes.sh generate-proxyroutes.sh
+CMD ["nginx", "-g", "daemon off;"]

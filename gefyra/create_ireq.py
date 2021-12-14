@@ -22,8 +22,8 @@ def create_random_interceptrequest():
             "metadata": {
                 "name": "test-interceptrequest-" + datetime.now().strftime("%Y%m%d%H%M%S"),
             },
-            "destinationIP": "192.168.99.12",
-            "destinationPort": "8080",
+            "destinationIP": "my-nginx-headless",
+            "destinationPort": "80",
             "targetPod": "my-nginx-hash2123-trololo",
             "targetContainer": "nginx",
             "targetContainerPort": "8080",

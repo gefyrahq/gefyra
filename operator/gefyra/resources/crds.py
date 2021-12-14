@@ -42,6 +42,8 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
         api_version="apiextensions.k8s.io/v1",
         kind="CustomResourceDefinition",
         spec=def_spec,
-        metadata=k8s.client.V1ObjectMeta(name="interceptrequests.gefyra.dev"),
+        metadata=k8s.client.V1ObjectMeta(
+            name="interceptrequests.gefyra.dev", finalizers=[]
+        ),
     )
     return crd

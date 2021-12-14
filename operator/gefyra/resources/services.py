@@ -3,7 +3,9 @@ import kubernetes as k8s
 from gefyra.configuration import configuration
 
 
-def create_stowaway_nodeport_service(stowaway_deployment: k8s.client.V1Deployment):
+def create_stowaway_nodeport_service(
+    stowaway_deployment: k8s.client.V1Deployment,
+) -> k8s.client.V1Service:
 
     spec = k8s.client.V1ServiceSpec(
         type="NodePort",
@@ -23,6 +25,33 @@ def create_stowaway_nodeport_service(stowaway_deployment: k8s.client.V1Deploymen
         api_version="v1",
         kind="Service",
         metadata=k8s.client.V1ObjectMeta(name="gefyra-stowaway-wireguard"),
+        spec=spec,
+    )
+
+    return service
+
+
+def create_stowaway_proxy_service(
+    stowaway_deployment: k8s.client.V1Deployment, port: int
+) -> k8s.client.V1Service:
+
+    spec = k8s.client.V1ServiceSpec(
+        type="ClusterIP",
+        selector=stowaway_deployment.spec.template.metadata.labels,
+        cluster_ip="None",  # this is a headless service
+        ports=[
+            k8s.client.V1ServicePort(
+                name=str(port),
+                target_port=port,
+                port=port,
+            )
+        ],
+    )
+
+    service = k8s.client.V1Service(
+        api_version="v1",
+        kind="Service",
+        metadata=k8s.client.V1ObjectMeta(name=f"gefyra-stowaway-proxy-{port}"),
         spec=spec,
     )
 

@@ -140,7 +140,7 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     deployment_stowaway = handle_stowaway_deployment(logger, configuration)
 
     #
-    # handle Stowaway nodeport service
+    # handle Stowaway services
     #
     handle_stowaway_nodeport_service(logger, configuration, deployment_stowaway)
 
