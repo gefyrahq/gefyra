@@ -4,6 +4,7 @@ import tarfile
 from collections import defaultdict
 from datetime import datetime
 from tempfile import TemporaryFile
+from time import sleep
 from typing import List
 
 import kubernetes as k8s
@@ -163,12 +164,14 @@ def notify_stowaway_pod(
         )
     except k8s.client.exceptions.ApiException as e:
         logger.exception(e)
+    sleep(1)
 
 
 def exec_command_pod(
     api_instance: k8s.client.CoreV1Api,
     pod_name: str,
     namespace: str,
+    container_name: str,
     command: List[str],
 ) -> str:
     """
@@ -176,6 +179,7 @@ def exec_command_pod(
     :param api_instance: a CoreV1Api instance
     :param pod_name: the name of the Pod to exec this command on
     :param namespace: the namespace this Pod is running in
+    :param container_name: the container name of this Pod
     :param command: command as List[str]
     :return: the result output as str
     """
@@ -183,6 +187,7 @@ def exec_command_pod(
         api_instance.connect_get_namespaced_pod_exec,
         pod_name,
         namespace,
+        container=container_name,
         command=command,
         stderr=True,
         stdin=False,
