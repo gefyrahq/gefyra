@@ -9,7 +9,7 @@ from gefyra.configuration import configuration
 from gefyra.resources.secrets import create_wireguard_connection_secret
 from gefyra.utils import read_wireguard_config, stream_copy_from_pod
 
-logger = logging.getLogger("gefyra")
+logger = logging.getLogger("gefyra.stowaway")
 
 STOWAWAY_POD = None
 
