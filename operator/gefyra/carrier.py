@@ -158,7 +158,7 @@ async def configure_carrier(
     try:
         command = CARRIER_CONFIGURE_COMMAND_BASE + [
             f"{container_port}",
-            f"{stowaway_service_name}:{stowaway_service_port}",
+            f"{stowaway_service_name}.{configuration.NAMESPACE}.svc.cluster.local:{stowaway_service_port}",
         ]
         await sleep(5)
         exec_command_pod(api_instance, pod_name, namespace, container_name, command)

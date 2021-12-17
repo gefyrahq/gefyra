@@ -3,7 +3,7 @@ import kubernetes as k8s
 from gefyra.configuration import configuration
 
 
-def create_stowaway_deployment(suffix: str = ""):
+def create_stowaway_deployment() -> k8s.client.V1Deployment:
 
     container = k8s.client.V1Container(
         name="stowaway",
@@ -62,7 +62,9 @@ def create_stowaway_deployment(suffix: str = ""):
     deployment = k8s.client.V1Deployment(
         api_version="apps/v1",
         kind="Deployment",
-        metadata=k8s.client.V1ObjectMeta(name="gefyra-stowaway"),
+        metadata=k8s.client.V1ObjectMeta(
+            name="gefyra-stowaway", namespace=configuration.NAMESPACE
+        ),
         spec=spec,
     )
 

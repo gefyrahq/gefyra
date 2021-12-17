@@ -24,7 +24,9 @@ def create_stowaway_nodeport_service(
     service = k8s.client.V1Service(
         api_version="v1",
         kind="Service",
-        metadata=k8s.client.V1ObjectMeta(name="gefyra-stowaway-wireguard"),
+        metadata=k8s.client.V1ObjectMeta(
+            name="gefyra-stowaway-wireguard", namespace=configuration.NAMESPACE
+        ),
         spec=spec,
     )
 

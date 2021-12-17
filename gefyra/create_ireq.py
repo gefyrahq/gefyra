@@ -6,11 +6,10 @@ import kubernetes as k8s
 
 logger = logging.getLogger(__name__)
 
-# if the operator is executed locally load the current KUBECONFIG
 k8s.config.load_kube_config()
 logger.info("Loaded KUBECONFIG config")
 custom_object_api = k8s.client.CustomObjectsApi()
-namespace = os.getenv("GEFYRA_NAMESPACE", "default")
+namespace = os.getenv("GEFYRA_NAMESPACE", "gefyra")
 
 
 def create_random_interceptrequest():
@@ -21,10 +20,11 @@ def create_random_interceptrequest():
             "kind": "InterceptRequest",
             "metadata": {
                 "name": "test-interceptrequest-" + datetime.now().strftime("%Y%m%d%H%M%S"),
+                "namspace": "gefyra",
             },
-            "destinationIP": "my-nginx",
+            "destinationIP": "my-nginx.default.svc.cluster.local",
             "destinationPort": "80",
-            "targetPod": "hello-nginxdemo-7d648bd866-m988c",
+            "targetPod": "hello-nginxdemo-7d648bd866-82qvt",
             "targetNamespace": "default",
             "targetContainer": "hello-nginx",
             "targetContainerPort": "80",

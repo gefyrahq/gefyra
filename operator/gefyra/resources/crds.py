@@ -1,5 +1,7 @@
 import kubernetes as k8s
 
+from gefyra.configuration import configuration
+
 
 def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinition:
     schema_props = k8s.client.V1JSONSchemaProps(
@@ -8,7 +10,9 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
             "established": k8s.client.V1JSONSchemaProps(type="boolean", default=False),
             "destinationIP": k8s.client.V1JSONSchemaProps(type="string"),
             "destinationPort": k8s.client.V1JSONSchemaProps(type="string"),
-            "targetPod": k8s.client.V1JSONSchemaProps(type="string"),  # target a specific Pod for intercept
+            "targetPod": k8s.client.V1JSONSchemaProps(
+                type="string"
+            ),  # target a specific Pod for intercept
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
             "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
             "targetContainerPort": k8s.client.V1JSONSchemaProps(type="string"),
@@ -31,7 +35,9 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
                 name="v1",
                 served=True,
                 storage=True,
-                schema=k8s.client.V1CustomResourceValidation(open_apiv3_schema=schema_props),
+                schema=k8s.client.V1CustomResourceValidation(
+                    open_apiv3_schema=schema_props
+                ),
             )
         ],
     )
@@ -40,6 +46,10 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
         api_version="apiextensions.k8s.io/v1",
         kind="CustomResourceDefinition",
         spec=def_spec,
-        metadata=k8s.client.V1ObjectMeta(name="interceptrequests.gefyra.dev", finalizers=[]),
+        metadata=k8s.client.V1ObjectMeta(
+            name="interceptrequests.gefyra.dev",
+            namespace=configuration.NAMESPACE,
+            finalizers=[],
+        ),
     )
     return crd

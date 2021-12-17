@@ -17,7 +17,7 @@ def create_stowaway_proxyroute_configmap() -> k8s.client.V1ConfigMap:
         kind="ConfigMap",
         data=PROXY_ROUTES,
         metadata=k8s.client.V1ObjectMeta(
-            name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME
+            name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME, namespace=configuration.NAMESPACE
         ),
     )
     return configmap
@@ -34,9 +34,7 @@ def add_route(to_ip: str, to_port: str) -> Tuple[k8s.client.V1ConfigMap, int]:
     global PORT_RANGE
     port = random.choice(PORT_RANGE)
     PORT_RANGE.remove(port)
-    PROXY_ROUTES[
-        f"{''.join(random.choices(string.ascii_lowercase, k=10))}"
-    ] = f"{to_ip}:{to_port},{port}"
+    PROXY_ROUTES[f"{''.join(random.choices(string.ascii_lowercase, k=10))}"] = f"{to_ip}:{to_port},{port}"
     return create_stowaway_proxyroute_configmap(), port
 
 

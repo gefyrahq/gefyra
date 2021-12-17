@@ -1,4 +1,4 @@
-FROM quay.io/blueshoe/python3.9-slim
+FROM quay.io/blueshoe/python3.9-slim AS build-env
 
 ENV BUILD_ONLY_PACKAGES='wget' \
   # python:
@@ -41,4 +41,9 @@ RUN poetry install --no-dev --no-interaction --no-ansi \
   && poetry run pip install -U pip \
   # Cleaning poetry installation's cache for production:
   && rm -rf "$POETRY_CACHE_DIR"
+
+
+FROM gcr.io/distroless/python3
+COPY --from=build-env /app /app
+WORKDIR /app
 CMD kopf run main.py
