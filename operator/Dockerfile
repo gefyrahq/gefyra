@@ -55,4 +55,4 @@ FROM gcr.io/distroless/python3
 COPY --from=builder /opt/pysetup/venv/lib/python3.9/site-packages /usr/lib/python3.9/
 COPY . /app/
 WORKDIR /app
-CMD ["-m", "kopf", "run", "main.py"]
+CMD ["-m", "kopf", "run", "-A", "main.py"]
