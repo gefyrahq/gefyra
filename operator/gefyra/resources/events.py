@@ -4,10 +4,16 @@ import kubernetes as k8s
 
 
 def create_interceptrequest_established_event(
-    intercept_request_name: str, namespace: str
+    intercept_request_name: str,
+    namespace: str,
+    pod_name: str,
+    container_name: str,
+    container_port: int,
 ) -> k8s.client.EventsV1Event:
     return k8s.client.EventsV1Event(
-        note="This InterceptRequest route has been established",
+        reason="Established",
+        note=f"This InterceptRequest route on Pod {pod_name} container {container_name}:{container_port}"
+        f" has been established",
         event_time=datetime.now().isoformat(),
         regarding=k8s.client.V1ObjectReference(
             kind="interceptrequest", name=intercept_request_name, namespace=namespace

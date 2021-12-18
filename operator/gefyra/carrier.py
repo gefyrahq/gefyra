@@ -195,7 +195,11 @@ async def configure_carrier(
         api_instance.create_namespaced_event(
             namespace=configuration.NAMESPACE,
             body=create_interceptrequest_established_event(
-                interceptrequest_name, namespace
+                interceptrequest_name,
+                namespace,
+                pod_name,
+                container_name,
+                container_port,
             ),
         )
     except k8s.client.exceptions.ApiException as e:
