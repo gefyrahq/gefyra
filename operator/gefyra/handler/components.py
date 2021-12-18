@@ -1,4 +1,5 @@
 import asyncio
+from typing import Awaitable
 
 import kopf
 import kubernetes as k8s
@@ -13,6 +14,23 @@ from gefyra.stowaway import check_stowaway_ready, get_wireguard_connection_detai
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 extension_api = k8s.client.ApiextensionsV1Api()
+
+
+async def write_startup_event(
+    all_ready: Awaitable, logger, configuration: OperatorConfiguration
+):
+    await all_ready
+    try:
+        ns = app.read_namespaced_deployment(
+            name="gefyra-operator", namespace=configuration.NAMESPACE
+        )
+        kopf.info(
+            ns.to_dict(),
+            reason="Startup",
+            message="Operator has been started configured successfully",
+        )
+    except k8s.client.exceptions.ApiException as e:
+        logger.error("Could not retrieve Namespace: " + str(e))
 
 
 def handle_crds(logger) -> k8s.client.V1CustomResourceDefinition:
@@ -148,16 +166,9 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     # schedule startup tasks, work on them async
     #
     aw_stowaway_ready = asyncio.create_task(check_stowaway_ready(deployment_stowaway))
-    await asyncio.create_task(get_wireguard_connection_details(aw_stowaway_ready))
-
-    try:
-        ns = core_v1_api.read_namespace(name=configuration.NAMESPACE)
-        kopf.info(
-            ns.to_dict(),
-            reason="Startup",
-            message="Operator has been started configured successfully",
-        )
-    except k8s.client.exceptions.ApiException as e:
-        logger.error("Could not retrive Namespace: " + str(e))
+    aw_wireguard_read = asyncio.create_task(
+        get_wireguard_connection_details(aw_stowaway_ready)
+    )
+    asyncio.create_task(write_startup_event(aw_wireguard_read, logger, configuration))
 
     logger.info("Gefyra components installed/patched")
