@@ -7,7 +7,6 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
 from gefyra.resources.crds import create_interceptrequest_definition
 from gefyra.resources.deployments import create_stowaway_deployment
-from gefyra.resources.events import create_operator_ready_event
 from gefyra.resources.services import create_stowaway_nodeport_service
 from gefyra.stowaway import check_stowaway_ready, get_wireguard_connection_details
 
@@ -152,11 +151,13 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     await asyncio.create_task(get_wireguard_connection_details(aw_stowaway_ready))
 
     try:
-        core_v1_api.create_namespaced_event(
-            namespace=configuration.NAMESPACE,
-            body=create_operator_ready_event(configuration.NAMESPACE),
+        ns = core_v1_api.read_namespace(name=configuration.NAMESPACE)
+        kopf.info(
+            ns.to_dict(),
+            reason="Startup",
+            message="Operator has been started configured successfully",
         )
     except k8s.client.exceptions.ApiException as e:
-        logger.exception("Could not write startup event: " + str(e))
+        logger.error("Could not retrive Namespace: " + str(e))
 
     logger.info("Gefyra components installed/patched")

@@ -5,7 +5,6 @@ from typing import Awaitable
 import kubernetes as k8s
 
 from gefyra.configuration import configuration
-from gefyra.resources.events import create_interceptrequest_established_event
 from gefyra.utils import exec_command_pod
 
 logger = logging.getLogger("gefyra.carrier")
@@ -191,16 +190,16 @@ async def configure_carrier(
         return
     logger.info(f"Carrier configured in {pod_name}")
 
-    try:
-        api_instance.create_namespaced_event(
-            namespace=configuration.NAMESPACE,
-            body=create_interceptrequest_established_event(
-                interceptrequest_name,
-                namespace,
-                pod_name,
-                container_name,
-                container_port,
-            ),
-        )
-    except k8s.client.exceptions.ApiException as e:
-        logger.exception("Could not write intercept established event: " + str(e))
+    # try:
+    #     api_instance.create_namespaced_event(
+    #         namespace=configuration.NAMESPACE,
+    #         body=create_interceptrequest_established_event(
+    #             interceptrequest_name,
+    #             namespace,
+    #             pod_name,
+    #             container_name,
+    #             container_port,
+    #         ),
+    #     )
+    # except k8s.client.exceptions.ApiException as e:
+    #     logger.exception("Could not write intercept established event: " + str(e))

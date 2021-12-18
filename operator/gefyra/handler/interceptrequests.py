@@ -140,7 +140,7 @@ async def interceptrequest_created(body, logger, **kwargs):
     aw_carrier_ready = asyncio.create_task(
         check_carrier_ready(core_v1_api, target_pod, target_namespace)
     )
-    asyncio.create_task(
+    await asyncio.create_task(
         configure_carrier(
             aw_carrier_ready,
             core_v1_api,
