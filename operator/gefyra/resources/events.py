@@ -10,7 +10,7 @@ def create_interceptrequest_established_event(
         note="This InterceptRequest route has been established",
         event_time=datetime.now().isoformat(),
         regarding=k8s.client.V1ObjectReference(
-            name=intercept_request_name, namespace=namespace
+            kind="interceptrequest", name=intercept_request_name, namespace=namespace
         ),
     )
 
