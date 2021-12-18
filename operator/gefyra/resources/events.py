@@ -12,6 +12,7 @@ def create_interceptrequest_established_event(
 ) -> k8s.client.EventsV1Event:
     return k8s.client.EventsV1Event(
         reason="Established",
+        reporting_controller="gefyra-operator",
         note=f"This InterceptRequest route on Pod {pod_name} container {container_name}:{container_port}"
         f" has been established",
         event_time=datetime.now().isoformat() + "+00:00",
@@ -24,6 +25,7 @@ def create_interceptrequest_established_event(
 def create_operator_ready_event(namespace: str) -> k8s.client.EventsV1Event:
     return k8s.client.EventsV1Event(
         reason="Startup",
+        reporting_controller="gefyra-operator",
         note="Operator has been started configured successfully",
         event_time=datetime.now().isoformat() + "+00:00",
         regarding=k8s.client.V1ObjectReference(
