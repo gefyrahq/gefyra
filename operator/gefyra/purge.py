@@ -13,6 +13,7 @@ logger = logging.getLogger("gefyra")
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
+rbac_api = k8s.client.RbacAuthorizationV1Api()
 extension_api = k8s.client.ApiextensionsV1Api()
 custom_api = k8s.client.CustomObjectsApi()
 
@@ -33,6 +34,27 @@ def purge_operator():
     remove_stowaway_deployment(deployment_stowaway)
     remove_stowaway_configmap(configmap_proxyroute)
     remove_stowaway_peer_secret(peer_secret)
+    #
+    # Remove components created by Gefyra client
+    #
+    try:
+        rbac_api.delete_cluster_role_binding(name="gefyra-operator-rolebinding")
+    except k8s.client.exceptions.ApiException:
+        pass
+    try:
+        core_v1_api.delete_namespaced_service_account(
+            name="gefyra-operator", namespace=configuration.NAMESPACE
+        )
+    except k8s.client.exceptions.ApiException:
+        pass
+    try:
+        rbac_api.delete_cluster_role(name="gefyra-operator-role")
+    except k8s.client.exceptions.ApiException:
+        pass
+    try:
+        core_v1_api.delete_namespace(name=configuration.NAMESPACE)
+    except k8s.client.exceptions.ApiException:
+        pass
 
 
 def remove_interceptrequest_remainder(ireqs: k8s.client.V1CustomResourceDefinition):
