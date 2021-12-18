@@ -5,6 +5,7 @@ from typing import Awaitable
 import kubernetes as k8s
 
 from gefyra.configuration import configuration
+from gefyra.resources.events import create_interceptrequest_established_event
 from gefyra.utils import exec_command_pod
 
 logger = logging.getLogger("gefyra.carrier")
@@ -12,7 +13,9 @@ logger = logging.getLogger("gefyra.carrier")
 CARRIER_CONFIGURE_COMMAND_BASE = ["sh", "setroute.sh"]
 
 
-def store_pod_original_config(container: k8s.client.V1Container, ireq_object: object) -> None:
+def store_pod_original_config(
+    container: k8s.client.V1Container, ireq_object: object
+) -> None:
     """
     Store the original configuration of that Container in order to restore it once the intercept request is ended
     :param container: V1Container of the Pod in question
@@ -28,7 +31,11 @@ def store_pod_original_config(container: k8s.client.V1Container, ireq_object: ob
         plural="interceptrequests",
         version="v1",
     )
-    obj["carrierOriginalConfig"] = {"image": container.image, "command": container.command, "args": container.args}
+    obj["carrierOriginalConfig"] = {
+        "image": container.image,
+        "command": container.command,
+        "args": container.args,
+    }
     custom_object_api.patch_namespaced_custom_object(
         name=ireq_object.metadata.name,
         namespace=ireq_object.metadata.namespace,
@@ -67,18 +74,26 @@ def patch_pod_with_carrier(
     for container in pod.spec.containers:
         if container.name == container_name:
             store_pod_original_config(container, ireq_object)
-            container.image = f"{configuration.CARRIER_IMAGE}:{configuration.CARRIER_IMAGE_TAG}"
+            container.image = (
+                f"{configuration.CARRIER_IMAGE}:{configuration.CARRIER_IMAGE_TAG}"
+            )
             break
     else:
         logger.error(f"Could not found container {container_name} in Pod {pod_name}")
         return False
-    logger.info(f"Now patching Pod {pod_name}; container {container_name} with Carrier on port {port}")
+    logger.info(
+        f"Now patching Pod {pod_name}; container {container_name} with Carrier on port {port}"
+    )
     api_instance.patch_namespaced_pod(name=pod_name, namespace=namespace, body=pod)
     return True
 
 
 def patch_pod_with_original_config(
-    api_instance: k8s.client.CoreV1Api, pod_name: str, namespace: str, container_name: str, ireq_object: object
+    api_instance: k8s.client.CoreV1Api,
+    pod_name: str,
+    namespace: str,
+    container_name: str,
+    ireq_object: object,
 ) -> bool:
     """
     Install Gefyra Carrier to the target Pod
@@ -102,14 +117,20 @@ def patch_pod_with_original_config(
                 setattr(container, k, v)
             break
     else:
-        logger.error(f"Could not found container {container_name} in Pod {pod_name}: cannot patch with original state")
+        logger.error(
+            f"Could not found container {container_name} in Pod {pod_name}: cannot patch with original state"
+        )
         return False
-    logger.info(f"Now patching Pod {pod_name}; container {container_name} with original state")
+    logger.info(
+        f"Now patching Pod {pod_name}; container {container_name} with original state"
+    )
     api_instance.patch_namespaced_pod(name=pod_name, namespace=namespace, body=pod)
     return True
 
 
-async def check_carrier_ready(api_instance: k8s.client.CoreV1Api, pod_name: str, namespace: str) -> bool:
+async def check_carrier_ready(
+    api_instance: k8s.client.CoreV1Api, pod_name: str, namespace: str
+) -> bool:
     try:
         pod = api_instance.read_namespaced_pod(name=pod_name, namespace=namespace)
     except k8s.client.exceptions.ApiException as e:
@@ -149,10 +170,13 @@ async def configure_carrier(
     container_port: int,
     stowaway_service_name: str,
     stowaway_service_port: int,
+    interceptrequest_name: str,
 ):
     carrier_ready = await aw_carrier_ready
     if not carrier_ready:
-        logger.error(f"Not able to configure Carrier in Pod {pod_name}. See error above.")
+        logger.error(
+            f"Not able to configure Carrier in Pod {pod_name}. See error above."
+        )
         return
     logger.info(f"Carrier ready in Pod {pod_name} to get configured")
     try:
@@ -166,3 +190,13 @@ async def configure_carrier(
         logger.error(e)
         return
     logger.info(f"Carrier configured in {pod_name}")
+
+    try:
+        api_instance.create_namespaced_event(
+            namespace=configuration.NAMESPACE,
+            body=create_interceptrequest_established_event(
+                interceptrequest_name, namespace
+            ),
+        )
+    except k8s.client.exceptions.ApiException as e:
+        logger.exception("Could not write intercept established event: " + str(e))
