@@ -17,9 +17,10 @@ def create_interceptrequest_established_event(
 
 def create_operator_ready_event(namespace: str) -> k8s.client.EventsV1Event:
     return k8s.client.EventsV1Event(
-        action="Startup",
+        reason="Startup",
         event_time=datetime.now().isoformat(),
         regarding=k8s.client.V1ObjectReference(
             kind="deployment", name="gefyra-operator", namespace=namespace
         ),
+        namespace=namespace,
     )

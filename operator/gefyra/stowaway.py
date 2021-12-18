@@ -6,7 +6,6 @@ from typing import Awaitable
 import kubernetes as k8s
 
 from gefyra.configuration import configuration
-from gefyra.resources.events import create_operator_ready_event
 from gefyra.resources.secrets import create_wireguard_connection_secret
 from gefyra.utils import read_wireguard_config, stream_copy_from_pod
 
@@ -118,11 +117,3 @@ async def get_wireguard_connection_details(aw_stowaway_ready: Awaitable):
             raise e
     except Exception as e:
         logger.exception(e)
-    else:
-        try:
-            core_v1_api.create_namespaced_event(
-                namespace=configuration.NAMESPACE,
-                body=create_operator_ready_event(configuration.NAMESPACE),
-            )
-        except k8s.client.exceptions.ApiException as e:
-            logger.exception("Could not write startup event: " + str(e))
