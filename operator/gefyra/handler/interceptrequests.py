@@ -153,6 +153,12 @@ async def interceptrequest_created(body, logger, **kwargs):
             body.metadata.name,
         )
     )
+    kopf.info(
+        body,
+        reason="Established",
+        message=f"This InterceptRequest route on Pod {target_pod} container "
+        f"{target_container}:{target_container_port} has been established",
+    )
 
 
 @kopf.on.delete("interceptrequest")
@@ -212,3 +218,9 @@ async def interceptrequest_deleted(body, logger, **kwargs):
         logger.error(
             "Could not restore Pod with original container configuration. See errors above."
         )
+    kopf.info(
+        body,
+        reason="Removed",
+        message=f"The InterceptRequest route on Pod {target_pod} container "
+        f"{target_container} has been removed",
+    )

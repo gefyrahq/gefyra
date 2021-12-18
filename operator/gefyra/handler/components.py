@@ -1,5 +1,4 @@
 import asyncio
-from typing import Awaitable
 
 import kopf
 import kubernetes as k8s
@@ -8,29 +7,14 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
 from gefyra.resources.crds import create_interceptrequest_definition
 from gefyra.resources.deployments import create_stowaway_deployment
+from gefyra.resources.events import create_operator_ready_event
 from gefyra.resources.services import create_stowaway_nodeport_service
 from gefyra.stowaway import check_stowaway_ready, get_wireguard_connection_details
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 extension_api = k8s.client.ApiextensionsV1Api()
-
-
-async def write_startup_event(
-    all_ready: Awaitable, logger, configuration: OperatorConfiguration
-):
-    await all_ready
-    try:
-        ns = app.read_namespaced_deployment(
-            name="gefyra-operator", namespace=configuration.NAMESPACE
-        )
-        kopf.info(
-            ns.to_dict(),
-            reason="Startup",
-            message="Operator has been started configured successfully",
-        )
-    except k8s.client.exceptions.ApiException as e:
-        logger.error("Could not retrieve Namespace: " + str(e))
+events = k8s.client.EventsV1Api()
 
 
 def handle_crds(logger) -> k8s.client.V1CustomResourceDefinition:
@@ -165,10 +149,21 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     #
     # schedule startup tasks, work on them async
     #
-    aw_stowaway_ready = asyncio.create_task(check_stowaway_ready(deployment_stowaway))
-    aw_wireguard_read = asyncio.create_task(
+    loop = asyncio.get_event_loop_policy().get_event_loop()
+    aw_stowaway_ready = loop.create_task(check_stowaway_ready(deployment_stowaway))
+    aw_wireguard_ready = loop.create_task(
         get_wireguard_connection_details(aw_stowaway_ready)
     )
-    asyncio.create_task(write_startup_event(aw_wireguard_read, logger, configuration))
+    await aw_wireguard_ready
 
+    def _write_startup_task():
+        try:
+            events.create_namespaced_event(
+                body=create_operator_ready_event(configuration.NAMESPACE),
+                namespace=configuration.NAMESPACE,
+            )
+        except k8s.client.exceptions.ApiException as e:
+            logger.error("Could not create startup event: " + str(e))
+
+    _write_startup_task()
     logger.info("Gefyra components installed/patched")
