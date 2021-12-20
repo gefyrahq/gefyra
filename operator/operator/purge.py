@@ -1,13 +1,12 @@
 import asyncio
 import logging
+from operator.configuration import configuration
+from operator.resources.configmaps import create_stowaway_proxyroute_configmap
+from operator.resources.crds import create_interceptrequest_definition
+from operator.resources.deployments import create_stowaway_deployment
+from operator.resources.secrets import create_wireguard_connection_secret
 
 import kubernetes as k8s
-
-from gefyra.configuration import configuration
-from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
-from gefyra.resources.crds import create_interceptrequest_definition
-from gefyra.resources.deployments import create_stowaway_deployment
-from gefyra.resources.secrets import create_wireguard_connection_secret
 
 logger = logging.getLogger("gefyra")
 
@@ -42,9 +41,7 @@ def purge_operator():
     except k8s.client.exceptions.ApiException:
         pass
     try:
-        core_v1_api.delete_namespaced_service_account(
-            name="gefyra-operator", namespace=configuration.NAMESPACE
-        )
+        core_v1_api.delete_namespaced_service_account(name="gefyra-operator", namespace=configuration.NAMESPACE)
     except k8s.client.exceptions.ApiException:
         pass
     try:
@@ -58,7 +55,7 @@ def purge_operator():
 
 
 def remove_interceptrequest_remainder(ireqs: k8s.client.V1CustomResourceDefinition):
-    from gefyra.handler import interceptrequest_deleted
+    from operator.handler import interceptrequest_deleted
 
     try:
         ireq_list = custom_api.list_namespaced_custom_object(
@@ -74,9 +71,7 @@ def remove_interceptrequest_remainder(ireqs: k8s.client.V1CustomResourceDefiniti
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             for ireq in ireq_list.get("items"):
-                delete_jobs.append(
-                    loop.create_task(interceptrequest_deleted(ireq, logger))
-                )
+                delete_jobs.append(loop.create_task(interceptrequest_deleted(ireq, logger)))
                 # this does not call Operator as it is already shutting down
                 custom_api.delete_namespaced_custom_object(
                     group=ireqs.spec.group,
@@ -85,9 +80,7 @@ def remove_interceptrequest_remainder(ireqs: k8s.client.V1CustomResourceDefiniti
                     plural=ireqs.spec.names.plural,
                     name=ireq["metadata"]["name"],
                 )
-            loop.run_until_complete(
-                asyncio.wait(delete_jobs, return_when=asyncio.ALL_COMPLETED)
-            )
+            loop.run_until_complete(asyncio.wait(delete_jobs, return_when=asyncio.ALL_COMPLETED))
     except k8s.client.exceptions.ApiException as e:
         logger.error("Error removing remainder InterceptRequests: " + str(e))
 
@@ -103,13 +96,9 @@ def remove_crd(ireqs: k8s.client.V1CustomResourceDefinition):
 def remove_stowaway_services():
     logger.info("Removing Stowaway services")
     try:
-        svc_list = core_v1_api.list_namespaced_service(
-            namespace=configuration.NAMESPACE
-        )
+        svc_list = core_v1_api.list_namespaced_service(namespace=configuration.NAMESPACE)
         for svc in svc_list.items:
-            core_v1_api.delete_namespaced_service(
-                name=svc.metadata.name, namespace=configuration.NAMESPACE
-            )
+            core_v1_api.delete_namespaced_service(name=svc.metadata.name, namespace=configuration.NAMESPACE)
     except k8s.client.exceptions.ApiException as e:
         logger.error("Error removing Stowaway services: " + str(e))
 
@@ -139,9 +128,7 @@ def remove_stowaway_configmap(configmap_proxyroute: k8s.client.V1ConfigMap):
 def remove_stowaway_peer_secret(peer_secret: k8s.client.V1Secret):
     logger.info("Removing Stowaway peer connection secret")
     try:
-        core_v1_api.delete_namespaced_secret(
-            name=peer_secret.metadata.name, namespace=peer_secret.metadata.namespace
-        )
+        core_v1_api.delete_namespaced_secret(name=peer_secret.metadata.name, namespace=peer_secret.metadata.namespace)
     except k8s.client.exceptions.ApiException as e:
         logger.error("Error Stowaway peer connection secret: " + str(e))
 

@@ -1,18 +1,17 @@
 import asyncio
-
-import kopf
-import kubernetes as k8s
-
-from gefyra.carrier import (
+from operator.carrier import (
     check_carrier_ready,
     configure_carrier,
     patch_pod_with_carrier,
     patch_pod_with_original_config,
 )
-from gefyra.configuration import configuration
-from gefyra.resources.configmaps import add_route, remove_route
-from gefyra.resources.services import create_stowaway_proxy_service
-from gefyra.utils import exec_command_pod, get_deployment_of_pod, notify_stowaway_pod
+from operator.configuration import configuration
+from operator.resources.configmaps import add_route, remove_route
+from operator.resources.services import create_stowaway_proxy_service
+from operator.utils import exec_command_pod, get_deployment_of_pod, notify_stowaway_pod
+
+import kopf
+import kubernetes as k8s
 
 core_v1_api = k8s.client.CoreV1Api()
 app_v1_api = k8s.client.AppsV1Api()
@@ -30,9 +29,7 @@ def handle_stowaway_proxy_service(
 ) -> k8s.client.V1Service:
     proxy_service_stowaway = create_stowaway_proxy_service(deployment_stowaway, port)
     try:
-        core_v1_api.create_namespaced_service(
-            body=proxy_service_stowaway, namespace=configuration.NAMESPACE
-        )
+        core_v1_api.create_namespaced_service(body=proxy_service_stowaway, namespace=configuration.NAMESPACE)
         logger.info(f"Stowaway proxy service for port {port} created")
     except k8s.client.exceptions.ApiException as e:
         if e.status in [409, 422]:
@@ -54,7 +51,7 @@ def handle_stowaway_proxy_service(
 
 @kopf.on.create("interceptrequest")
 async def interceptrequest_created(body, logger, **kwargs):
-    from gefyra.stowaway import STOWAWAY_POD
+    from operator.stowaway import STOWAWAY_POD
 
     # is this connection already established
     # established = body.get("established")
@@ -80,8 +77,7 @@ async def interceptrequest_created(body, logger, **kwargs):
     )
     if not success:
         logger.error(
-            "Could not create intercept route because target pod could to be patched with Carrier. "
-            "See errors above."
+            "Could not create intercept route because target pod could to be patched with Carrier. " "See errors above."
         )
         # instantly remove this InterceptRequest since it's not unsatisfiable
         k8s.client.CustomObjectsApi().delete_namespaced_custom_object(
@@ -101,9 +97,7 @@ async def interceptrequest_created(body, logger, **kwargs):
         namespace=configuration.NAMESPACE,
     )
     # this logger instance logs directly onto the InterceptRequest object instance as an event
-    logger.info(
-        f"Added intercept route: Stowaway proxy route configmap patched with port {port}"
-    )
+    logger.info(f"Added intercept route: Stowaway proxy route configmap patched with port {port}")
 
     if STOWAWAY_POD:
         notify_stowaway_pod(core_v1_api, STOWAWAY_POD, configuration)
@@ -114,15 +108,11 @@ async def interceptrequest_created(body, logger, **kwargs):
             "stowaway",
             PROXY_RELOAD_COMMAND,
         )
-        stowaway_deployment = get_deployment_of_pod(
-            app_v1_api, STOWAWAY_POD, configuration.NAMESPACE
-        )
+        stowaway_deployment = get_deployment_of_pod(app_v1_api, STOWAWAY_POD, configuration.NAMESPACE)
         proxy_service = handle_stowaway_proxy_service(logger, stowaway_deployment, port)
         logger.info(f"Created route for InterceptRequest {body.metadata.name}")
     else:
-        logger.error(
-            "Could not modify Stowaway with new intercept request. Removing this InterceptRequest."
-        )
+        logger.error("Could not modify Stowaway with new intercept request. Removing this InterceptRequest.")
         # instantly remove this InterceptRequest since it's not unsatisfiable
         k8s.client.CustomObjectsApi().delete_namespaced_custom_object(
             name=body.metadata.name,
@@ -137,9 +127,7 @@ async def interceptrequest_created(body, logger, **kwargs):
     #
     # configure Carrier
     #
-    aw_carrier_ready = asyncio.create_task(
-        check_carrier_ready(core_v1_api, target_pod, target_namespace)
-    )
+    aw_carrier_ready = asyncio.create_task(check_carrier_ready(core_v1_api, target_pod, target_namespace))
     await asyncio.create_task(
         configure_carrier(
             aw_carrier_ready,
@@ -163,7 +151,7 @@ async def interceptrequest_created(body, logger, **kwargs):
 
 @kopf.on.delete("interceptrequest")
 async def interceptrequest_deleted(body, logger, **kwargs):
-    from gefyra.stowaway import STOWAWAY_POD
+    from operator.stowaway import STOWAWAY_POD
 
     name = body.metadata.name
     # is this connection already established
@@ -185,9 +173,7 @@ async def interceptrequest_deleted(body, logger, **kwargs):
 
     if STOWAWAY_POD:
         if port is None:
-            logger.warning(
-                f"Could not delete service for intercept route {name}: no proxy port found"
-            )
+            logger.warning(f"Could not delete service for intercept route {name}: no proxy port found")
         else:
             core_v1_api.delete_namespaced_service(
                 name=f"gefyra-stowaway-proxy-{port}", namespace=configuration.NAMESPACE
@@ -215,12 +201,9 @@ async def interceptrequest_deleted(body, logger, **kwargs):
         ireq_object=body,
     )
     if not success:
-        logger.error(
-            "Could not restore Pod with original container configuration. See errors above."
-        )
+        logger.error("Could not restore Pod with original container configuration. See errors above.")
     kopf.info(
         body,
         reason="Removed",
-        message=f"The InterceptRequest route on Pod {target_pod} container "
-        f"{target_container} has been removed",
+        message=f"The InterceptRequest route on Pod {target_pod} container " f"{target_container} has been removed",
     )

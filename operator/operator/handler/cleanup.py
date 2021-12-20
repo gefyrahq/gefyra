@@ -1,6 +1,6 @@
-import kopf
+from operator.purge import purge_operator
 
-from gefyra.purge import purge_operator
+import kopf
 
 
 @kopf.on.cleanup()

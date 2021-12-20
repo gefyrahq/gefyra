@@ -15,4 +15,4 @@ except k8s.config.ConfigException:
 
 
 # register all Kopf handler
-from gefyra.handler import *  # noqa
+from operator.handler import *  # noqa

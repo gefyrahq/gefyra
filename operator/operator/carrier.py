@@ -1,11 +1,10 @@
 import logging
 from asyncio import sleep
+from operator.configuration import configuration
+from operator.utils import exec_command_pod
 from typing import Awaitable
 
 import kubernetes as k8s
-
-from gefyra.configuration import configuration
-from gefyra.utils import exec_command_pod
 
 logger = logging.getLogger("gefyra.carrier")
 
