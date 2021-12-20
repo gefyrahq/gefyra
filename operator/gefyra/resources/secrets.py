@@ -1,9 +1,10 @@
 import base64
 import collections
-from operator.configuration import configuration
 from typing import Dict
 
 import kubernetes as k8s
+
+from gefyra.configuration import configuration
 
 
 def create_wireguard_connection_secret(data: Dict) -> k8s.client.V1Secret:

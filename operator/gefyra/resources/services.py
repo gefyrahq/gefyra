@@ -1,6 +1,6 @@
-from operator.configuration import configuration
-
 import kubernetes as k8s
+
+from gefyra.configuration import configuration
 
 
 def create_stowaway_nodeport_service(

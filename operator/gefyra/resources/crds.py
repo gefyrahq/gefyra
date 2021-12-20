@@ -1,6 +1,6 @@
-from operator.configuration import configuration
-
 import kubernetes as k8s
+
+from gefyra.configuration import configuration
 
 
 def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinition:

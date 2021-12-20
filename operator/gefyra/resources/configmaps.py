@@ -1,9 +1,10 @@
 import random
 import string
-from operator.configuration import configuration
 from typing import Tuple
 
 import kubernetes as k8s
+
+from gefyra.configuration import configuration
 
 PROXY_ROUTES = dict()
 PORT_RANGE = [i for i in range(10000, 10020)]
