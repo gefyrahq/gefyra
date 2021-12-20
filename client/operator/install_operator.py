@@ -85,6 +85,8 @@ if __name__ == "__main__":
 
     # block (forever) until Gefyra cluster side is ready
     for event in w.stream(core_api.list_namespaced_event, namespace=NAMESPACE):
+        if event["object"].reason in ["Pulling", "Pulled"]:
+            print(event["object"].message)
         if event["object"].reason == "Gefyra-Ready":
             toc = time.perf_counter()
             print(f"Gefyra ready in {toc - tic:0.4f} seconds")
@@ -92,4 +94,5 @@ if __name__ == "__main__":
 
     cargo_connection_secret = core_api.read_namespaced_secret(name="gefyra-cargo-connection", namespace=NAMESPACE)
     values = decode_secret(cargo_connection_secret.data)
+    print("Cargo connection details")
     print(values)
