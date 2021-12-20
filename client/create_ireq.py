@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 k8s.config.load_kube_config()
 logger.info("Loaded KUBECONFIG config")
 custom_object_api = k8s.client.CustomObjectsApi()
-namespace = os.getenv("GEFYRA_NAMESPACE", "../operator/operator")
+namespace = os.getenv("GEFYRA_NAMESPACE", "gefyra")
 
 
 def create_random_interceptrequest():

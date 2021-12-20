@@ -17,7 +17,7 @@ logger.info("Loaded KUBECONFIG config")
 core_api = k8s.client.CoreV1Api()
 rbac_api = k8s.client.RbacAuthorizationV1Api()
 app_api = k8s.client.AppsV1Api()
-NAMESPACE = os.getenv("GEFYRA_NAMESPACE", "../../operator/operator")
+NAMESPACE = os.getenv("GEFYRA_NAMESPACE", "gefyra")
 
 
 if __name__ == "__main__":

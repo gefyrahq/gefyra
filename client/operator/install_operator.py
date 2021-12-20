@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 import kubernetes as k8s
 from resources import (
@@ -8,6 +9,7 @@ from resources import (
     create_operator_deployment,
     create_operator_serviceaccount,
 )
+from utils import decode_secret
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,7 @@ logger.info("Loaded KUBECONFIG config")
 core_api = k8s.client.CoreV1Api()
 rbac_api = k8s.client.RbacAuthorizationV1Api()
 app_api = k8s.client.AppsV1Api()
-NAMESPACE = os.getenv("GEFYRA_NAMESPACE", "../../operator/operator")
+NAMESPACE = os.getenv("GEFYRA_NAMESPACE", "gefyra")
 
 
 def handle_serviceaccount(serviceaccount):
@@ -60,6 +62,7 @@ def handle_deployment(operator_deployment):
 
 
 if __name__ == "__main__":
+    tic = time.perf_counter()
     try:
         core_api.create_namespace(body=k8s.client.V1Namespace(metadata=k8s.client.V1ObjectMeta(name=NAMESPACE)))
     except k8s.client.exceptions.ApiException as e:
@@ -77,3 +80,16 @@ if __name__ == "__main__":
     handle_clusterrole(clusterrole)
     handle_clusterrolebinding(clusterrolebinding)
     handle_deployment(operator_deployment)
+
+    w = k8s.watch.Watch()
+
+    # block (forever) until Gefyra cluster side is ready
+    for event in w.stream(core_api.list_namespaced_event, namespace=NAMESPACE):
+        if event["object"].reason == "Gefyra-Ready":
+            toc = time.perf_counter()
+            print(f"Gefyra ready in {toc - tic:0.4f} seconds")
+            break
+
+    cargo_connection_secret = core_api.read_namespaced_secret(name="gefyra-cargo-connection", namespace=NAMESPACE)
+    values = decode_secret(cargo_connection_secret.data)
+    print(values)
