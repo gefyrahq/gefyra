@@ -3,13 +3,14 @@ import os
 import time
 
 import kubernetes as k8s
-from resources import (
+
+from .resources import (
     create_operator_clusterrole,
     create_operator_clusterrolebinding,
     create_operator_deployment,
     create_operator_serviceaccount,
 )
-from utils import decode_secret
+from .utils import decode_secret
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,9 @@ NAMESPACE = os.getenv("GEFYRA_NAMESPACE", "gefyra")
 
 def handle_serviceaccount(serviceaccount):
     try:
-        core_api.create_namespaced_service_account(body=serviceaccount, namespace=NAMESPACE)
+        core_api.create_namespaced_service_account(
+            body=serviceaccount, namespace=NAMESPACE
+        )
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             pass
@@ -53,7 +56,9 @@ def handle_clusterrolebinding(clusterrolebinding):
 
 def handle_deployment(operator_deployment):
     try:
-        app_api.create_namespaced_deployment(body=operator_deployment, namespace=NAMESPACE)
+        app_api.create_namespaced_deployment(
+            body=operator_deployment, namespace=NAMESPACE
+        )
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             pass
@@ -61,10 +66,14 @@ def handle_deployment(operator_deployment):
             raise e
 
 
-if __name__ == "__main__":
+def install_operator():
     tic = time.perf_counter()
     try:
-        core_api.create_namespace(body=k8s.client.V1Namespace(metadata=k8s.client.V1ObjectMeta(name=NAMESPACE)))
+        core_api.create_namespace(
+            body=k8s.client.V1Namespace(
+                metadata=k8s.client.V1ObjectMeta(name=NAMESPACE)
+            )
+        )
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             # namespace does already exist
@@ -74,7 +83,9 @@ if __name__ == "__main__":
 
     serviceaccount = create_operator_serviceaccount(NAMESPACE)
     clusterrole = create_operator_clusterrole()
-    clusterrolebinding = create_operator_clusterrolebinding(serviceaccount, clusterrole, NAMESPACE)
+    clusterrolebinding = create_operator_clusterrolebinding(
+        serviceaccount, clusterrole, NAMESPACE
+    )
     operator_deployment = create_operator_deployment(serviceaccount, NAMESPACE)
     handle_serviceaccount(serviceaccount)
     handle_clusterrole(clusterrole)
@@ -92,7 +103,13 @@ if __name__ == "__main__":
             print(f"Gefyra ready in {toc - tic:0.4f} seconds")
             break
 
-    cargo_connection_secret = core_api.read_namespaced_secret(name="gefyra-cargo-connection", namespace=NAMESPACE)
+    cargo_connection_secret = core_api.read_namespaced_secret(
+        name="gefyra-cargo-connection", namespace=NAMESPACE
+    )
     values = decode_secret(cargo_connection_secret.data)
     print("Cargo connection details")
     print(values)
+
+
+if __name__ == "__main__":
+    install_operator()

@@ -3,7 +3,8 @@ import os
 from time import sleep
 
 import kubernetes as k8s
-from resources import (
+
+from .resources import (
     create_operator_clusterrole,
     create_operator_clusterrolebinding,
     create_operator_deployment,
@@ -20,17 +21,22 @@ app_api = k8s.client.AppsV1Api()
 NAMESPACE = os.getenv("GEFYRA_NAMESPACE", "gefyra")
 
 
-if __name__ == "__main__":
-
+def uninstall_operator():
     serviceaccount = create_operator_serviceaccount(NAMESPACE)
     clusterrole = create_operator_clusterrole()
-    clusterrolebinding = create_operator_clusterrolebinding(serviceaccount, clusterrole, NAMESPACE)
+    clusterrolebinding = create_operator_clusterrolebinding(
+        serviceaccount, clusterrole, NAMESPACE
+    )
     operator_deployment = create_operator_deployment(serviceaccount, NAMESPACE)
     try:
-        app_api.delete_namespaced_deployment(name=operator_deployment.metadata.name, namespace=NAMESPACE)
+        app_api.delete_namespaced_deployment(
+            name=operator_deployment.metadata.name, namespace=NAMESPACE
+        )
         # pause to let Operator shutdown properly
         sleep(5)
-        core_api.delete_namespaced_service_account(name=serviceaccount.metadata.name, namespace=NAMESPACE)
+        core_api.delete_namespaced_service_account(
+            name=serviceaccount.metadata.name, namespace=NAMESPACE
+        )
         rbac_api.delete_cluster_role(name=clusterrole.metadata.name)
         rbac_api.delete_cluster_role_binding(name=clusterrolebinding.metadata.name)
     except k8s.client.exceptions.ApiException:
@@ -40,3 +46,7 @@ if __name__ == "__main__":
         core_api.delete_namespace(name=NAMESPACE)
     except k8s.client.exceptions.ApiException as e:
         raise e
+
+
+if __name__ == "__main__":
+    uninstall_operator()
