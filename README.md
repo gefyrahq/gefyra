@@ -156,7 +156,7 @@ It is operated by [Gefyra's Operator application](operator).
 Stowaway boots up and dynamically creates Wireguard connection secrets (private/public key-pair) for itself and Cargo.
 Gefyra copies these secrets to Cargo for it to establish a connection. This is a UDP connection. It requires a Kubernetes
 Service of kind _nodeport_ to allow the traffic to pass through *for the time of an active _bridge_ operation*. Gefyra's 
-operator installs these componentens with the requested parameters and removes it after the session terminates.  
+operator installs these components with the requested parameters and removes it after the session terminates.  
 By the way: Gefyra's operator removes all components and itself from the cluster in case the connection was disrupted 
 for some time, too.  
 Once a connection could be establised from Cargo to Stowaway, Gefyra spins up the app container on the local side for the
