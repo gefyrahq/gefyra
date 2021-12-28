@@ -80,7 +80,7 @@ async def interceptrequest_created(body, logger, **kwargs):
     )
     if not success:
         logger.error(
-            "Could not create intercept route because target pod could to be patched with Carrier. "
+            "Could not create intercept route because target pod could not be patched with Carrier. "
             "See errors above."
         )
         # instantly remove this InterceptRequest since it's not unsatisfiable
