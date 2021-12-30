@@ -70,7 +70,7 @@ Operator performs the following steps:
    - read the local container ip address and port
    - add proxy route to Stowaway: (source Pod's ip) -- proxy_pass --> (target ip and port)
 3) create a service for Carrier in the target namespace (#todo check if required)
-4) store target's container image and tag on the InterceptionRequest to restore in afterwards 
+4) store target's container image and tag on the InterceptionRequest to restore it afterwards 
 4) rewrite target Pod's container to use Carrier instead
 5) configure Carrier to listen on the originally defined serving port (in order to forward traffic from that port)
 6) set the InterceptionRequest object to `active` 
