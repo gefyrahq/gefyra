@@ -7,7 +7,7 @@ import docker
 import kubernetes as k8s
 from docker.models.containers import Container
 
-from .utils import build_cargo_image, get_cargo_connection_data
+from .utils import build_cargo_image, get_cargo_connection_data, get_container_ip
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -18,7 +18,9 @@ custom_object_api = k8s.client.CustomObjectsApi()
 client = docker.from_env()
 NAMESPACE = os.getenv("GEFYRA_NAMESPACE", "gefyra")
 ENDPOINT = os.getenv("GEFYRA_CARGO_ENDPOINT", "172.17.0.1:31820")
-CARGO_CONTAINER_NAME = os.getenv("GEFYRA_CARGO_CONTAINER_NAME", "cargo")
+CARGO_CONTAINER_NAME = os.getenv("GEFYRA_CARGO_CONTAINER_NAME", "gefyra_cargo")
+APP_CONTAINER_NAME = os.getenv("GEFYRA_APP_CONTAINER_NAME", "gefyra_bridged_app")
+NETWORK_NAME = os.getenv("GEFYRA_NETWORK_NAME", "gefyra_bridge")
 
 
 def handle_docker_run_container(image, **kwargs):
@@ -104,15 +106,12 @@ def deploy_cargo_container() -> Container:
 
     # we only have one tag
     image_name_and_tag = image.tags[0]
-    # tag is a timestamp
-    # we make the containers name unique in case multiple different cargo containers shall run
-    container_name = f"{CARGO_CONTAINER_NAME}_{image_name_and_tag.split(':')[-1]}"
     # run image
     container = handle_docker_run_container(
         image_name_and_tag,
         detach=True,
-        name=container_name,
-        network_mode="bridge",
+        name=CARGO_CONTAINER_NAME,
+        network=NETWORK_NAME,
         auto_remove=True,
         remove=True,
     )
@@ -122,19 +121,24 @@ def deploy_cargo_container() -> Container:
 
 def deploy_app_container(
     image: str,
-    network_container_id: str,
+    name: str = None,
     command: str = None,
     volumes: dict = None,
     ports: dict = None,
-    tty: bool = None,
+    detach: bool = None,
+    remove: bool = None,
+    auto_remove: bool = None,
 ):
     all_kwargs = {
+        "network": NETWORK_NAME,
         "image": image,
-        "network_mode": f"container:{network_container_id}",
+        "name": name,
         "command": command,
         "volumes": volumes,
         "ports": ports,
-        "tty": tty,
+        "detach": detach,
+        "remove": remove,
+        "auto_remove": auto_remove,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 
@@ -174,28 +178,42 @@ def bridge(
     command=None,
     volumes=None,
     ports=None,
-    tty=None,
 ):
+    print("gonna deploy cargo container")
     # deploy cargo container
     cargo_container = deploy_cargo_container()
 
+    cargo_ip = get_container_ip(container=cargo_container)
+    print(f"cargo_ip: {cargo_ip}")
+    # TODO:
+    # # start listening to docker events to change the app containers default route
+    # events = client.events(filters={"container": APP_CONTAINER_NAME})
+    # loop = asyncio.get_event_loop()
+    # loop.create_task(change_container_default_route(events, APP_CONTAINER_NAME, cargo_ip))
+
+    print("gonna deploy app container")
     # deploy app container
+    # TODO: add --dns flag
     deploy_app_container(
         app_image,
-        network_container_id=cargo_container.id,
+        name=APP_CONTAINER_NAME,
         command=command,
         volumes=volumes,
         ports=ports,
-        tty=tty,
+        detach=True,
+        remove=True,
+        auto_remove=True,
     )
 
+    print("gonna create ireq")
     # create ireq
     ireq_body = get_ireq_body(
-        destination_ip=destination_ip,
+        destination_ip=destination_ip,  # TODO: should this be IP of app-container?
         destination_port=destination_port,
         target_pod=target_pod,
         target_namespace=target_namespace,
         target_container=target_container,
         target_container_port=target_container_port,
     )
+    print(f"IREQ body: {ireq_body}")
     handle_create_interceptrequest(ireq_body)

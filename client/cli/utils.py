@@ -1,15 +1,19 @@
 import base64
 import collections
+import json
 import os
+import subprocess
 from datetime import datetime
 
 import docker
 import kubernetes as k8s
+from docker.models.containers import Container
 
 CARGO_DOCKERFILE_LOCATION = os.getenv(
     "GEFYRA_CARGO_DOCKERFILE_LOCATION", "/tmp/DOCKERFILE.CARGO"
 )
 CARGO_IMAGE_NAME = os.getenv("GEFYRA_CARGO_IMAGE_NAME", "gefyra_cargo")
+NETWORK_NAME = os.getenv("GEFYRA_NETWORK_NAME", "gefyra_bridge")
 
 k8s.config.load_kube_config()
 core_api = k8s.client.CoreV1Api()
@@ -45,9 +49,30 @@ def build_cargo_image(
         "ENDPOINT": endpoint,
         "ALLOWED_IPS": allowed_ips,
     }
-    # we need to make the tag unique in order to support multiple cargo images, i.e. multiple bridge operations
     tag = f"{CARGO_IMAGE_NAME}:{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    # TODO: I'm not sure about `path` here... This works if script is called from gefyra project dir (../..)
     image, build_logs = client.images.build(
-        path="cargo", rm=True, forcerm=True, buildargs=build_args, tag=tag
+        path="client/cli/cargo", rm=True, forcerm=True, buildargs=build_args, tag=tag
     )
     return image, build_logs
+
+
+def get_container_ip(container: Container = None, container_id: str = None):
+    assert container or container_id, "Either container or id must be specified!"
+
+    # TODO handle exceptions
+    if container:
+        # we might need to reload attrs
+        container.reload()
+    else:
+        container = client.containers.get(container_id)
+    return container.attrs["NetworkSettings"]["Networks"][NETWORK_NAME]["IPAddress"]
+
+
+async def change_container_default_route(events, container_id, ip_address):
+    for event in events:
+        event_dict = json.loads(event.decode("utf-8"))
+        print(event_dict)
+        if event_dict["status"] == "start":
+            subprocess.call(["cli/cargo/route_setting.sh", container_id, ip_address])
+            return True

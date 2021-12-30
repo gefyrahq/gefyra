@@ -4,11 +4,9 @@ import logging
 import sys
 
 from .cli.bridge import bridge, run
+from .cli.docker_network import handle_create_network, handle_remove_network
 from .operator.install_operator import install_operator
 from .operator.uninstall_operator import uninstall_operator
-
-# from .cli.docker_network import handle_create_network, handle_remove_network
-
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -45,9 +43,9 @@ if __name__ == "__main__":
         logger.info("init: gonna install operator")
         install_operator()
         logger.info("init: operator installed")
-        # logger.info("init: gonna create docker network")
-        # handle_create_network()
-        # logger.info("init: created docker network")
+        logger.info("init: gonna create docker network")
+        handle_create_network()
+        logger.info("init: created docker network")
     elif args.action == "run":
         logger.info("run: gonna call run")
         run(**get_intercept_kwargs(args))
@@ -57,15 +55,16 @@ if __name__ == "__main__":
         bridge(**get_intercept_kwargs(args))
         logger.info("bridge: bridge called")
     elif args.action == "reset":
-        # idea: to delete one ireq (reset may not be the best name for that, choices menu like in unikube would be nice)
+        # idea: to delete one/all ireqs (reset may not be the best name for that, choices menu like in unikube would be
+        # nice)
         logger.warning("reset: not yet supported")
     elif args.action == "shutdown":
         logger.info("shutdown: gonna uninstall operator")
         uninstall_operator()
         logger.info("shutdown: operator uninstalled")
-        # logger.info("shutdown: gonna remove docker network")
-        # handle_remove_network()
-        # logger.info("shutdown: removed docker network")
+        logger.info("shutdown: gonna remove docker network")
+        handle_remove_network()
+        logger.info("shutdown: removed docker network")
     else:
         logger.error(
             f"action must be one of [init, run, bridge, shutdown], got {args.action}"
