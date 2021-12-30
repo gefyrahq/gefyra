@@ -83,7 +83,7 @@ async def interceptrequest_created(body, logger, **kwargs):
             "Could not create intercept route because target pod could not be patched with Carrier. "
             "See errors above."
         )
-        # instantly remove this InterceptRequest since it's not unsatisfiable
+        # instantly remove this InterceptRequest since it's not satisfiable
         k8s.client.CustomObjectsApi().delete_namespaced_custom_object(
             name=body.metadata.name,
             namespace=body.metadata.namespace,
@@ -123,7 +123,7 @@ async def interceptrequest_created(body, logger, **kwargs):
         logger.error(
             "Could not modify Stowaway with new intercept request. Removing this InterceptRequest."
         )
-        # instantly remove this InterceptRequest since it's not unsatisfiable
+        # instantly remove this InterceptRequest since it's not satisfiable
         k8s.client.CustomObjectsApi().delete_namespaced_custom_object(
             name=body.metadata.name,
             namespace=body.metadata.namespace,
