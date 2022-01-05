@@ -3,10 +3,11 @@ import argparse
 import logging
 import sys
 
-from .cli.bridge import bridge, run
-from .cli.docker_network import handle_create_network, handle_remove_network
-from .operator.install_operator import install_operator
-from .operator.uninstall_operator import uninstall_operator
+from cli.bridge import bridge, deploy_cargo_container, remove_cargo_container, run
+from cli.docker_network import handle_create_network, handle_remove_network
+from cli.utils import get_container_ip
+from cluster.install_operator import install_operator
+from cluster.uninstall_operator import uninstall_operator
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler(sys.stdout))
@@ -46,6 +47,9 @@ if __name__ == "__main__":
         logger.info("init: gonna create docker network")
         handle_create_network()
         logger.info("init: created docker network")
+        cargo_container = deploy_cargo_container()
+        cargo_ip = get_container_ip(container=cargo_container)
+        logger.info(cargo_ip)
     elif args.action == "run":
         logger.info("run: gonna call run")
         run(**get_intercept_kwargs(args))
@@ -62,6 +66,8 @@ if __name__ == "__main__":
         logger.info("shutdown: gonna uninstall operator")
         uninstall_operator()
         logger.info("shutdown: operator uninstalled")
+        logger.info("shutdown: remove cargo")
+        remove_cargo_container()
         logger.info("shutdown: gonna remove docker network")
         handle_remove_network()
         logger.info("shutdown: removed docker network")

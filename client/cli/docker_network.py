@@ -14,6 +14,7 @@ client = docker.from_env()
 
 
 def handle_create_network(name=NETWORK_NAME):
+    # TODO this creates a network even if it already exists
     network = client.networks.create(name, driver="bridge")
     logger.info(f"Created docker network '{name}' ({network.short_id})")
 

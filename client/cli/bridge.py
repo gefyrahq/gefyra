@@ -49,6 +49,24 @@ def handle_docker_stop_container(container: Container = None, container_id: str 
     container.stop()
 
 
+def handle_docker_remove_container(
+    container: Container = None, container_id: str = None
+):
+    """Stop docker container, either `container` or `container_id` must be specified.
+
+    :param container: docker.models.containers.Container instance
+    :param container_id: id or name of a docker container
+
+    :raises AssertionError: if neither container nor container_id is specified
+    :raises docker.errors.APIError: when removing of container fails
+    """
+    assert container or container_id, "Either container or id must be specified!"
+    if not container:
+        container = client.containers.get(container_id)
+
+    container.remove(force=True)
+
+
 def handle_create_interceptrequest(body):
     custom_object_api.create_namespaced_custom_object(
         namespace=NAMESPACE,
@@ -92,7 +110,8 @@ def deploy_cargo_container() -> Container:
     dns = f"{cargo_connection_data['Interface.DNS']} {NAMESPACE}.svc.cluster.local"
     public_key = cargo_connection_data["Peer.PublicKey"]
     endpoint = ENDPOINT
-    allowed_ips = cargo_connection_data["Peer.AllowedIPs"]
+    # docker to work with ipv4 only
+    allowed_ips = cargo_connection_data["Peer.AllowedIPs"].split(",")[0]
 
     # build image
     image, build_logs = build_cargo_image(
@@ -114,9 +133,15 @@ def deploy_cargo_container() -> Container:
         network=NETWORK_NAME,
         auto_remove=True,
         remove=True,
+        cap_add=["NET_ADMIN"],
+        privileged=True,
     )
 
     return container
+
+
+def remove_cargo_container():
+    handle_docker_remove_container(container_id=CARGO_CONTAINER_NAME)
 
 
 def deploy_app_container(
