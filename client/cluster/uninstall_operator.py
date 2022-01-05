@@ -45,7 +45,10 @@ def uninstall_operator():
     try:
         core_api.delete_namespace(name=NAMESPACE)
     except k8s.client.exceptions.ApiException as e:
-        raise e
+        if e.status == 404:
+            pass
+        else:
+            raise e
 
 
 if __name__ == "__main__":
