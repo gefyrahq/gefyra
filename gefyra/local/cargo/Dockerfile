@@ -1,7 +1,5 @@
 FROM linuxserver/wireguard
 
-RUN apt update && apt install udptunnel
-
 ARG ADDRESS
 ARG PRIVATE_KEY
 ARG DNS

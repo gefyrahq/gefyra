@@ -28,23 +28,6 @@ def create_operator_clusterrole() -> k8s.client.V1ClusterRole:
             "patch",
         ],
     )
-    # this is potentially not needed for kopf in standalone mode
-    # kopf_peering = k8s.client.V1PolicyRule(
-    #     api_groups=[
-    #         "admissionregistration.k8s.io/v1",
-    #         "admissionregistration.k8s.io/v1beta1"
-    #     ],
-    #     resources=[
-    #         "validatingwebhookconfigurations",
-    #         "mutatingwebhookconfigurations"
-    #     ],
-    #     verbs=[
-    #         "list",
-    #         "watch",
-    #         "patch",
-    #         "get"
-    #     ]
-    # )
     misc_res_rule = k8s.client.V1PolicyRule(
         api_groups=["", "apps", "extensions", "events.k8s.io"],
         resources=[
