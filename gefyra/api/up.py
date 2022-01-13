@@ -25,15 +25,10 @@ def up(config=default_configuration) -> bool:
         logger.error(f"{e.reason}: {data['details']['causes']}")
         return False
 
-    stowaway_ip_octets = list(
-        map(int, cargo_connection_details["Interface.Address"].split("."))
-    )
-    network_address = (
-        f"{stowaway_ip_octets[0]}.{stowaway_ip_octets[1]}." f"{stowaway_ip_octets[2]}.0"
-    )
+    stowaway_ip_octets = list(map(int, cargo_connection_details["Interface.Address"].split(".")))
+    network_address = f"{stowaway_ip_octets[0]}.{stowaway_ip_octets[1]}." f"{stowaway_ip_octets[2]}.0"
     cargo_ip_address = (
-        f"{stowaway_ip_octets[0]}.{stowaway_ip_octets[1]}."
-        f"{stowaway_ip_octets[2]}.{stowaway_ip_octets[3] + 1}"
+        f"{stowaway_ip_octets[0]}.{stowaway_ip_octets[1]}." f"{stowaway_ip_octets[2]}.{stowaway_ip_octets[3] + 1}"
     )
     logger.debug(f"Cargo ip address: {cargo_ip_address}")
     logger.debug(f"Gefyra network address: {network_address}")

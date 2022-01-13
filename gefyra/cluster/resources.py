@@ -42,9 +42,7 @@ def create_operator_clusterrole() -> k8s.client.V1ClusterRole:
         ],
         verbs=["create", "patch", "update", "delete", "get", "list"],
     )
-    ireq_rule = k8s.client.V1PolicyRule(
-        api_groups=["gefyra.dev"], resources=["interceptrequests"], verbs=["*"]
-    )
+    ireq_rule = k8s.client.V1PolicyRule(api_groups=["gefyra.dev"], resources=["interceptrequests"], verbs=["*"])
 
     clusterrole = k8s.client.V1ClusterRole(
         kind="ClusterRole",
@@ -88,9 +86,7 @@ def create_operator_clusterrolebinding(
     )
 
 
-def create_operator_deployment(
-    serviceaccount: k8s.client.V1ServiceAccount, namespace: str
-) -> k8s.client.V1Deployment:
+def create_operator_deployment(serviceaccount: k8s.client.V1ServiceAccount, namespace: str) -> k8s.client.V1Deployment:
 
     template = k8s.client.V1PodTemplateSpec(
         metadata=k8s.client.V1ObjectMeta(labels={"app": "gefyra-operator"}),

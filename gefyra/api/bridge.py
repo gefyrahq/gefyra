@@ -22,9 +22,7 @@ def run(
     auto_remove: bool = True,
     config=default_configuration,
 ) -> bool:
-    container = deploy_app_container(
-        config, image, name, command, volumes, ports, remove, auto_remove
-    )
+    container = deploy_app_container(config, image, name, command, volumes, ports, remove, auto_remove)
     if detach:
         return True
     else:

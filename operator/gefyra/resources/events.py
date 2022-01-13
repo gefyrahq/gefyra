@@ -16,9 +16,7 @@ def create_interceptrequest_established_event(
 ) -> k8s.client.EventsV1Event:
     now = _get_now()
     return k8s.client.EventsV1Event(
-        metadata=k8s.client.V1ObjectMeta(
-            name=f"interceptrequest-established-{now}", namespace=namespace
-        ),
+        metadata=k8s.client.V1ObjectMeta(name=f"interceptrequest-established-{now}", namespace=namespace),
         reason="Established",
         action="Proxyroute",
         reporting_controller="gefyra-operator",
@@ -34,9 +32,7 @@ def create_interceptrequest_established_event(
 def create_operator_ready_event(namespace: str) -> k8s.client.EventsV1Event:
     now = _get_now()
     return k8s.client.EventsV1Event(
-        metadata=k8s.client.V1ObjectMeta(
-            name="gefyra-operator-startup", namespace=namespace
-        ),
+        metadata=k8s.client.V1ObjectMeta(name="gefyra-operator-startup", namespace=namespace),
         reason="Gefyra-Ready",
         note="Operator has been started configured successfully",
         event_time=now,
@@ -44,7 +40,5 @@ def create_operator_ready_event(namespace: str) -> k8s.client.EventsV1Event:
         type="Normal",
         reporting_instance="gefyra-operator",
         reporting_controller="gefyra-operator",
-        regarding=k8s.client.V1ObjectReference(
-            kind="deployment", name="gefyra-operator", namespace=namespace
-        ),
+        regarding=k8s.client.V1ObjectReference(kind="deployment", name="gefyra-operator", namespace=namespace),
     )

@@ -31,23 +31,17 @@ def handle_crds(logger) -> k8s.client.V1CustomResourceDefinition:
     return ireqs
 
 
-def handle_proxyroute_configmap(
-    logger, configuration: OperatorConfiguration
-) -> k8s.client.V1ConfigMap:
+def handle_proxyroute_configmap(logger, configuration: OperatorConfiguration) -> k8s.client.V1ConfigMap:
     # Todo recover from restart; read in all <InterceptRequests>
     configmap_proxyroute = create_stowaway_proxyroute_configmap()
 
     try:
-        core_v1_api.create_namespaced_config_map(
-            body=configmap_proxyroute, namespace=configuration.NAMESPACE
-        )
+        core_v1_api.create_namespaced_config_map(body=configmap_proxyroute, namespace=configuration.NAMESPACE)
         logger.info("Stowaway proxy route configmap created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             # the Stowaway proxy route configmap exist
-            logger.warn(
-                "Stowaway proxy route configmap already available, now patching it with current configuration"
-            )
+            logger.warn("Stowaway proxy route configmap already available, now patching it with current configuration")
             core_v1_api.replace_namespaced_config_map(
                 name=configmap_proxyroute.metadata.name,
                 body=configmap_proxyroute,
@@ -59,22 +53,16 @@ def handle_proxyroute_configmap(
     return configmap_proxyroute
 
 
-def handle_stowaway_deployment(
-    logger, configuration: OperatorConfiguration
-) -> k8s.client.V1Deployment:
+def handle_stowaway_deployment(logger, configuration: OperatorConfiguration) -> k8s.client.V1Deployment:
     deployment_stowaway = create_stowaway_deployment()
 
     try:
-        app.create_namespaced_deployment(
-            body=deployment_stowaway, namespace=configuration.NAMESPACE
-        )
+        app.create_namespaced_deployment(body=deployment_stowaway, namespace=configuration.NAMESPACE)
         logger.info("Stowaway deployment created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             # the Stowaway deployment already exist
-            logger.warn(
-                "Stowaway deployment already available, now patching it with current configuration"
-            )
+            logger.warn("Stowaway deployment already available, now patching it with current configuration")
             app.patch_namespaced_deployment(
                 name=deployment_stowaway.metadata.name,
                 body=deployment_stowaway,
@@ -93,17 +81,13 @@ def handle_stowaway_nodeport_service(
 ):
     nodeport_service_stowaway = create_stowaway_nodeport_service(deployment_stowaway)
     try:
-        core_v1_api.create_namespaced_service(
-            body=nodeport_service_stowaway, namespace=configuration.NAMESPACE
-        )
+        core_v1_api.create_namespaced_service(body=nodeport_service_stowaway, namespace=configuration.NAMESPACE)
         logger.info("Stowaway nodeport service created")
     except k8s.client.exceptions.ApiException as e:
         if e.status in [409, 422]:
             # the Stowaway service already exist
             # status == 422 is nodeport already allocated
-            logger.warn(
-                "Stowaway nodeport service already available, now patching it with current configuration"
-            )
+            logger.warn("Stowaway nodeport service already available, now patching it with current configuration")
             core_v1_api.patch_namespaced_service(
                 name=nodeport_service_stowaway.metadata.name,
                 body=nodeport_service_stowaway,
@@ -122,9 +106,7 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     """
     from gefyra.configuration import configuration
 
-    logger.info(
-        f"Ensuring Gefyra components with the following configuration: {configuration}"
-    )
+    logger.info(f"Ensuring Gefyra components with the following configuration: {configuration}")
 
     #
     # handle Gefyra CRDs and Permissions
@@ -151,9 +133,7 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     #
     loop = asyncio.get_event_loop_policy().get_event_loop()
     aw_stowaway_ready = loop.create_task(check_stowaway_ready(deployment_stowaway))
-    aw_wireguard_ready = loop.create_task(
-        get_wireguard_connection_details(aw_stowaway_ready)
-    )
+    aw_wireguard_ready = loop.create_task(get_wireguard_connection_details(aw_stowaway_ready))
     await aw_wireguard_ready
 
     def _write_startup_task():

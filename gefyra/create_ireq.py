@@ -22,8 +22,7 @@ def create_random_interceptrequest():
             "apiVersion": "gefyra.dev/v1",
             "kind": "InterceptRequest",
             "metadata": {
-                "name": "test-interceptrequest-"
-                + datetime.now().strftime("%Y%m%d%H%M%S"),  # noqa
+                "name": "test-interceptrequest-" + datetime.now().strftime("%Y%m%d%H%M%S"),  # noqa
                 "namspace": "gefyra",
             },
             "destinationIP": "my-nginx.default.svc.cluster.local",

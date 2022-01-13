@@ -2,22 +2,13 @@ import docker
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.utils import (
-    build_cargo_image,
-    get_cargo_connection_data,
-    handle_docker_remove_container,
-    handle_docker_run_container,
-)
+from gefyra.local.utils import build_cargo_image, handle_docker_create_container, handle_docker_remove_container
 
 
-def deploy_cargo_container(config: ClientConfiguration) -> Container:
-    # get connection data from secret
-    cargo_connection_data = get_cargo_connection_data(config)
+def create_cargo_container(config: ClientConfiguration, cargo_connection_data: dict) -> Container:
     wireguard_ip = f"{cargo_connection_data['Interface.Address']}/32"
     private_key = cargo_connection_data["Interface.PrivateKey"]
-    dns = (
-        f"{cargo_connection_data['Interface.DNS']} {config.NAMESPACE}.svc.cluster.local"
-    )
+    dns = f"{cargo_connection_data['Interface.DNS']} {config.NAMESPACE}.svc.cluster.local"
     public_key = cargo_connection_data["Peer.PublicKey"]
     # docker to work with ipv4 only
     allowed_ips = cargo_connection_data["Peer.AllowedIPs"].split(",")[0]
@@ -35,7 +26,7 @@ def deploy_cargo_container(config: ClientConfiguration) -> Container:
     # we only have one tag
     image_name_and_tag = image.tags[0]
     # run image
-    container = handle_docker_run_container(
+    container = handle_docker_create_container(
         config,
         image_name_and_tag,
         detach=True,

@@ -16,13 +16,9 @@ from .utils import decode_secret
 logger = logging.getLogger(__name__)
 
 
-def handle_serviceaccount(
-    config: ClientConfiguration, serviceaccount: k8s.client.V1ServiceAccount
-):
+def handle_serviceaccount(config: ClientConfiguration, serviceaccount: k8s.client.V1ServiceAccount):
     try:
-        config.K8S_CORE_API.create_namespaced_service_account(
-            body=serviceaccount, namespace=config.NAMESPACE
-        )
+        config.K8S_CORE_API.create_namespaced_service_account(body=serviceaccount, namespace=config.NAMESPACE)
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             pass
@@ -30,9 +26,7 @@ def handle_serviceaccount(
             raise e
 
 
-def handle_clusterrole(
-    config: ClientConfiguration, clusterrole: k8s.client.V1ClusterRole
-):
+def handle_clusterrole(config: ClientConfiguration, clusterrole: k8s.client.V1ClusterRole):
     try:
         config.K8S_RBAC_API.create_cluster_role(body=clusterrole)
     except k8s.client.exceptions.ApiException as e:
@@ -42,9 +36,7 @@ def handle_clusterrole(
             raise e
 
 
-def handle_clusterrolebinding(
-    config: ClientConfiguration, clusterrolebinding: k8s.client.V1ClusterRoleBinding
-):
+def handle_clusterrolebinding(config: ClientConfiguration, clusterrolebinding: k8s.client.V1ClusterRoleBinding):
     try:
         config.K8S_RBAC_API.create_cluster_role_binding(body=clusterrolebinding)
     except k8s.client.exceptions.ApiException as e:
@@ -54,13 +46,9 @@ def handle_clusterrolebinding(
             raise e
 
 
-def handle_deployment(
-    config: ClientConfiguration, operator_deployment: k8s.client.V1Deployment
-):
+def handle_deployment(config: ClientConfiguration, operator_deployment: k8s.client.V1Deployment):
     try:
-        config.K8S_APP_API.create_namespaced_deployment(
-            body=operator_deployment, namespace=config.NAMESPACE
-        )
+        config.K8S_APP_API.create_namespaced_deployment(body=operator_deployment, namespace=config.NAMESPACE)
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             pass
@@ -78,9 +66,7 @@ def install_operator(config: ClientConfiguration) -> dict:
     tic = time.perf_counter()
     try:
         config.K8S_CORE_API.create_namespace(
-            body=k8s.client.V1Namespace(
-                metadata=k8s.client.V1ObjectMeta(name=config.NAMESPACE)
-            )
+            body=k8s.client.V1Namespace(metadata=k8s.client.V1ObjectMeta(name=config.NAMESPACE))
         )
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
@@ -91,9 +77,7 @@ def install_operator(config: ClientConfiguration) -> dict:
 
     serviceaccount = create_operator_serviceaccount(config.NAMESPACE)
     clusterrole = create_operator_clusterrole()
-    clusterrolebinding = create_operator_clusterrolebinding(
-        serviceaccount, clusterrole, config.NAMESPACE
-    )
+    clusterrolebinding = create_operator_clusterrolebinding(serviceaccount, clusterrole, config.NAMESPACE)
     operator_deployment = create_operator_deployment(serviceaccount, config.NAMESPACE)
     handle_serviceaccount(config, serviceaccount)
     handle_clusterrole(config, clusterrole)
@@ -103,9 +87,7 @@ def install_operator(config: ClientConfiguration) -> dict:
     w = k8s.watch.Watch()
 
     # block (forever) until Gefyra cluster side is ready
-    for event in w.stream(
-        config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
-    ):
+    for event in w.stream(config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE):
         if event["object"].reason in ["Pulling", "Pulled"]:
             logger.info(event["object"].message)
         if event["object"].reason == "Gefyra-Ready":
@@ -125,9 +107,7 @@ def install_operator(config: ClientConfiguration) -> dict:
 def uninstall_operator(config: ClientConfiguration):
     serviceaccount = create_operator_serviceaccount(config.NAMESPACE)
     clusterrole = create_operator_clusterrole()
-    clusterrolebinding = create_operator_clusterrolebinding(
-        serviceaccount, clusterrole, config.NAMESPACE
-    )
+    clusterrolebinding = create_operator_clusterrolebinding(serviceaccount, clusterrole, config.NAMESPACE)
     operator_deployment = create_operator_deployment(serviceaccount, config.NAMESPACE)
     try:
         config.K8S_APP_API.delete_namespaced_deployment(
@@ -139,9 +119,7 @@ def uninstall_operator(config: ClientConfiguration):
             name=serviceaccount.metadata.name, namespace=config.NAMESPACE
         )
         config.K8S_RBAC_API.delete_cluster_role(name=clusterrole.metadata.name)
-        config.K8S_RBAC_API.delete_cluster_role_binding(
-            name=clusterrolebinding.metadata.name
-        )
+        config.K8S_RBAC_API.delete_cluster_role_binding(name=clusterrolebinding.metadata.name)
     except k8s.client.exceptions.ApiException:
         pass
 

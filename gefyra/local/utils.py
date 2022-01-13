@@ -34,15 +34,11 @@ def build_cargo_image(
     }
     tag = f"{config.CARGO_CONTAINER_NAME}:{datetime.now().strftime('%Y%m%d%H%M%S')}"
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cargo")
-    image, build_logs = config.DOCKER.images.build(
-        path=path, rm=True, forcerm=True, buildargs=build_args, tag=tag
-    )
+    image, build_logs = config.DOCKER.images.build(path=path, rm=True, forcerm=True, buildargs=build_args, tag=tag)
     return image, build_logs
 
 
-def get_container_ip(
-    config: ClientConfiguration, container: Container = None, container_id: str = None
-) -> str:
+def get_container_ip(config: ClientConfiguration, container: Container = None, container_id: str = None) -> str:
     assert container or container_id, "Either container or id must be specified!"
 
     # TODO handle exceptions
@@ -51,14 +47,10 @@ def get_container_ip(
         container.reload()
     else:
         container = config.DOCKER.containers.get(container_id)
-    return container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME][
-        "IPAddress"
-    ]
+    return container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME]["IPAddress"]
 
 
-def patch_container_gateway(
-    config: ClientConfiguration, container_name: str, gateway_ip
-) -> None:
+def patch_container_gateway(config: ClientConfiguration, container_name: str, gateway_ip) -> None:
     """
     This function will be called as a subprocess
     :param config: a ClientConfiguration
@@ -74,20 +66,14 @@ def patch_container_gateway(
     #     if event_dict["status"] == "start":
     #         subprocess.call([os.path.join(rdir, "cargo/route_setting.sh"), container_name, gateway_ip], timeout=10)
     #         return
-    pid = subprocess.check_output(
-        ["docker", "inspect", "--format", "{{.State.Pid}}", container_name]
-    )
+    pid = subprocess.check_output(["docker", "inspect", "--format", "{{.State.Pid}}", container_name])
     pid = pid.decode().strip()
     print(f"mypyserver pid {pid}")
     subprocess.call(["nsenter", "-n", "-t", pid, "ip", "route", "del", "default"])
-    subprocess.call(
-        ["nsenter", "-n", "-t", pid, "ip", "route", "add", "default", "via", gateway_ip]
-    )
+    subprocess.call(["nsenter", "-n", "-t", pid, "ip", "route", "add", "default", "via", gateway_ip])
 
 
-def handle_docker_stop_container(
-    config: ClientConfiguration, container: Container = None, container_id: str = None
-):
+def handle_docker_stop_container(config: ClientConfiguration, container: Container = None, container_id: str = None):
     """Stop docker container, either `container` or `container_id` must be specified.
 
     :param config: gefyra.configuration.ClientConfiguration instance
@@ -104,9 +90,7 @@ def handle_docker_stop_container(
     container.stop()
 
 
-def handle_docker_remove_container(
-    config: ClientConfiguration, container: Container = None, container_id: str = None
-):
+def handle_docker_remove_container(config: ClientConfiguration, container: Container = None, container_id: str = None):
     """Stop docker container, either `container` or `container_id` must be specified.
 
     :param config: gefyra.configuration.ClientConfiguration instance
@@ -123,15 +107,11 @@ def handle_docker_remove_container(
     container.remove(force=True)
 
 
-def handle_docker_create_container(
-    config: ClientConfiguration, image: str, **kwargs
-) -> Container:
+def handle_docker_create_container(config: ClientConfiguration, image: str, **kwargs) -> Container:
     return config.DOCKER.containers.create(image, **kwargs)
 
 
-def handle_docker_run_container(
-    config: ClientConfiguration, image: str, **kwargs
-) -> Container:
+def handle_docker_run_container(config: ClientConfiguration, image: str, **kwargs) -> Container:
     # if detach=True is in kwargs, this will return a container; otherwise the container logs (see
     # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run)
     # TODO: handle exception(s):

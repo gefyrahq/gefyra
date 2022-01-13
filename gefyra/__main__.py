@@ -62,6 +62,4 @@ if __name__ == "__main__":
     elif args.action == "down":
         down()
     else:
-        logger.error(
-            f"action must be one of [up, run, bridge, down], got {args.action}"
-        )
+        logger.error(f"action must be one of [up, run, bridge, down], got {args.action}")
