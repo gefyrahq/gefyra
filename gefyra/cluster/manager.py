@@ -68,7 +68,13 @@ def handle_deployment(
             raise e
 
 
-def install_operator(config: ClientConfiguration):
+def install_operator(config: ClientConfiguration) -> dict:
+    """
+    Installs Gefyra Operator to the configured cluster, waits for the installation to complete and returns the
+    connection secrets for Cargo
+    :param config: a ClientConfiguration install
+    :return: Cargo connection details
+    """
     tic = time.perf_counter()
     try:
         config.K8S_CORE_API.create_namespace(
@@ -113,6 +119,7 @@ def install_operator(config: ClientConfiguration):
     values = decode_secret(cargo_connection_secret.data)
     logger.debug("Cargo connection details")
     logger.debug(values)
+    return values
 
 
 def uninstall_operator(config: ClientConfiguration):

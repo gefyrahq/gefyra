@@ -1,4 +1,3 @@
-import json
 import os
 import subprocess
 from datetime import datetime
@@ -57,13 +56,33 @@ def get_container_ip(
     ]
 
 
-async def change_container_default_route(events, container_id, ip_address):
-    for event in events:
-        event_dict = json.loads(event.decode("utf-8"))
-        print(event_dict)
-        if event_dict["status"] == "start":
-            subprocess.call(["cli/cargo/route_setting.sh", container_id, ip_address])
-            return True
+def patch_container_gateway(
+    config: ClientConfiguration, container_name: str, gateway_ip
+) -> None:
+    """
+    This function will be called as a subprocess
+    :param config: a ClientConfiguration
+    :param container_name: the name of the container to be patched
+    :param gateway_ip: the target ip address of the gateway
+    :return: None
+    """
+    # rdir = pathlib.Path(__file__).parent.resolve()
+    # print("Waiting for the gateway patch to be applied")
+    # for event in config.DOCKER.events(filters={"container": container_name}):
+    #     event_dict = json.loads(event.decode("utf-8"))
+    #     print(event_dict)
+    #     if event_dict["status"] == "start":
+    #         subprocess.call([os.path.join(rdir, "cargo/route_setting.sh"), container_name, gateway_ip], timeout=10)
+    #         return
+    pid = subprocess.check_output(
+        ["docker", "inspect", "--format", "{{.State.Pid}}", container_name]
+    )
+    pid = pid.decode().strip()
+    print(f"mypyserver pid {pid}")
+    subprocess.call(["nsenter", "-n", "-t", pid, "ip", "route", "del", "default"])
+    subprocess.call(
+        ["nsenter", "-n", "-t", pid, "ip", "route", "add", "default", "via", gateway_ip]
+    )
 
 
 def handle_docker_stop_container(
@@ -104,7 +123,15 @@ def handle_docker_remove_container(
     container.remove(force=True)
 
 
-def handle_docker_run_container(config: ClientConfiguration, image: str, **kwargs):
+def handle_docker_create_container(
+    config: ClientConfiguration, image: str, **kwargs
+) -> Container:
+    return config.DOCKER.containers.create(image, **kwargs)
+
+
+def handle_docker_run_container(
+    config: ClientConfiguration, image: str, **kwargs
+) -> Container:
     # if detach=True is in kwargs, this will return a container; otherwise the container logs (see
     # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run)
     # TODO: handle exception(s):

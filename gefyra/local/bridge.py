@@ -51,26 +51,22 @@ def deploy_app_container(
     command: str = None,
     volumes: dict = None,
     ports: dict = None,
-    detach: bool = None,
     remove: bool = None,
     auto_remove: bool = None,
 ):
     all_kwargs = {
         "network": config.NETWORK_NAME,
-        "image": image,
         "name": name,
         "command": command,
         "volumes": volumes,
         "ports": ports,
-        "detach": detach,
+        "detach": True,
         "remove": remove,
         "auto_remove": auto_remove,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
-
-    logs = handle_docker_run_container(config, **not_none_kwargs)
-
-    return logs
+    container = handle_docker_run_container(config, image, **not_none_kwargs)
+    return container
 
 
 def run(
