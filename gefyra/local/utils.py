@@ -1,6 +1,9 @@
+import json
 import os
+import pathlib
 import subprocess
 from datetime import datetime
+from random import choice
 
 from docker.models.containers import Container
 
@@ -58,19 +61,20 @@ def patch_container_gateway(config: ClientConfiguration, container_name: str, ga
     :param gateway_ip: the target ip address of the gateway
     :return: None
     """
-    # rdir = pathlib.Path(__file__).parent.resolve()
-    # print("Waiting for the gateway patch to be applied")
-    # for event in config.DOCKER.events(filters={"container": container_name}):
-    #     event_dict = json.loads(event.decode("utf-8"))
-    #     print(event_dict)
-    #     if event_dict["status"] == "start":
-    #         subprocess.call([os.path.join(rdir, "cargo/route_setting.sh"), container_name, gateway_ip], timeout=10)
-    #         return
-    pid = subprocess.check_output(["docker", "inspect", "--format", "{{.State.Pid}}", container_name])
-    pid = pid.decode().strip()
-    print(f"mypyserver pid {pid}")
-    subprocess.call(["nsenter", "-n", "-t", pid, "ip", "route", "del", "default"])
-    subprocess.call(["nsenter", "-n", "-t", pid, "ip", "route", "add", "default", "via", gateway_ip])
+    rdir = pathlib.Path(__file__).parent.resolve()
+    print("Waiting for the gateway patch to be applied")
+    for event in config.DOCKER.events(filters={"container": container_name}):
+        event_dict = json.loads(event.decode("utf-8"))
+        print(event_dict)
+        if event_dict["status"] == "start":
+            subprocess.call([os.path.join(rdir, "cargo/route_setting.sh"), container_name, gateway_ip], timeout=10)
+            return
+            # pid = subprocess.check_output(["docker", "inspect", "--format", "{{.State.Pid}}", container_name])
+            # pid = pid.decode().strip()
+            # print(f"mypyserver pid {pid}")
+            # subprocess.call(["sudo", "nsenter", "-n", "-t", pid, "ip", "route", "del", "default"])
+            # subprocess.call(["sudo", "nsenter", "-n", "-t", pid, "ip", "route", "add", "default", "via", gateway_ip])
+            # return
 
 
 def handle_docker_stop_container(config: ClientConfiguration, container: Container = None, container_id: str = None):
@@ -119,3 +123,18 @@ def handle_docker_run_container(config: ClientConfiguration, image: str, **kwarg
     # docker.errors.ImageNotFound – If the specified image does not exist.
     # docker.errors.APIError – If the server returns an error.
     return config.DOCKER.containers.run(image, **kwargs)
+
+
+def get_free_class_c_netaddress(config: ClientConfiguration):
+    taken_netaddress = []
+    for network in config.DOCKER.networks.list():
+        try:
+            config_list = network.attrs["IPAM"]["Config"]
+            for config in config_list:
+                taken_netaddress.append(config["Subnet"])
+        except KeyError:
+            continue
+    class_c = filter(lambda s: s.startswith("192.168."), taken_netaddress)
+    exc_tho = [int(o.split(".")[2]) for o in class_c]
+    tho = choice([i for i in range(10, 200) if i not in exc_tho])
+    return f"192.168.{tho}.0"

@@ -3,7 +3,7 @@ import logging
 from gefyra.cluster.manager import uninstall_operator
 from gefyra.configuration import default_configuration
 from gefyra.local.cargo import remove_cargo_container
-from gefyra.local.networking import handle_remove_network
+from gefyra.local.networking import handle_remove_network, kill_remainder_container_in_network
 
 from .utils import stopwatch
 
@@ -16,6 +16,8 @@ def down(config=default_configuration) -> bool:
     uninstall_operator(config)
     logger.info("Removing Cargo")
     remove_cargo_container(config)
+    logger.info("Stopping remainder container from Gefyra network")
+    kill_remainder_container_in_network(config, config.NETWORK_NAME)
     logger.info("Removing Docker network")
     handle_remove_network(config)
     return True

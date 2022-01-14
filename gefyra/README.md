@@ -43,3 +43,8 @@ Tasks:
 - deploy cargo sidecar into local docker network
 - deploy app container into local docker network
 - create _InterceptRequest_ 
+
+
+## Create a cluster with `k3d`
+### k3d version v4.4.x  
+`k3d cluster create mycluster --agents 1 -p 8080:80@agent[0] -p 31820:31820/UDP@agent[0]`

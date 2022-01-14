@@ -1,9 +1,10 @@
 import logging
+import multiprocessing
 from datetime import datetime
 
 from gefyra.configuration import ClientConfiguration
 
-from .utils import handle_docker_run_container
+from .utils import handle_docker_run_container, patch_container_gateway
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +52,13 @@ def deploy_app_container(
     command: str = None,
     volumes: dict = None,
     ports: dict = None,
-    remove: bool = None,
     auto_remove: bool = None,
 ):
+
+    gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
+
+    net_add = gefyra_net.attrs["IPAM"]["Config"][0]["Subnet"].split("/")[0]
+    cargo_ip = ".".join(net_add.split(".")[:3]) + ".149"
     all_kwargs = {
         "network": config.NETWORK_NAME,
         "name": name,
@@ -61,11 +66,15 @@ def deploy_app_container(
         "volumes": volumes,
         "ports": ports,
         "detach": True,
-        "remove": remove,
+        "dns": ["192.168.99.1"],
         "auto_remove": auto_remove,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
+    p = multiprocessing.Process(target=patch_container_gateway, args=(config, name, cargo_ip))
+    p.start()
     container = handle_docker_run_container(config, image, **not_none_kwargs)
+    p.join()
+
     return container
 
 

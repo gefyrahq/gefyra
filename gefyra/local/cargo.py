@@ -6,7 +6,7 @@ from gefyra.local.utils import build_cargo_image, handle_docker_create_container
 
 
 def create_cargo_container(config: ClientConfiguration, cargo_connection_data: dict) -> Container:
-    wireguard_ip = f"{cargo_connection_data['Interface.Address']}/32"
+    wireguard_ip = f"{cargo_connection_data['Interface.Address']}"
     private_key = cargo_connection_data["Interface.PrivateKey"]
     dns = f"{cargo_connection_data['Interface.DNS']} {config.NAMESPACE}.svc.cluster.local"
     public_key = cargo_connection_data["Peer.PublicKey"]
@@ -31,9 +31,7 @@ def create_cargo_container(config: ClientConfiguration, cargo_connection_data: d
         image_name_and_tag,
         detach=True,
         name=config.CARGO_CONTAINER_NAME,
-        network=config.NETWORK_NAME,
         auto_remove=True,
-        remove=True,
         cap_add=["NET_ADMIN"],
         privileged=True,
     )

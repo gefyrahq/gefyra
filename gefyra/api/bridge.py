@@ -18,17 +18,16 @@ def run(
     volumes: dict = None,
     ports: dict = None,
     detach: bool = False,
-    remove: bool = None,
     auto_remove: bool = True,
     config=default_configuration,
 ) -> bool:
-    container = deploy_app_container(config, image, name, command, volumes, ports, remove, auto_remove)
+    deploy_app_container(config, image, name, command, volumes, ports, auto_remove)
     if detach:
         return True
     else:
         print("Now printing out logs")
-        for logline in container.logs(stream=True):
-            print(logline)
+        # for logline in container.logs(stream=True):
+        #     print(logline)
 
 
 if __name__ == "__main__":

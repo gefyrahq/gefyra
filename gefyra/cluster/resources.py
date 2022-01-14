@@ -86,7 +86,9 @@ def create_operator_clusterrolebinding(
     )
 
 
-def create_operator_deployment(serviceaccount: k8s.client.V1ServiceAccount, namespace: str) -> k8s.client.V1Deployment:
+def create_operator_deployment(
+    serviceaccount: k8s.client.V1ServiceAccount, namespace: str, gefyra_network_subnet: str
+) -> k8s.client.V1Deployment:
 
     template = k8s.client.V1PodTemplateSpec(
         metadata=k8s.client.V1ObjectMeta(labels={"app": "gefyra-operator"}),
@@ -95,6 +97,7 @@ def create_operator_deployment(serviceaccount: k8s.client.V1ServiceAccount, name
                 k8s.client.V1Container(
                     name="gefyra-operator",
                     image="quay.io/gefyra/operator:latest",
+                    env=[k8s.client.V1EnvVar(name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet)],
                 )
             ],
             service_account_name=serviceaccount.metadata.name,

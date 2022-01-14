@@ -12,6 +12,8 @@ Address = '"$ADDRESS"' \n\
 PrivateKey = '"$PRIVATE_KEY"' \n\
 DNS = '"$DNS"' \n\
 PreUp = sysctl -w net.ipv4.ip_forward=1 \n\
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE \n\
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth1 -j MASQUERADE \n\
 \n\
 [Peer] \n\
 PublicKey = '"$PUBLIC_KEY"' \n\

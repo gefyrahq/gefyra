@@ -14,6 +14,7 @@ class OperatorConfiguration:
         self.STOWAWAY_PEER_DNS = config("GEFYRA_STOWAWAY_PUID", default="auto")
         self.STOWAWAY_PEER_CONFIG_PATH = config("GEFYRA_STOWAWAY_PEER_CONFIG_PATH", default="/config/peer1/peer1.conf")
         self.STOWAWAY_INTERNAL_SUBNET = config("GEFYRA_INTERNAL_SUBNET", default="192.168.99.0")
+        self.GEFYRA_PEER_SUBNET = config("GEFYRA_PEER_SUBNET", default="0.0.0.0/0")
         self.STOWAWAY_PROXYROUTE_CONFIGMAPNAME = "gefyra-stowaway-proxyroutes"
         # Carrier
         self.CARRIER_IMAGE = config("GEFYRA_CARRIER_IMAGE", default="quay.io/gefyra/carrier")
