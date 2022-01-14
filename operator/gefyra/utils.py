@@ -95,9 +95,7 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
                 if out:
                     tar_buffer.write(out)
                 elif err:
-                    logger.debug(
-                        "Error copying file {0}".format(err.decode("utf-8", "replace"))
-                    )
+                    logger.debug("Error copying file {0}".format(err.decode("utf-8", "replace")))
                 if closed:
                     break
             exec_stream.close()
@@ -154,10 +152,7 @@ def notify_stowaway_pod(
             name=pod_name,
             body={
                 "metadata": {
-                    "annotations": {
-                        "operator": f"update-notification-"
-                        f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    }
+                    "annotations": {"operator": f"update-notification-" f"{datetime.now().strftime('%Y%m%d%H%M%S')}"}
                 }
             },
             namespace=configuration.NAMESPACE,
@@ -198,9 +193,7 @@ def exec_command_pod(
     return resp
 
 
-def get_deployment_of_pod(
-    api_instance: k8s.client.AppsV1Api, pod_name: str, namespace: str
-) -> k8s.client.V1Deployment:
+def get_deployment_of_pod(api_instance: k8s.client.AppsV1Api, pod_name: str, namespace: str) -> k8s.client.V1Deployment:
     """
     Return a Deployment of a Pod by its name
     :param api_instance: instance of k8s.client.AppsV1Api

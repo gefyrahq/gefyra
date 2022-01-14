@@ -22,12 +22,13 @@ def create_random_interceptrequest():
             "apiVersion": "gefyra.dev/v1",
             "kind": "InterceptRequest",
             "metadata": {
-                "name": "test-interceptrequest-" + datetime.now().strftime("%Y%m%d%H%M%S"),
+                "name": "test-interceptrequest-"
+                + datetime.now().strftime("%Y%m%d%H%M%S"),  # noqa
                 "namspace": "gefyra",
             },
-            "destinationIP": "my-nginx.default.svc.cluster.local",
-            "destinationPort": "80",
-            "targetPod": "hello-nginxdemo-7d648bd866-82qvt",
+            "destinationIP": "192.168.126.2",
+            "destinationPort": "8000",
+            "targetPod": "hello-nginxdemo-7d648bd866-2q7rw",
             "targetNamespace": "default",
             "targetContainer": "hello-nginx",
             "targetContainerPort": "80",

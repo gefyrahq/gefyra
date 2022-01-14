@@ -28,26 +28,18 @@ def create_operator_clusterrole() -> k8s.client.V1ClusterRole:
             "patch",
         ],
     )
-    # this is potentially not needed for kopf in standalone mode
-    # kopf_peering = k8s.client.V1PolicyRule(
-    #     api_groups=[
-    #         "admissionregistration.k8s.io/v1",
-    #         "admissionregistration.k8s.io/v1beta1"
-    #     ],
-    #     resources=[
-    #         "validatingwebhookconfigurations",
-    #         "mutatingwebhookconfigurations"
-    #     ],
-    #     verbs=[
-    #         "list",
-    #         "watch",
-    #         "patch",
-    #         "get"
-    #     ]
-    # )
     misc_res_rule = k8s.client.V1PolicyRule(
         api_groups=["", "apps", "extensions", "events.k8s.io"],
-        resources=["namespaces", "configmaps", "secrets", "deployments", "services", "pods", "pods/exec", "events"],
+        resources=[
+            "namespaces",
+            "configmaps",
+            "secrets",
+            "deployments",
+            "services",
+            "pods",
+            "pods/exec",
+            "events",
+        ],
         verbs=["create", "patch", "update", "delete", "get", "list"],
     )
     ireq_rule = k8s.client.V1PolicyRule(api_groups=["gefyra.dev"], resources=["interceptrequests"], verbs=["*"])
@@ -70,7 +62,9 @@ def create_operator_clusterrole() -> k8s.client.V1ClusterRole:
 
 
 def create_operator_clusterrolebinding(
-    serviceaccount: k8s.client.V1ServiceAccount, clusterrole: k8s.client.V1ClusterRole, namespace: str
+    serviceaccount: k8s.client.V1ServiceAccount,
+    clusterrole: k8s.client.V1ClusterRole,
+    namespace: str,
 ) -> k8s.client.V1ClusterRoleBinding:
     return k8s.client.V1ClusterRoleBinding(
         metadata=k8s.client.V1ObjectMeta(
@@ -78,13 +72,23 @@ def create_operator_clusterrolebinding(
             name="gefyra-operator-rolebinding",
         ),
         role_ref=k8s.client.V1RoleRef(
-            api_group="rbac.authorization.k8s.io", name=clusterrole.metadata.name, kind="ClusterRole"
+            api_group="rbac.authorization.k8s.io",
+            name=clusterrole.metadata.name,
+            kind="ClusterRole",
         ),
-        subjects=[k8s.client.V1Subject(kind="ServiceAccount", name=serviceaccount.metadata.name, namespace=namespace)],
+        subjects=[
+            k8s.client.V1Subject(
+                kind="ServiceAccount",
+                name=serviceaccount.metadata.name,
+                namespace=namespace,
+            )
+        ],
     )
 
 
-def create_operator_deployment(serviceaccount: k8s.client.V1ServiceAccount, namespace: str) -> k8s.client.V1Deployment:
+def create_operator_deployment(
+    serviceaccount: k8s.client.V1ServiceAccount, namespace: str, gefyra_network_subnet: str
+) -> k8s.client.V1Deployment:
 
     template = k8s.client.V1PodTemplateSpec(
         metadata=k8s.client.V1ObjectMeta(labels={"app": "gefyra-operator"}),
@@ -93,6 +97,7 @@ def create_operator_deployment(serviceaccount: k8s.client.V1ServiceAccount, name
                 k8s.client.V1Container(
                     name="gefyra-operator",
                     image="quay.io/gefyra/operator:latest",
+                    env=[k8s.client.V1EnvVar(name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet)],
                 )
             ],
             service_account_name=serviceaccount.metadata.name,

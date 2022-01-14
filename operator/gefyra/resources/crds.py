@@ -10,9 +10,7 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
             "established": k8s.client.V1JSONSchemaProps(type="boolean", default=False),
             "destinationIP": k8s.client.V1JSONSchemaProps(type="string"),
             "destinationPort": k8s.client.V1JSONSchemaProps(type="string"),
-            "targetPod": k8s.client.V1JSONSchemaProps(
-                type="string"
-            ),  # target a specific Pod for intercept
+            "targetPod": k8s.client.V1JSONSchemaProps(type="string"),  # target a specific Pod for intercept
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
             "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
             "targetContainerPort": k8s.client.V1JSONSchemaProps(type="string"),
@@ -35,9 +33,7 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
                 name="v1",
                 served=True,
                 storage=True,
-                schema=k8s.client.V1CustomResourceValidation(
-                    open_apiv3_schema=schema_props
-                ),
+                schema=k8s.client.V1CustomResourceValidation(open_apiv3_schema=schema_props),
             )
         ],
     )
