@@ -12,12 +12,6 @@ repos:
     hooks:
       - id: flake8
 
-  # isort - organize import correctly
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.6.4
-    hooks:
-      - id: isort
-
   # gitlint - correct git commit format
   - repo: https://github.com/jorisroovers/gitlint
     rev: v0.15.0

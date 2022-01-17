@@ -24,18 +24,14 @@ def create_stowaway_nodeport_service(
     service = k8s.client.V1Service(
         api_version="v1",
         kind="Service",
-        metadata=k8s.client.V1ObjectMeta(
-            name="gefyra-stowaway-wireguard", namespace=configuration.NAMESPACE
-        ),
+        metadata=k8s.client.V1ObjectMeta(name="gefyra-stowaway-wireguard", namespace=configuration.NAMESPACE),
         spec=spec,
     )
 
     return service
 
 
-def create_stowaway_proxy_service(
-    stowaway_deployment: k8s.client.V1Deployment, port: int
-) -> k8s.client.V1Service:
+def create_stowaway_proxy_service(stowaway_deployment: k8s.client.V1Deployment, port: int) -> k8s.client.V1Service:
 
     spec = k8s.client.V1ServiceSpec(
         type="ClusterIP",

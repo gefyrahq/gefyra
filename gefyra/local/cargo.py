@@ -2,13 +2,21 @@ import docker
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.utils import build_cargo_image, handle_docker_create_container, handle_docker_remove_container
+from gefyra.local.utils import (
+    build_cargo_image,
+    handle_docker_create_container,
+    handle_docker_remove_container,
+)
 
 
-def create_cargo_container(config: ClientConfiguration, cargo_connection_data: dict) -> Container:
+def create_cargo_container(
+    config: ClientConfiguration, cargo_connection_data: dict
+) -> Container:
     wireguard_ip = f"{cargo_connection_data['Interface.Address']}"
     private_key = cargo_connection_data["Interface.PrivateKey"]
-    dns = f"{cargo_connection_data['Interface.DNS']} {config.NAMESPACE}.svc.cluster.local"
+    dns = (
+        f"{cargo_connection_data['Interface.DNS']} {config.NAMESPACE}.svc.cluster.local"
+    )
     public_key = cargo_connection_data["Peer.PublicKey"]
     # docker to work with ipv4 only
     allowed_ips = cargo_connection_data["Peer.AllowedIPs"].split(",")[0]
@@ -43,3 +51,7 @@ def remove_cargo_container(config: ClientConfiguration):
         handle_docker_remove_container(config, container_id=config.CARGO_CONTAINER_NAME)
     except docker.errors.NotFound:
         pass
+
+
+def get_cargo_ip_from_netaddress(network_address: str) -> str:
+    return ".".join(network_address.split(".")[:3]) + ".149"

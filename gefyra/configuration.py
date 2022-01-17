@@ -18,6 +18,7 @@ class ClientConfiguration:
         self.DOCKER = docker_client or docker.from_env()
         self.CARGO_ENDPOINT = cargo_endpoint or "172.17.0.1:31820"
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
+        self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
         self.K8S_CORE_API = k8s.client.CoreV1Api()
         self.K8S_RBAC_API = k8s.client.RbacAuthorizationV1Api()
