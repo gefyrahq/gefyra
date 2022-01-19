@@ -6,9 +6,8 @@ import kubernetes as k8s
 
 from gefyra.cluster.manager import install_operator
 from gefyra.configuration import default_configuration
-from gefyra.local.cargo import create_cargo_container
-from gefyra.local.networking import handle_create_network
-from gefyra.local.utils import get_free_class_c_netaddress
+from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
+from gefyra.local.networking import get_free_class_c_netaddress, handle_create_network
 
 from . import down
 from .utils import stopwatch
@@ -19,6 +18,9 @@ logger = logging.getLogger(__name__)
 @stopwatch
 def up(config=default_configuration) -> bool:
     logger.info("Installing Gefyra Operator")
+    #
+    # Deploy Operator to cluster, aligned with local conditions
+    #
     try:
         network_address = get_free_class_c_netaddress(config)
         cargo_connection_details = install_operator(config, network_address)
@@ -26,13 +28,16 @@ def up(config=default_configuration) -> bool:
         data = json.loads(e.body)
         logger.error(f"{e.reason}: {data['details']['causes'][0]['message']}")
         return False
+    #
+    # Run up a local Docker network setup
+    #
     try:
         cargo_com_net_ip_address = cargo_connection_details["Interface.Address"]
         stowaway_ip_address = cargo_connection_details["Interface.DNS"].split(" ")[0]
         logger.debug(f"Cargo com net ip address: {cargo_com_net_ip_address}")
         logger.debug(f"Stowaway com net ip address: {stowaway_ip_address}")
         # well known cargo address
-        cargo_ip_address = ".".join(network_address.split(".")[:3]) + ".149"
+        cargo_ip_address = get_cargo_ip_from_netaddress(network_address)
         logger.debug(f"Gefyra network address: {network_address}")
         logger.info("Creating Docker network")
         gefyra_network = handle_create_network(config, network_address, {})
@@ -41,7 +46,9 @@ def up(config=default_configuration) -> bool:
         logger.error(e)
         down(config)
         return False
-
+    #
+    # Connect Docker network with K8s cluster
+    #
     try:
         cargo_container = create_cargo_container(config, cargo_connection_details)
         logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")

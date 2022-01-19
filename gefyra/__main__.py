@@ -3,31 +3,58 @@ import argparse
 import logging
 import sys
 
-from gefyra.api import down, up
-from gefyra.local.bridge import bridge, run
+from gefyra.api import bridge, down, run, up
 
 console = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+formatter = logging.Formatter("[%(levelname)s] %(name)s %(message)s")
 console.setFormatter(formatter)
 
 logger = logging.getLogger("gefyra")
 
 
 parser = argparse.ArgumentParser(description="Gefyra Client")
-parser.add_argument("action", help="One of: [up, run, bridge, reset, down]")
-parser.add_argument("-v", "--verbose", action="store_true")
-# the name will be used as an optional argument ("--name")
+action = parser.add_subparsers(dest="action", help="the action to be performed")
+parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
+
+up_parser = action.add_parser("up")
+run_parser = action.add_parser("run")
+run_parser.add_argument(
+    "-i", "--image", help="the docker image to run locally", required=True
+)
+run_parser.add_argument(
+    "-N", "--name", help="the name for the locally running container", required=True
+)
+run_parser.add_argument(
+    "-n",
+    "--namespace",
+    help="the namespace for this container to run in",
+    default="default",
+)
+bridge_parser = action.add_parser("bridge")
+bridge_parser.add_argument(
+    "-N", "--name", help="the name for the locally running container", required=True
+)
+bridge_parser.add_argument(
+    "-p", "--port", help="the port to send the traffic to", required=True
+)
+bridge_parser.add_argument(
+    "-n",
+    "--namespace",
+    help="the namespace for this container to run in",
+    default="default",
+)
 intercept_flags = [
-    {"name": "app_image"},
-    {"name": "destination_ip"},
-    {"name": "destination_port"},
-    {"name": "target_pod"},
-    {"name": "target_container"},
-    {"name": "target_container_port"},
-    {"name": "target_namespace"},
+    {"name": "deployment"},
+    {"name": "statefulset"},
+    {"name": "pod"},
+    {"name": "container_name"},
+    {"name": "container_port"},
+    #    {"name": "namespace"}, target namespace
 ]
 for flag in intercept_flags:
-    parser.add_argument(f"--{flag['name']}")
+    bridge_parser.add_argument(f"--{flag['name']}")
+
+down_parser = action.add_parser("down")
 
 
 def get_intercept_kwargs(parser_args):
@@ -40,7 +67,7 @@ def get_intercept_kwargs(parser_args):
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    if args.verbose:
+    if args.debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
@@ -48,13 +75,9 @@ if __name__ == "__main__":
     if args.action == "up":
         up()
     elif args.action == "run":
-        logger.info("run: gonna call run")
-        run(**get_intercept_kwargs(args))
-        logger.info("run: run called")
+        run(image=args.image, name=args.name, namespace=args.namespace)
     elif args.action == "bridge":
-        logger.info("bridge: gonna call bridge")
-        bridge(**get_intercept_kwargs(args))
-        logger.info("bridge: bridge called")
+        bridge(args.name, args.port, **get_intercept_kwargs(args))
     elif args.action == "reset":
         # idea: to delete one/all ireqs (reset may not be the best name for that, choices menu like in unikube would be
         # nice)
@@ -62,4 +85,6 @@ if __name__ == "__main__":
     elif args.action == "down":
         down()
     else:
-        logger.error(f"action must be one of [up, run, bridge, down], got {args.action}")
+        logger.error(
+            f"action must be one of [up, run, bridge, down], got {args.action}"
+        )
