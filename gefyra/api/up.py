@@ -10,12 +10,10 @@ from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddr
 from gefyra.local.networking import get_free_class_c_netaddress, handle_create_network
 
 from . import down
-from .utils import stopwatch
 
 logger = logging.getLogger(__name__)
 
 
-@stopwatch
 def up(config=default_configuration) -> bool:
     logger.info("Installing Gefyra Operator")
     #

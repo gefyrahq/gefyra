@@ -3,7 +3,15 @@ import argparse
 import logging
 import sys
 
-from gefyra.api import bridge, down, run, up
+from gefyra.api import (
+    bridge,
+    down,
+    run,
+    up,
+    unbridge,
+    unbridge_all,
+    list_interceptrequests,
+)
 
 console = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("[%(levelname)s] %(name)s %(message)s")
@@ -19,10 +27,10 @@ parser.add_argument("-d", "--debug", action="store_true", help="add debug output
 up_parser = action.add_parser("up")
 run_parser = action.add_parser("run")
 run_parser.add_argument(
-    "-i", "--image", help="the docker image to run locally", required=True
+    "-i", "--image", help="the docker image to run in Gefyra", required=True
 )
 run_parser.add_argument(
-    "-N", "--name", help="the name for the locally running container", required=True
+    "-N", "--name", help="the name of the container running in Gefyra", required=True
 )
 run_parser.add_argument(
     "-n",
@@ -32,7 +40,16 @@ run_parser.add_argument(
 )
 bridge_parser = action.add_parser("bridge")
 bridge_parser.add_argument(
-    "-N", "--name", help="the name for the locally running container", required=True
+    "-N", "--name", help="the name of the container running in Gefyra", required=True
+)
+bridge_parser.add_argument(
+    "-C",
+    "--container-name",
+    help="the name for the locally running container",
+    required=True,
+)
+bridge_parser.add_argument(
+    "-I", "--bridge-name", help="the name of the bridge", required=False
 )
 bridge_parser.add_argument(
     "-p", "--port", help="the port to send the traffic to", required=True
@@ -47,25 +64,37 @@ intercept_flags = [
     {"name": "deployment"},
     {"name": "statefulset"},
     {"name": "pod"},
-    {"name": "container_name"},
-    {"name": "container_port"},
-    #    {"name": "namespace"}, target namespace
+    {"name": "container"},
+    {"name": "container-port"},
 ]
 for flag in intercept_flags:
     bridge_parser.add_argument(f"--{flag['name']}")
 
 down_parser = action.add_parser("down")
+unbridge_parser = action.add_parser("unbridge")
+unbridge_parser.add_argument("-N", "--name", help="the name of the intercept request")
+unbridge_parser.add_argument(
+    "-A", "--all", help="removes all current intercept requests", action="store_true"
+)
+list_parser = action.add_parser("list")
+list_parser.add_argument(
+    "--containers", help="list all containers running in Gefyra", action="store_true"
+)
+list_parser.add_argument(
+    "--bridges", help="list all active bridges in Gefyra", action="store_true"
+)
 
 
 def get_intercept_kwargs(parser_args):
     kwargs = {}
     for flag in intercept_flags:
-        if getattr(parser_args, flag["name"]):
-            kwargs[flag["name"]] = getattr(parser_args, flag["name"])
+        _f = flag["name"].replace("-", "_")
+        if getattr(parser_args, _f):
+            kwargs[_f] = getattr(parser_args, _f)
     return kwargs
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # noqa
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
@@ -77,14 +106,32 @@ if __name__ == "__main__":
     elif args.action == "run":
         run(image=args.image, name=args.name, namespace=args.namespace)
     elif args.action == "bridge":
-        bridge(args.name, args.port, **get_intercept_kwargs(args))
-    elif args.action == "reset":
-        # idea: to delete one/all ireqs (reset may not be the best name for that, choices menu like in unikube would be
-        # nice)
-        logger.warning("reset: not yet supported")
+        bridge(
+            args.name,
+            args.port,
+            container_name=args.container_name,
+            namespace=args.namespace,
+            bridge_name=args.bridge_name,
+            **get_intercept_kwargs(args),
+        )
+    elif args.action == "unbridge":
+        if args.name:
+            unbridge(args.name)
+        elif args.all:
+            unbridge_all()
+    elif args.action == "list":
+        if args.containers:
+            pass
+        elif args.bridges:
+            ireqs = list_interceptrequests()
+            if ireqs:
+                for ireq in ireqs:
+                    print(ireq)
+            else:
+                logger.info("No active bridges found")
     elif args.action == "down":
         down()
     else:
         logger.error(
-            f"action must be one of [up, run, bridge, down], got {args.action}"
+            f"action must be one of [up, run, bridge, unbridge, list, down], got {args.action}"
         )

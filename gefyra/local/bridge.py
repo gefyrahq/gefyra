@@ -2,10 +2,10 @@ import json
 import logging
 import multiprocessing
 import subprocess
-from datetime import datetime
 
 import docker
 from docker.models.containers import Container
+import kubernetes as k8s
 
 from gefyra.configuration import ClientConfiguration
 
@@ -26,8 +26,55 @@ def handle_create_interceptrequest(config: ClientConfiguration, body):
     return ireq
 
 
+def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bool:
+    try:
+        config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object(
+            namespace=config.NAMESPACE,
+            name=name,
+            group="gefyra.dev",
+            plural="interceptrequests",
+            version="v1",
+        )
+        return True
+    except k8s.client.exceptions.ApiException as e:
+        if e.status == 404:
+            logger.debug(f"InterceptRequest {name} not found")
+        else:
+            logger.debug("Error removing InterceptRequest: " + str(e))
+        return False
+
+
+def get_all_interceptrequests(config: ClientConfiguration) -> list:
+    try:
+        ireq_list = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+            namespace=config.NAMESPACE,
+            group="gefyra.dev",
+            plural="interceptrequests",
+            version="v1",
+        )
+        if ireq_list:
+            return list(ireq_list.get("items"))
+        else:
+            return []
+    except k8s.client.exceptions.ApiException as e:
+        logger.error("Error getting InterceptRequests: " + str(e))
+
+
+def remove_interceptrequest_remainder(config: ClientConfiguration):
+    try:
+        ireq_list = get_all_interceptrequests(config)
+        if ireq_list:
+            logger.debug(f"Removing {len(ireq_list)} InterceptRequests remainder")
+            # if there are running intercept requests clean them up
+            for ireq in ireq_list:
+                handle_delete_interceptrequest(config, ireq["metadata"]["name"])
+    except k8s.client.exceptions.ApiException as e:
+        logger.error("Error removing remainder InterceptRequests: " + str(e))
+
+
 def get_ireq_body(
     config: ClientConfiguration,
+    name: str,
     destination_ip,
     destination_port,
     target_pod,
@@ -39,7 +86,7 @@ def get_ireq_body(
         "apiVersion": "gefyra.dev/v1",
         "kind": "InterceptRequest",
         "metadata": {
-            "name": f"{target_container}-ireq-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            "name": name,
             "namspace": config.NAMESPACE,
         },
         "destinationIP": destination_ip,
@@ -93,74 +140,6 @@ def deploy_app_container(
     return container
 
 
-def run(
-    config: ClientConfiguration,
-    destination_ip: str,
-    destination_port: str,
-    target_pod: str,
-    target_container: str,
-    target_container_port: str,
-    target_namespace: str = "default",
-):
-    # create ireq
-    ireq_body = get_ireq_body(
-        destination_ip=destination_ip,
-        destination_port=destination_port,
-        target_pod=target_pod,
-        target_namespace=target_namespace,
-        target_container=target_container,
-        target_container_port=target_container_port,
-    )
-    handle_create_interceptrequest(config, ireq_body)
-
-
-def bridge(
-    config: ClientConfiguration,
-    app_image,
-    destination_ip: str,
-    destination_port: str,
-    target_pod: str,
-    target_container: str,
-    target_container_port: str,
-    target_namespace: str = "default",
-    command=None,
-    volumes=None,
-    ports=None,
-):
-    # TODO:
-    # # start listening to docker events to change the app containers default route
-    # events = client.events(filters={"container": APP_CONTAINER_NAME})
-    # loop = asyncio.get_event_loop()
-    # loop.create_task(change_container_default_route(events, APP_CONTAINER_NAME, cargo_ip))
-
-    print("gonna deploy app container")
-    # deploy app container
-    # TODO: add --dns flag
-    deploy_app_container(
-        app_image,
-        name="TODO",
-        command=command,
-        volumes=volumes,
-        ports=ports,
-        detach=True,
-        remove=True,
-        auto_remove=True,
-    )
-
-    print("gonna create ireq")
-    # create ireq
-    ireq_body = get_ireq_body(
-        destination_ip=destination_ip,  # TODO: should this be IP of app-container?
-        destination_port=destination_port,
-        target_pod=target_pod,
-        target_namespace=target_namespace,
-        target_container=target_container,
-        target_container_port=target_container_port,
-    )
-    print(f"IREQ body: {ireq_body}")
-    handle_create_interceptrequest(ireq_body)
-
-
 def patch_container_gateway(
     config: ClientConfiguration, container_name: str, gateway_ip
 ) -> None:
@@ -171,7 +150,6 @@ def patch_container_gateway(
     :param gateway_ip: the target ip address of the gateway
     :return: None
     """
-    # rdir = pathlib.Path(__file__).parent.resolve()
     logger.debug("Waiting for the gateway patch to be applied")
     for event in config.DOCKER.events(filters={"container": container_name}):
         event_dict = json.loads(event.decode("utf-8"))
@@ -200,4 +178,5 @@ def patch_container_gateway(
                     gateway_ip,
                 ]
             )
+            logger.debug(f"Gateway patch applied to '{container_name}'")
             return
