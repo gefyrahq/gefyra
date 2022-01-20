@@ -105,6 +105,7 @@ def deploy_app_container(
     command: str = None,
     volumes: dict = None,
     ports: dict = None,
+    env: dict = None,
     auto_remove: bool = None,
     dns_search: str = "default",
 ) -> Container:
@@ -123,6 +124,7 @@ def deploy_app_container(
         "dns": [config.STOWAWAY_IP],
         "dns_search": [dns_search],
         "auto_remove": auto_remove,
+        "environment": env,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
     p = multiprocessing.Process(

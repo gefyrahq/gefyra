@@ -38,6 +38,17 @@ run_parser.add_argument(
     help="the namespace for this container to run in",
     default="default",
 )
+run_parser.add_argument(
+    "--env",
+    action="append",
+    help="set or override environment variables in the form ENV=value, allowed multiple times",
+    required=False,
+)
+run_parser.add_argument(
+    "--env-from",
+    help="copy the environment from the container in the notation 'Pod/Container'",
+    required=False,
+)
 bridge_parser = action.add_parser("bridge")
 bridge_parser.add_argument(
     "-N", "--name", help="the name of the container running in Gefyra", required=True
@@ -104,7 +115,13 @@ if __name__ == "__main__":  # noqa
     if args.action == "up":
         up()
     elif args.action == "run":
-        run(image=args.image, name=args.name, namespace=args.namespace)
+        run(
+            image=args.image,
+            name=args.name,
+            namespace=args.namespace,
+            env_from=args.env_from,
+            env=args.env,
+        )
     elif args.action == "bridge":
         bridge(
             args.name,

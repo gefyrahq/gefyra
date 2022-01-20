@@ -1,12 +1,9 @@
 import logging
 from datetime import datetime
 
-import docker
-
 from gefyra.cluster.resources import get_pods_for_workload
 from gefyra.configuration import default_configuration
 from gefyra.local.bridge import (
-    deploy_app_container,
     get_ireq_body,
     handle_create_interceptrequest,
     handle_delete_interceptrequest,
@@ -72,43 +69,6 @@ def bridge(
         ireq = handle_create_interceptrequest(config, ireq_body)
         logger.info(f"Bridge {ireq['metadata']['name']} created")
     return True
-
-
-@stopwatch
-def run(
-    image: str,
-    name: str = None,
-    command: str = None,
-    volumes: dict = None,
-    ports: dict = None,
-    detach: bool = True,
-    auto_remove: bool = True,
-    namespace: str = "default",
-    config=default_configuration,
-) -> bool:
-    dns_search = f"{namespace}.svc.cluster.local"
-    try:
-        container = deploy_app_container(
-            config, image, name, command, volumes, ports, auto_remove, dns_search
-        )
-    except docker.errors.APIError as e:
-        if e.status_code == 409:
-            logger.warning("This container is already deployed and running")
-            return True
-        else:
-            logger.error(e)
-            return False
-
-    logger.info(
-        f"Container image '{', '.join(container.image.tags)}' started with name '{container.name}' in "
-        f"Kubernetes namespace '{namespace}'"
-    )
-    if detach:
-        return True
-    else:
-        logger.debug("Now printing out logs")
-        for logline in container.logs(stream=True):
-            print(logline)
 
 
 @stopwatch
