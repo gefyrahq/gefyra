@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import List
 
 from gefyra.cluster.resources import get_pods_for_workload
 from gefyra.configuration import default_configuration
@@ -9,6 +10,7 @@ from gefyra.local.bridge import (
     handle_delete_interceptrequest,
     get_all_interceptrequests,
 )
+from gefyra.local.cargo import add_syncdown_job
 
 from .utils import stopwatch
 
@@ -26,13 +28,11 @@ def bridge(
     container_port: str = None,
     namespace: str = "default",
     bridge_name: str = None,
+    sync_down_dirs: List[str] = None,
     config=default_configuration,
 ) -> bool:
-
     container = config.DOCKER.containers.get(name)
-    local_container_ip = container.attrs["NetworkSettings"]["Networks"][
-        config.NETWORK_NAME
-    ]["IPAddress"]
+    local_container_ip = container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME]["IPAddress"]
 
     pods_to_intercept = []
     if deployment:
@@ -44,15 +44,19 @@ def bridge(
     pass
 
     if not bridge_name:
-        ireq_base_name = (
-            f"{container_name}-ireq-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        )
+        ireq_base_name = f"{container_name}-ireq-{datetime.now().strftime('%Y%m%d%H%M%S')}"
     else:
         ireq_base_name = bridge_name
     if len(pods_to_intercept) > 1:
         use_index = True
     else:
         use_index = False
+
+    # is is required to copy at least the service account tokens from the bridged container
+    if sync_down_dirs:
+        sync_down_dirs = ["/var/run/secrets/kubernetes.io/serviceaccount"] + sync_down_dirs
+    else:
+        sync_down_dirs = ["/var/run/secrets/kubernetes.io/serviceaccount"]
 
     for idx, pod in enumerate(pods_to_intercept):
         logger.info(f"Creating bridge for Pod {pod}")
@@ -65,9 +69,12 @@ def bridge(
             target_namespace=namespace,
             target_container=container_name,
             target_container_port=container_port,
+            sync_down_directories=sync_down_dirs,
         )
         ireq = handle_create_interceptrequest(config, ireq_body)
         logger.info(f"Bridge {ireq['metadata']['name']} created")
+        for syncdown_dir in sync_down_dirs:
+            add_syncdown_job(config, ireq["metadata"]["name"], name, pod, container_name, syncdown_dir)
     return True
 
 

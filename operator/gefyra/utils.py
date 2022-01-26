@@ -168,6 +168,7 @@ def exec_command_pod(
     namespace: str,
     container_name: str,
     command: List[str],
+    run_async: bool = False,
 ) -> str:
     """
     Exec a command on a Pod and exit
@@ -176,20 +177,35 @@ def exec_command_pod(
     :param namespace: the namespace this Pod is running in
     :param container_name: the container name of this Pod
     :param command: command as List[str]
+    :param run_async: run this command async
     :return: the result output as str
     """
-    resp = k8s.stream.stream(
-        api_instance.connect_get_namespaced_pod_exec,
-        pod_name,
-        namespace,
-        container=container_name,
-        command=command,
-        stderr=True,
-        stdin=False,
-        stdout=True,
-        tty=False,
-    )
-    logger.debug("Response: " + resp)
+    if run_async:
+        resp = api_instance.connect_get_namespaced_pod_exec(
+            pod_name,
+            namespace,
+            container=container_name,
+            command=command,
+            stderr=False,
+            stdin=False,
+            stdout=False,
+            tty=False,
+            async_req=True,
+        )
+    else:
+        resp = k8s.stream.stream(
+            api_instance.connect_get_namespaced_pod_exec,
+            pod_name,
+            namespace,
+            container=container_name,
+            command=command,
+            stderr=True,
+            stdin=False,
+            stdout=True,
+            tty=False,
+        )
+    if not run_async:
+        logger.debug("Response: " + resp)
     return resp
 
 

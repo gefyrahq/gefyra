@@ -1,6 +1,6 @@
 import logging
 from asyncio import sleep
-from typing import Awaitable
+from typing import Awaitable, List
 
 import kubernetes as k8s
 
@@ -10,6 +10,7 @@ from gefyra.utils import exec_command_pod
 logger = logging.getLogger("gefyra.carrier")
 
 CARRIER_CONFIGURE_COMMAND_BASE = ["sh", "setroute.sh"]
+CARRIER_RSYNC_COMMAND_BASE = ["sh", "syncdirs.sh"]
 
 
 def store_pod_original_config(container: k8s.client.V1Container, ireq_object: object) -> None:
@@ -158,6 +159,7 @@ async def configure_carrier(
     stowaway_service_name: str,
     stowaway_service_port: int,
     interceptrequest_name: str,
+    sync_down_directories: List[str],
 ):
     carrier_ready = await aw_carrier_ready
     if not carrier_ready:
@@ -171,21 +173,12 @@ async def configure_carrier(
         ]
         await sleep(5)
         exec_command_pod(api_instance, pod_name, namespace, container_name, command)
+        if sync_down_directories:
+            logger.info(f"Setting directories in Carrier {pod_name} to be down synced")
+            rsync_cmd = CARRIER_RSYNC_COMMAND_BASE + [f"{pod_name}/{container_name}"] + sync_down_directories
+
+            exec_command_pod(api_instance, pod_name, namespace, container_name, rsync_cmd)
     except Exception as e:
         logger.error(e)
         return
     logger.info(f"Carrier configured in {pod_name}")
-
-    # try:
-    #     api_instance.create_namespaced_event(
-    #         namespace=configuration.NAMESPACE,
-    #         body=create_interceptrequest_established_event(
-    #             interceptrequest_name,
-    #             namespace,
-    #             pod_name,
-    #             container_name,
-    #             container_port,
-    #         ),
-    #     )
-    # except k8s.client.exceptions.ApiException as e:
-    #     logger.exception("Could not write intercept established event: " + str(e))

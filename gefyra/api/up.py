@@ -24,7 +24,11 @@ def up(config=default_configuration) -> bool:
         cargo_connection_details = install_operator(config, network_address)
     except k8s.client.exceptions.ApiException as e:
         data = json.loads(e.body)
-        logger.error(f"{e.reason}: {data['details']['causes'][0]['message']}")
+        try:
+            logger.error(f"{e.reason}: {data['details']['causes'][0]['message']}")
+        except KeyError:
+            logger.error(f"{e.reason}: {data}")
+
         return False
     #
     # Run up a local Docker network setup
@@ -34,12 +38,12 @@ def up(config=default_configuration) -> bool:
         stowaway_ip_address = cargo_connection_details["Interface.DNS"].split(" ")[0]
         logger.debug(f"Cargo com net ip address: {cargo_com_net_ip_address}")
         logger.debug(f"Stowaway com net ip address: {stowaway_ip_address}")
-        # well known cargo address
-        cargo_ip_address = get_cargo_ip_from_netaddress(network_address)
-        logger.debug(f"Gefyra network address: {network_address}")
         logger.info("Creating Docker network")
         gefyra_network = handle_create_network(config, network_address, {})
-        logger.info("Deploying Cargo (network sidecar)")
+        # well known cargo address
+        logger.debug(gefyra_network.attrs)
+        cargo_ip_address = get_cargo_ip_from_netaddress(gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"])
+        logger.info(f"Deploying Cargo (network sidecar) with IP {cargo_ip_address}")
     except Exception as e:
         logger.error(e)
         down(config)

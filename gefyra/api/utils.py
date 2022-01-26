@@ -9,7 +9,7 @@ def stopwatch(func):
         tic = time.perf_counter()
         result = func(*args, **kwargs)
         toc = time.perf_counter()
-        logger.info(f"Operation time for '{func.__name__}(...)' was {(toc - tic)*1000:0.4f}ms")
+        logger.debug(f"Operation time for '{func.__name__}(...)' was {(toc - tic)*1000:0.4f}ms")
         return result
 
     return wrapper

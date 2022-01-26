@@ -26,12 +26,8 @@ parser.add_argument("-d", "--debug", action="store_true", help="add debug output
 
 up_parser = action.add_parser("up")
 run_parser = action.add_parser("run")
-run_parser.add_argument(
-    "-i", "--image", help="the docker image to run in Gefyra", required=True
-)
-run_parser.add_argument(
-    "-N", "--name", help="the name of the container running in Gefyra", required=True
-)
+run_parser.add_argument("-i", "--image", help="the docker image to run in Gefyra", required=True)
+run_parser.add_argument("-N", "--name", help="the name of the container running in Gefyra", required=True)
 run_parser.add_argument(
     "-n",
     "--namespace",
@@ -50,21 +46,15 @@ run_parser.add_argument(
     required=False,
 )
 bridge_parser = action.add_parser("bridge")
-bridge_parser.add_argument(
-    "-N", "--name", help="the name of the container running in Gefyra", required=True
-)
+bridge_parser.add_argument("-N", "--name", help="the name of the container running in Gefyra", required=True)
 bridge_parser.add_argument(
     "-C",
     "--container-name",
     help="the name for the locally running container",
     required=True,
 )
-bridge_parser.add_argument(
-    "-I", "--bridge-name", help="the name of the bridge", required=False
-)
-bridge_parser.add_argument(
-    "-p", "--port", help="the port to send the traffic to", required=True
-)
+bridge_parser.add_argument("-I", "--bridge-name", help="the name of the bridge", required=False)
+bridge_parser.add_argument("-p", "--port", help="the port to send the traffic to", required=True)
 bridge_parser.add_argument(
     "-n",
     "--namespace",
@@ -84,16 +74,10 @@ for flag in intercept_flags:
 down_parser = action.add_parser("down")
 unbridge_parser = action.add_parser("unbridge")
 unbridge_parser.add_argument("-N", "--name", help="the name of the intercept request")
-unbridge_parser.add_argument(
-    "-A", "--all", help="removes all current intercept requests", action="store_true"
-)
+unbridge_parser.add_argument("-A", "--all", help="removes all current intercept requests", action="store_true")
 list_parser = action.add_parser("list")
-list_parser.add_argument(
-    "--containers", help="list all containers running in Gefyra", action="store_true"
-)
-list_parser.add_argument(
-    "--bridges", help="list all active bridges in Gefyra", action="store_true"
-)
+list_parser.add_argument("--containers", help="list all containers running in Gefyra", action="store_true")
+list_parser.add_argument("--bridges", help="list all active bridges in Gefyra", action="store_true")
 
 
 def get_intercept_kwargs(parser_args):
@@ -149,6 +133,4 @@ if __name__ == "__main__":  # noqa
     elif args.action == "down":
         down()
     else:
-        logger.error(
-            f"action must be one of [up, run, bridge, unbridge, list, down], got {args.action}"
-        )
+        logger.error(f"action must be one of [up, run, bridge, unbridge, list, down], got {args.action}")

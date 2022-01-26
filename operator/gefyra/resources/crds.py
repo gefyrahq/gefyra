@@ -14,6 +14,9 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
             "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
             "targetContainerPort": k8s.client.V1JSONSchemaProps(type="string"),
+            "syncDownDirectories": k8s.client.V1JSONSchemaProps(
+                type="array", default=[], items=k8s.client.V1JSONSchemaProps(type="string")
+            ),
             "carrierOriginalConfig": k8s.client.V1JSONSchemaProps(
                 type="object", x_kubernetes_preserve_unknown_fields=True
             ),  # object to store information for reset of target Pod

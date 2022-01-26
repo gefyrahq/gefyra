@@ -13,13 +13,14 @@ logger = logging.getLogger(__name__)
 def handle_create_network(config: ClientConfiguration, network_address: str, aux_addresses: dict) -> Network:
     try:
         network = config.DOCKER.networks.get(config.NETWORK_NAME)
+        logger.info("Gefyra network already exists")
         return network
     except docker.errors.NotFound:
         pass
     ipam_pool = IPAMPool(subnet=f"{network_address}/24", aux_addresses=aux_addresses)
     ipam_config = IPAMConfig(pool_configs=[ipam_pool])
     network = config.DOCKER.networks.create(config.NETWORK_NAME, driver="bridge", ipam=ipam_config)
-    logger.info(f"Created docker network '{config.NETWORK_NAME}' ({network.short_id})")
+    logger.info(f"Created network '{config.NETWORK_NAME}' ({network.short_id})")
     return network
 
 

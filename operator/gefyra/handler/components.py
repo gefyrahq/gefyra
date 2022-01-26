@@ -8,8 +8,12 @@ from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
 from gefyra.resources.crds import create_interceptrequest_definition
 from gefyra.resources.deployments import create_stowaway_deployment
 from gefyra.resources.events import create_operator_ready_event
-from gefyra.resources.services import create_stowaway_nodeport_service
+from gefyra.resources.services import (
+    create_stowaway_nodeport_service,
+    create_stowaway_rsync_service,
+)
 from gefyra.stowaway import check_stowaway_ready, get_wireguard_connection_details
+
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -98,6 +102,30 @@ def handle_stowaway_nodeport_service(
             raise e
 
 
+def handle_stowaway_rsync_service(
+    logger,
+    configuration: OperatorConfiguration,
+    deployment_stowaway: k8s.client.V1Deployment,
+):
+    rsync_service_stowaway = create_stowaway_rsync_service(deployment_stowaway)
+    try:
+        core_v1_api.create_namespaced_service(body=rsync_service_stowaway, namespace=configuration.NAMESPACE)
+        logger.info("Stowaway rsync service created")
+    except k8s.client.exceptions.ApiException as e:
+        if e.status in [409, 422]:
+            # the Stowaway service already exist
+            # status == 422 is rsync already allocated
+            logger.warn("Stowaway rsync service already available, now patching it with current configuration")
+            core_v1_api.patch_namespaced_service(
+                name=rsync_service_stowaway.metadata.name,
+                body=rsync_service_stowaway,
+                namespace=configuration.NAMESPACE,
+            )
+            logger.info("Stowaway rsync service patched")
+        else:
+            raise e
+
+
 @kopf.on.startup()
 async def check_gefyra_components(logger, **kwargs) -> None:
     """
@@ -127,6 +155,7 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     # handle Stowaway services
     #
     handle_stowaway_nodeport_service(logger, configuration, deployment_stowaway)
+    handle_stowaway_rsync_service(logger, configuration, deployment_stowaway)
 
     #
     # schedule startup tasks, work on them async

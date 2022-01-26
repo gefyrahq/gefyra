@@ -12,7 +12,7 @@ RUN set -x \
     && addgroup --system --gid $GID nginx || true \
     && adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos "nginx user" --shell /bin/false --uid $UID nginx || true \
     && apt-get update \
-    && apt-get install --no-install-recommends --no-install-suggests -y gnupg1 ca-certificates \
+    && apt-get install --no-install-recommends --no-install-suggests -y gnupg1 ca-certificates rsync \
     && \
     NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
     found=''; \
@@ -110,4 +110,9 @@ RUN sed -i 's,listen       80;,listen       8080;,' /etc/nginx/conf.d/default.co
 
 COPY gefyra-stowaway.conf /etc/nginx/nginx.conf
 COPY generate-proxyroutes.sh generate-proxyroutes.sh
+
+RUN mkdir /rsync/
+COPY rsyncd.conf /etc/rsyncd.conf
+COPY 40-rsync /etc/cont-init.d
+
 CMD ["nginx", "-g", "daemon off;"]

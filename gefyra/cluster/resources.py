@@ -48,9 +48,7 @@ def create_operator_clusterrole() -> k8s.client.V1ClusterRole:
         ],
         verbs=["create", "patch", "update", "delete", "get", "list"],
     )
-    ireq_rule = k8s.client.V1PolicyRule(
-        api_groups=["gefyra.dev"], resources=["interceptrequests"], verbs=["*"]
-    )
+    ireq_rule = k8s.client.V1PolicyRule(api_groups=["gefyra.dev"], resources=["interceptrequests"], verbs=["*"])
 
     clusterrole = k8s.client.V1ClusterRole(
         kind="ClusterRole",
@@ -107,11 +105,7 @@ def create_operator_deployment(
                 k8s.client.V1Container(
                     name="gefyra-operator",
                     image="quay.io/gefyra/operator:latest",
-                    env=[
-                        k8s.client.V1EnvVar(
-                            name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet
-                        )
-                    ],
+                    env=[k8s.client.V1EnvVar(name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet)],
                 )
             ],
             service_account_name=serviceaccount.metadata.name,
@@ -132,9 +126,7 @@ def create_operator_deployment(
     return deployment
 
 
-def get_pods_for_workload(
-    config: ClientConfiguration, name: str, namespace: str
-) -> List[str]:
+def get_pods_for_workload(config: ClientConfiguration, name: str, namespace: str) -> List[str]:
     result = []
     name = name.split("-")
     pods = config.K8S_CORE_API.list_namespaced_pod(namespace)

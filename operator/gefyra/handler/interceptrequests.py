@@ -23,6 +23,8 @@ PROXY_RELOAD_COMMAND = [
     "generate-proxyroutes.sh",
     "/stowaway/proxyroutes/",
 ]
+RSYNC_MKDIR_COMMAND = ["mkdir", "-p"]
+RSYNC_RM_COMMAND = ["rm", "-rf"]
 
 
 def handle_stowaway_proxy_service(
@@ -64,6 +66,7 @@ async def interceptrequest_created(body, logger, **kwargs):
     target_namespace = body.get("targetNamespace")
     target_container = body.get("targetContainer")
     target_container_port = body.get("targetContainerPort")
+    sync_down_dirs = body.get("syncDownDirectories")
 
     #
     # handle target Pod
@@ -110,6 +113,13 @@ async def interceptrequest_created(body, logger, **kwargs):
             "stowaway",
             PROXY_RELOAD_COMMAND,
         )
+        exec_command_pod(
+            core_v1_api,
+            STOWAWAY_POD,
+            configuration.NAMESPACE,
+            "stowaway",
+            RSYNC_MKDIR_COMMAND + [f"/rsync/{target_pod}/{target_container}"],
+        )
         stowaway_deployment = get_deployment_of_pod(app_v1_api, STOWAWAY_POD, configuration.NAMESPACE)
         proxy_service = handle_stowaway_proxy_service(logger, stowaway_deployment, port)
         logger.info(f"Created route for InterceptRequest {body.metadata.name}")
@@ -141,6 +151,7 @@ async def interceptrequest_created(body, logger, **kwargs):
             proxy_service.metadata.name,
             port,
             body.metadata.name,
+            sync_down_dirs,
         )
     )
     kopf.info(
@@ -187,6 +198,13 @@ async def interceptrequest_deleted(body, logger, **kwargs):
             configuration.NAMESPACE,
             "stowaway",
             PROXY_RELOAD_COMMAND,
+        )
+        exec_command_pod(
+            core_v1_api,
+            STOWAWAY_POD,
+            configuration.NAMESPACE,
+            "stowaway",
+            RSYNC_RM_COMMAND + [f"/rsync/{target_pod}/{target_container}"],
         )
         logger.info(f"Removed route for InterceptRequest {name}")
     else:

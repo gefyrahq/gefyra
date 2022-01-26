@@ -21,7 +21,7 @@ async def check_stowaway_ready(stowaway_deployment: k8s.client.V1Deployment):
 
     i = 0
     dep = app.read_namespaced_deployment(name=stowaway_deployment.metadata.name, namespace=configuration.NAMESPACE)
-    # a primitive timeout 1 minute
+    # a primitive timeout of configuration.STOWAWAY_STARTUP_TIMEOUT in seconds
     while i <= configuration.STOWAWAY_STARTUP_TIMEOUT:
         s = dep.status
         if (

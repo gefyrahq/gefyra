@@ -1,4 +1,4 @@
-FROM linuxserver/wireguard
+FROM quay.io/gefyra/cargo
 
 ARG ADDRESS
 ARG PRIVATE_KEY

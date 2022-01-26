@@ -33,19 +33,11 @@ def run(
     env_dict = {}
     if env_from:
         env_from_pod, env_from_container = env_from.split("/")
-        raw_env = get_env_from_pod_container(
-            config, env_from_pod, namespace, env_from_container
-        )
+        raw_env = get_env_from_pod_container(config, env_from_pod, namespace, env_from_container)
         logger.debug("ENV from pod/container is:\n" + raw_env)
-        env_dict = {
-            k[0]: k[1]
-            for k in [arg.split("=") for arg in raw_env.split("\n")]
-            if len(k) > 1
-        }
+        env_dict = {k[0]: k[1] for k in [arg.split("=") for arg in raw_env.split("\n")] if len(k) > 1}
     if env:
-        env_overrides = {
-            k[0]: k[1] for k in [arg.split("=") for arg in env] if len(k) > 1
-        }
+        env_overrides = {k[0]: k[1] for k in [arg.split("=") for arg in env] if len(k) > 1}
         env_dict.update(env_overrides)
 
     #
