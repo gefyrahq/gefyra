@@ -17,6 +17,7 @@ Gefyra was designed to be fast and robust on an average developer machine includ
 - [What is Gefyra?](#what-is-gefyra)
 - [Did I hear developer convenience?](#did-i-hear-developer-convenience)
 - [Installation](#installation)
+- [Try it yourself](#try-it-yourself)
 - [How does it work?](#how-does-it-work)
   - [Docker](#docker)
   - [Wireguard](#wireguard)
@@ -27,7 +28,7 @@ Gefyra was designed to be fast and robust on an average developer machine includ
   - [The _bridge_ operation in action](#the-_bridge_-operation-in-action)
 
 ## What is Gefyra?
-Gefyra is a toolkit written in Python to arrange a local development setup in order to produce software for and with 
+Gefyra is a toolkit written in Python to arrange a local development infrastructure in order to produce software for and with 
 Kubernetes while having fun. It is installed on any development computer and starts its work when it is asked. Gefyra runs
 as user-space application and controls the local Docker host and Kubernetes via _Kubernetes Python Client_. 
 
@@ -42,7 +43,8 @@ In order for this to work, a few requirements have to be satisfied:
 - there are a few container capabilities required on both sides, within the Kubernetes cluster and on the local computer
 - a node port must be opened on the development cluster for the duration of the development work 
 
-Gefyra intercepts the target application running in the cluster, i.e. a container, and tunnels all traffic hitting said container to the one running 
+Gefyra makes sure your development container runs as part of the cluster while you still have full access to it. In addition
+Gefyra is able to intercept the target application running within the cluster, i.e. a container in a Pod, and tunnels all traffic hitting said container to the one running 
 locally. Now, developers can add new code or fix bugs and run it right away in the Kubernetes cluster, or simply introspect the traffic. 
 Gefyra provides the entire infrastructure to do so and provides a high level of developer convenience. 
 
@@ -51,7 +53,8 @@ Gefyra provides the entire infrastructure to do so and provides a high level of 
 The idea is to relieve developers from the hassle with containers to go back and forth to the integration system. Instead, take
 the integration system closer to the developer and make the development cycles as short as possible. No more waiting for the CI to complete
 just to see the service failing on the first request. Cloud-native (or Kubernetes-native) technologies have completely changed the 
-developer experience: infrastructure is increasingly becoming part of developer's business with all the barriers and obstacles.  
+developer experience: infrastructure is increasingly becoming part of developer's business with all the barriers and obstacles, but also chances
+to turn the software for a better.  
 Gefyra is here to provide a development workflow with the highest convenience possible. It brings low setup times, rapid development, 
 high release cadence and super-satisfied managers.
 
@@ -119,9 +122,9 @@ Gefyra builds on top of the following popular open-source technologies:
 host, networking and container management procedures.
 
 ### Wireguard
-[*Wireguard*](https://wireguard.com)  is used to establish the connection tunnel between the two ends. It securely encrypts the UDP-based traffic
+[*Wireguard*](https://wireguard.com) is used to establish the connection tunnel between the two ends. It securely encrypts the UDP-based traffic
 and allows to create a _site-to-site_ network for Gefyra. That way, the development setup becomes part of the cluster and locally running containers 
-are actually able to reach cluster-based resources, such as databases, other microservices and so on.
+are actually able to reach cluster-based resources, such as databases, other (micro)services and so on.
 
 ### CoreDNS
 [*CoreDNS*](https://coredns.io) provides local DNS functionality. It allows resolving resources running within the Kubernetes cluster.
@@ -129,6 +132,10 @@ are actually able to reach cluster-based resources, such as databases, other mic
 ### Nginx
 [*Nginx*](https://www.nginx.com/) is used for all kinds of proxying and reverse-proxying traffic, including the interceptions of already running containers
 in the cluster.
+
+### Rsync
+[*Rsync*](https://rsync.samba.org/) is used to synchronize directories from containers running in the cluster to local
+instances. This is particularly important for Kubernetes service account tokens during a bridge operation.
 
 ## Architecture of the entire development system
 
