@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "Gefyra"
+version = "0.1.0"
+description = "Gefyra runs all developer machine side components of Gefyra's Kubernetes-based development infrastructure"
+authors = ["Michael Schilonka <michael@blueshoe.de>"]
+readme = "README.md"
+homepage = ""
+repository = "https://github.com/Schille/gefyra"
+documentation = ""
+keywords = [
+    "Kubernetes",
+    "Development",
+    "Cloud-native"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux"
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+kubernetes = "^19.15.0"
+docker = "^5.0.3"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+gefyra = "gefyra.__main__:main"
+
+[tool.poetry.urls]
+issues = "https://github.com/Schille/gefyra/issues"
