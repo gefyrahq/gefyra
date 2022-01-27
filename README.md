@@ -33,7 +33,7 @@ Kubernetes while having fun. It is installed on any development computer and sta
 as user-space application and controls the local Docker host and Kubernetes via _Kubernetes Python Client_. 
 
 <p align="center">
-  <img src="docs/static/img/gefyra-intro.png" alt="Gefyra controls docker and kubeapi"/>
+  <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-intro.png" alt="Gefyra controls docker and kubeapi"/>
 </p>
 
 (_Kubectl_ is not really required but makes kinda sense to be in this picture)
@@ -100,7 +100,7 @@ A working _KUBECONFIG_ connection is required with appropriate permissions which
 cluster-side components by itself once a development setup is about to be established.
 
 <p align="center">
-  <img src="docs/static/img/gefyra-overview.png" alt="Gefyra connects to a Kubernetes cluster"/>
+  <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-overview.png" alt="Gefyra connects to a Kubernetes cluster"/>
 </p>
 
 With these components, Gefyra is able to control a local development machine, and the development cluster, too. Both sides are now in the hand of 
@@ -151,7 +151,7 @@ isolated application scenarios).
 Cargo encrypts all the passing traffic with Wireguard using ad-hoc connection secrets. 
 
 <p align="center">
-  <img src="docs/static/img/gefyra-development.png" alt="Gefyra local development"/>
+  <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-development.png" alt="Gefyra local development"/>
 </p>
 
 This local setup allows developers to use their existing tooling, including their favorite code editor and debuggers. The
@@ -177,7 +177,7 @@ Think of a provisioned Kubernetes cluster running some workload. There is an Ing
 containers. Some of them use the _sidecar_ (https://medium.com/nerd-for-tech/microservice-design-pattern-sidecar-sidekick-pattern-dbcea9bed783) pattern.
 
 <p align="center">
-  <img src="docs/static/img/gefyra-process-step-1.png" alt="Gefyra development workflow_step1"/>
+  <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-process-step-1.png" alt="Gefyra development workflow_step1"/>
 </p>
 
 #### Preparing the bridge operation
@@ -187,7 +187,7 @@ The main component is the cluster agent called _Stowaway_. The Stowaway controls
 It is operated by [Gefyra's Operator application](operator).
 
 <p align="center">
-  <img src="docs/static/img/gefyra-process-step-2.png" alt="Gefyra development workflow step 2"/>
+  <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-process-step-2.png" alt="Gefyra development workflow step 2"/>
 </p>
 
 Stowaway boots up and dynamically creates Wireguard connection secrets (private/public key-pair) for itself and Cargo.
@@ -218,7 +218,7 @@ Once the local app container is done with constructing its initial answer the re
 to the Ingress and back to the client.
 
 <p align="center">
-  <img src="docs/static/img/gefyra-process-step-3.png" alt="Gefyra development workflow step 3"/>
+  <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-process-step-3.png" alt="Gefyra development workflow step 3"/>
 </p>
 
 With that, the local development container is reachable exactly the same way another container from within the cluster 
@@ -230,7 +230,7 @@ and tears the local environment down (just like nothing ever happened).
 Doge is excited about that.
 
 <p align="center">
-  <img src="docs/static/img/doge.jpg" alt="Doge is excited"/>
+  <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/doge.jpg" alt="Doge is excited"/>
 </p>
 
 
