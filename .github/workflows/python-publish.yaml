@@ -7,24 +7,21 @@ on:
     types: [created]
 
 jobs:
-  deploy:
+  publish:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
     - name: Build and publish
       env:
         POETRY_HTTP_BASIC_PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
         POETRY_HTTP_BASIC_PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        source $HOME/.poetry/env
         poetry build
         poetry publish
