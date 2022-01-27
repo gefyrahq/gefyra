@@ -159,7 +159,7 @@ application, when it is supported, can perform code-hot-reloading upon changes a
 (or other systems).  
 Of course, developers are able to mount local storage volumes into the container, override environment variables and modify
 everything as they'd like to.  
-In Gefyra this action is called _bridge_: from an architectural perspective the application is _bridged_ into the cluster.
+Replacing a container in the cluster with a local instance is called _bridge_: from an architectural perspective the application is _bridged_ into the cluster.
 If the container is already running within a Kubernetes Pod, it gets replaced and all traffic to the originally running 
 container is proxied to the one on the developer machine.  
 During the container startup of the application, Gefyra modifies the container's networking from the outside and sets the 
@@ -174,7 +174,7 @@ This chapter covers the important _bridge_ operation by following an example.
 
 #### Before the bridge operation
 Think of a provisioned Kubernetes cluster running some workload. There is an Ingress, Kubernetes Services and Pods running
-containers. Some of them use the "sidecar" pattern.
+containers. Some of them use the _sidecar_ (https://medium.com/nerd-for-tech/microservice-design-pattern-sidecar-sidekick-pattern-dbcea9bed783) pattern.
 
 <p align="center">
   <img src="docs/static/img/gefyra-process-step-1.png" alt="Gefyra development workflow_step1"/>
@@ -192,7 +192,7 @@ It is operated by [Gefyra's Operator application](operator).
 
 Stowaway boots up and dynamically creates Wireguard connection secrets (private/public key-pair) for itself and Cargo.
 Gefyra copies these secrets to Cargo for it to establish a connection. This is a UDP connection. It requires a Kubernetes
-Service of kind _nodeport_ to allow the traffic to pass through *for the time of an active _bridge_ operation*. Gefyra's 
+Service of kind _nodeport_ to allow the traffic to pass through *for the time of an active development session*. Gefyra's 
 operator installs these components with the requested parameters and removes it after the session terminates.  
 By the way: Gefyra's operator removes all components and itself from the cluster in case the connection was disrupted 
 for some time, too.  
