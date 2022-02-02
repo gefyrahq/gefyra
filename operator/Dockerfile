@@ -1,4 +1,4 @@
-FROM python:3.9-slim AS builder
+FROM quay.io/blueshoe/python3.9-slim AS builder
 
 # python
 ENV PYTHONUNBUFFERED=1 \
