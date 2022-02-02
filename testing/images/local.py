@@ -21,7 +21,11 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         hostname = socket.gethostname()
         now = datetime.utcnow()
         self.wfile.write(
-            bytes(f"<html><body><h1>Hello from Gefyra. It is {now} on {hostname}.</h1></body></html>".encode("utf-8"))
+            bytes(
+                f"<html><body><h1>Hello from Gefyra. It is {now} on {hostname}.</h1></body></html>".encode(
+                    "utf-8"
+                )
+            )
         )
 
 

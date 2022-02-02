@@ -8,7 +8,7 @@ import docker
 from docker.models.containers import Container
 import kubernetes as k8s
 
-from gefyra.configuration import ClientConfiguration
+from configuration import ClientConfiguration
 
 from .cargo import get_cargo_ip_from_netaddress, delete_syncdown_job
 from .utils import handle_docker_run_container
@@ -132,7 +132,9 @@ def deploy_app_container(
         "environment": env,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
-    p = multiprocessing.Process(target=patch_container_gateway, args=(config, name, cargo_ip))
+    p = multiprocessing.Process(
+        target=patch_container_gateway, args=(config, name, cargo_ip)
+    )
     p.start()
     try:
         container = handle_docker_run_container(config, image, **not_none_kwargs)
@@ -145,7 +147,9 @@ def deploy_app_container(
     return container
 
 
-def patch_container_gateway(config: ClientConfiguration, container_name: str, gateway_ip) -> None:
+def patch_container_gateway(
+    config: ClientConfiguration, container_name: str, gateway_ip
+) -> None:
     """
     This function will be called as a subprocess
     :param config: a ClientConfiguration
@@ -159,9 +163,13 @@ def patch_container_gateway(config: ClientConfiguration, container_name: str, ga
         if event_dict["status"] == "start":
             # subprocess.call([os.path.join(rdir, "cargo/route_setting.sh"), container_name, gateway_ip], timeout=10)
             # return
-            pid = subprocess.check_output(["docker", "inspect", "--format", "{{.State.Pid}}", container_name])
+            pid = subprocess.check_output(
+                ["docker", "inspect", "--format", "{{.State.Pid}}", container_name]
+            )
             pid = pid.decode().strip()
-            subprocess.call(["sudo", "nsenter", "-n", "-t", pid, "ip", "route", "del", "default"])
+            subprocess.call(
+                ["sudo", "nsenter", "-n", "-t", pid, "ip", "route", "del", "default"]
+            )
             subprocess.call(
                 [
                     "sudo",

@@ -3,8 +3,8 @@ from datetime import datetime
 
 from docker.models.containers import Container
 
-from gefyra.cluster.utils import decode_secret
-from gefyra.configuration import ClientConfiguration
+from cluster.utils import decode_secret
+from configuration import ClientConfiguration
 
 
 def get_cargo_connection_data(config: ClientConfiguration):
@@ -33,11 +33,15 @@ def build_cargo_image(
     }
     tag = f"{config.CARGO_CONTAINER_NAME}:{datetime.now().strftime('%Y%m%d%H%M%S')}"
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cargo")
-    image, build_logs = config.DOCKER.images.build(path=path, rm=True, forcerm=True, buildargs=build_args, tag=tag)
+    image, build_logs = config.DOCKER.images.build(
+        path=path, rm=True, forcerm=True, buildargs=build_args, tag=tag
+    )
     return image, build_logs
 
 
-def get_container_ip(config: ClientConfiguration, container: Container = None, container_id: str = None) -> str:
+def get_container_ip(
+    config: ClientConfiguration, container: Container = None, container_id: str = None
+) -> str:
     assert container or container_id, "Either container or id must be specified!"
 
     # TODO handle exceptions
@@ -46,10 +50,14 @@ def get_container_ip(config: ClientConfiguration, container: Container = None, c
         container.reload()
     else:
         container = config.DOCKER.containers.get(container_id)
-    return container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME]["IPAddress"]
+    return container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME][
+        "IPAddress"
+    ]
 
 
-def handle_docker_stop_container(config: ClientConfiguration, container: Container = None, container_id: str = None):
+def handle_docker_stop_container(
+    config: ClientConfiguration, container: Container = None, container_id: str = None
+):
     """Stop docker container, either `container` or `container_id` must be specified.
 
     :param config: gefyra.configuration.ClientConfiguration instance
@@ -66,7 +74,9 @@ def handle_docker_stop_container(config: ClientConfiguration, container: Contain
     container.stop()
 
 
-def handle_docker_remove_container(config: ClientConfiguration, container: Container = None, container_id: str = None):
+def handle_docker_remove_container(
+    config: ClientConfiguration, container: Container = None, container_id: str = None
+):
     """Stop docker container, either `container` or `container_id` must be specified.
 
     :param config: gefyra.configuration.ClientConfiguration instance
@@ -83,11 +93,15 @@ def handle_docker_remove_container(config: ClientConfiguration, container: Conta
     container.remove(force=True)
 
 
-def handle_docker_create_container(config: ClientConfiguration, image: str, **kwargs) -> Container:
+def handle_docker_create_container(
+    config: ClientConfiguration, image: str, **kwargs
+) -> Container:
     return config.DOCKER.containers.create(image, **kwargs)
 
 
-def handle_docker_run_container(config: ClientConfiguration, image: str, **kwargs) -> Container:
+def handle_docker_run_container(
+    config: ClientConfiguration, image: str, **kwargs
+) -> Container:
     # if detach=True is in kwargs, this will return a container; otherwise the container logs (see
     # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run)
     # TODO: handle exception(s):

@@ -4,10 +4,10 @@ import logging
 import docker
 import kubernetes as k8s
 
-from gefyra.cluster.manager import install_operator
-from gefyra.configuration import default_configuration
-from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
-from gefyra.local.networking import get_free_class_c_netaddress, handle_create_network
+from cluster.manager import install_operator
+from configuration import default_configuration
+from local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
+from local.networking import get_free_class_c_netaddress, handle_create_network
 
 from . import down
 
@@ -42,7 +42,9 @@ def up(config=default_configuration) -> bool:
         gefyra_network = handle_create_network(config, network_address, {})
         # well known cargo address
         logger.debug(gefyra_network.attrs)
-        cargo_ip_address = get_cargo_ip_from_netaddress(gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"])
+        cargo_ip_address = get_cargo_ip_from_netaddress(
+            gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
+        )
         logger.info(f"Deploying Cargo (network sidecar) with IP {cargo_ip_address}")
     except Exception as e:
         logger.error(e)

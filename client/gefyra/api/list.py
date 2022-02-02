@@ -1,8 +1,8 @@
 import logging
 from typing import List
 
-from gefyra.configuration import default_configuration
-from gefyra.local.bridge import get_all_interceptrequests
+from configuration import default_configuration
+from local.bridge import get_all_interceptrequests
 
 from .utils import stopwatch
 

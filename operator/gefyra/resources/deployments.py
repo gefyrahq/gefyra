@@ -1,6 +1,6 @@
 import kubernetes as k8s
 
-from gefyra.configuration import configuration
+from configuration import configuration
 
 
 def create_stowaway_deployment() -> k8s.client.V1Deployment:
@@ -17,18 +17,28 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
         ),
         env=[
             k8s.client.V1EnvVar(name="PEERS", value="1"),
-            k8s.client.V1EnvVar(name="SERVERPORT", value=str(configuration.WIREGUARD_EXT_PORT)),
+            k8s.client.V1EnvVar(
+                name="SERVERPORT", value=str(configuration.WIREGUARD_EXT_PORT)
+            ),
             k8s.client.V1EnvVar(name="PUID", value=configuration.STOWAWAY_PUID),
             k8s.client.V1EnvVar(name="PGID", value=configuration.STOWAWAY_PGID),
             k8s.client.V1EnvVar(name="PEERDNS", value=configuration.STOWAWAY_PEER_DNS),
-            k8s.client.V1EnvVar(name="INTERNAL_SUBNET", value=configuration.STOWAWAY_INTERNAL_SUBNET),
-            k8s.client.V1EnvVar(name="SERVER_ALLOWEDIPS_PEER_1", value=configuration.GEFYRA_PEER_SUBNET),
+            k8s.client.V1EnvVar(
+                name="INTERNAL_SUBNET", value=configuration.STOWAWAY_INTERNAL_SUBNET
+            ),
+            k8s.client.V1EnvVar(
+                name="SERVER_ALLOWEDIPS_PEER_1", value=configuration.GEFYRA_PEER_SUBNET
+            ),
         ],
         security_context=k8s.client.V1SecurityContext(
             privileged=True,
             capabilities=k8s.client.V1Capabilities(add=["NET_ADMIN", "SYS_MODULE"]),
         ),
-        volume_mounts=[k8s.client.V1VolumeMount(name="proxyroutes", mount_path="/stowaway/proxyroutes")],
+        volume_mounts=[
+            k8s.client.V1VolumeMount(
+                name="proxyroutes", mount_path="/stowaway/proxyroutes"
+            )
+        ],
     )
 
     template = k8s.client.V1PodTemplateSpec(
@@ -38,7 +48,9 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
             volumes=[
                 k8s.client.V1Volume(
                     name="proxyroutes",
-                    config_map=k8s.client.V1ConfigMapVolumeSource(name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME),
+                    config_map=k8s.client.V1ConfigMapVolumeSource(
+                        name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME
+                    ),
                 )
             ],
         ),
@@ -53,7 +65,9 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
     deployment = k8s.client.V1Deployment(
         api_version="apps/v1",
         kind="Deployment",
-        metadata=k8s.client.V1ObjectMeta(name="gefyra-stowaway", namespace=configuration.NAMESPACE),
+        metadata=k8s.client.V1ObjectMeta(
+            name="gefyra-stowaway", namespace=configuration.NAMESPACE
+        ),
         spec=spec,
     )
 

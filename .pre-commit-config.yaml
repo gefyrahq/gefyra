@@ -1,16 +1,17 @@
 repos:
-  # dropin replacement for black with configuration in setup.py
-  - repo: https://github.com/odwyersoftware/brunette
-    rev: b8fc75f460885f986a01842664e0571769b2cc12
+  - repo: https://github.com/python/black.git
+    rev: 22.1.0
     hooks:
-      - id: brunette
-        language_version: python3.8
+      - id: black
+        language_version: python3
 
   # flake8 - style guide enforcement
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.8.4
+    rev: 4.0.1
     hooks:
       - id: flake8
+        additional_dependencies:
+          - flake8-black>=0.2.4
 
   # gitlint - correct git commit format
   - repo: https://github.com/jorisroovers/gitlint

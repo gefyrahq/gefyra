@@ -4,7 +4,7 @@ import logging
 
 import kubernetes as k8s
 
-from gefyra.configuration import ClientConfiguration
+from configuration import ClientConfiguration
 
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,9 @@ def decode_secret(u):
     return n
 
 
-def get_env_from_pod_container(config: ClientConfiguration, pod_name: str, namespace: str, container_name: str):
+def get_env_from_pod_container(
+    config: ClientConfiguration, pod_name: str, namespace: str, container_name: str
+):
     resp = k8s.stream.stream(
         config.K8S_CORE_API.connect_get_namespaced_pod_exec,
         pod_name,

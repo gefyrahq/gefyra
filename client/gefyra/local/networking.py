@@ -5,12 +5,14 @@ import docker
 from docker.models.networks import Network
 from docker.types import IPAMConfig, IPAMPool
 
-from gefyra.configuration import ClientConfiguration
+from configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
 
-def handle_create_network(config: ClientConfiguration, network_address: str, aux_addresses: dict) -> Network:
+def handle_create_network(
+    config: ClientConfiguration, network_address: str, aux_addresses: dict
+) -> Network:
     try:
         network = config.DOCKER.networks.get(config.NETWORK_NAME)
         logger.info("Gefyra network already exists")
@@ -19,7 +21,9 @@ def handle_create_network(config: ClientConfiguration, network_address: str, aux
         pass
     ipam_pool = IPAMPool(subnet=f"{network_address}/24", aux_addresses=aux_addresses)
     ipam_config = IPAMConfig(pool_configs=[ipam_pool])
-    network = config.DOCKER.networks.create(config.NETWORK_NAME, driver="bridge", ipam=ipam_config)
+    network = config.DOCKER.networks.create(
+        config.NETWORK_NAME, driver="bridge", ipam=ipam_config
+    )
     logger.info(f"Created network '{config.NETWORK_NAME}' ({network.short_id})")
     return network
 
@@ -31,10 +35,14 @@ def handle_remove_network(config: ClientConfiguration) -> None:
     networks = config.DOCKER.networks.list(config.NETWORK_NAME)
     for network in networks:
         network.remove()
-    logger.info(f"Removed {len(networks)} docker networks with name '{config.NETWORK_NAME}'")
+    logger.info(
+        f"Removed {len(networks)} docker networks with name '{config.NETWORK_NAME}'"
+    )
 
 
-def kill_remainder_container_in_network(config: ClientConfiguration, network_name) -> None:
+def kill_remainder_container_in_network(
+    config: ClientConfiguration, network_name
+) -> None:
     """Kills all containers from this network"""
     try:
         network = config.DOCKER.networks.get(network_name)

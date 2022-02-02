@@ -6,8 +6,8 @@ import tarfile
 import docker
 from docker.models.containers import Container
 
-from gefyra.configuration import ClientConfiguration
-from gefyra.local.utils import (
+from configuration import ClientConfiguration
+from local.utils import (
     build_cargo_image,
     handle_docker_create_container,
     handle_docker_remove_container,
@@ -16,10 +16,14 @@ from gefyra.local.utils import (
 logger = logging.getLogger(__name__)
 
 
-def create_cargo_container(config: ClientConfiguration, cargo_connection_data: dict) -> Container:
+def create_cargo_container(
+    config: ClientConfiguration, cargo_connection_data: dict
+) -> Container:
     wireguard_ip = f"{cargo_connection_data['Interface.Address']}"
     private_key = cargo_connection_data["Interface.PrivateKey"]
-    dns = f"{cargo_connection_data['Interface.DNS']} {config.NAMESPACE}.svc.cluster.local"
+    dns = (
+        f"{cargo_connection_data['Interface.DNS']} {config.NAMESPACE}.svc.cluster.local"
+    )
     public_key = cargo_connection_data["Peer.PublicKey"]
     # docker to work with ipv4 only
     allowed_ips = cargo_connection_data["Peer.AllowedIPs"].split(",")[0]
@@ -110,5 +114,8 @@ def add_syncdown_job(
     relative = directory.strip("/")
     target = os.path.split(directory)[0]
     # bridge name;container name;prefix;relative directory;target directory
-    configfile = configfile + f"\n{bridge_name};{to_container_name};{from_pod}/{from_container};{relative};{target}"
+    configfile = (
+        configfile
+        + f"\n{bridge_name};{to_container_name};{from_pod}/{from_container};{relative};{target}"
+    )
     put_syncdown_config(config, configfile)
