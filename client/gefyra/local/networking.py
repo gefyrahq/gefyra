@@ -5,7 +5,7 @@ import docker
 from docker.models.networks import Network
 from docker.types import IPAMConfig, IPAMPool
 
-from configuration import ClientConfiguration
+from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 

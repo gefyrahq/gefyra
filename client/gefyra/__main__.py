@@ -3,7 +3,7 @@ import argparse
 import logging
 import sys
 
-from api import (
+from gefyra.api import (
     bridge,
     down,
     run,
@@ -12,7 +12,7 @@ from api import (
     unbridge_all,
     list_interceptrequests,
 )
-from local.check import probe_nsenter, probe_kubernetes, probe_docker
+from gefyra.local.check import probe_nsenter, probe_kubernetes, probe_docker
 
 console = logging.StreamHandler(sys.stdout)
 # formatter = logging.Formatter("[%(levelname)s] %(name)s %(message)s")

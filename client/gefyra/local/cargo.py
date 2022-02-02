@@ -6,8 +6,8 @@ import tarfile
 import docker
 from docker.models.containers import Container
 
-from configuration import ClientConfiguration
-from local.utils import (
+from gefyra.configuration import ClientConfiguration
+from gefyra.local.utils import (
     build_cargo_image,
     handle_docker_create_container,
     handle_docker_remove_container,

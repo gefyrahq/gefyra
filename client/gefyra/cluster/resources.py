@@ -3,7 +3,7 @@ from typing import List
 
 import kubernetes as k8s
 
-from configuration import ClientConfiguration
+from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 

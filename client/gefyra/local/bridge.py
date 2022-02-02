@@ -8,7 +8,7 @@ import docker
 from docker.models.containers import Container
 import kubernetes as k8s
 
-from configuration import ClientConfiguration
+from gefyra.configuration import ClientConfiguration
 
 from .cargo import get_cargo_ip_from_netaddress, delete_syncdown_job
 from .utils import handle_docker_run_container

@@ -3,7 +3,7 @@ import time
 
 import kubernetes as k8s
 
-from configuration import ClientConfiguration
+from gefyra.configuration import ClientConfiguration
 
 from .resources import (
     create_operator_clusterrole,

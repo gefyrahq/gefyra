@@ -4,10 +4,10 @@ import logging
 import docker
 import kubernetes as k8s
 
-from cluster.manager import install_operator
-from configuration import default_configuration
-from local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
-from local.networking import get_free_class_c_netaddress, handle_create_network
+from gefyra.cluster.manager import install_operator
+from gefyra.configuration import default_configuration
+from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
+from gefyra.local.networking import get_free_class_c_netaddress, handle_create_network
 
 from . import down
 

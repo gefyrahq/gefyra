@@ -2,15 +2,15 @@ import logging
 from datetime import datetime
 from typing import List
 
-from cluster.resources import get_pods_for_workload
-from configuration import default_configuration
-from local.bridge import (
+from gefyra.cluster.resources import get_pods_for_workload
+from gefyra.configuration import default_configuration
+from gefyra.local.bridge import (
     get_ireq_body,
     handle_create_interceptrequest,
     handle_delete_interceptrequest,
     get_all_interceptrequests,
 )
-from local.cargo import add_syncdown_job
+from gefyra.local.cargo import add_syncdown_job
 
 from .utils import stopwatch
 

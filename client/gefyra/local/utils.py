@@ -3,8 +3,8 @@ from datetime import datetime
 
 from docker.models.containers import Container
 
-from cluster.utils import decode_secret
-from configuration import ClientConfiguration
+from gefyra.cluster.utils import decode_secret
+from gefyra.configuration import ClientConfiguration
 
 
 def get_cargo_connection_data(config: ClientConfiguration):

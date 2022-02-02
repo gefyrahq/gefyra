@@ -1,13 +1,13 @@
 import logging
 
-from cluster.manager import uninstall_operator
-from configuration import default_configuration
-from local.cargo import remove_cargo_container
-from local.networking import (
+from gefyra.cluster.manager import uninstall_operator
+from gefyra.configuration import default_configuration
+from gefyra.local.cargo import remove_cargo_container
+from gefyra.local.networking import (
     handle_remove_network,
     kill_remainder_container_in_network,
 )
-from local.bridge import remove_interceptrequest_remainder
+from gefyra.local.bridge import remove_interceptrequest_remainder
 
 from .utils import stopwatch
 

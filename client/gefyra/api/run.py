@@ -2,9 +2,9 @@ import logging
 
 import docker
 
-from cluster.utils import get_env_from_pod_container
-from configuration import default_configuration
-from local.bridge import deploy_app_container
+from gefyra.cluster.utils import get_env_from_pod_container
+from gefyra.configuration import default_configuration
+from gefyra.local.bridge import deploy_app_container
 
 from .utils import stopwatch
 

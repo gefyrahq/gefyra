@@ -1,7 +1,7 @@
 import logging
 import subprocess
 
-from configuration import ClientConfiguration, default_configuration
+from gefyra.configuration import ClientConfiguration, default_configuration
 
 logger = logging.getLogger(__name__)
 
