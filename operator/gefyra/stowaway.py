@@ -5,9 +5,9 @@ from typing import Awaitable
 
 import kubernetes as k8s
 
-from configuration import configuration
-from client.gefyra import create_wireguard_connection_secret
-from client.gefyra import read_wireguard_config, stream_copy_from_pod
+from gefyra.configuration import configuration
+from gefyra.utils import stream_copy_from_pod, read_wireguard_config
+from gefyra.resources.secrets import create_wireguard_connection_secret
 
 logger = logging.getLogger("gefyra.stowaway")
 

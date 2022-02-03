@@ -22,7 +22,7 @@ do
   echo $target_dir
   mkdir -p $BASEPATH/$prefix
   cd $BASEPATH/$prefix
-  rsync -avz $RSYNC_SVC/$prefix .
-  docker exec $local_container mkdir -p $target_dir
+  rsync -avz $RSYNC_SVC/$prefix/ .
+  docker exec --user root $local_container mkdir -p $target_dir
   docker cp $relative_path $local_container:$target_dir
 done

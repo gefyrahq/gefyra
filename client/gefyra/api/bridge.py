@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import List
 
+import kubernetes
 from gefyra.cluster.resources import get_pods_for_workload
 from gefyra.configuration import default_configuration
 from gefyra.local.bridge import (
@@ -64,6 +65,7 @@ def bridge(
     else:
         sync_down_dirs = ["/var/run/secrets/kubernetes.io/serviceaccount"]
 
+    ireqs = []
     for idx, pod in enumerate(pods_to_intercept):
         logger.info(f"Creating bridge for Pod {pod}")
         ireq_body = get_ireq_body(
@@ -78,7 +80,7 @@ def bridge(
             sync_down_directories=sync_down_dirs,
         )
         ireq = handle_create_interceptrequest(config, ireq_body)
-        logger.info(f"Bridge {ireq['metadata']['name']} created")
+        logger.debug(f"Bridge {ireq['metadata']['name']} created")
         for syncdown_dir in sync_down_dirs:
             add_syncdown_job(
                 config,
@@ -88,6 +90,23 @@ def bridge(
                 container_name,
                 syncdown_dir,
             )
+        ireqs.append(ireq)
+    #
+    # block until all bridges are in place
+    #
+    logger.info("Waiting for the bridge(s) to become active")
+    w = kubernetes.watch.Watch()
+    for event in w.stream(
+        config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
+    ):
+        if event["object"].reason == "Established":
+            for ireq in ireqs:
+                if ireq["metadata"]["uid"] == event["object"].involved_object.uid:
+                    logger.info(f"Bridge {ireq['metadata']['name']} established")
+                    if len(ireqs) - 1 == 0:
+                        return True
+                    else:
+                        ireqs.pop(ireq)
     return True
 
 

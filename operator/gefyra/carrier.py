@@ -4,13 +4,13 @@ from typing import Awaitable, List
 
 import kubernetes as k8s
 
-from configuration import configuration
-from client.gefyra import exec_command_pod
+from gefyra.configuration import configuration
+from gefyra.utils import exec_command_pod
 
 logger = logging.getLogger("gefyra.carrier")
 
-CARRIER_CONFIGURE_COMMAND_BASE = ["sh", "setroute.sh"]
-CARRIER_RSYNC_COMMAND_BASE = ["sh", "syncdirs.sh"]
+CARRIER_CONFIGURE_COMMAND_BASE = ["/bin/busybox", "sh", "setroute.sh"]
+CARRIER_RSYNC_COMMAND_BASE = ["/bin/busybox", "sh", "syncdirs.sh"]
 
 
 def store_pod_original_config(
@@ -139,19 +139,24 @@ async def check_carrier_ready(
     i = 0
     try:
         while i <= configuration.CARRIER_STARTUP_TIMEOUT:
-            status = []
+            _ready = False
+            # iterate all container statuses
             for container_status in pod.status.container_statuses:
-                status.append(container_status.ready)
-            for container in pod.spec.containers:
-                if configuration.CARRIER_IMAGE in container.name:
-                    break
+                # if one container is carrier...
+                if container_status.image_id.startswith(configuration.CARRIER_IMAGE):
+                    # ...and it is ready
+                    if container_status.ready:
+                        # we can stop waiting
+                        _ready = True
+            if _ready:
+                break
             else:
-                if all(status):
-                    break
-            logger.info(f"Waiting for Carrier to become read in Pod {pod_name}")
-            await sleep(1)
-            i += 1
-            pod = api_instance.read_namespaced_pod(name=pod_name, namespace=namespace)
+                logger.info(f"Waiting for Carrier to become read in Pod {pod_name}")
+                await sleep(1)
+                i += 1
+                pod = api_instance.read_namespaced_pod(
+                    name=pod_name, namespace=namespace
+                )
     except Exception as e:
         logger.error(e)
         return False

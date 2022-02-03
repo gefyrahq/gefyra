@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/busybox sh
 # vim:sw=4:ts=4:et
 
 PREFIX=$1

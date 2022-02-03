@@ -4,7 +4,7 @@ from typing import Tuple
 
 import kubernetes as k8s
 
-from configuration import configuration
+from gefyra.configuration import configuration
 
 PROXY_ROUTES = dict()
 PORT_RANGE = [i for i in range(10000, 10020)]

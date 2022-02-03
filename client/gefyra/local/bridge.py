@@ -167,23 +167,30 @@ def patch_container_gateway(
                 ["docker", "inspect", "--format", "{{.State.Pid}}", container_name]
             )
             pid = pid.decode().strip()
-            subprocess.call(
+            logger.debug("This pid: " + str(pid))
+            code = subprocess.call(
                 ["sudo", "nsenter", "-n", "-t", pid, "ip", "route", "del", "default"]
             )
-            subprocess.call(
-                [
-                    "sudo",
-                    "nsenter",
-                    "-n",
-                    "-t",
-                    pid,
-                    "ip",
-                    "route",
-                    "add",
-                    "default",
-                    "via",
-                    gateway_ip,
-                ]
-            )
-            logger.debug(f"Gateway patch applied to '{container_name}'")
+            if code == 0:
+                code = subprocess.call(
+                    [
+                        "sudo",
+                        "nsenter",
+                        "-n",
+                        "-t",
+                        pid,
+                        "ip",
+                        "route",
+                        "add",
+                        "default",
+                        "via",
+                        gateway_ip,
+                    ]
+                )
+                if code == 0:
+                    logger.debug(f"Gateway patch applied to '{container_name}'")
+            else:
+                logger.error(
+                    f"Gateway patch could not be applied to '{container_name}'"
+                )
             return

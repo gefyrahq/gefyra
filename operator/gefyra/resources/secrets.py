@@ -4,7 +4,7 @@ from typing import Dict
 
 import kubernetes as k8s
 
-from configuration import configuration
+from gefyra.configuration import configuration
 
 
 def create_wireguard_connection_secret(data: Dict) -> k8s.client.V1Secret:

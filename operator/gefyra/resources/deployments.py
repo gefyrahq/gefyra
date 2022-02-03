@@ -1,6 +1,6 @@
 import kubernetes as k8s
 
-from configuration import configuration
+from gefyra.configuration import configuration
 
 
 def create_stowaway_deployment() -> k8s.client.V1Deployment:

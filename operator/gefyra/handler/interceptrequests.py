@@ -3,16 +3,16 @@ import asyncio
 import kopf
 import kubernetes as k8s
 
-from client.gefyra import (
+from gefyra.configuration import configuration
+from gefyra.resources.services import create_stowaway_proxy_service
+from gefyra.utils import notify_stowaway_pod, exec_command_pod, get_deployment_of_pod
+from gefyra.resources.configmaps import remove_route, add_route
+from gefyra.carrier import (
+    patch_pod_with_carrier,
     check_carrier_ready,
     configure_carrier,
-    patch_pod_with_carrier,
     patch_pod_with_original_config,
 )
-from configuration import configuration
-from client.gefyra import add_route, remove_route
-from client.gefyra import create_stowaway_proxy_service
-from client.gefyra import exec_command_pod, get_deployment_of_pod, notify_stowaway_pod
 
 core_v1_api = k8s.client.CoreV1Api()
 app_v1_api = k8s.client.AppsV1Api()
@@ -56,7 +56,7 @@ def handle_stowaway_proxy_service(
 
 @kopf.on.create("interceptrequest")
 async def interceptrequest_created(body, logger, **kwargs):
-    from client.gefyra import STOWAWAY_POD
+    from gefyra.stowaway import STOWAWAY_POD
 
     # is this connection already established
     # established = body.get("established")
@@ -174,7 +174,7 @@ async def interceptrequest_created(body, logger, **kwargs):
 
 @kopf.on.delete("interceptrequest")
 async def interceptrequest_deleted(body, logger, **kwargs):
-    from client.gefyra import STOWAWAY_POD
+    from gefyra.stowaway import STOWAWAY_POD
 
     name = body.metadata.name
     # is this connection already established

@@ -3,17 +3,16 @@ import asyncio
 import kopf
 import kubernetes as k8s
 
-from configuration import OperatorConfiguration
-from client.gefyra import create_stowaway_proxyroute_configmap
-from client.gefyra import create_interceptrequest_definition
-from client.gefyra import create_stowaway_deployment
-from client.gefyra import create_operator_ready_event
-from client.gefyra import (
+from gefyra.configuration import OperatorConfiguration
+from gefyra.resources.crds import create_interceptrequest_definition
+from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
+from gefyra.resources.deployments import create_stowaway_deployment
+from gefyra.resources.services import (
     create_stowaway_nodeport_service,
     create_stowaway_rsync_service,
 )
-from client.gefyra import check_stowaway_ready, get_wireguard_connection_details
-
+from gefyra.stowaway import check_stowaway_ready, get_wireguard_connection_details
+from gefyra.resources.events import create_operator_ready_event
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -152,7 +151,7 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     Checks all required components of Gefyra in the current version. This handler installs components if they are
     not already available with the matching configuration.
     """
-    from configuration import configuration
+    from gefyra.configuration import configuration
 
     logger.info(
         f"Ensuring Gefyra components with the following configuration: {configuration}"

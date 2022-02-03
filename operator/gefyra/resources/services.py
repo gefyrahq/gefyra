@@ -1,6 +1,6 @@
 import kubernetes as k8s
 
-from configuration import configuration
+from gefyra.configuration import configuration
 
 RSYNC_SERVICE_PORT = 10873
 

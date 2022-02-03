@@ -1,6 +1,7 @@
 import logging
 
 import docker
+import kubernetes
 
 from gefyra.cluster.utils import get_env_from_pod_container
 from gefyra.configuration import default_configuration
@@ -31,17 +32,21 @@ def run(
     # 1. get the ENV together a) from a K8s container b) from override
     #
     env_dict = {}
-    if env_from:
-        env_from_pod, env_from_container = env_from.split("/")
-        raw_env = get_env_from_pod_container(
-            config, env_from_pod, namespace, env_from_container
-        )
-        logger.debug("ENV from pod/container is:\n" + raw_env)
-        env_dict = {
-            k[0]: k[1]
-            for k in [arg.split("=") for arg in raw_env.split("\n")]
-            if len(k) > 1
-        }
+    try:
+        if env_from:
+            env_from_pod, env_from_container = env_from.split("/")
+            raw_env = get_env_from_pod_container(
+                config, env_from_pod, namespace, env_from_container
+            )
+            logger.debug("ENV from pod/container is:\n" + raw_env)
+            env_dict = {
+                k[0]: k[1]
+                for k in [arg.split("=") for arg in raw_env.split("\n")]
+                if len(k) > 1
+            }
+    except kubernetes.client.exceptions.ApiException as e:
+        logger.error(f"Cannot copy environment from Pod: {e.reason}")
+        return False
     if env:
         env_overrides = {
             k[0]: k[1] for k in [arg.split("=") for arg in env] if len(k) > 1

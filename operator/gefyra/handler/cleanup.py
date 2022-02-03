@@ -1,6 +1,6 @@
 import kopf
 
-from client.gefyra import purge_operator
+from gefyra.purge import purge_operator
 
 
 @kopf.on.cleanup()

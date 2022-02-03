@@ -35,6 +35,13 @@ run_parser.add_argument(
     "-N", "--name", help="the name of the container running in Gefyra", required=True
 )
 run_parser.add_argument(
+    "-c",
+    "--command",
+    help="the command for this container to in Gefyra",
+    nargs="+",
+    required=False,
+)
+run_parser.add_argument(
     "-n",
     "--namespace",
     help="the namespace for this container to run in",
@@ -85,9 +92,9 @@ for flag in intercept_flags:
 
 down_parser = action.add_parser("down")
 unbridge_parser = action.add_parser("unbridge")
-unbridge_parser.add_argument("-N", "--name", help="the name of the intercept request")
+unbridge_parser.add_argument("-N", "--name", help="the name of the bridge")
 unbridge_parser.add_argument(
-    "-A", "--all", help="removes all current intercept requests", action="store_true"
+    "-A", "--all", help="removes all active bridges", action="store_true"
 )
 list_parser = action.add_parser("list")
 list_parser.add_argument(
@@ -121,6 +128,7 @@ def main():
         run(
             image=args.image,
             name=args.name,
+            command=" ".join(args.command) if args.command else None,
             namespace=args.namespace,
             env_from=args.env_from,
             env=args.env,

@@ -10,7 +10,7 @@ from typing import List
 import kubernetes as k8s
 from websocket import ABNF
 
-from configuration import OperatorConfiguration
+from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger("gefyra.utils")
 

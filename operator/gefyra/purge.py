@@ -3,11 +3,11 @@ import logging
 
 import kubernetes as k8s
 
-from configuration import configuration
-from client.gefyra import create_stowaway_proxyroute_configmap
-from client.gefyra import create_interceptrequest_definition
-from client.gefyra import create_stowaway_deployment
-from client.gefyra import create_wireguard_connection_secret
+from gefyra.configuration import configuration
+from gefyra.resources.deployments import create_stowaway_deployment
+from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
+from gefyra.resources.crds import create_interceptrequest_definition
+from gefyra.resources.secrets import create_wireguard_connection_secret
 
 logger = logging.getLogger("gefyra")
 
@@ -58,7 +58,7 @@ def purge_operator():
 
 
 def remove_interceptrequest_remainder(ireqs: k8s.client.V1CustomResourceDefinition):
-    from client.gefyra import interceptrequest_deleted
+    from gefyra.handler import interceptrequest_deleted
 
     try:
         ireq_list = custom_api.list_namespaced_custom_object(

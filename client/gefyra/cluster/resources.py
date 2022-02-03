@@ -135,7 +135,9 @@ def get_pods_for_workload(
     pods = config.K8S_CORE_API.list_namespaced_pod(namespace)
     for pod in pods.items:
         pod_name = pod.metadata.name.split("-")
-        if all(x == y for x, y in zip(name, pod_name)):
+        if all(x == y for x, y in zip(name, pod_name)) and len(pod_name) - 2 == len(
+            name
+        ):
             # this pod name containers all segments of name
             result.append(pod.metadata.name)
     return result
