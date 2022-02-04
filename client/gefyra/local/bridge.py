@@ -1,10 +1,6 @@
-import json
 import logging
-import multiprocessing
-import subprocess
 from time import sleep
 
-import docker
 from docker.models.containers import Container
 import kubernetes as k8s
 
@@ -130,67 +126,21 @@ def deploy_app_container(
         "dns_search": [dns_search],
         "auto_remove": auto_remove,
         "environment": env,
+        "pid_mode": "container:gefyra-cargo",
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
-    p = multiprocessing.Process(
-        target=patch_container_gateway, args=(config, name, cargo_ip)
+
+    container = handle_docker_run_container(config, image, **not_none_kwargs)
+
+    cargo = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+    exit_code, output = cargo.exec_run(
+        f"bash patchContainerGateway.sh {container.name} {cargo_ip}"
     )
-    p.start()
-    try:
-        container = handle_docker_run_container(config, image, **not_none_kwargs)
-    except docker.errors.APIError as e:
-        p.kill()
-        raise e
+    if exit_code == 0:
+        logger.debug(f"Gateway patch applied to '{container.name}'")
+
     else:
-        p.join()
-
+        logger.error(
+            f"Gateway patch could not be applied to '{container.name}': {output}"
+        )
     return container
-
-
-def patch_container_gateway(
-    config: ClientConfiguration, container_name: str, gateway_ip
-) -> None:
-    """
-    This function will be called as a subprocess
-    :param config: a ClientConfiguration
-    :param container_name: the name of the container to be patched
-    :param gateway_ip: the target ip address of the gateway
-    :return: None
-    """
-    logger.debug("Waiting for the gateway patch to be applied")
-    for event in config.DOCKER.events(filters={"container": container_name}):
-        event_dict = json.loads(event.decode("utf-8"))
-        if event_dict["status"] == "start":
-            # subprocess.call([os.path.join(rdir, "cargo/route_setting.sh"), container_name, gateway_ip], timeout=10)
-            # return
-            pid = subprocess.check_output(
-                ["docker", "inspect", "--format", "{{.State.Pid}}", container_name]
-            )
-            pid = pid.decode().strip()
-            logger.debug("This pid: " + str(pid))
-            code = subprocess.call(
-                ["sudo", "nsenter", "-n", "-t", pid, "ip", "route", "del", "default"]
-            )
-            if code == 0:
-                code = subprocess.call(
-                    [
-                        "sudo",
-                        "nsenter",
-                        "-n",
-                        "-t",
-                        pid,
-                        "ip",
-                        "route",
-                        "add",
-                        "default",
-                        "via",
-                        gateway_ip,
-                    ]
-                )
-                if code == 0:
-                    logger.debug(f"Gateway patch applied to '{container_name}'")
-            else:
-                logger.error(
-                    f"Gateway patch could not be applied to '{container_name}'"
-                )
-            return
