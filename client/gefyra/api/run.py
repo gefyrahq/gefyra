@@ -1,4 +1,5 @@
 import logging
+import os
 
 import docker
 import kubernetes
@@ -8,6 +9,7 @@ from gefyra.configuration import default_configuration
 from gefyra.local.bridge import deploy_app_container
 
 from .utils import stopwatch
+from ..local.utils import get_processed_paths
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +29,12 @@ def run(
     config=default_configuration,
 ) -> bool:
     dns_search = f"{namespace}.svc.cluster.local"
-
+    try:
+        config.DOCKER.networks.get(config.NETWORK_NAME)
+    except docker.errors.NotFound:
+        logger.error("Gefyra network not found. Please run 'gefyra up' first.")
+        return False
+    volumes = get_processed_paths(os.getcwd(), volumes)
     #
     # 1. get the ENV together a) from a K8s container b) from override
     #

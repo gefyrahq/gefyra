@@ -1,10 +1,23 @@
 import os
 from datetime import datetime
+from typing import List, Optional
 
 from docker.models.containers import Container
 
 from gefyra.cluster.utils import decode_secret
 from gefyra.configuration import ClientConfiguration
+
+
+def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str]]:
+    if volumes is None:
+        return None
+    results = []
+    for volume in volumes:
+        source, target = volume.split(":")
+        if not os.path.isabs(source):
+            source = os.path.realpath(os.path.join(base_path, source))
+        results.append(f"{source}:{target}")
+    return results
 
 
 def get_cargo_connection_data(config: ClientConfiguration):
