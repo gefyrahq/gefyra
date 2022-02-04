@@ -50,6 +50,7 @@ def create_cargo_container(
         cap_add=["NET_ADMIN"],
         privileged=True,
         volumes=["/var/run/docker.sock:/var/run/docker.sock"],
+        pid_mode="host",
     )
     return container
 

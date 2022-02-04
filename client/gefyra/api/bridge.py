@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 from typing import List
 
+import docker
 import kubernetes
 from gefyra.cluster.resources import get_pods_for_workload
 from gefyra.configuration import default_configuration
@@ -32,10 +33,22 @@ def bridge(
     sync_down_dirs: List[str] = None,
     config=default_configuration,
 ) -> bool:
-    container = config.DOCKER.containers.get(name)
-    local_container_ip = container.attrs["NetworkSettings"]["Networks"][
-        config.NETWORK_NAME
-    ]["IPAddress"]
+    try:
+        container = config.DOCKER.containers.get(name)
+    except docker.errors.NotFound:
+        logger.error(f"Could not find target container '{name}'")
+        return False
+
+    try:
+        local_container_ip = container.attrs["NetworkSettings"]["Networks"][
+            config.NETWORK_NAME
+        ]["IPAddress"]
+    except KeyError:
+        logger.error(
+            f"The target container '{name}' is not in Gefyra's network {config.NETWORK_NAME}."
+            f" Did you run 'gefyra up'?"
+        )
+        return False
 
     pods_to_intercept = []
     if deployment:
