@@ -54,6 +54,13 @@ run_parser.add_argument(
     required=False,
 )
 run_parser.add_argument(
+    "-v",
+    "--volume",
+    action="append",
+    help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
+    required=False,
+)
+run_parser.add_argument(
     "--env-from",
     help="copy the environment from the container in the notation 'Pod/Container'",
     required=False,
@@ -132,6 +139,7 @@ def main():
             namespace=args.namespace,
             env_from=args.env_from,
             env=args.env,
+            volumes=args.volume,
         )
     elif args.action == "bridge":
         bridge(
