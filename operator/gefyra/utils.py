@@ -225,3 +225,34 @@ def get_deployment_of_pod(
     """
     deployment_name = pod_name.rsplit("-", 2)[0]
     return api_instance.read_namespaced_deployment(deployment_name, namespace=namespace)
+
+
+def get_all_probes(container: k8s.client.V1Container) -> List[k8s.client.V1Probe]:
+    probes = []
+    if container.startup_probe:
+        probes.append(container.startup_probe)
+    if container.readiness_probe:
+        probes.append(container.readiness_probe)
+    if container.liveness_probe:
+        probes.append(container.liveness_probe)
+    return probes
+
+
+def check_probe_compatibility(probe: k8s.client.V1Probe) -> bool:
+    """
+    Check if this type of probe is compatible with Gefyra Carrier
+    :param probe: instance of k8s.client.V1Probe
+    :return: bool if this is compatible
+    """
+    if probe is None:
+        return True
+    elif probe._exec:
+        # exec is not supported
+        return False
+    elif probe.tcp_socket:
+        # tcp sockets are not yet supported
+        return False
+    elif probe.http_get:
+        return True
+    else:
+        return True

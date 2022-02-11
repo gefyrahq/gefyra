@@ -87,6 +87,13 @@ bridge_parser.add_argument(
     help="the namespace for this container to run in",
     default="default",
 )
+bridge_parser.add_argument(
+    "-P",
+    "--no-probe-handling",
+    action="store_true",
+    help="make Carrier to not handle probes during switch operation",
+    default=False,
+)
 intercept_flags = [
     {"name": "deployment"},
     {"name": "statefulset"},
@@ -147,6 +154,7 @@ def main():
             container_name=args.container_name,
             namespace=args.namespace,
             bridge_name=args.bridge_name,
+            handle_probes=not args.no_probe_handling,
             **get_intercept_kwargs(args),
         )
     elif args.action == "unbridge":

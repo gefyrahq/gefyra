@@ -80,6 +80,7 @@ def get_ireq_body(
     target_container,
     port_mappings,
     sync_down_directories,
+    handle_probes,
 ):
     return {
         "apiVersion": "gefyra.dev/v1",
@@ -94,6 +95,7 @@ def get_ireq_body(
         "targetContainer": target_container,
         "portMappings": port_mappings,
         "syncDownDirectories": sync_down_directories,
+        "handleProbes": handle_probes,
     }
 
 

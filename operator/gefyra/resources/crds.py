@@ -9,13 +9,11 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
         properties={
             "established": k8s.client.V1JSONSchemaProps(type="boolean", default=False),
             "destinationIP": k8s.client.V1JSONSchemaProps(type="string"),
-            "destinationPort": k8s.client.V1JSONSchemaProps(type="string"),
             "targetPod": k8s.client.V1JSONSchemaProps(
                 type="string"
             ),  # target a specific Pod for intercept
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
             "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
-            "targetContainerPort": k8s.client.V1JSONSchemaProps(type="string"),
             "portMappings": k8s.client.V1JSONSchemaProps(
                 type="array",
                 default=[],
@@ -29,6 +27,7 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
             "carrierOriginalConfig": k8s.client.V1JSONSchemaProps(
                 type="object", x_kubernetes_preserve_unknown_fields=True
             ),  # object to store information for reset of target Pod
+            "handleProbes": k8s.client.V1JSONSchemaProps(type="boolean", default=False),
         },
     )
 
