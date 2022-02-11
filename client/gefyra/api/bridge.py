@@ -30,6 +30,7 @@ def bridge(
     namespace: str = "default",
     bridge_name: str = None,
     sync_down_dirs: List[str] = None,
+    handle_probes: bool = True,
     config=default_configuration,
 ) -> bool:
     try:
@@ -89,6 +90,7 @@ def bridge(
             target_container=container_name,
             port_mappings=ports,
             sync_down_directories=sync_down_dirs,
+            handle_probes=handle_probes,
         )
         ireq = handle_create_interceptrequest(config, ireq_body)
         logger.debug(f"Bridge {ireq['metadata']['name']} created")

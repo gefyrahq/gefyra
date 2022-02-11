@@ -1,15 +1,16 @@
 import logging
 from asyncio import sleep
-from typing import Awaitable, List
+from typing import Awaitable, List, Tuple
 
 import kubernetes as k8s
 
 from gefyra.configuration import configuration
-from gefyra.utils import exec_command_pod
+from gefyra.utils import exec_command_pod, check_probe_compatibility, get_all_probes
 
 logger = logging.getLogger("gefyra.carrier")
 
 CARRIER_CONFIGURE_COMMAND_BASE = ["/bin/busybox", "sh", "setroute.sh"]
+CARRIER_CONFIGURE_PROBE_COMMAND_BASE = ["/bin/busybox", "sh", "setprobe.sh"]
 CARRIER_RSYNC_COMMAND_BASE = ["/bin/busybox", "sh", "syncdirs.sh"]
 
 
@@ -53,7 +54,8 @@ def patch_pod_with_carrier(
     container_name: str,
     ports: List[int],
     ireq_object: object,
-) -> bool:
+    handle_probes: bool,
+) -> Tuple[bool, k8s.client.V1Pod]:
     """
     Install Gefyra Carrier to the target Pod
     :param api_instance: k8s.client.CoreV1Api
@@ -62,6 +64,7 @@ def patch_pod_with_carrier(
     :param container_name: the container to be exchanged with Carrier
     :param ports: the ports that Carrier is supposed to be forwarded
     :param ireq_object: the InterceptRequest object for this process
+    :param handle_probes: See if Gefyra can handle probes of this Pod
     :return: True if the patch was successful else False
     """
     try:
@@ -69,10 +72,17 @@ def patch_pod_with_carrier(
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
             logger.warning(f"The Pod {pod_name} does not exist")
-            return False
+            return False, pod
 
     for container in pod.spec.containers:
         if container.name == container_name:
+            if handle_probes:
+                # check if these probes are all supported
+                if not all(map(check_probe_compatibility, get_all_probes(container))):
+                    logger.error(
+                        "Not all of the probes to be handled are currently supported by Gefyra"
+                    )
+                    return False, pod
             if (
                 container.image
                 == f"{configuration.CARRIER_IMAGE}:{configuration.CARRIER_IMAGE_TAG}"
@@ -81,7 +91,7 @@ def patch_pod_with_carrier(
                 logger.info(
                     f"The container {container_name} in Pod {pod_name} is already running Carrier"
                 )
-                return True
+                return True, pod
             store_pod_original_config(container, ireq_object)
             container.image = (
                 f"{configuration.CARRIER_IMAGE}:{configuration.CARRIER_IMAGE_TAG}"
@@ -89,12 +99,12 @@ def patch_pod_with_carrier(
             break
     else:
         logger.error(f"Could not found container {container_name} in Pod {pod_name}")
-        return False
+        return False, pod
     logger.info(
         f"Now patching Pod {pod_name}; container {container_name} with Carrier on ports {ports}"
     )
     api_instance.patch_namespaced_pod(name=pod_name, namespace=namespace, body=pod)
-    return True
+    return True, pod
 
 
 def patch_pod_with_original_config(
@@ -158,7 +168,9 @@ async def check_carrier_ready(
             if _ready:
                 break
             else:
-                logger.info(f"Waiting for Carrier to become read in Pod {pod_name}")
+                logger.info(
+                    f"Waiting for Carrier to become read in Pod {pod_name} ({i}s)"
+                )
                 await sleep(1)
                 i += 1
                 pod = api_instance.read_namespaced_pod(
@@ -182,7 +194,6 @@ async def configure_carrier(
     container_port: int,
     stowaway_service_name: str,
     stowaway_service_port: int,
-    interceptrequest_name: str,
     sync_down_directories: List[str],
 ):
     carrier_ready = await aw_carrier_ready
@@ -191,13 +202,11 @@ async def configure_carrier(
             f"Not able to configure Carrier in Pod {pod_name}. See error above."
         )
         return
-    logger.info(f"Carrier ready in Pod {pod_name} to get configured")
     try:
         command = CARRIER_CONFIGURE_COMMAND_BASE + [
             f"{container_port}",
             f"{stowaway_service_name}.{configuration.NAMESPACE}.svc.cluster.local:{stowaway_service_port}",
         ]
-        await sleep(5)
         exec_command_pod(api_instance, pod_name, namespace, container_name, command)
         if sync_down_directories:
             logger.info(f"Setting directories in Carrier {pod_name} to be down synced")
@@ -206,7 +215,6 @@ async def configure_carrier(
                 + [f"{pod_name}/{container_name}"]
                 + sync_down_directories
             )
-
             exec_command_pod(
                 api_instance, pod_name, namespace, container_name, rsync_cmd
             )
@@ -214,3 +222,26 @@ async def configure_carrier(
         logger.error(e)
         return
     logger.info(f"Carrier configured in {pod_name}")
+
+
+async def configure_carrier_probe(
+    aw_carrier_ready: Awaitable,
+    api_instance: k8s.client.CoreV1Api,
+    port: str,
+    pod_name: str,
+    namespace: str,
+    container_name: str,
+):
+    carrier_ready = await aw_carrier_ready
+    if not carrier_ready:
+        logger.error(
+            f"Not able to configure Carrier in Pod {pod_name}. See error above."
+        )
+        return
+    try:
+        command = CARRIER_CONFIGURE_PROBE_COMMAND_BASE + [port]
+        exec_command_pod(api_instance, pod_name, namespace, container_name, command)
+    except Exception as e:
+        logger.error(e)
+        return
+    logger.info(f"Carrier probe configured in {pod_name} on port {port}")

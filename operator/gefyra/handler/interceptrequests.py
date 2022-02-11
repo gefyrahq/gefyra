@@ -5,13 +5,19 @@ import kubernetes as k8s
 
 from gefyra.configuration import configuration
 from gefyra.resources.services import create_stowaway_proxy_service
-from gefyra.utils import notify_stowaway_pod, exec_command_pod, get_deployment_of_pod
+from gefyra.utils import (
+    notify_stowaway_pod,
+    exec_command_pod,
+    get_deployment_of_pod,
+    get_all_probes,
+)
 from gefyra.resources.configmaps import remove_route, add_route
 from gefyra.carrier import (
     patch_pod_with_carrier,
     check_carrier_ready,
     configure_carrier,
     patch_pod_with_original_config,
+    configure_carrier_probe,
 )
 
 core_v1_api = k8s.client.CoreV1Api()
@@ -73,17 +79,19 @@ async def interceptrequest_created(body, logger, **kwargs):
         [int(_p.split(":")[0]), None, None] for _p in port_mappings
     ]
     sync_down_dirs = body.get("syncDownDirectories")
+    handle_probes = body.get("handleProbes")
 
     #
     # handle target Pod
     #
-    success = patch_pod_with_carrier(
+    success, pod = patch_pod_with_carrier(
         core_v1_api,
         pod_name=target_pod,
         namespace=target_namespace,
         container_name=target_container,
         ports=[p[0] for p in carrier_port_mappings],
         ireq_object=body,
+        handle_probes=handle_probes,
     )
     if not success:
         logger.error(
@@ -166,6 +174,29 @@ async def interceptrequest_created(body, logger, **kwargs):
     )
 
     configure_tasks = []
+    # handle probes
+    if handle_probes:
+        probe_ports = set()
+        for container in pod.spec.containers:
+            if container.name == target_container:
+                for probe in get_all_probes(container):
+                    if probe.http_get and probe.http_get.port:
+                        probe_ports.add(probe.http_get.port)
+                break
+        for _port in list(probe_ports):
+            _task = asyncio.create_task(
+                configure_carrier_probe(
+                    aw_carrier_ready,
+                    core_v1_api,
+                    str(_port),
+                    target_pod,
+                    target_namespace,
+                    target_container,
+                )
+            )
+            configure_tasks.append(_task)
+
+    # handle forwarded ports
     for carrier_mapping in carrier_port_mappings:
         _task = asyncio.create_task(
             configure_carrier(
@@ -177,11 +208,11 @@ async def interceptrequest_created(body, logger, **kwargs):
                 carrier_mapping[0],
                 carrier_mapping[2],
                 carrier_mapping[1],
-                body.metadata.name,
                 sync_down_dirs,
             )
         )
         configure_tasks.append(_task)
+    # wait for all configurations to happen
     await asyncio.wait(configure_tasks)
     kopf.info(
         body,
