@@ -58,16 +58,20 @@ def handle_stowaway_proxy_service(
 async def interceptrequest_created(body, logger, **kwargs):
     from gefyra.stowaway import STOWAWAY_POD
 
-    # is this connection already established
-    # established = body.get("established")
     # destination host and port
     destination_ip = body.get("destinationIP")
-    destination_port = body.get("destinationPort")
     # the target Pod information
     target_pod = body.get("targetPod")
     target_namespace = body.get("targetNamespace")
     target_container = body.get("targetContainer")
-    target_container_port = body.get("targetContainerPort")
+    port_mappings = body.get("portMappings")
+    #
+    #   app:PORT <---> Stowaway:PORT <---> Carrier:PORT
+    #
+    stowaway_port_mappings = [[None, int(_p.split(":")[1])] for _p in port_mappings]
+    carrier_port_mappings = [
+        [int(_p.split(":")[0]), None, None] for _p in port_mappings
+    ]
     sync_down_dirs = body.get("syncDownDirectories")
 
     #
@@ -78,7 +82,7 @@ async def interceptrequest_created(body, logger, **kwargs):
         pod_name=target_pod,
         namespace=target_namespace,
         container_name=target_container,
-        port=int(target_container_port),
+        ports=[p[0] for p in carrier_port_mappings],
         ireq_object=body,
     )
     if not success:
@@ -97,16 +101,30 @@ async def interceptrequest_created(body, logger, **kwargs):
         logger.error(f"Deleted InterceptRequest {body.metadata.name}")
         return
 
-    configmap_update, port = add_route(destination_ip, destination_port)
-    core_v1_api.replace_namespaced_config_map(
-        name=configmap_update.metadata.name,
-        body=configmap_update,
-        namespace=configuration.NAMESPACE,
+    stowaway_deployment = get_deployment_of_pod(
+        app_v1_api, STOWAWAY_POD, configuration.NAMESPACE
     )
-    # this logger instance logs directly onto the InterceptRequest object instance as an event
-    logger.info(
-        f"Added intercept route: Stowaway proxy route configmap patched with port {port}"
-    )
+
+    for port_mapping in stowaway_port_mappings:
+        destination_port = port_mapping[1]
+        configmap_update, _port = add_route(destination_ip, destination_port)
+        core_v1_api.replace_namespaced_config_map(
+            name=configmap_update.metadata.name,
+            body=configmap_update,
+            namespace=configuration.NAMESPACE,
+        )
+        port_mapping[0] = _port
+        # this logger instance logs directly onto the InterceptRequest object instance as an event
+        logger.info(
+            f"Added intercept route: Stowaway proxy route configmap patched with port {_port}"
+        )
+        proxy_service = handle_stowaway_proxy_service(
+            logger, stowaway_deployment, _port
+        )
+        for carrier_mapping in carrier_port_mappings:
+            if carrier_mapping[0] == destination_port:
+                carrier_mapping[1] = _port
+                carrier_mapping[2] = proxy_service.metadata.name
 
     if STOWAWAY_POD:
         notify_stowaway_pod(core_v1_api, STOWAWAY_POD, configuration)
@@ -124,10 +142,6 @@ async def interceptrequest_created(body, logger, **kwargs):
             "stowaway",
             RSYNC_MKDIR_COMMAND + [f"/rsync/{target_pod}/{target_container}"],
         )
-        stowaway_deployment = get_deployment_of_pod(
-            app_v1_api, STOWAWAY_POD, configuration.NAMESPACE
-        )
-        proxy_service = handle_stowaway_proxy_service(logger, stowaway_deployment, port)
         logger.info(f"Created route for InterceptRequest {body.metadata.name}")
     else:
         logger.error(
@@ -150,25 +164,30 @@ async def interceptrequest_created(body, logger, **kwargs):
     aw_carrier_ready = asyncio.create_task(
         check_carrier_ready(core_v1_api, target_pod, target_namespace)
     )
-    await asyncio.create_task(
-        configure_carrier(
-            aw_carrier_ready,
-            core_v1_api,
-            target_pod,
-            target_namespace,
-            target_container,
-            int(target_container_port),
-            proxy_service.metadata.name,
-            port,
-            body.metadata.name,
-            sync_down_dirs,
+
+    configure_tasks = []
+    for carrier_mapping in carrier_port_mappings:
+        _task = asyncio.create_task(
+            configure_carrier(
+                aw_carrier_ready,
+                core_v1_api,
+                target_pod,
+                target_namespace,
+                target_container,
+                carrier_mapping[0],
+                carrier_mapping[2],
+                carrier_mapping[1],
+                body.metadata.name,
+                sync_down_dirs,
+            )
         )
-    )
+        configure_tasks.append(_task)
+    await asyncio.wait(configure_tasks)
     kopf.info(
         body,
         reason="Established",
         message=f"This InterceptRequest route on Pod {target_pod} container "
-        f"{target_container}:{target_container_port} has been established",
+        f"{target_container}:{port_mappings} has been established",
     )
 
 
@@ -180,29 +199,32 @@ async def interceptrequest_deleted(body, logger, **kwargs):
     # is this connection already established
     # destination host and port
     destination_ip = body.get("destinationIP")
-    destination_port = body.get("destinationPort")
     # the target Pod information
     target_pod = body.get("targetPod")
     target_namespace = body.get("targetNamespace")
     target_container = body.get("targetContainer")
+    port_mappings = body.get("portMappings")
+    destination_ports = [int(_p.split(":")[1]) for _p in port_mappings]
 
-    configmap_update, port = remove_route(destination_ip, destination_port)
-    core_v1_api.replace_namespaced_config_map(
-        name=configmap_update.metadata.name,
-        body=configmap_update,
-        namespace=configuration.NAMESPACE,
-    )
-    logger.info("Remove intercept route: Stowaway proxy route configmap patched")
+    for destination_port in destination_ports:
+        configmap_update, port = remove_route(destination_ip, destination_port)
+        core_v1_api.replace_namespaced_config_map(
+            name=configmap_update.metadata.name,
+            body=configmap_update,
+            namespace=configuration.NAMESPACE,
+        )
 
+        if STOWAWAY_POD:
+            if port is None:
+                logger.warning(
+                    f"Could not delete service for intercept route {name}: no proxy port found"
+                )
+            else:
+                core_v1_api.delete_namespaced_service(
+                    name=f"gefyra-stowaway-proxy-{port}",
+                    namespace=configuration.NAMESPACE,
+                )
     if STOWAWAY_POD:
-        if port is None:
-            logger.warning(
-                f"Could not delete service for intercept route {name}: no proxy port found"
-            )
-        else:
-            core_v1_api.delete_namespaced_service(
-                name=f"gefyra-stowaway-proxy-{port}", namespace=configuration.NAMESPACE
-            )
         notify_stowaway_pod(core_v1_api, STOWAWAY_POD, configuration)
         exec_command_pod(
             core_v1_api,

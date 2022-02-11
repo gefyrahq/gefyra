@@ -6,10 +6,8 @@ set -e
 DEFAULT_CONF_FILE="/etc/nginx/nginx.conf"
 
 
-echo "Setting listening port to $1"
-sed -i "s/listen 8080;/listen $1;/g" $DEFAULT_CONF_FILE
-
-echo "Setting target upstream to $2"
-sed -i "s/server 127.0.0.1:9999;/server $2;/g" $DEFAULT_CONF_FILE
+echo "Setting listening port to $1; Setting target upstream to $2"
+block="upstream stowaway-$1 {server $2;} server {listen $1; proxy_pass stowaway-$1;}\n#MARKER"
+sed -i "s/#MARKER/$block/g" $DEFAULT_CONF_FILE
 
 nginx -s reload
