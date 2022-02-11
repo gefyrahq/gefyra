@@ -79,7 +79,7 @@ bridge_parser.add_argument(
     "-I", "--bridge-name", help="the name of the bridge", required=False
 )
 bridge_parser.add_argument(
-    "-p", "--port", help="the port to send the traffic to", required=True
+    "-p", "--port", help="the port mapping", required=True, action="append"
 )
 bridge_parser.add_argument(
     "-n",
@@ -92,7 +92,6 @@ intercept_flags = [
     {"name": "statefulset"},
     {"name": "pod"},
     {"name": "container"},
-    {"name": "container-port"},
 ]
 for flag in intercept_flags:
     bridge_parser.add_argument(f"--{flag['name']}")

@@ -75,11 +75,10 @@ def get_ireq_body(
     config: ClientConfiguration,
     name: str,
     destination_ip,
-    destination_port,
     target_pod,
     target_namespace,
     target_container,
-    target_container_port,
+    port_mappings,
     sync_down_directories,
 ):
     return {
@@ -90,11 +89,10 @@ def get_ireq_body(
             "namspace": config.NAMESPACE,
         },
         "destinationIP": destination_ip,
-        "destinationPort": destination_port,
         "targetPod": target_pod,
         "targetNamespace": target_namespace,
         "targetContainer": target_container,
-        "targetContainerPort": target_container_port,
+        "portMappings": port_mappings,
         "syncDownDirectories": sync_down_directories,
     }
 

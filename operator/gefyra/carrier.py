@@ -51,7 +51,7 @@ def patch_pod_with_carrier(
     pod_name: str,
     namespace: str,
     container_name: str,
-    port: int,
+    ports: List[int],
     ireq_object: object,
 ) -> bool:
     """
@@ -60,7 +60,7 @@ def patch_pod_with_carrier(
     :param pod_name: the name of the Pod to be patched with Carrier
     :param namespace: the namespace of the target Pod runs in
     :param container_name: the container to be exchanged with Carrier
-    :param port: the port that Carrier is supposed to be forwarded
+    :param ports: the ports that Carrier is supposed to be forwarded
     :param ireq_object: the InterceptRequest object for this process
     :return: True if the patch was successful else False
     """
@@ -73,6 +73,15 @@ def patch_pod_with_carrier(
 
     for container in pod.spec.containers:
         if container.name == container_name:
+            if (
+                container.image
+                == f"{configuration.CARRIER_IMAGE}:{configuration.CARRIER_IMAGE_TAG}"
+            ):
+                # this pod/container is already running Carrier
+                logger.info(
+                    f"The container {container_name} in Pod {pod_name} is already running Carrier"
+                )
+                return True
             store_pod_original_config(container, ireq_object)
             container.image = (
                 f"{configuration.CARRIER_IMAGE}:{configuration.CARRIER_IMAGE_TAG}"
@@ -82,7 +91,7 @@ def patch_pod_with_carrier(
         logger.error(f"Could not found container {container_name} in Pod {pod_name}")
         return False
     logger.info(
-        f"Now patching Pod {pod_name}; container {container_name} with Carrier on port {port}"
+        f"Now patching Pod {pod_name}; container {container_name} with Carrier on ports {ports}"
     )
     api_instance.patch_namespaced_pod(name=pod_name, namespace=namespace, body=pod)
     return True
@@ -144,10 +153,8 @@ async def check_carrier_ready(
             for container_status in pod.status.container_statuses:
                 # if one container is carrier...
                 if container_status.image_id.startswith(configuration.CARRIER_IMAGE):
-                    # ...and it is ready
-                    if container_status.ready:
-                        # we can stop waiting
-                        _ready = True
+                    _ready = True
+                    break
             if _ready:
                 break
             else:

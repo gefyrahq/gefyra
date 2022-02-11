@@ -22,12 +22,11 @@ logger = logging.getLogger(__name__)
 @stopwatch
 def bridge(
     name: str,
-    port: int,
+    ports: List[str],
     deployment: str = None,
     statefulset: str = None,
     pod: str = None,
     container_name: str = None,
-    container_port: str = None,
     namespace: str = "default",
     bridge_name: str = None,
     sync_down_dirs: List[str] = None,
@@ -85,11 +84,10 @@ def bridge(
             config,
             name=f"{ireq_base_name}-{idx}" if use_index else ireq_base_name,
             destination_ip=local_container_ip,
-            destination_port=port,
             target_pod=pod,
             target_namespace=namespace,
             target_container=container_name,
-            target_container_port=container_port,
+            port_mappings=ports,
             sync_down_directories=sync_down_dirs,
         )
         ireq = handle_create_interceptrequest(config, ireq_body)
