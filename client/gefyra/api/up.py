@@ -14,7 +14,9 @@ from . import down
 logger = logging.getLogger(__name__)
 
 
-def up(config=default_configuration) -> bool:
+def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
+    if cargo_endpoint:
+        config.CARGO_ENDPOINT = cargo_endpoint
     logger.info("Installing Gefyra Operator")
     #
     # Deploy Operator to cluster, aligned with local conditions

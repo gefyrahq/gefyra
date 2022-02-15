@@ -27,6 +27,12 @@ action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
 
 up_parser = action.add_parser("up")
+up_parser.add_argument(
+    "-e",
+    "--endpoint",
+    help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to",
+    required=False,
+)
 run_parser = action.add_parser("run")
 run_parser.add_argument(
     "-i", "--image", help="the docker image to run in Gefyra", required=True

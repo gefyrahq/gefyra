@@ -37,7 +37,8 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
         volume_mounts=[
             k8s.client.V1VolumeMount(
                 name="proxyroutes", mount_path="/stowaway/proxyroutes"
-            )
+            ),
+            k8s.client.V1VolumeMount(name="host-libs", mount_path="/lib/modules"),
         ],
     )
 
@@ -51,7 +52,13 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
                     config_map=k8s.client.V1ConfigMapVolumeSource(
                         name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME
                     ),
-                )
+                ),
+                k8s.client.V1Volume(
+                    name="host-libs",
+                    host_path=k8s.client.V1HostPathVolumeSource(
+                        path="/lib/modules", type="Directory"
+                    ),
+                ),
             ],
         ),
     )
