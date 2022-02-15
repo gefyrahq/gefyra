@@ -1,4 +1,75 @@
-FROM quay.io/linuxserver.io/wireguard
+ARG ARCH=
+ARG GOLANG_VERSION=1.17.6
+ARG ALPINE_VERSION=3.15
+
+FROM ${ARCH}golang:${GOLANG_VERSION}-bullseye as builder
+
+ARG go_tag=0.0.20220117
+ARG tools_tag=v1.0.20210914
+
+RUN  apt-get update && \
+ apt-get install -y --no-install-recommends \
+ git \
+ build-essential \
+ libmnl-dev \
+ iptables
+
+RUN git clone https://git.zx2c4.com/wireguard-go && \
+    cd wireguard-go && \
+    git checkout $go_tag && \
+    make && \
+    make install
+
+ENV WITH_WGQUICK=yes
+RUN git clone https://git.zx2c4.com/wireguard-tools && \
+    cd wireguard-tools && \
+    git checkout $tools_tag && \
+    cd src && \
+    make && \
+    make install
+
+FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
+COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
+COPY --from=builder /usr/bin/wg-quick /usr/bin/
+
+# set version label
+ARG BUILD_DATE
+ARG VERSION
+ARG WIREGUARD_RELEASE
+LABEL maintainer="Schille"
+
+ENV DEBIAN_FRONTEND="noninteractive"
+
+RUN \
+ echo "**** install dependencies ****" && \
+ apt-get update && \
+ apt-get install -y --no-install-recommends \
+	bc \
+	curl \
+	gnupg \
+	ifupdown \
+	iproute2 \
+	iptables \
+	iputils-ping \
+	jq \
+	net-tools \
+	openresolv \
+	pkg-config \
+	qrencode && \
+ echo "**** install CoreDNS ****" && \
+ COREDNS_VERSION=$(curl -sX GET "https://api.github.com/repos/coredns/coredns/releases/latest" \
+	| awk '/tag_name/{print $4;exit}' FS='[""]' | awk '{print substr($1,2); }') && \
+ curl -o \
+	/tmp/coredns.tar.gz -L \
+	"https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_amd64.tgz" && \
+ tar xf \
+	/tmp/coredns.tar.gz -C \
+	/app && \
+ echo "**** clean up ****" && \
+ rm -rf \
+	/tmp/* \
+	/var/lib/apt/lists/* \
+	/var/tmp/*
 
 ENV NGINX_VERSION   1.20.2
 ENV NJS_VERSION     0.7.0
@@ -97,6 +168,7 @@ RUN set -x \
 # create a docker-entrypoint.d directory
     && mkdir /docker-entrypoint.d
 
+
 # implement changes required to run NGINX as an unprivileged user
 RUN sed -i 's,listen       80;,listen       8080;,' /etc/nginx/conf.d/default.conf \
     && sed -i '/user  nginx;/d' /etc/nginx/nginx.conf \
@@ -108,11 +180,7 @@ RUN sed -i 's,listen       80;,listen       8080;,' /etc/nginx/conf.d/default.co
     && chown -R $UID:0 /etc/nginx \
     && chmod -R g+w /etc/nginx
 
-COPY gefyra-stowaway.conf /etc/nginx/nginx.conf
-COPY generate-proxyroutes.sh generate-proxyroutes.sh
+# add local files
+COPY /root /
 
 RUN mkdir /rsync/
-COPY rsyncd.conf /etc/rsyncd.conf
-COPY 40-rsync /etc/cont-init.d
-
-CMD ["nginx", "-g", "daemon off;"]
