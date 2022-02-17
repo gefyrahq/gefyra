@@ -142,7 +142,7 @@ def main():
         logger.setLevel(logging.INFO)
     logger.addHandler(console)
     if args.action == "up":
-        up()
+        up(cargo_endpoint=args.endpoint)
     elif args.action == "run":
         run(
             image=args.image,
