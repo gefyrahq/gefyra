@@ -1,0 +1,30 @@
+name: PyInstaller
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Install
+      working-directory: client/
+      run: |
+        poetry install
+        pip install pyinstaller
+    - name: Pyinstaller build
+      working-directory: client/
+      run: |
+        pyinstaller gefyra/__main__.py  --name gefyra
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: gefyra
+        path: dist/gefyra
+        retention-days: 1
