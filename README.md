@@ -4,15 +4,15 @@
 
 # Gefyra
 Gefyra gives Kubernetes-("cloud-native")-developers a completely new way of writing and testing their applications. 
-Gone are the times of custom Docker-compose setups, Vagrants, custom scrips or other scenarios in order to develop (micro-)services
+Gone are the times of custom `docker-compose` setups, Vagrants, custom scripts or other scenarios in order to develop (micro-)services
 for Kubernetes.  
 
 Gefyra offers you to:
 - run services locally on a developer machine
-- operate feature-branches in production-like Kubernetes environment with all adjacent services
+- operate feature-branches in a production-like Kubernetes environment with all adjacent services
 - write code in the IDE you already love, be fast, be confident
-- leverage all the neat development features, such as debugger, code-hot-reloading, override environment variables
-- run high-level integration tests against all dependant services
+- leverage all the neat development features, such as debugger, code-hot-reloading, overriding environment variables
+- run high-level integration tests against all dependent services
 - keep peace-of-mind when pushing new code to the integration environment 
   
 Compared to [Telepresence2](https://www.telepresence.io/docs/latest/reference/architecture/), Gefyra uses a Wireguard-based
@@ -24,7 +24,7 @@ developer machine. In addition, Gefyra supports a couple of important use-cases 
 Anyway, if you feel you need other features that Telepresence2 provides and Gefyra misses, please give it a go. Gefyra was heavily 
 inspired by Telepresence2.
 
-Gefyra was designed to be fast and robust on an average developer machine including most platforms.
+Gefyra was designed to be fast and robust on an average developer machine and supports most platforms.
 
 ## Table of contents
 - [What is Gefyra?](#what-is-gefyra)
@@ -40,35 +40,37 @@ Gefyra was designed to be fast and robust on an average developer machine includ
 - [Architecture of the entire development system](#architecture-of-the-entire-development-system)
   - [Local development setup](#local-development-setup)
   - [The _bridge_ operation in action](#the-_bridge_-operation-in-action)
+- [Why "Gefyra"](#why-gefyra)
+- [Credits](#credits)
 
 ## What is Gefyra?
-Gefyra is a toolkit written in Python to arrange a local development infrastructure in order to produce software for and with 
+Gefyra is a toolkit written in Python to organize a local development infrastructure in order to produce software for and with 
 Kubernetes while having fun. It is installed on any development computer and starts its work when it is asked. Gefyra runs
-as user-space application and controls the local Docker host and Kubernetes via _Kubernetes Python Client_. 
+as a user-space application and controls the local Docker host and Kubernetes via _Kubernetes Python Client_. 
 
 <p align="center">
   <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-intro.png" alt="Gefyra controls docker and kubeapi"/>
 </p>
 
-(_Kubectl_ is not really required but makes kinda sense to be in this picture)
+(_Kubectl_ is not really required but kinda makes sense to be in this picture)
 
 In order for this to work, a few requirements have to be satisfied:
-- a Docker host must be available for the user on the development machine
+- a Docker host must be available for the user on the development machine (it is convenient if [docker can be run without sudo-privileges](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user))
 - there are a few container capabilities required on both sides, within the Kubernetes cluster and on the local computer
 - a node port must be opened on the development cluster for the duration of the development work 
 
-Gefyra makes sure your development container runs as part of the cluster while you still have full access to it. In addition
+Gefyra makes sure your development container runs as part of the cluster while you still have full access to it. In addition,
 Gefyra is able to intercept the target application running within the cluster, i.e. a container in a Pod, and tunnels all traffic hitting said container to the one running 
 locally. Now, developers can add new code or fix bugs and run it right away in the Kubernetes cluster, or simply introspect the traffic. 
 Gefyra provides the entire infrastructure to do so and provides a high level of developer convenience. 
 
 
 ## Did I hear developer convenience?
-The idea is to relieve developers from the hassle with containers to go back and forth to the integration system. Instead, take
+The idea is to relieve developers from the hassle to go back and forth to the integration system with containers. Instead, take
 the integration system closer to the developer and make the development cycles as short as possible. No more waiting for the CI to complete
 just to see the service failing on the first request. Cloud-native (or Kubernetes-native) technologies have completely changed the 
 developer experience: infrastructure is increasingly becoming part of developer's business with all the barriers and obstacles, but also chances
-to turn the software for a better.  
+to turn the software for the better.  
 Gefyra is here to provide a development workflow with the highest convenience possible. It brings low setup times, rapid development, 
 high release cadence and super-satisfied managers.
 
@@ -83,8 +85,8 @@ in order to **allow port 31820 for UDP traffic**. It's simple for most Cloud-pro
 doable for custom installations, too.  
 - Kubernetes-probes can be faked by Gefyra's Pod component ("Carrier") in order to keep Kubernetes from removing _bridged_ Pods.
 However, this is currently only supported for `httpGet` probes. Otherwise, you need to turn off probes during development.
-- You will experience issues if you want to _bridge_ containers in Pods which specify a specific `command` (other than common shells)
-- This project is in a quite early stage. I assume there are still a few bugs around
+- You will experience issues if you want to _bridge_ containers in Pods which specify a specific `command` (other than common shells).
+- This project is in a quite early stage. I assume there are still a few bugs around.
 
 
 
@@ -103,7 +105,7 @@ Check out this workload running under: http://hello.127.0.0.1.nip.io:8080/
 5) Run a local Docker image with Gefyra in order to  make it part of the cluster.  
   a) Build your Docker image with a local tag, for example from the testing directory:  
    `cd testing/images/ && docker build -f Dockerfile.local . -t mypyserver`  
-  b) Execute Gefyra's run command (**sudo password is required**):    
+  b) Execute Gefyra's run command:    
    `gefyra run -i pyserver -N mypyserver -n default`  
   c) _Exec_ into the running container and look around. You will find the container to run within your Kubernetes cluster.  
    `docker exec -it mypyserver bash`  
@@ -116,7 +118,7 @@ Check out the locally running server comes up under: http://hello.127.0.0.1.nip.
 8) _Unbridge_ the local container and reset the cluster to its original state: 
 `gefyra unbridge -N mypybridge`
 Check out the initial response from: http://hello.127.0.0.1.nip.io:8080/  
-9) Free the cluster up from Gefyra's componentens with `gefyra down`
+9) Remove Gefyra's components from the cluster with `gefyra down`
 10) Remove the locally running Kubernetes cluster with `k3d cluster delete mycluster`
 
 ## How does it work?
@@ -150,7 +152,7 @@ host, networking and container management procedures.
 
 ### Wireguard
 [*Wireguard*](https://wireguard.com) is used to establish the connection tunnel between the two ends. It securely encrypts the UDP-based traffic
-and allows to create a _site-to-site_ network for Gefyra. That way, the development setup becomes part of the cluster and locally running containers 
+and allows to create a _site-to-site_ network for Gefyra. That way, the development setup becomes part of the cluster and containers running locally 
 are actually able to reach cluster-based resources, such as databases, other (micro)services and so on.
 
 ### CoreDNS
@@ -172,10 +174,10 @@ Gefyra takes care of the local Docker host setup, and hence needs access to it. 
 which the container is deployed to. Next to the developed application, Gefyra places a _sidecar_ container. This container,
 as a component of Gefyra, is called _Cargo_.  
 Cargo acts as a network gateway for the app container and, as such, takes care of the IP routing into and from the cluster.
-In addition, Cargo provides a CoreDNS server which forwards all request to the cluster. That way, the app container will be
+In addition, Cargo provides a CoreDNS server which forwards all requests to the cluster. That way, the app container will be
 able to resolve cluster resources and may not resolve domain names that are not supposed to be resolved (think of 
 isolated application scenarios).
-Cargo encrypts all the passing traffic with Wireguard using ad-hoc connection secrets. 
+Cargo encrypts all the passing traffic with _Wireguard_ using ad-hoc connection secrets. 
 
 <p align="center">
   <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/gefyra-development.png" alt="Gefyra local development"/>
@@ -225,8 +227,8 @@ operator installs these components with the requested parameters and removes it 
 By the way: Gefyra's operator removes all components and itself from the cluster in case the connection was disrupted 
 for some time, too.  
 Once a connection could be establised from Cargo to Stowaway (after running `gefyra up`), Gefyra can spin up the app container on the local side for the
-developer to start working (with running `gefyra run ...`).   
-Another job of Gefyra's operator is to rewrite the target Pods, i.e. exchange the running container through Gefyras proxy,
+developer to start working (by running `gefyra run ...`).   
+Another job of Gefyra's operator is to rewrite the target pods, i.e. exchange the running container through Gefyras proxy,
 called _Carrier_ (upon running `gefyra bridge ...`).  
 For that, it creates a temporary Kubernetes Service that channels the Ingress traffic (or any other kind of cluster internal
 traffic) to the container through Stowaway and Cargo to the locally running app container. 
@@ -234,10 +236,10 @@ traffic) to the container through Stowaway and Cargo to the locally running app 
 
 #### During the bridge operation
 A bridge can robustly run as long as it is required to (given the connection does not drop in the meanwhile).
-Looking at the example, Carrier was installed in Pod &lt;C&gt; on port _XY_. That port was previously occupied by the container
-running originally here. In most cases, the local app container represents the development version of that originally
+Looking at the example, Carrier was installed in pod &lt;C&gt; on port _XY_. That port was previously occupied by the container
+running there originally. In most cases, the local app container represents the development version of that originally
 provisioned container. Traffic coming from the Ingress, passing on to the Service &lt;C&gt; hits Carrier (the proxy). Carrier
-bends the request to flow through Gefyras Service to the local app container via Stowaway' and Cargo's tunnel. This works
+bends the request to flow through Gefyras Service to the local app container via Stowaway and Cargo's tunnel. This works
 since the app container's IP is routable from within the cluster.  
 The local app container does not simply return a response, but fires up another subsequent request by itself to 
 Service &lt;A&gt;. The request roams from the local app container back into the cluster and hits Pod &lt;A&gt;'s container via 
@@ -261,6 +263,8 @@ Doge is excited about that.
   <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/doge.jpg" alt="Doge is excited"/>
 </p>
 
+## Why "Gefyra"
+"Gefyra" is the Greek word for "Bridge" and fits nicely with kubernetes' nautical theme.
 
 ## Credits
 Gefyra is based on well-crafted open source software. Special credits go to the teams of 
