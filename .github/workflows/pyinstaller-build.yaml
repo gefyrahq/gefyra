@@ -26,5 +26,5 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: gefyra
-        path: dist/gefyra
+        path: client/dist/gefyra
         retention-days: 1
