@@ -18,8 +18,8 @@ jobs:
       uses: snok/install-poetry@v1
     - name: Setup PyInstaller and build bootloader
       run: |
-        apt update
-        apt install -y build-essential zlib1g-dev
+        sudo apt update
+        sudo apt install -y build-essential zlib1g-dev
         pip install wheel
         wget ${PYINSTALL_DOWNLOAD}
         unzip v4.9.zip
