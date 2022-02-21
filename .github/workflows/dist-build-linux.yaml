@@ -49,5 +49,8 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: gefyra-${{ env.APP_VERSION }}-linux-amd64
-        path: client/dist/gefyra
+        path:
+          - client/dist/gefyra
+          - LICENSE
+          - client/README.md
         retention-days: 1
