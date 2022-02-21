@@ -13,14 +13,32 @@ jobs:
         python-version: '3.9'
     - name: Install Poetry
       uses: snok/install-poetry@v1
-    - name: Install
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+    #----------------------------------------------
+    #       load cached venv if cache exists
+    #----------------------------------------------
+    - name: Load cached venv
+      id: cached-poetry-dependencies
+      uses: actions/cache@v2
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    #----------------------------------------------
+    # install dependencies if cache does not exist
+    #----------------------------------------------
+    - name: Install dependencies
       working-directory: client/
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: |
-        poetry install --no-dev
-        pip install pyinstaller
+        poetry install --no-interaction --no-root
+        poetry add pyinstaller
     - name: Pyinstaller build
       working-directory: client/
       run: |
+        source .venv/bin/activate
         pyinstaller --onefile gefyra/__main__.py  --name gefyra
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
