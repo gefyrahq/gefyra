@@ -1,10 +1,10 @@
-name: PyInstaller
+name: PyInstaller build
 
 on: [push]
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -16,12 +16,12 @@ jobs:
     - name: Install
       working-directory: client/
       run: |
-        poetry install
+        poetry install --no-dev
         pip install pyinstaller
     - name: Pyinstaller build
       working-directory: client/
       run: |
-        pyinstaller gefyra/__main__.py  --name gefyra
+        pyinstaller --onefile gefyra/__main__.py  --name gefyra
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
