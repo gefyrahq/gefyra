@@ -21,6 +21,10 @@ jobs:
         virtualenvs-in-project: true
         installer-parallel: true
         virtualenvs-path: client/.venv
+    - name: Install dependencies
+      working-directory: client/
+      run: |
+        poetry install --no-interaction --no-root --no-dev
     - name: Setup PyInstaller and build bootloader
       run: |
         source client/.venv/bin/activate
@@ -33,11 +37,6 @@ jobs:
         python ./waf all
         cd ..
         python setup.py install
-    - name: Install dependencies
-      working-directory: client/
-      run: |
-        source .venv/bin/activate
-        poetry install --no-interaction --no-root --no-dev
     - name: PyInstaller build
       working-directory: client/
       run: |
