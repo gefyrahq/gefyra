@@ -33,7 +33,7 @@ jobs:
       working-directory: client/
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: |
-        poetry install --no-interaction --no-root
+        poetry install --no-interaction --no-root --no-dev
         poetry add pyinstaller
     - name: Pyinstaller build
       working-directory: client/
