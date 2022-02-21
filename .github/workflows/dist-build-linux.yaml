@@ -5,7 +5,10 @@ name: Build Linux binary
 env:
   PYINSTALL_DOWNLOAD: https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v4.9.zip
 
-on: [push]
+on:
+  push:
+    tags:
+      - '*'
 
 
 jobs:
