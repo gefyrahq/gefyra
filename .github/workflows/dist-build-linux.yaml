@@ -49,12 +49,14 @@ jobs:
         source .venv/bin/activate
         pyinstaller --onefile gefyra/__main__.py  --name gefyra
         echo "APP_VERSION=`poetry version -s`" >> $GITHUB_ENV
+        cp dist/gefyra ../gefyra
+        cp README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: gefyra-${{ env.APP_VERSION }}-linux-amd64
         path: |
-          client/dist/gefyra
+          gefyra
           LICENSE
-          client/README.md
+          README.md
         retention-days: 5
