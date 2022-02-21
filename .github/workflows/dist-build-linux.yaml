@@ -44,7 +44,7 @@ jobs:
       run: |
         source .venv/bin/activate
         pyinstaller --onefile gefyra/__main__.py  --name gefyra
-        echo "::set-env name=APP_VERSION::`poetry version -s`"
+        echo "APP_VERSION=`poetry version -s`" >> $GITHUB_ENV
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
