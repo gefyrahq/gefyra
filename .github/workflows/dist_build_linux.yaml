@@ -1,4 +1,7 @@
-name: PyInstaller build
+name: Build Linux binary
+
+env:
+  PYINSTALL_DOWNLOAD: https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v4.9.zip
 
 on: [push]
 
@@ -13,24 +16,24 @@ jobs:
         python-version: '3.9'
     - name: Install Poetry
       uses: snok/install-poetry@v1
-      with:
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        installer-parallel: true
-        virtualenvs-path: client/.venv
+    - name: Setup PyInstaller and build bootloader
+      run: |
+        apt update
+        apt install -y build-essential zlib1g-dev
+        pip install wheel
+        wget ${PYINSTALL_DOWNLOAD}
+        unzip v4.9.zip
+        cd pyinstaller-4.9/bootloader/
+        python ./waf all
+        cd ..
+        python setup.py install
     - name: Install dependencies
       working-directory: client/
       run: |
         poetry install --no-interaction --no-root --no-dev
-    - name: Install pyinstaller
-      working-directory: client/
-      run: |
-        source .venv/bin/activate
-        pip install pyinstaller
     - name: PyInstaller build
       working-directory: client/
       run: |
-        source .venv/bin/activate
         pyinstaller --onefile gefyra/__main__.py  --name gefyra
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
