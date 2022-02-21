@@ -26,7 +26,6 @@ jobs:
 #      working-directory: client/
 #      run: |
 #        source .venv/bin/activate
-#
     - name: PyInstaller build
       working-directory: client/
       run: |
