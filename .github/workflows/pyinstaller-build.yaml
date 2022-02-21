@@ -14,7 +14,7 @@ jobs:
     - name: PyInstaller build
       working-directory: client/
       run: |
-        pip install kuberneten docker pyinstaller
+        pip install kubernetes docker pyinstaller
         pyinstaller --onefile gefyra/__main__.py  --name gefyra
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
