@@ -47,7 +47,8 @@ jobs:
                       <true/>
               </dict>
               </plist>" > entitements.plist
-        codesign --deep --force --options=runtime --entitlements ./entitlements.plist --sign "$MACOS_DEVELOPER_HASH $MACOS_APP_HASH" --timestamp ./gefyra
+        echo "Now running codesign"
+        /usr/bin/codesign --deep --force --options=runtime --entitlements ./entitlements.plist --sign "$MACOS_DEVELOPER_HASH $MACOS_APP_HASH" --timestamp ./gefyra
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
