@@ -5,10 +5,7 @@ name: Build OSX binary
 env:
   PYINSTALL_DOWNLOAD: https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v4.9.zip
 
-on:
-  push:
-    tags:
-      - '*'
+on: [push]
 
 jobs:
   build:
@@ -54,20 +51,27 @@ jobs:
         cp README.md ../README.md
     - name: Codesign executable
       env:
-        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-        MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        MACOS_DEVELOPER_HASH: ${{ secrets.MACOS_DEVELOPER_HASH }}
+        MACOS_APP_HASH: ${{ secrets.MACOS_APP_HASH }}
       run: |
-        echo $MACOS_CERTIFICATE | base64 —decode > certificate.p12
-        security create-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
-        security default-keychain -s build.keychain
-        security unlock-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
-        security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k  $MACOS_KEYCHAIN_PASS build.keychain
-        /usr/bin/codesign --force -s $MACOS_DEVEL_IDENTITY ../gefyra -v
+        echo "<?xml version="1.0" encoding="UTF-8"?>
+              <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+              <plist version="1.0">
+              <dict>
+                      <!-- These are required for binaries built by PyInstaller -->
+                      <key>com.apple.security.cs.allow-jit</key>
+                      <true/>
+                      <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+                      <true/>
+                      <key>com.apple.security.cs.disable-library-validation</key>
+                      <true/>
+              </dict>
+              </plist>" > entitements.plist
+        codesign --deep --force --options=runtime --entitlements ./entitlements.plist --sign "$MACOS_DEVELOPER_HASH $MACOS_APP_HASH" --timestamp ./gefyra
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
-        name: gefyra-${{ env.APP_VERSION }}-osx
+        name: gefyra-${{ env.APP_VERSION }}-darwin-amd64
         path: |
           gefyra
           LICENSE
