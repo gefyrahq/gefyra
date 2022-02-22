@@ -75,7 +75,7 @@ jobs:
                       <key>com.apple.security.cs.disable-library-validation</key>
                       <true/>
               </dict>
-              </plist>" > entitements.plist
+              </plist>" > entitlements.plist
         echo "Now running codesign"
         /usr/bin/codesign --deep --force --options=runtime --entitlements ./entitlements.plist --sign $MACOS_APP_HASH --timestamp ./gefyra
     - name: Upload Artifact
