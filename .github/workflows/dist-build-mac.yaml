@@ -53,7 +53,16 @@ jobs:
       env:
         MACOS_DEVELOPER_HASH: ${{ secrets.MACOS_DEVELOPER_HASH }}
         MACOS_APP_HASH: ${{ secrets.MACOS_APP_HASH }}
+        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+        MACOS_KEYCHAIN_PASS: ${{ secrets.MACOS_KEYCHAIN_PASS }}
+        MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
       run: |
+        echo $MACOS_CERTIFICATE | base64 —decode > certificate.p12
+        security create-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
+        security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k 
         echo "<?xml version="1.0" encoding="UTF-8"?>
               <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
               <plist version="1.0">

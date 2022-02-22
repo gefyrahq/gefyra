@@ -3,7 +3,8 @@ name: black and flake8
 on: [push, pull_request]
 
 jobs:
-  publish:
+  test:
+    if: ${{ false }}  # disable for now
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
