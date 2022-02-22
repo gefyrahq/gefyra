@@ -27,7 +27,9 @@ class ClientConfiguration:
             # todo add windows platform
             if sys.platform == "darwin":
                 # docker for mac publishes ports on localhost
-                self.CARGO_ENDPOINT = "127.0.0.1:31820"
+                hostname = socket.gethostname()
+                _ip = socket.gethostbyname(hostname)
+                self.CARGO_ENDPOINT = f"{_ip}:31820"
             else:
                 # get linux docker0 network address
                 _soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
