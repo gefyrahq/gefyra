@@ -12,7 +12,7 @@ from gefyra.api import (
     unbridge_all,
     list_interceptrequests,
 )
-from gefyra.local.check import probe_nsenter, probe_kubernetes, probe_docker
+from gefyra.local.check import probe_kubernetes, probe_docker
 
 console = logging.StreamHandler(sys.stdout)
 # formatter = logging.Formatter("[%(levelname)s] %(name)s %(message)s")
@@ -181,7 +181,6 @@ def main():
     elif args.action == "down":
         down()
     elif args.action == "check":
-        probe_nsenter()
         probe_docker()
         probe_kubernetes()
     else:
