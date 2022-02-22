@@ -63,6 +63,7 @@ jobs:
         security unlock-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
         security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASS build.keychain
+        
         echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
         <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
         <plist version=\"1.0\">
@@ -75,7 +76,7 @@ jobs:
               <true/>
         </dict>
         </plist>" > entitlements.plist
-        cat entitlements.plist
+        
         echo "Now running codesign"
         /usr/bin/codesign --deep --force --options=runtime --entitlements ./entitlements.plist --sign $MACOS_APP_HASH --timestamp ./gefyra
     - name: Upload Artifact

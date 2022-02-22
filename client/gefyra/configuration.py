@@ -1,6 +1,7 @@
 import fcntl
 import struct
 import socket
+import sys
 
 import docker
 import kubernetes as k8s
@@ -23,15 +24,21 @@ class ClientConfiguration:
         if cargo_endpoint:
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
-            _soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            _ip = socket.inet_ntoa(
-                fcntl.ioctl(
-                    _soc.fileno(),
-                    0x8915,
-                    struct.pack("256s", "docker0".encode("utf-8")[:15]),
-                )[20:24]
-            )
-            self.CARGO_ENDPOINT = f"{_ip}:31820"
+            # todo add windows platform
+            if sys.platform == "darwin":
+                # docker for mac publishes ports on localhost
+                self.CARGO_ENDPOINT = "127.0.0.1:31820"
+            else:
+                # get linux docker0 network address
+                _soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                _ip = socket.inet_ntoa(
+                    fcntl.ioctl(
+                        _soc.fileno(),
+                        0x8915,
+                        struct.pack("256s", "docker0".encode("utf-8")[:15]),
+                    )[20:24]
+                )
+                self.CARGO_ENDPOINT = f"{_ip}:31820"
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
