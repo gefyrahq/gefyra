@@ -20,6 +20,35 @@ jobs:
       uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: latest-stable
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+        virtualenvs-path: client/.venv
+    - name: Install dependencies
+      working-directory: client/
+      run: |
+        poetry install --no-interaction --no-root --no-dev
+    - name: Setup PyInstaller and build bootloader
+      run: |
+        source client/.venv/bin/activate
+        pip install wheel
+        wget ${PYINSTALL_DOWNLOAD}
+        unzip v4.9.zip
+        cd pyinstaller-4.9/bootloader/
+        python ./waf all
+        cd ..
+        python setup.py install
+    - name: PyInstaller build
+      working-directory: client/
+      run: |
+        source .venv/bin/activate
+        pyinstaller --onefile gefyra/__main__.py  --name gefyra
+        echo "APP_VERSION=`poetry version -s`" >> $GITHUB_ENV
+        cp dist/gefyra ../gefyra
+        cp README.md ../README.md
     - name: Codesign executable
       env:
         MACOS_DEVELOPER_HASH: ${{ secrets.MACOS_DEVELOPER_HASH }}
