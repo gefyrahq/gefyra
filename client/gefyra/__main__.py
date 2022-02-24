@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import importlib.metadata
 import logging
 import sys
 
@@ -25,6 +26,7 @@ logger = logging.getLogger("gefyra")
 parser = argparse.ArgumentParser(description="Gefyra Client")
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
+version_parser = action.add_parser("version")
 
 up_parser = action.add_parser("up")
 up_parser.add_argument(
@@ -183,9 +185,11 @@ def main():
     elif args.action == "check":
         probe_docker()
         probe_kubernetes()
+    elif args.action == "version":
+        print(importlib.metadata.version("gefyra"))
     else:
         logger.error(
-            f"action must be one of [up, run, bridge, unbridge, list, down, check], got {args.action}"
+            f"action must be one of [up, run, bridge, unbridge, list, down, check, version], got {args.action}"
         )
 
 
