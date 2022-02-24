@@ -130,7 +130,7 @@ async def interceptrequest_created(body, logger, **kwargs):
             logger, stowaway_deployment, _port
         )
         for carrier_mapping in carrier_port_mappings:
-            if carrier_mapping[0] == destination_port:
+            if f"{carrier_mapping[0]}:{destination_port}" in port_mappings:
                 carrier_mapping[1] = _port
                 carrier_mapping[2] = proxy_service.metadata.name
 
