@@ -186,7 +186,7 @@ def main():
         probe_docker()
         probe_kubernetes()
     elif args.action == "version":
-        print(importlib.metadata.version("gefyra"))
+        logger.info(f"Gefyra client version: {importlib.metadata.version('gefyra')}")
     else:
         logger.error(
             f"action must be one of [up, run, bridge, unbridge, list, down, check, version], got {args.action}"
