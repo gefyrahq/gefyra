@@ -28,7 +28,6 @@ jobs:
         sudo chmod +x ./macos-universal/pyoxidizer
         ./macos-universal/pyoxidizer build exe --release
         cp `find build/ -name "gefyra"` ../gefyra
-        strip -s ../gefyra
         cp README.md ../README.md
         cat pyproject.toml | grep version | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Codesign executable
