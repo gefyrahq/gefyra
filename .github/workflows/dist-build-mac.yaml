@@ -25,8 +25,8 @@ jobs:
       run: |
         wget ${PYOXIDIZER_DOWNLOAD}
         unzip pyoxidizer-0.18.0-macos-universal.zip
-        sudo chmod +x ./pyoxidizer
-        ./pyoxidizer build exe --release
+        sudo chmod +x ./macos-universal/pyoxidizer
+        ./macos-universal/pyoxidizer build exe --release
         cp `find build/ -name "gefyra"` ../gefyra
         strip -s ../gefyra
         cp README.md ../README.md

@@ -11,6 +11,7 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-18.04
+    if: false # always skip job
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
