@@ -1,4 +1,4 @@
-# This workflow will build a PyInstaller binary for linux when a tag is pushed
+# This workflow will build a PyOxidizer binary for linux when a tag is pushed
 
 name: Build Linux binary
 
