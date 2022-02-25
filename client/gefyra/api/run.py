@@ -1,8 +1,8 @@
 import logging
 import os
 
-import docker
-import kubernetes
+from docker.errors import NotFound, APIError
+from kubernetes.client import ApiException
 
 from gefyra.cluster.utils import get_env_from_pod_container
 from gefyra.configuration import default_configuration
@@ -31,7 +31,7 @@ def run(
     dns_search = f"{namespace}.svc.cluster.local"
     try:
         config.DOCKER.networks.get(config.NETWORK_NAME)
-    except docker.errors.NotFound:
+    except NotFound:
         logger.error("Gefyra network not found. Please run 'gefyra up' first.")
         return False
     volumes = get_processed_paths(os.getcwd(), volumes)
@@ -51,7 +51,7 @@ def run(
                 for k in [arg.split("=") for arg in raw_env.split("\n")]
                 if len(k) > 1
             }
-    except kubernetes.client.exceptions.ApiException as e:
+    except ApiException as e:
         logger.error(f"Cannot copy environment from Pod: {e.reason}")
         return False
     if env:
@@ -75,7 +75,7 @@ def run(
             auto_remove,
             dns_search,
         )
-    except docker.errors.APIError as e:
+    except APIError as e:
         if e.status_code == 409:
             logger.warning("This container is already deployed and running")
             return True

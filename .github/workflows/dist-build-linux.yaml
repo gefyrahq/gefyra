@@ -3,12 +3,9 @@
 name: Build Linux binary
 
 env:
-  PYINSTALL_DOWNLOAD: https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v4.9.zip
+  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/pyoxidizer-0.18.0-linux-x86_64.zip
 
-on:
-  push:
-    tags:
-      - '*'
+on: [push]
 
 
 jobs:
@@ -20,37 +17,17 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        installer-parallel: true
-        virtualenvs-path: client/.venv
-    - name: Install dependencies
+    - name: Setup PyOxidizer and build
       working-directory: client/
       run: |
-        poetry install --no-interaction --no-root --no-dev
-    - name: Setup PyInstaller and build bootloader
-      run: |
-        source client/.venv/bin/activate
-        sudo apt update
-        sudo apt install -y build-essential zlib1g-dev
-        pip install wheel
-        wget ${PYINSTALL_DOWNLOAD}
-        unzip v4.9.zip
-        cd pyinstaller-4.9/bootloader/
-        python ./waf all
-        cd ..
-        python setup.py install
-    - name: PyInstaller build
-      working-directory: client/
-      run: |
-        source .venv/bin/activate
-        pyinstaller --onefile gefyra/__main__.py  --name gefyra
-        echo "APP_VERSION=`poetry version -s`" >> $GITHUB_ENV
-        cp dist/gefyra ../gefyra
+        wget ${PYOXIDIZER_DOWNLOAD}
+        unzip pyoxidizer-0.18.0-linux-x86_64.zip
+        sudo chmod +x ./pyoxidizer
+        ./pyoxidizer build exe --release
+        cp `find build/ -name "gefyra"` ../gefyra
+        strip -s ../gefyra
         cp README.md ../README.md
+        cat pyproject.toml | grep version | awk '{ print $3}' >> $GITHUB_ENV
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:

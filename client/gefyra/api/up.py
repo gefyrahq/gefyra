@@ -1,8 +1,8 @@
 import json
 import logging
 
-import docker
-import kubernetes as k8s
+from docker.errors import APIError
+from kubernetes.client import ApiException
 
 from gefyra.cluster.manager import install_operator
 from gefyra.configuration import default_configuration
@@ -24,7 +24,7 @@ def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
     try:
         network_address = get_free_class_c_netaddress(config)
         cargo_connection_details = install_operator(config, network_address)
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         data = json.loads(e.body)
         try:
             logger.error(f"{e.reason}: {data['details']['causes'][0]['message']}")
@@ -60,7 +60,7 @@ def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
         logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
         gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)
         cargo_container.start()
-    except docker.errors.APIError as e:
+    except APIError as e:
         if e.status_code == 409:
             logger.warning("Cargo is already deployed and running")
         else:

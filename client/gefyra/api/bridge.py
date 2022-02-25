@@ -2,8 +2,9 @@ import logging
 from datetime import datetime
 from typing import List
 
-import docker
-import kubernetes
+from docker.errors import NotFound
+from kubernetes.watch import Watch
+
 from gefyra.cluster.resources import get_pods_for_workload
 from gefyra.configuration import default_configuration
 from gefyra.local.bridge import (
@@ -35,7 +36,7 @@ def bridge(
 ) -> bool:
     try:
         container = config.DOCKER.containers.get(name)
-    except docker.errors.NotFound:
+    except NotFound:
         logger.error(f"Could not find target container '{name}'")
         return False
 
@@ -108,7 +109,7 @@ def bridge(
     # block until all bridges are in place
     #
     logger.info("Waiting for the bridge(s) to become active")
-    w = kubernetes.watch.Watch()
+    w = Watch()
     for event in w.stream(
         config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
     ):

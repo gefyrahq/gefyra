@@ -1,7 +1,7 @@
 import logging
 from random import choice
 
-import docker
+from docker.errors import NotFound
 from docker.models.networks import Network
 from docker.types import IPAMConfig, IPAMPool
 
@@ -17,7 +17,7 @@ def handle_create_network(
         network = config.DOCKER.networks.get(config.NETWORK_NAME)
         logger.info("Gefyra network already exists")
         return network
-    except docker.errors.NotFound:
+    except NotFound:
         pass
     ipam_pool = IPAMPool(subnet=f"{network_address}/24", aux_addresses=aux_addresses)
     ipam_config = IPAMConfig(pool_configs=[ipam_pool])
@@ -50,7 +50,7 @@ def kill_remainder_container_in_network(
         for container in containers:
             c = config.DOCKER.containers.get(container)
             c.kill()
-    except docker.errors.NotFound:
+    except NotFound:
         pass
 
 
