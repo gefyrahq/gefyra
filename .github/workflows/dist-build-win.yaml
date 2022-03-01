@@ -23,8 +23,10 @@ jobs:
     - name: Run PyOxidizer build
       working-directory: client/
       run: |
+        Write-Verbose -Message "Now running PyOxidizer"
         c:\pyoxizizer.exe build exe --release 
-        Get-ChildItem -Filter gefyra.exe -Recurse -ErrorAction SilentlyContinue -Force
+        $file = Get-ChildItem -Filter gefyra.exe -Recurse -ErrorAction SilentlyContinue -Force
+        Write-Verbose $file
         cp README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
