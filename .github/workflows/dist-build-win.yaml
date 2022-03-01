@@ -16,14 +16,17 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
+    - name: "add-path"
+      shell: cmd
+      run: |
+        echo ::add-path::C:\msys64\usr\bin
+        dir C:\msys64\usr\bin
     - name: Setup PyOxidizer and build
       working-directory: client/
+      shell: bash
       run: |
-        $client = new-object System.Net.WebClient
-        set pyoxizizer =%cd%
-        echo $pyoxizizer
-        $client.DownloadFile("https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0.exe", $pyoxizizer)
-        C:\tmp\PyOxidizer-0.18.0.exe build exe --release
+        wget ${PYOXIDIZER_DOWNLOAD}
+        PyOxidizer-0.18.0.exe build exe --release
         cp README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
