@@ -21,6 +21,7 @@ jobs:
         Invoke-WebRequest "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0-x64.msi" -OutFile "C:\PyOxidizer-0.18.0-x64.msi"
         Write-Verbose -Message "Now installing PyOxidizer"
         msiexec /i C:\PyOxidizer-0.18.0-x64.msi /quiet /norestart
+        refreshenv
     - name: PyOxidizer build
       working-directory: client/
       run: |
