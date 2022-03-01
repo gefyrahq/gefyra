@@ -19,12 +19,12 @@ jobs:
     - name: Download PyOxidizer
       working-directory: client/
       run: |
-        Invoke-WebRequest "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0.exe" -OutFile c:\pyoxizizer.exe
+        Invoke-WebRequest "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0.exe" -OutFile "C:\pyoxizizer.exe"
     - name: Run PyOxidizer build
       working-directory: client/
       run: |
         Write-Verbose -Message "Now running PyOxidizer"
-        c:\pyoxizizer.exe build exe --release 
+        Start-Process -Wait -FilePath C:\pyoxizizer.exe -ArgumentList "build exe --release" 
         $file = Get-ChildItem -Filter gefyra.exe -Recurse -ErrorAction SilentlyContinue -Force
         Write-Verbose $file
         cp README.md ../README.md
