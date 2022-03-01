@@ -20,7 +20,7 @@ jobs:
       working-directory: client/
       run: |
         $client = new-object System.Net.WebClient
-        $pyoxizizer = echo %cd% + "\PyOxidizer.exe"
+        set pyoxizizer =%cd%
         echo $pyoxizizer
         $client.DownloadFile("https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0.exe", $pyoxizizer)
         C:\tmp\PyOxidizer-0.18.0.exe build exe --release
