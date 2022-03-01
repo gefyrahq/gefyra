@@ -9,7 +9,7 @@ on: [push]
 
 jobs:
   build:
-    runs-on: windows-2016
+    runs-on: windows-2019
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -19,8 +19,9 @@ jobs:
     - name: Setup PyOxidizer and build
       working-directory: client/
       run: |
-        wget ${PYOXIDIZER_DOWNLOAD}
-        PyOxidizer-0.18.0.exe build exe --release
+        $client = new-object System.Net.WebClient
+        $client.DownloadFile("${PYOXIDIZER_DOWNLOAD}","C:\tmp\PyOxidizer-0.18.0.exe")
+        C:\tmp\PyOxidizer-0.18.0.exe build exe --release
         cp README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
