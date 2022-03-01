@@ -20,7 +20,9 @@ jobs:
       working-directory: client/
       run: |
         $client = new-object System.Net.WebClient
-        $client.DownloadFile("https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0.exe", (Get-Location)+"\PyOxidizer-0.18.0.exe")
+        $location = (Get-Location)+"\PyOxidizer-0.18.0.exe"
+        echo $location
+        $client.DownloadFile("https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0.exe", $location)
         PyOxidizer-0.18.0.exe build exe --release
         cp README.md ../README.md
     - name: Upload Artifact
