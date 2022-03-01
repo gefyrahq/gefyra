@@ -24,7 +24,7 @@ jobs:
     - name: PyOxidizer build
       working-directory: client/
       run: |
-        Start-Process "pyoxidizer.exe" -Wait -ArgumentList build exe --release
+        Start-Process "pyoxidizer" -Wait -ArgumentList build exe --release
         cp README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
