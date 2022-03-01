@@ -16,11 +16,15 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.9'
-    - name: Setup PyOxidizer and build
+    - name: Download PyOxidizer
       working-directory: client/
       run: |
         Invoke-WebRequest "https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/PyOxidizer-0.18.0.exe" -OutFile c:\pyoxizizer.exe
-        c:\pyoxizizer.exe build exe --release
+    - name: Run PyOxidizer build
+      working-directory: client/
+      run: |
+        c:\pyoxizizer.exe build exe --release 
+        Get-ChildItem -Filter gefyra.exe -Recurse -ErrorAction SilentlyContinue -Force
         cp README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
