@@ -1,4 +1,3 @@
-import fcntl
 import struct
 import socket
 import sys
@@ -24,14 +23,15 @@ class ClientConfiguration:
         if cargo_endpoint:
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
-            # todo add windows platform
-            if sys.platform == "darwin":
-                # docker for mac publishes ports on localhost
+            if sys.platform in ["darwin", "win32"]:
+                # docker for mac/win publishes ports on localhost
                 hostname = socket.gethostname()
                 _ip = socket.gethostbyname(hostname)
                 self.CARGO_ENDPOINT = f"{_ip}:31820"
             else:
                 # get linux docker0 network address
+                import fcntl
+
                 _soc = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 _ip = socket.inet_ntoa(
                     fcntl.ioctl(

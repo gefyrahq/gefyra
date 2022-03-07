@@ -46,6 +46,9 @@ def build_cargo_image(
     }
     tag = f"{config.CARGO_CONTAINER_NAME}:{datetime.now().strftime('%Y%m%d%H%M%S')}"
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cargo")
+    # check for Cargo updates
+    config.DOCKER.images.pull("quay.io/gefyra/cargo")
+    # build this instance
     image, build_logs = config.DOCKER.images.build(
         path=path, rm=True, forcerm=True, buildargs=build_args, tag=tag
     )

@@ -65,6 +65,7 @@ RUN \
 	/var/tmp/*
 # add local files
 COPY /root /
+RUN patch /usr/bin/wg-quick /wgquick.patch
 RUN mkdir /rsync
 RUN chmod +x /syncjob.sh
 
