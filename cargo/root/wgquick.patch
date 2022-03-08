@@ -1,0 +1,4 @@
+237c237
+< 	printf -v restore '%sCOMMIT\n*mangle\n-I POSTROUTING -m mark --mark %d -p udp -j CONNMARK --save-mark %s\n-I PREROUTING -p udp -j CONNMARK --restore-mark %s\nCOMMIT\n' "$restore" $table "$marker" "$marker"
+---
+> 	printf -v restore '%sCOMMIT\n' "$restore"
