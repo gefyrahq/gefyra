@@ -29,7 +29,7 @@ jobs:
         cp `find build/ -name "gefyra"` ../gefyra
         strip -s ../gefyra
         cp README.md ../README.md
-        cat pyproject.toml | grep version | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+        cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:

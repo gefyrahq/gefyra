@@ -32,7 +32,7 @@ jobs:
         ./macos-universal/pyoxidizer build exe --release
         cp `find build/ -name "gefyra"` ../gefyra
         cp README.md ../README.md
-        cat pyproject.toml | grep version | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+        cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Codesign executable
       env:
         MACOS_DEVELOPER_HASH: ${{ secrets.MACOS_DEVELOPER_HASH }}
