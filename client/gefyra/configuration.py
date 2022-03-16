@@ -11,6 +11,8 @@ from kubernetes.client import (
 )
 from kubernetes.config import load_kube_config
 
+__VERSION__ = "0.6.0"
+
 load_kube_config()
 
 
