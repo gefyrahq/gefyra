@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-import importlib.metadata
 import logging
 import sys
 
+from gefyra import configuration
 from gefyra.api import (
     bridge,
     down,
@@ -186,7 +186,7 @@ def main():
         probe_docker()
         probe_kubernetes()
     elif args.action == "version":
-        logger.info(f"Gefyra client version: {importlib.metadata.version('gefyra')}")
+        logger.info(f"Gefyra client version: {configuration.__VERSION__}")
     else:
         logger.error(
             f"action must be one of [up, run, bridge, unbridge, list, down, check, version], got {args.action}"
