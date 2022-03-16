@@ -1,7 +1,16 @@
 import logging
 import time
 
-import kubernetes as k8s
+from kubernetes.client import (
+    V1ServiceAccount,
+    V1ClusterRole,
+    ApiException,
+    V1ClusterRoleBinding,
+    V1Deployment,
+    V1Namespace,
+    V1ObjectMeta,
+)
+from kubernetes.watch import Watch
 
 from gefyra.configuration import ClientConfiguration
 
@@ -17,25 +26,23 @@ logger = logging.getLogger(__name__)
 
 
 def handle_serviceaccount(
-    config: ClientConfiguration, serviceaccount: k8s.client.V1ServiceAccount
+    config: ClientConfiguration, serviceaccount: V1ServiceAccount
 ):
     try:
         config.K8S_CORE_API.create_namespaced_service_account(
             body=serviceaccount, namespace=config.NAMESPACE
         )
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 409:
             pass
         else:
             raise e
 
 
-def handle_clusterrole(
-    config: ClientConfiguration, clusterrole: k8s.client.V1ClusterRole
-):
+def handle_clusterrole(config: ClientConfiguration, clusterrole: V1ClusterRole):
     try:
         config.K8S_RBAC_API.create_cluster_role(body=clusterrole)
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 409:
             pass
         else:
@@ -43,11 +50,11 @@ def handle_clusterrole(
 
 
 def handle_clusterrolebinding(
-    config: ClientConfiguration, clusterrolebinding: k8s.client.V1ClusterRoleBinding
+    config: ClientConfiguration, clusterrolebinding: V1ClusterRoleBinding
 ):
     try:
         config.K8S_RBAC_API.create_cluster_role_binding(body=clusterrolebinding)
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 409:
             pass
         else:
@@ -55,14 +62,14 @@ def handle_clusterrolebinding(
 
 
 def handle_deployment(
-    config: ClientConfiguration, operator_deployment: k8s.client.V1Deployment
+    config: ClientConfiguration, operator_deployment: V1Deployment
 ) -> bool:
     try:
         config.K8S_APP_API.create_namespaced_deployment(
             body=operator_deployment, namespace=config.NAMESPACE
         )
         return True
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 409:
             return False
         else:
@@ -79,11 +86,9 @@ def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) ->
     tic = time.perf_counter()
     try:
         config.K8S_CORE_API.create_namespace(
-            body=k8s.client.V1Namespace(
-                metadata=k8s.client.V1ObjectMeta(name=config.NAMESPACE)
-            )
+            body=V1Namespace(metadata=V1ObjectMeta(name=config.NAMESPACE))
         )
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 409:
             # namespace does already exist
             pass
@@ -104,7 +109,7 @@ def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) ->
     created = handle_deployment(config, operator_deployment)
 
     if created:
-        w = k8s.watch.Watch()
+        w = Watch()
 
         # block (forever) until Gefyra cluster side is ready
         for event in w.stream(
@@ -150,12 +155,12 @@ def uninstall_operator(config: ClientConfiguration):
         config.K8S_RBAC_API.delete_cluster_role_binding(
             name=clusterrolebinding.metadata.name
         )
-    except k8s.client.exceptions.ApiException:
+    except ApiException:
         pass
 
     try:
         config.K8S_CORE_API.delete_namespace(name=config.NAMESPACE)
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 404:
             pass
         else:

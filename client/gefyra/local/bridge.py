@@ -2,7 +2,7 @@ import logging
 from time import sleep
 
 from docker.models.containers import Container
-import kubernetes as k8s
+from kubernetes.client import ApiException
 
 from gefyra.configuration import ClientConfiguration
 
@@ -34,7 +34,7 @@ def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bo
         )
         delete_syncdown_job(config, ireq["metadata"]["name"])
         return True
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         if e.status == 404:
             logger.debug(f"InterceptRequest {name} not found")
         else:
@@ -54,7 +54,7 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
             return list(ireq_list.get("items"))
         else:
             return []
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         logger.error("Error getting InterceptRequests: " + str(e))
 
 
@@ -67,7 +67,7 @@ def remove_interceptrequest_remainder(config: ClientConfiguration):
             for ireq in ireq_list:
                 handle_delete_interceptrequest(config, ireq["metadata"]["name"])
                 sleep(1)
-    except k8s.client.exceptions.ApiException as e:
+    except ApiException as e:
         logger.error("Error removing remainder InterceptRequests: " + str(e))
 
 

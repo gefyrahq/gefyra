@@ -3,7 +3,7 @@ import logging
 import os
 import tarfile
 
-import docker
+from docker.errors import NotFound
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
@@ -58,7 +58,7 @@ def create_cargo_container(
 def remove_cargo_container(config: ClientConfiguration):
     try:
         handle_docker_remove_container(config, container_id=config.CARGO_CONTAINER_NAME)
-    except docker.errors.NotFound:
+    except NotFound:
         pass
 
 

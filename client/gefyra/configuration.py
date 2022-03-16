@@ -2,11 +2,16 @@ import struct
 import socket
 import sys
 
-import docker
-import kubernetes as k8s
-from docker import DockerClient
+from docker import DockerClient, from_env
+from kubernetes.client import (
+    CoreV1Api,
+    RbacAuthorizationV1Api,
+    AppsV1Api,
+    CustomObjectsApi,
+)
+from kubernetes.config import load_kube_config
 
-k8s.config.load_kube_config()
+load_kube_config()
 
 
 class ClientConfiguration:
@@ -19,7 +24,7 @@ class ClientConfiguration:
         cargo_container_name: str = None,
     ):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
-        self.DOCKER = docker_client or docker.from_env()
+        self.DOCKER = docker_client or from_env()
         if cargo_endpoint:
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
@@ -45,10 +50,10 @@ class ClientConfiguration:
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
         self.BRIDGE_TIMEOUT = 60  # in seconds
-        self.K8S_CORE_API = k8s.client.CoreV1Api()
-        self.K8S_RBAC_API = k8s.client.RbacAuthorizationV1Api()
-        self.K8S_APP_API = k8s.client.AppsV1Api()
-        self.K8S_CUSTOM_OBJECT_API = k8s.client.CustomObjectsApi()
+        self.K8S_CORE_API = CoreV1Api()
+        self.K8S_RBAC_API = RbacAuthorizationV1Api()
+        self.K8S_APP_API = AppsV1Api()
+        self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
 
     def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if k.isupper()}
