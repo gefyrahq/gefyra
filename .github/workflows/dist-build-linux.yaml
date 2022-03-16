@@ -5,8 +5,10 @@ name: Build Linux binary
 env:
   PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/pyoxidizer-0.18.0-linux-x86_64.zip
 
-on: [push]
-
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:

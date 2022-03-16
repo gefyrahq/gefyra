@@ -5,7 +5,10 @@ name: Build OSX binary
 env:
   PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/pyoxidizer-0.18.0-macos-universal.zip
 
-on: [push]
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   build:
