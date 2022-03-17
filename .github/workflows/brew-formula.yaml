@@ -1,0 +1,18 @@
+# This workflow creates a PR for the formula update
+
+name: Update Homebrew formula
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  update_homebrew:
+    runs-on: macos-10.15
+    steps:
+    - name: Update Homebrew formula
+      env:
+        HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.BREW_TOKEN }}
+      run: |
+        brew tap gefyrahq/gefyra
+        brew bump-formula-pr --version=${{ github.ref_name }} gefyra
