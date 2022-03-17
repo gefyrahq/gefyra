@@ -3,9 +3,10 @@
 name: Update Homebrew formula
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   update_homebrew:
