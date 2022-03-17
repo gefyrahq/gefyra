@@ -1,11 +1,11 @@
 import logging
 
-from gefyra.configuration import ClientConfiguration, default_configuration
+from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
 
-def probe_docker(config: ClientConfiguration = default_configuration):
+def probe_docker(config: ClientConfiguration = ClientConfiguration()):
     logger.debug("Probing: Docker")
     try:
         config.DOCKER.containers.list()
@@ -16,7 +16,7 @@ def probe_docker(config: ClientConfiguration = default_configuration):
         logger.info("Docker: Ok.")
 
 
-def probe_kubernetes(config: ClientConfiguration = default_configuration):
+def probe_kubernetes(config: ClientConfiguration = ClientConfiguration()):
     logger.debug("Probing: Kubernetes")
     try:
         config.K8S_CORE_API.list_namespace()

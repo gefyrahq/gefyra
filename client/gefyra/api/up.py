@@ -2,9 +2,7 @@ import json
 import logging
 
 from docker.errors import APIError
-from kubernetes.client import ApiException
 
-from gefyra.cluster.manager import install_operator
 from gefyra.configuration import default_configuration
 from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
 from gefyra.local.networking import get_free_class_c_netaddress, handle_create_network
@@ -15,6 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
+    from kubernetes.client import ApiException
+    from gefyra.cluster.manager import install_operator
+
     if cargo_endpoint:
         config.CARGO_ENDPOINT = cargo_endpoint
     logger.info("Installing Gefyra Operator")

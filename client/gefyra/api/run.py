@@ -2,12 +2,8 @@ import logging
 import os
 
 from docker.errors import NotFound, APIError
-from kubernetes.client import ApiException
 
-from gefyra.cluster.utils import get_env_from_pod_container
 from gefyra.configuration import default_configuration
-from gefyra.local.bridge import deploy_app_container
-
 from .utils import stopwatch
 from ..local.utils import get_processed_paths
 
@@ -28,6 +24,10 @@ def run(
     env_from: str = None,
     config=default_configuration,
 ) -> bool:
+    from kubernetes.client import ApiException
+    from gefyra.cluster.utils import get_env_from_pod_container
+    from gefyra.local.bridge import deploy_app_container
+
     dns_search = f"{namespace}.svc.cluster.local"
     try:
         config.DOCKER.networks.get(config.NETWORK_NAME)

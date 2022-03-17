@@ -2,18 +2,7 @@ import logging
 from datetime import datetime
 from typing import List
 
-from docker.errors import NotFound
-from kubernetes.watch import Watch
-
-from gefyra.cluster.resources import get_pods_for_workload
 from gefyra.configuration import default_configuration
-from gefyra.local.bridge import (
-    get_ireq_body,
-    handle_create_interceptrequest,
-    handle_delete_interceptrequest,
-    get_all_interceptrequests,
-)
-from gefyra.local.cargo import add_syncdown_job
 
 from .utils import stopwatch
 
@@ -34,6 +23,8 @@ def bridge(
     handle_probes: bool = True,
     config=default_configuration,
 ) -> bool:
+    from docker.errors import NotFound
+
     try:
         container = config.DOCKER.containers.get(name)
     except NotFound:
@@ -52,6 +43,9 @@ def bridge(
         return False
 
     pods_to_intercept = []
+
+    from gefyra.cluster.resources import get_pods_for_workload
+
     if deployment:
         pods_to_intercept.extend(get_pods_for_workload(config, deployment, namespace))
     if statefulset:
@@ -78,6 +72,13 @@ def bridge(
         ] + sync_down_dirs
     else:
         sync_down_dirs = ["/var/run/secrets/kubernetes.io/serviceaccount"]
+
+    from gefyra.local.bridge import (
+        get_ireq_body,
+        handle_create_interceptrequest,
+    )
+
+    from gefyra.local.cargo import add_syncdown_job
 
     ireqs = []
     for idx, pod in enumerate(pods_to_intercept):
@@ -109,6 +110,8 @@ def bridge(
     # block until all bridges are in place
     #
     logger.info("Waiting for the bridge(s) to become active")
+    from kubernetes.watch import Watch
+
     w = Watch()
     for event in w.stream(
         config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
@@ -129,6 +132,8 @@ def unbridge(
     name: str,
     config=default_configuration,
 ) -> bool:
+    from gefyra.local.bridge import handle_delete_interceptrequest
+
     success = handle_delete_interceptrequest(config, name)
     if success:
         logger.info(f"Bridge {name} removed")
@@ -139,6 +144,11 @@ def unbridge(
 def unbridge_all(
     config=default_configuration,
 ) -> bool:
+    from gefyra.local.bridge import (
+        handle_delete_interceptrequest,
+        get_all_interceptrequests,
+    )
+
     ireqs = get_all_interceptrequests(config)
     for ireq in ireqs:
         name = ireq["metadata"]["name"]
