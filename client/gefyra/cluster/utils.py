@@ -2,8 +2,6 @@ import base64
 import logging
 from collections.abc import Mapping
 
-from kubernetes.stream import stream
-
 from gefyra.configuration import ClientConfiguration
 
 
@@ -23,6 +21,8 @@ def decode_secret(u):
 def get_env_from_pod_container(
     config: ClientConfiguration, pod_name: str, namespace: str, container_name: str
 ):
+    from kubernetes.stream import stream
+
     resp = stream(
         config.K8S_CORE_API.connect_get_namespaced_pod_exec,
         pod_name,

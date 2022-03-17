@@ -2,7 +2,6 @@ import logging
 from time import sleep
 
 from docker.models.containers import Container
-from kubernetes.client import ApiException
 
 from gefyra.configuration import ClientConfiguration
 
@@ -24,6 +23,8 @@ def handle_create_interceptrequest(config: ClientConfiguration, body):
 
 
 def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bool:
+    from kubernetes.client import ApiException
+
     try:
         ireq = config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object(
             namespace=config.NAMESPACE,
@@ -43,6 +44,8 @@ def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bo
 
 
 def get_all_interceptrequests(config: ClientConfiguration) -> list:
+    from kubernetes.client import ApiException
+
     try:
         ireq_list = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             namespace=config.NAMESPACE,
@@ -59,6 +62,8 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
 
 
 def remove_interceptrequest_remainder(config: ClientConfiguration):
+    from kubernetes.client import ApiException
+
     try:
         ireq_list = get_all_interceptrequests(config)
         if ireq_list:

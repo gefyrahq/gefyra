@@ -1,6 +1,6 @@
 import logging
 
-from gefyra.configuration import ClientConfiguration, default_configuration
+from gefyra.configuration import default_configuration, ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
