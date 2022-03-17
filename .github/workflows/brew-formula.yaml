@@ -3,6 +3,7 @@
 name: Update Homebrew formula
 
 on:
+  workflow_dispatch: {}
   release:
     types: [created]
 
