@@ -5,7 +5,7 @@ import sys
 from docker import DockerClient, from_env
 
 
-__VERSION__ = "0.6.4"
+__VERSION__ = "0.6.5"
 
 
 class ClientConfiguration(object):
