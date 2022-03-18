@@ -65,10 +65,13 @@ RUN \
 	/var/tmp/*
 # add local files
 COPY /root /
-RUN patch /usr/bin/wg-quick /wgquick.patch
+
 RUN mkdir /rsync
 RUN chmod +x /syncjob.sh
 
 RUN chmod 0644 /etc/cron.d/sync-crontab \
   && crontab /etc/cron.d/sync-crontab \
   && touch /var/log/cron.log
+
+# This might be required for Windows
+# RUN patch /usr/bin/wg-quick /wgquick.patch

@@ -1,10 +1,11 @@
 import struct
 import socket
 import sys
+import logging
 
 from docker import DockerClient, from_env
 
-
+logger = logging.getLogger("gefyra")
 __VERSION__ = "0.6.5"
 
 
@@ -23,10 +24,15 @@ class ClientConfiguration(object):
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
             if sys.platform in ["darwin", "win32"]:
-                # docker for mac/win publishes ports on localhost
-                hostname = socket.gethostname()
-                _ip = socket.gethostbyname(hostname)
-                self.CARGO_ENDPOINT = f"{_ip}:31820"
+                # docker for mac/win publishes ports on a special internal ip
+                try:
+                    _ip_output = self.DOCKER.containers.run(
+                        "alpine", "getent hosts host.docker.internal"
+                    )
+                    _ip = _ip_output.decode("utf-8").split(" ")[0]
+                    self.CARGO_ENDPOINT = f"{_ip}:31820"
+                except Exception as e:
+                    logger.error("Could not create a valid configuration: " + str(e))
             else:
                 # get linux docker0 network address
                 import fcntl
