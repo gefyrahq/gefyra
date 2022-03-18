@@ -6,7 +6,7 @@ import logging
 from docker import DockerClient, from_env
 
 logger = logging.getLogger("gefyra")
-__VERSION__ = "0.6.5"
+__VERSION__ = "0.6.6"
 
 
 class ClientConfiguration(object):
