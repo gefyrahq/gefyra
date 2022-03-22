@@ -2,7 +2,7 @@ import logging
 
 from gefyra.configuration import default_configuration, ClientConfiguration
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("gefyra")
 
 
 def probe_docker(config: ClientConfiguration = default_configuration):
@@ -13,7 +13,7 @@ def probe_docker(config: ClientConfiguration = default_configuration):
     except Exception:
         logger.error("Docker does not seem to be not working for Gefyra")
     else:
-        logger.info("Docker: Ok.")
+        logger.info("Docker: Ok")
 
 
 def probe_kubernetes(config: ClientConfiguration = default_configuration):
@@ -25,4 +25,4 @@ def probe_kubernetes(config: ClientConfiguration = default_configuration):
             "Kubernetes is not connected to a cluster or does not seem to be working for Gefyra"
         )
     else:
-        logger.info("Kubernetes: Ok.")
+        logger.info("Kubernetes: Ok")
