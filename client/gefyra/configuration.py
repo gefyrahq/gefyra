@@ -27,7 +27,7 @@ class ClientConfiguration(object):
                 # docker for mac/win publishes ports on a special internal ip
                 try:
                     _ip_output = self.DOCKER.containers.run(
-                        "alpine", "getent hosts host.docker.internal"
+                        "alpine", "getent hosts host.docker.internal", remove=True
                     )
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
                     self.CARGO_ENDPOINT = f"{_ip}:31820"
