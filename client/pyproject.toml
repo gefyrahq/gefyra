@@ -2,11 +2,11 @@
 name = "Gefyra"
 version = "0.6.6"
 description = "Gefyra runs all developer machine side components of Gefyra's Kubernetes-based development infrastructure"
-authors = ["Michael Schilonka <michael@blueshoe.de>"]
+authors = ["Michael Schilonka <michael@unikube.io>"]
 readme = "README.md"
-homepage = ""
-repository = "https://github.com/Schille/gefyra"
-documentation = ""
+homepage = "https://gefyra.dev"
+repository = "https://github.com/gefyrahq/gefyra"
+documentation = "https://gefyra.dev"
 keywords = [
     "Kubernetes",
     "Development",
@@ -40,4 +40,4 @@ gefyra = "gefyra.__main__:main"
 setversion = "version:set_version"
 
 [tool.poetry.urls]
-issues = "https://github.com/Schille/gefyra/issues"
+issues = "https://github.com/gefyrahq/gefyra/issues"
