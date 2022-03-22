@@ -1,11 +1,9 @@
 import logging
 import os
 
-from docker.errors import NotFound, APIError
-
 from gefyra.configuration import default_configuration
 from .utils import stopwatch
-from ..local.utils import get_processed_paths
+
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +25,8 @@ def run(
     from kubernetes.client import ApiException
     from gefyra.cluster.utils import get_env_from_pod_container
     from gefyra.local.bridge import deploy_app_container
+    from ..local.utils import get_processed_paths
+    from docker.errors import NotFound, APIError
 
     dns_search = f"{namespace}.svc.cluster.local"
     try:
