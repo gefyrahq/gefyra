@@ -23,10 +23,13 @@ console.setFormatter(formatter)
 logger = logging.getLogger("gefyra")
 
 
-parser = argparse.ArgumentParser(description="Gefyra Client")
+parser = argparse.ArgumentParser(
+    prog="gefyra",
+    description="The Gefyra client. For more help please visit: https://gefyra.dev",
+)
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
-version_parser = action.add_parser("version")
+
 
 up_parser = action.add_parser("up")
 up_parser.add_argument(
@@ -111,7 +114,6 @@ intercept_flags = [
 for flag in intercept_flags:
     bridge_parser.add_argument(f"--{flag['name']}")
 
-down_parser = action.add_parser("down")
 unbridge_parser = action.add_parser("unbridge")
 unbridge_parser.add_argument("-N", "--name", help="the name of the bridge")
 unbridge_parser.add_argument(
@@ -124,7 +126,9 @@ list_parser.add_argument(
 list_parser.add_argument(
     "--bridges", help="list all active bridges in Gefyra", action="store_true"
 )
+down_parser = action.add_parser("down")
 check_parser = action.add_parser("check")
+version_parser = action.add_parser("version")
 
 
 def get_intercept_kwargs(parser_args):
@@ -188,9 +192,7 @@ def main():
     elif args.action == "version":
         logger.info(f"Gefyra client version: {configuration.__VERSION__}")
     else:
-        logger.error(
-            f"action must be one of [up, run, bridge, unbridge, list, down, check, version], got {args.action}"
-        )
+        parser.print_help()
 
 
 if __name__ == "__main__":  # noqa
