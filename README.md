@@ -95,6 +95,7 @@ in the cluster.
 instances. This is particularly important for Kubernetes service account tokens during a bridge operation.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
+
 <!-- GETTING STARTED -->
 ## Getting Started
 You can easily try Gefyra yourself following this small example.
@@ -151,7 +152,7 @@ _For more examples, please refer to the [Documentation](https://gefyra.dev)_
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Why "Gefyra"
-"Gefyra" is the Greek word for "Bridge" and fits nicely with kubernetes' nautical theme.
+"Gefyra" is the Greek word for "Bridge" and fits nicely with Kubernetes' nautical theme.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
