@@ -1,28 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import sys
-
-from gefyra import configuration
-from gefyra.api import (
-    bridge,
-    down,
-    run,
-    up,
-    unbridge,
-    unbridge_all,
-    list_interceptrequests,
-)
-from gefyra.local.check import probe_kubernetes, probe_docker
-
-console = logging.StreamHandler(sys.stdout)
-# formatter = logging.Formatter("[%(levelname)s] %(name)s %(message)s")
-formatter = logging.Formatter("[%(levelname)s] %(message)s")
-console.setFormatter(formatter)
 
 logger = logging.getLogger("gefyra")
-
-
 parser = argparse.ArgumentParser(
     prog="gefyra",
     description="The Gefyra client. For more help please visit: https://gefyra.dev",
@@ -141,12 +121,24 @@ def get_intercept_kwargs(parser_args):
 
 
 def main():
+    from gefyra import configuration
+    from gefyra.api import (
+        bridge,
+        down,
+        run,
+        up,
+        unbridge,
+        unbridge_all,
+        list_interceptrequests,
+    )
+    from gefyra.local.check import probe_kubernetes, probe_docker
+
     args = parser.parse_args()
     if args.debug:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
-    logger.addHandler(console)
+    logger.addHandler(configuration.console)
     if args.action == "up":
         up(cargo_endpoint=args.endpoint)
     elif args.action == "run":
@@ -196,4 +188,7 @@ def main():
 
 
 if __name__ == "__main__":  # noqa
-    main()
+    try:
+        main()
+    except Exception as e:
+        logger.fatal(f"There was an error running Gefyra: {e}")

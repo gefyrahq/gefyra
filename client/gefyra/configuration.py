@@ -3,23 +3,36 @@ import socket
 import sys
 import logging
 
-from docker import DockerClient, from_env
+console = logging.StreamHandler(sys.stdout)
+formatter = logging.Formatter("[%(levelname)s] %(message)s")
+console.setFormatter(formatter)
 
 logger = logging.getLogger("gefyra")
+logger.addHandler(console)
+
 __VERSION__ = "0.6.6"
 
 
 class ClientConfiguration(object):
+    from docker import DockerClient
+
     def __init__(
         self,
-        # namespace: str = None,
         docker_client: DockerClient = None,
         network_name: str = None,
         cargo_endpoint: str = None,
         cargo_container_name: str = None,
     ):
+        import docker
+
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
-        self.DOCKER = docker_client or from_env()
+        try:
+            self.DOCKER = docker_client or docker.from_env()
+        except docker.errors.DockerException as de:
+            logger.fatal(f"Docker init error: {de}")
+            raise docker.errors.DockerException(
+                "Docker init error. Docker host not running?"
+            )
         if cargo_endpoint:
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
