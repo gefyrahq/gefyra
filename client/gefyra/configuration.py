@@ -14,25 +14,16 @@ __VERSION__ = "0.6.6"
 
 
 class ClientConfiguration(object):
-    from docker import DockerClient
-
     def __init__(
         self,
-        docker_client: DockerClient = None,
+        docker_client=None,
         network_name: str = None,
         cargo_endpoint: str = None,
         cargo_container_name: str = None,
     ):
-        import docker
-
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
-        try:
-            self.DOCKER = docker_client or docker.from_env()
-        except docker.errors.DockerException as de:
-            logger.fatal(f"Docker init error: {de}")
-            raise docker.errors.DockerException(
-                "Docker init error. Docker host not running?"
-            )
+        if docker_client:
+            self.DOCKER = docker_client
         if cargo_endpoint:
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
@@ -64,6 +55,17 @@ class ClientConfiguration(object):
         self.NETWORK_NAME = network_name or "gefyra"
         self.BRIDGE_TIMEOUT = 60  # in seconds
 
+    def _init_docker(self):
+        import docker
+
+        try:
+            self.DOCKER = docker.from_env()
+        except docker.errors.DockerException as de:
+            logger.fatal(f"Docker init error: {de}")
+            raise docker.errors.DockerException(
+                "Docker init error. Docker host not running?"
+            )
+
     def _init_kubeapi(self):
         from kubernetes.client import (
             CoreV1Api,
@@ -90,6 +92,12 @@ class ClientConfiguration(object):
                 return self.__getattribute__(item)
             except AttributeError:
                 self._init_kubeapi()
+        if item == "DOCKER":
+            try:
+                return self.__getattribute__(item)
+            except AttributeError:
+                self._init_docker()
+
         return self.__getattribute__(item)
 
     def to_dict(self):
