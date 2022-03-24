@@ -11,7 +11,7 @@ on:
 jobs:
   update_homebrew:
     runs-on: macos-10.15
-    if: ${{ github.event.workflow_run.event.action == 'published' }}
+    if: ${{ github.event.workflow_run.event == 'release' }}
     steps:
     - uses: actions/checkout@v2
     - name: Update Homebrew formula
