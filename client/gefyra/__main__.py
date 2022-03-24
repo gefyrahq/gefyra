@@ -190,5 +190,7 @@ def main():
 if __name__ == "__main__":  # noqa
     try:
         main()
+        exit(0)
     except Exception as e:
         logger.fatal(f"There was an error running Gefyra: {e}")
+        exit(1)
