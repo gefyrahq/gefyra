@@ -4,8 +4,9 @@ name: Update Homebrew formula
 
 on:
   workflow_dispatch: {}
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Build OSX binary"]
+    types: [completed]
 
 jobs:
   update_homebrew:
