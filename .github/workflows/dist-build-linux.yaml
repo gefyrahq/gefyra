@@ -9,6 +9,8 @@ on:
   push:
     tags:
       - '*'
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -39,3 +41,11 @@ jobs:
           LICENSE
           README.md
         retention-days: 5
+    - name: Create release zip
+      if: ${{ github.event.release && github.event.action == 'published' }}
+      run: zip gefyra-${{ env.APP_VERSION }}-linux-amd64.zip "gefyra" "LICENSE" "README.md"
+    - name: Attach files to release
+      uses: softprops/action-gh-release@v1
+      if: ${{ github.event.release && github.event.action == 'published' }}
+      with:
+        files: gefyra-${{ env.APP_VERSION }}-linux-amd64.zip
