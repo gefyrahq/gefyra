@@ -162,6 +162,16 @@ Distributed under the Apache License 2.0. See `LICENSE` for more information.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
+## Reporting Bugs
+If you encounter issues, please create a new issue on GitHub or talk to us on the
+[unikube Slack channel](https://unikubeworkspace.slack.com/). 
+When reporting a bug please include the following information:
+
+Gefyra version or Git commit that you're running (gefyra version),
+description of the bug and logs from the relevant `gefyra` command (if applicable),
+steps to reproduce the issue, expected behavior.
+If you're reporting a security vulnerability, please follow the process for reporting security issues.
+
 ## Acknowledgments
 Gefyra is based on well-crafted open source software. Special credits go to the teams of 
 [https://www.linuxserver.io/](linxuserver.io) and [https://git.zx2c4.com/wireguard-go/about/](Wireguard(-go)). Please
