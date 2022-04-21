@@ -147,7 +147,7 @@ The following actions are available in Gefyra's CLI:
 - `check`: check local system dependencies 
 - `version`: print the current version and exit
 
-_For more examples, please refer to the [Documentation](https://gefyra.dev)_
+_For more examples, please refer to the [CLI documentation](https://gefyra.dev/reference/cli)_
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

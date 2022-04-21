@@ -1,7 +1,8 @@
 import logging
 from random import choice
 
-from docker.errors import NotFound
+
+from docker.errors import NotFound, APIError
 from docker.models.networks import Network
 from docker.types import IPAMConfig, IPAMPool
 
@@ -19,7 +20,7 @@ def handle_create_network(
         return network
     except NotFound:
         pass
-    ipam_pool = IPAMPool(subnet=f"{network_address}/24", aux_addresses=aux_addresses)
+    ipam_pool = IPAMPool(subnet=f"{network_address}", aux_addresses=aux_addresses)
     ipam_config = IPAMConfig(pool_configs=[ipam_pool])
     network = config.DOCKER.networks.create(
         config.NETWORK_NAME, driver="bridge", ipam=ipam_config
@@ -32,12 +33,13 @@ def handle_remove_network(config: ClientConfiguration) -> None:
     """Removes all docker networks with the given name."""
     # we would need the id to identify the network unambiguously, so we just remove all networks that can be found with
     # the given name, under the assumption that no other docker network inadvertently uses the same name
-    networks = config.DOCKER.networks.list(config.NETWORK_NAME)
-    for network in networks:
-        network.remove()
-    logger.info(
-        f"Removed {len(networks)} docker networks with name '{config.NETWORK_NAME}'"
-    )
+    try:
+        gefyra_network = config.DOCKER.networks.get(config.NETWORK_NAME)
+        gefyra_network.remove()
+    except NotFound:
+        pass
+    except APIError as e:
+        logger.error(f"Could not remove network due to the following error: {e}")
 
 
 def kill_remainder_container_in_network(
@@ -55,15 +57,23 @@ def kill_remainder_container_in_network(
 
 
 def get_free_class_c_netaddress(config: ClientConfiguration):
+    import socket
+
     taken_netaddress = []
+    # get all local address spaces
+    local_addrs = socket.getaddrinfo(socket.gethostname(), None)
+    for local_addr in local_addrs:
+        taken_netaddress.append(str(local_addr[4][0]))
+    # get additional docker address spaces
     for network in config.DOCKER.networks.list():
         try:
             config_list = network.attrs["IPAM"]["Config"]
             for config in config_list:
-                taken_netaddress.append(config["Subnet"])
+                taken_netaddress.append(config.get("Subnet"))
         except KeyError:
             continue
+    logger.debug(f"Taken address pools: {taken_netaddress}")
     class_c = filter(lambda s: s.startswith("192.168."), taken_netaddress)
     exc_tho = [int(o.split(".")[2]) for o in class_c]
     tho = choice([i for i in range(10, 200) if i not in exc_tho])
-    return f"192.168.{tho}.0"
+    return f"192.168.{tho}.0/24"
