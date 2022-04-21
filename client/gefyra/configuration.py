@@ -22,6 +22,11 @@ class ClientConfiguration(object):
         cargo_container_name: str = None,
     ):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
+        self.OPERATOR_IMAGE = "gefyra/operator:latest"
+        self.STOWAWAY_IMAGE = "gefyra/stowaway:latest"
+        self.CARRIER_IMAGE = "gefyra/carrier"
+        self.CARGO_IMAGE = "gefyra/cargo:latest"
+        self.REGISTRY_URL = "quay.io"
         if docker_client:
             self.DOCKER = docker_client
         if cargo_endpoint:
@@ -105,6 +110,18 @@ class ClientConfiguration(object):
 
     def __str__(self):
         return str(self.to_dict())
+
+    @property
+    def operator_image_url(self):
+        return f"{self.REGISTRY_URL}/{self.OPERATOR_IMAGE}"
+
+    @property
+    def stowaway_image_url(self):
+        return f"{self.REGISTRY_URL}/{self.STOWAWAY_IMAGE}"
+
+    @property
+    def carrier_image_url(self):
+        return f"{self.REGISTRY_URL}/{self.CARRIER_IMAGE}"
 
 
 default_configuration = ClientConfiguration()

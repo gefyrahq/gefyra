@@ -18,6 +18,36 @@ up_parser.add_argument(
     help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to",
     required=False,
 )
+up_parser.add_argument(
+    "-o",
+    "--operator",
+    help="Registry url for the operator image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-s",
+    "--stowaway",
+    help="Registry url for the stowaway image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-c",
+    "--carrier",
+    help="Registry url for the carrier image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-a",
+    "--cargo",
+    help="Registry url for the cargo image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-r",
+    "--registry",
+    help="Base url for registry to pull images from.",
+    required=False,
+)
 run_parser = action.add_parser("run")
 run_parser.add_argument(
     "-i", "--image", help="the docker image to run in Gefyra", required=True
@@ -140,7 +170,14 @@ def main():
         logger.setLevel(logging.INFO)
     logger.addHandler(configuration.console)
     if args.action == "up":
-        up(cargo_endpoint=args.endpoint)
+        up(
+            cargo_endpoint=args.endpoint,
+            operator_image_url=args.operator,
+            stowaway_image_url=args.stowaway,
+            carrier_image_url=args.carrier,
+            cargo_image_url=args.cargo,
+            registry_url=args.registry,
+        )
     elif args.action == "run":
         run(
             image=args.image,

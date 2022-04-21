@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Any
 
 from gefyra.configuration import default_configuration
 
@@ -9,7 +10,35 @@ from . import down
 logger = logging.getLogger(__name__)
 
 
-def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
+def set_image_urls(
+    operator_image_url: str = None,
+    stowaway_image_url: str = None,
+    carrier_image_url: str = None,
+    cargo_image_url: str = None,
+    registry_url: str = None,
+    config: Any
+):
+    if operator_image_url:
+        config.OPERATOR_IMAGE = operator_image_url
+    if stowaway_image_url:
+        config.STOWAWAY_IMAGE = stowaway_image_url
+    if carrier_image_url:
+        config.CARRIER_IMAGE = carrier_image_url
+    if cargo_image_url:
+        config.CARGO_IMAGE = cargo_image_url
+    if registry_url:
+        config.REGISTRY_URL = registry_url
+
+
+def up(
+        cargo_endpoint: str = None,
+        config=default_configuration,
+        operator_image_url: str = None,
+        stowaway_image_url: str = None,
+        carrier_image_url: str = None,
+        cargo_image_url: str = None,
+        registry_url: str = None,
+) -> bool:
     from kubernetes.client import ApiException
     from gefyra.cluster.manager import install_operator
     from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
@@ -18,6 +47,15 @@ def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
         handle_create_network,
     )
     from docker.errors import APIError
+
+    set_image_urls(
+        operator_image_url=operator_image_url,
+        stowaway_image_url=stowaway_image_url,
+        carrier_image_url=carrier_image_url,
+        cargo_image_url=cargo_image_url,
+        registry_url=registry_url,
+        config=config,
+    )
 
     if cargo_endpoint:
         config.CARGO_ENDPOINT = cargo_endpoint
