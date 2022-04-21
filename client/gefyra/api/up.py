@@ -26,8 +26,13 @@ def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
     # Deploy Operator to cluster, aligned with local conditions
     #
     try:
+        logger.debug("Creating Docker network")
         network_address = get_free_class_c_netaddress(config)
-        cargo_connection_details = install_operator(config, network_address)
+        gefyra_network = handle_create_network(config, network_address, {})
+        logger.debug(f"Network {gefyra_network.attrs}")
+        cargo_connection_details = install_operator(
+            config, gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
+        )
     except ApiException as e:
         data = json.loads(e.body)
         try:
@@ -44,8 +49,6 @@ def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
         stowaway_ip_address = cargo_connection_details["Interface.DNS"].split(" ")[0]
         logger.debug(f"Cargo com net ip address: {cargo_com_net_ip_address}")
         logger.debug(f"Stowaway com net ip address: {stowaway_ip_address}")
-        logger.info("Creating Docker network")
-        gefyra_network = handle_create_network(config, network_address, {})
         # well known cargo address
         logger.debug(gefyra_network.attrs)
         cargo_ip_address = get_cargo_ip_from_netaddress(

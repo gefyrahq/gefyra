@@ -101,7 +101,7 @@ def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) ->
         serviceaccount, clusterrole, config.NAMESPACE
     )
     operator_deployment = create_operator_deployment(
-        serviceaccount, config.NAMESPACE, f"{gefyra_network_subnet}/24"
+        serviceaccount, config.NAMESPACE, f"{gefyra_network_subnet}"
     )
     handle_serviceaccount(config, serviceaccount)
     handle_clusterrole(config, clusterrole)
