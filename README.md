@@ -164,7 +164,7 @@ Distributed under the Apache License 2.0. See `LICENSE` for more information.
 
 ## Reporting Bugs
 If you encounter issues, please create a new issue on GitHub or talk to us on the
-[unikube Slack channel](https://unikubeworkspace.slack.com/). 
+[Unikube Slack channel](https://unikubeworkspace.slack.com/). 
 When reporting a bug please include the following information:
 
 Gefyra version or Git commit that you're running (gefyra version),
