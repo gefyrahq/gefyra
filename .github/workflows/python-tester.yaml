@@ -1,0 +1,35 @@
+name: pytest
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Pytest
+      run: |
+        poetry install
+        pytest
+    # Run the 'Try it yourself'
+    - uses: AbsaOSS/k3d-action@v2
+      name: Create Single Cluster
+      with:
+        cluster-name: "mycluster"
+        args: >-
+          --agents 1
+          -p "31820:31820/UDP@agent:0"
+    - name: Apply some workload
+      run: |
+        kubectl apply -f testing/workloads/hello.yaml
+    - name: Run gefyra up
+      working-directory: ./client
+      run: |
+        python -m gefyra up

@@ -21,13 +21,44 @@ class ClientConfiguration(object):
         cargo_endpoint: str = None,
         cargo_container_name: str = None,
         registry_url: str = None,
+        operator_image_url: str = None,
+        stowaway_image_url: str = None,
+        carrier_image_url: str = None,
+        cargo_image_url: str = None,
     ):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
-        self.REGISTRY_URL = registry_url or "quay.io"
-        self.OPERATOR_IMAGE = f"{self.REGISTRY_URL}/gefyra/operator:{__VERSION__}"
-        self.STOWAWAY_IMAGE = f"{self.REGISTRY_URL}/gefyra/stowaway:{__VERSION__}"
-        self.CARRIER_IMAGE = f"{self.REGISTRY_URL}/gefyra/carrier:{__VERSION__}"
-        self.CARGO_IMAGE = f"{self.REGISTRY_URL}/gefyra/cargo:{__VERSION__}"
+        self.REGISTRY_URL = (
+            registry_url.rstrip("/") if registry_url else "quay.io/gefyra"
+        )
+        if registry_url:
+            logger.debug(
+                f"Using registry prefix (other than default): {self.REGISTRY_URL}"
+            )
+        self.OPERATOR_IMAGE = (
+            operator_image_url or f"{self.REGISTRY_URL}/operator:{__VERSION__}"
+        )
+        if operator_image_url:
+            logger.debug(
+                f"Using Operator image (other than default): {operator_image_url}"
+            )
+        self.STOWAWAY_IMAGE = (
+            stowaway_image_url or f"{self.REGISTRY_URL}/stowaway:{__VERSION__}"
+        )
+        if stowaway_image_url:
+            logger.debug(
+                f"Using Stowaway image (other than default): {stowaway_image_url}"
+            )
+        self.CARRIER_IMAGE = (
+            carrier_image_url or f"{self.REGISTRY_URL}/carrier:{__VERSION__}"
+        )
+        if carrier_image_url:
+            logger.debug(
+                f"Using Carrier image (other than default): {carrier_image_url}"
+            )
+        self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
+        if cargo_image_url:
+            logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
+
         if docker_client:
             self.DOCKER = docker_client
         if cargo_endpoint:
