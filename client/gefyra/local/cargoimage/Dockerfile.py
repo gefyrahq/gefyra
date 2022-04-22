@@ -2,10 +2,11 @@
 import io
 import sys
 
+
 def get_dockerfile(cargo_image):
     if sys.platform == "win32":
         return io.BytesIO(
-        f""" 
+            f""" 
 FROM {cargo_image}
 RUN patch /usr/bin/wg-quick /wgquick.patch
 
@@ -32,9 +33,9 @@ AllowedIPs = '"$ALLOWED_IPS" > /config/wg0.conf
 
 RUN cat /config/wg0.conf
 """.encode(
-        "utf-8"
-    )
-)
+                "utf-8"
+            )
+        )
     else:
         return io.BytesIO(
             f""" 

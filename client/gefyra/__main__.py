@@ -154,6 +154,7 @@ def get_intercept_kwargs(parser_args):
 
 def up_command(args):
     from gefyra.api import up
+
     if any(
         hasattr(args, p)
         for p in ["operator", "stowaway", "carrier", "cargo", "registry"]
