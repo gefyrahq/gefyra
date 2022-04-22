@@ -18,7 +18,7 @@ jobs:
       working-directory: ./client
       run: |
         poetry install
-        pytest
+        poetry run pytest
     # Run the 'Try it yourself'
     - uses: AbsaOSS/k3d-action@v2
       name: Create Single Cluster
