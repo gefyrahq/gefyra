@@ -112,17 +112,5 @@ class ClientConfiguration(object):
     def __str__(self):
         return str(self.to_dict())
 
-    @property
-    def operator_image_url(self):
-        return f"{self.REGISTRY_URL}/{self.OPERATOR_IMAGE}"
-
-    @property
-    def stowaway_image_url(self):
-        return f"{self.REGISTRY_URL}/{self.STOWAWAY_IMAGE}"
-
-    @property
-    def carrier_image_url(self):
-        return f"{self.REGISTRY_URL}/{self.CARRIER_IMAGE}"
-
 
 default_configuration = ClientConfiguration()
