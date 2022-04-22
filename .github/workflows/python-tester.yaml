@@ -33,4 +33,4 @@ jobs:
     - name: Run gefyra up
       working-directory: ./client
       run: |
-        python -m gefyra up
+        poetry run gefyra up
