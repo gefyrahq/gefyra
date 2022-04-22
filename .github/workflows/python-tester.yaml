@@ -1,4 +1,4 @@
-name: pytest
+name: pytest and try it yourself example
 
 on: [push, pull_request]
 
@@ -34,3 +34,23 @@ jobs:
       working-directory: ./client
       run: |
         poetry run gefyra up
+    - name: Build a docker file
+      working-directory: testing/images/
+      run: |
+        docker build -f Dockerfile.local . -t pyserver
+    - name: Run gefyra run
+      working-directory: ./client
+      run: |
+        poetry run gefyra run -i pyserver -N mypyserver -n default
+    - name: Run gefyra bridge
+      working-directory: ./client
+      run: |
+        poetry run gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
+    - name: "Run gefyra list --bridges"
+      working-directory: ./client
+      run: |
+        poetry run gefyra list --bridges
+    - name: Run gefyra down
+      working-directory: ./client
+      run: |
+        poetry run gefyra down
