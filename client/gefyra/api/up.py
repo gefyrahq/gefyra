@@ -1,6 +1,5 @@
 import json
 import logging
-from typing import Any
 
 from gefyra.configuration import default_configuration
 
@@ -10,10 +9,7 @@ from . import down
 logger = logging.getLogger(__name__)
 
 
-def up(
-        cargo_endpoint: str = None,
-        config=default_configuration
-) -> bool:
+def up(cargo_endpoint: str = None, config=default_configuration) -> bool:
     from kubernetes.client import ApiException
     from gefyra.cluster.manager import install_operator
     from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress

@@ -117,9 +117,15 @@ def create_operator_deployment(
                     name="gefyra-operator",
                     image=config.OPERATOR_IMAGE,
                     env=[
-                        V1EnvVar(name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet),
-                        V1EnvVar(name="GEFYRA_STOWAWAY_IMAGE", value=config.STOWAWAY_IMAGE),
-                        V1EnvVar(name="GEFYRA_CARRIER_IMAGE", value=config.OPERATOR_IMAGE),
+                        V1EnvVar(
+                            name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet
+                        ),
+                        V1EnvVar(
+                            name="GEFYRA_STOWAWAY_IMAGE", value=config.STOWAWAY_IMAGE
+                        ),
+                        V1EnvVar(
+                            name="GEFYRA_CARRIER_IMAGE", value=config.OPERATOR_IMAGE
+                        ),
                     ],
                 )
             ],

@@ -152,13 +152,35 @@ def get_intercept_kwargs(parser_args):
     return kwargs
 
 
+def up_command(args):
+    from gefyra.api import up
+    if any(
+        hasattr(args, p)
+        for p in ["operator", "stowaway", "carrier", "cargo", "registry"]
+    ):
+        configuration = ClientConfiguration()
+        if args.registry:
+            configuration.REGISTRY_URL = args.registry
+            configuration = ClientConfiguration(registry_url=args.registry)
+        if args.operator:
+            configuration.OPERATOR_IMAGE = args.operator
+        if args.cargo:
+            configuration.CARGO_IMAGE = args.cargo
+        if args.stowaway:
+            configuration.STOWAWAY_IMAGE = args.stowaway
+        if args.carrier:
+            configuration.CARRIER_IMAGE = args.carrier
+        up(cargo_endpoint=args.endpoint, config=configuration)
+    else:
+        up(cargo_endpoint=args.endpoint)
+
+
 def main():
     from gefyra import configuration
     from gefyra.api import (
         bridge,
         down,
         run,
-        up,
         unbridge,
         unbridge_all,
         list_interceptrequests,
@@ -172,27 +194,7 @@ def main():
         logger.setLevel(logging.INFO)
     logger.addHandler(configuration.console)
     if args.action == "up":
-        if(any(hasattr(args, p) for p in["operator", "stowaway", "carrier", "cargo", "registry"])):
-            configuration = ClientConfiguration()
-            if args.registry:
-                configuration.REGISTRY_URL = args.registry
-                configuration = ClientConfiguration(
-                    registry_url=args.registry
-                )
-            if args.operator:
-                configuration.OPERATOR_IMAGE = args.operator
-            if args.cargo:
-                configuration.CARGO_IMAGE = args.cargo
-            if args.stowaway:
-                configuration.STOWAWAY_IMAGE = args.stowaway
-            if args.carrier:
-                configuration.CARRIER_IMAGE = args.carrier
-            up(
-                cargo_endpoint=args.endpoint,
-                config=configuration
-            )
-        else:
-            up(cargo_endpoint=args.endpoint)
+        up_command(args)
     elif args.action == "run":
         run(
             image=args.image,

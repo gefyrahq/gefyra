@@ -20,7 +20,7 @@ class ClientConfiguration(object):
         network_name: str = None,
         cargo_endpoint: str = None,
         cargo_container_name: str = None,
-        registry_url: str = None
+        registry_url: str = None,
     ):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
         self.REGISTRY_URL = registry_url or "quay.io"

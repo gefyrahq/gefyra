@@ -139,9 +139,7 @@ def uninstall_operator(config: ClientConfiguration):
     clusterrolebinding = create_operator_clusterrolebinding(
         serviceaccount, clusterrole, config.NAMESPACE
     )
-    operator_deployment = create_operator_deployment(
-        serviceaccount, config, ""
-    )
+    operator_deployment = create_operator_deployment(serviceaccount, config, "")
     try:
         config.K8S_APP_API.delete_namespaced_deployment(
             name=operator_deployment.metadata.name, namespace=config.NAMESPACE
