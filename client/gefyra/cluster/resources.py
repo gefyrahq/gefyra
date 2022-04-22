@@ -105,7 +105,7 @@ def create_operator_clusterrolebinding(
 
 def create_operator_deployment(
     serviceaccount: V1ServiceAccount,
-    namespace: str,
+    config: ClientConfiguration,
     gefyra_network_subnet: str,
 ) -> V1Deployment:
 
@@ -115,9 +115,11 @@ def create_operator_deployment(
             containers=[
                 V1Container(
                     name="gefyra-operator",
-                    image="quay.io/gefyra/operator:latest",
+                    image=config.OPERATOR_IMAGE,
                     env=[
-                        V1EnvVar(name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet)
+                        V1EnvVar(name="GEFYRA_PEER_SUBNET", value=gefyra_network_subnet),
+                        V1EnvVar(name="GEFYRA_STOWAWAY_IMAGE", value=config.STOWAWAY_IMAGE),
+                        V1EnvVar(name="GEFYRA_CARRIER_IMAGE", value=config.OPERATOR_IMAGE),
                     ],
                 )
             ],
@@ -132,7 +134,7 @@ def create_operator_deployment(
     deployment = V1Deployment(
         api_version="apps/v1",
         kind="Deployment",
-        metadata=V1ObjectMeta(name="gefyra-operator", namespace=namespace),
+        metadata=V1ObjectMeta(name="gefyra-operator", namespace=config.NAMESPACE),
         spec=spec,
     )
 

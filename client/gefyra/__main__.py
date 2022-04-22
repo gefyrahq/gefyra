@@ -2,6 +2,8 @@
 import argparse
 import logging
 
+from gefyra.configuration import ClientConfiguration
+
 logger = logging.getLogger("gefyra")
 parser = argparse.ArgumentParser(
     prog="gefyra",
@@ -170,14 +172,27 @@ def main():
         logger.setLevel(logging.INFO)
     logger.addHandler(configuration.console)
     if args.action == "up":
-        up(
-            cargo_endpoint=args.endpoint,
-            operator_image_url=args.operator,
-            stowaway_image_url=args.stowaway,
-            carrier_image_url=args.carrier,
-            cargo_image_url=args.cargo,
-            registry_url=args.registry,
-        )
+        if(any(hasattr(args, p) for p in["operator", "stowaway", "carrier", "cargo", "registry"])):
+            configuration = ClientConfiguration()
+            if args.registry:
+                configuration.REGISTRY_URL = args.registry
+                configuration = ClientConfiguration(
+                    registry_url=args.registry
+                )
+            if args.operator:
+                configuration.OPERATOR_IMAGE = args.operator
+            if args.cargo:
+                configuration.CARGO_IMAGE = args.cargo
+            if args.stowaway:
+                configuration.STOWAWAY_IMAGE = args.stowaway
+            if args.carrier:
+                configuration.CARRIER_IMAGE = args.carrier
+            up(
+                cargo_endpoint=args.endpoint,
+                config=configuration
+            )
+        else:
+            up(cargo_endpoint=args.endpoint)
     elif args.action == "run":
         run(
             image=args.image,

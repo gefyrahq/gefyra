@@ -20,13 +20,14 @@ class ClientConfiguration(object):
         network_name: str = None,
         cargo_endpoint: str = None,
         cargo_container_name: str = None,
+        registry_url: str = None
     ):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
-        self.OPERATOR_IMAGE = "gefyra/operator:latest"
-        self.STOWAWAY_IMAGE = "gefyra/stowaway:latest"
-        self.CARRIER_IMAGE = "gefyra/carrier"
-        self.CARGO_IMAGE = "gefyra/cargo:latest"
-        self.REGISTRY_URL = "quay.io"
+        self.REGISTRY_URL = registry_url or "quay.io"
+        self.OPERATOR_IMAGE = f"{self.REGISTRY_URL}/gefyra/operator:{__VERSION__}"
+        self.STOWAWAY_IMAGE = f"{self.REGISTRY_URL}/gefyra/stowaway:{__VERSION__}"
+        self.CARRIER_IMAGE = f"{self.REGISTRY_URL}/gefyra/carrier:{__VERSION__}"
+        self.CARGO_IMAGE = f"{self.REGISTRY_URL}/gefyra/cargo:{__VERSION__}"
         if docker_client:
             self.DOCKER = docker_client
         if cargo_endpoint:
