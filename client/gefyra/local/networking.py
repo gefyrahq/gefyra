@@ -11,6 +11,23 @@ from gefyra.configuration import ClientConfiguration
 logger = logging.getLogger(__name__)
 
 
+def create_gefyra_network(config: ClientConfiguration) -> Network:
+    _exc = None
+    for _attempt in range(0, 5):
+        try:
+            network_address = get_free_class_c_netaddress(config)
+            gefyra_network = handle_create_network(config, network_address, {})
+            logger.debug(f"Network {gefyra_network.attrs}")
+        except APIError as e:
+            # the Gefyra network was not created, probably due to the 'pool overlap' error
+            _exc = e
+            continue
+        break
+    else:
+        raise Exception(f"Gefyra finally failed to create a network: {_exc}")
+    return gefyra_network
+
+
 def handle_create_network(
     config: ClientConfiguration, network_address: str, aux_addresses: dict
 ) -> Network:

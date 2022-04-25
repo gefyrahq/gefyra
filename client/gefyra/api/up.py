@@ -6,6 +6,7 @@ from gefyra.configuration import default_configuration
 
 from . import down
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,10 +14,7 @@ def up(config=default_configuration) -> bool:
     from kubernetes.client import ApiException
     from gefyra.cluster.manager import install_operator
     from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
-    from gefyra.local.networking import (
-        get_free_class_c_netaddress,
-        handle_create_network,
-    )
+    from gefyra.local.networking import create_gefyra_network
     from docker.errors import APIError
 
     logger.info("Installing Gefyra Operator")
@@ -25,9 +23,9 @@ def up(config=default_configuration) -> bool:
     #
     try:
         logger.debug("Creating Docker network")
-        network_address = get_free_class_c_netaddress(config)
-        gefyra_network = handle_create_network(config, network_address, {})
-        logger.debug(f"Network {gefyra_network.attrs}")
+        # The 'pool overlap' error was not yet resolved other than retry
+        gefyra_network = create_gefyra_network(config)
+
         cargo_connection_details = install_operator(
             config, gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
         )

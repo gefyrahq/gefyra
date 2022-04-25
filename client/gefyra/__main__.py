@@ -7,7 +7,7 @@ from gefyra.configuration import ClientConfiguration
 logger = logging.getLogger("gefyra")
 parser = argparse.ArgumentParser(
     prog="gefyra",
-    description="The Gefyra client. For more help please visit: https://gefyra.dev",
+    description="The Gefyra client. For more help please visit: https://gefyra.dev/reference/cli/",
 )
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
