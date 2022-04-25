@@ -6,6 +6,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
+[![Coverage Information][coveralls-shield]][coveralls-url]
 
 
 <!-- PROJECT LOGO -->
@@ -197,5 +198,7 @@ Doge is excited about that.
 [issues-url]: https://github.com/gefyrahq/gefyra/issues
 [license-shield]: https://img.shields.io/github/license/gefyrahq/gefyra.svg?style=for-the-badge
 [license-url]: https://github.com/gefyrahq/gefyra/blob/master/LICENSE.txt
+[coveralls-shield]: https://img.shields.io/coveralls/github/gefyrahq/gefyra/main?style=for-the-badge
+[coveralls-url]: https://coveralls.io/github/gefyrahq/gefyra
 
 
