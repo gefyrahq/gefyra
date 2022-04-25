@@ -1,6 +1,10 @@
 name: pytest and try it yourself example
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   test:
@@ -18,7 +22,7 @@ jobs:
       working-directory: ./client
       run: |
         poetry install
-        poetry run pytest
+        poetry run coverage run -m pytest
     # Run the 'Try it yourself'
     - uses: AbsaOSS/k3d-action@v2
       name: Create Single Cluster
@@ -33,7 +37,7 @@ jobs:
     - name: Run gefyra up
       working-directory: ./client
       run: |
-        poetry run gefyra up
+        poetry run coverage run -a -m gefyra up
     - name: Build a docker file
       working-directory: testing/images/
       run: |
@@ -41,16 +45,41 @@ jobs:
     - name: Run gefyra run
       working-directory: ./client
       run: |
-        poetry run gefyra run -i pyserver -N mypyserver -n default
+        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default
     - name: Run gefyra bridge
       working-directory: ./client
       run: |
-        poetry run gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
+        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
     - name: "Run gefyra list --bridges"
       working-directory: ./client
       run: |
-        poetry run gefyra list --bridges
+        poetry run coverage run -a -m gefyra list --bridges
     - name: Run gefyra down
       working-directory: ./client
       run: |
-        poetry run gefyra down
+        poetry run coverage run -a -m gefyra down
+    - name: Show coverage report
+      working-directory: ./client
+      run: |
+        poetry run coverage report
+    - name: Upload coverage data to coveralls.io
+      working-directory: ./client
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+        COVERALLS_PARALLEL: true
+      run: |
+        poetry run coveralls --service=github
+  coveralls:
+    name: Indicate completion to coveralls.io
+    # need secrets.GITHUB_TOKEN
+    needs: test
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+      - name: Finished
+        run: |
+          pip3 install --upgrade coveralls
+          coveralls --finish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
