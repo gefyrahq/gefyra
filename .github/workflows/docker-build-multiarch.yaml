@@ -44,7 +44,7 @@ jobs:
             quay.io/gefyra/operator
           tags: |
             type=raw,value=latest,enable=${{ github.event_name == 'push' }}
-            type=raw,value={{tag}},enable=${{ github.event_name == 'tags') }}
+            type=raw,value={{tag}},enable=${{ github.event_name == 'tags' }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
