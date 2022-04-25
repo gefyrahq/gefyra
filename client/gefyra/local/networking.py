@@ -75,5 +75,7 @@ def get_free_class_c_netaddress(config: ClientConfiguration):
     logger.debug(f"Taken address pools: {taken_netaddress}")
     class_c = filter(lambda s: s.startswith("192.168."), taken_netaddress)
     exc_tho = [int(o.split(".")[2]) for o in class_c]
+    # exclude Gefyra's internal segment
+    exc_tho.append(99)
     tho = choice([i for i in range(10, 200) if i not in exc_tho])
     return f"192.168.{tho}.0/24"
