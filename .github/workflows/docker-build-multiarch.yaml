@@ -36,6 +36,7 @@ jobs:
       # Gefyra Operator
       #
       - name: Operator Image meta
+        id: operator_meta
         uses: docker/metadata-action@v3
         with:
           flavor: |
@@ -51,12 +52,13 @@ jobs:
           context: operator/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.operator_meta.outputs.tags }}
       #
       # Gefyra Cargo
       #
       - name: Cargo Image meta
         uses: docker/metadata-action@v3
+        id: cargo_meta
         with:
           flavor: |
             latest=false
@@ -71,12 +73,13 @@ jobs:
           context: cargo/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.cargo_meta.outputs.tags }}
       #
       # Gefyra Carrier
       #
       - name: Carrier Image meta
         uses: docker/metadata-action@v3
+        id: carrier_meta
         with:
           flavor: |
             latest=false
@@ -91,12 +94,13 @@ jobs:
           context: carrier/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.carrier_meta.outputs.tags }}
       #
       # Gefyra Stowaway
       #
       - name: Stowaway Image meta
         uses: docker/metadata-action@v3
+        id: stowaway_meta
         with:
           flavor: |
             latest=false
@@ -111,4 +115,4 @@ jobs:
           context: stowaway/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.stowaway_meta.outputs.tags }}
