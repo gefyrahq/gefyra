@@ -43,8 +43,8 @@ jobs:
           images: |
             quay.io/gefyra/operator
           tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
-            type=raw,value={{tag}},enable=${{ github.event_name == 'tags' }}
+            type=raw,value=latest,enable=${{ !startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -63,8 +63,8 @@ jobs:
           images: |
             quay.io/gefyra/cargo
           tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
-            type=raw,value={{tag}},enable=${{ github.event_name == 'tags' }}
+            type=raw,value=latest,enable=${{ !startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -83,8 +83,8 @@ jobs:
           images: |
             quay.io/gefyra/carrier
           tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
-            type=raw,value={{tag}},enable=${{ github.event_name == 'tags' }}
+            type=raw,value=latest,enable=${{ !startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -103,8 +103,8 @@ jobs:
           images: |
             quay.io/gefyra/stowaway
           tags: |
-            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
-            type=raw,value={{tag}},enable=${{ github.event_name == 'tags' }}
+            type=raw,value=latest,enable=${{ !startsWith(github.ref, 'refs/tags/') }}
+            type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
