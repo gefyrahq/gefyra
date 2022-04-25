@@ -120,3 +120,20 @@ def add_syncdown_job(
         + f"\n{bridge_name};{to_container_name};{from_pod}/{from_container};{relative};{target}"
     )
     put_syncdown_config(config, configfile)
+
+
+def probe_wireguard_connection(config: ClientConfiguration):
+    cargo = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+    for _attempt in range(0, config.CARGO_PROBE_TIMEOUT):
+        _r = cargo.exec_run(f"timeout 1 ping -c 1 {config.STOWAWAY_IP}")
+        if _r.exit_code != 0:
+            continue
+        else:
+            break
+    else:
+        raise Exception(
+            f"Gefyra could not successfully confirm the Wireguard connection working. Please make sure you "
+            f"are using the --endpoint argument for remote clusters and that {config.CARGO_ENDPOINT} can "
+            f"reach Kubernetes node port 31820 from this machine. Please check your firewall "
+            f"settings, too."
+        )

@@ -168,75 +168,75 @@ def up_command(args):
 
 
 def main():
-    from gefyra import configuration
-    from gefyra.api import (
-        bridge,
-        down,
-        run,
-        unbridge,
-        unbridge_all,
-        list_interceptrequests,
-    )
-    from gefyra.local.check import probe_kubernetes, probe_docker
-
-    args = parser.parse_args()
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(logging.INFO)
-    logger.addHandler(configuration.console)
-    if args.action == "up":
-        up_command(args)
-    elif args.action == "run":
-        run(
-            image=args.image,
-            name=args.name,
-            command=" ".join(args.command) if args.command else None,
-            namespace=args.namespace,
-            env_from=args.env_from,
-            env=args.env,
-            volumes=args.volume,
-        )
-    elif args.action == "bridge":
-        bridge(
-            args.name,
-            args.port,
-            container_name=args.container_name,
-            namespace=args.namespace,
-            bridge_name=args.bridge_name,
-            handle_probes=not args.no_probe_handling,
-            **get_intercept_kwargs(args),
-        )
-    elif args.action == "unbridge":
-        if args.name:
-            unbridge(args.name)
-        elif args.all:
-            unbridge_all()
-    elif args.action == "list":
-        if args.containers:
-            pass
-        elif args.bridges:
-            ireqs = list_interceptrequests()
-            if ireqs:
-                for ireq in ireqs:
-                    print(ireq)
-            else:
-                logger.info("No active bridges found")
-    elif args.action == "down":
-        down()
-    elif args.action == "check":
-        probe_docker()
-        probe_kubernetes()
-    elif args.action == "version":
-        logger.info(f"Gefyra client version: {configuration.__VERSION__}")
-    else:
-        parser.print_help()
-
-
-if __name__ == "__main__":  # noqa
     try:
-        main()
-        exit(0)
+        from gefyra import configuration
+        from gefyra.api import (
+            bridge,
+            down,
+            run,
+            unbridge,
+            unbridge_all,
+            list_interceptrequests,
+        )
+        from gefyra.local.check import probe_kubernetes, probe_docker
+
+        args = parser.parse_args()
+        if args.debug:
+            logger.setLevel(logging.DEBUG)
+        else:
+            logger.setLevel(logging.INFO)
+        logger.addHandler(configuration.console)
+        if args.action == "up":
+            up_command(args)
+        elif args.action == "run":
+            run(
+                image=args.image,
+                name=args.name,
+                command=" ".join(args.command) if args.command else None,
+                namespace=args.namespace,
+                env_from=args.env_from,
+                env=args.env,
+                volumes=args.volume,
+            )
+        elif args.action == "bridge":
+            bridge(
+                args.name,
+                args.port,
+                container_name=args.container_name,
+                namespace=args.namespace,
+                bridge_name=args.bridge_name,
+                handle_probes=not args.no_probe_handling,
+                **get_intercept_kwargs(args),
+            )
+        elif args.action == "unbridge":
+            if args.name:
+                unbridge(args.name)
+            elif args.all:
+                unbridge_all()
+        elif args.action == "list":
+            if args.containers:
+                pass
+            elif args.bridges:
+                ireqs = list_interceptrequests()
+                if ireqs:
+                    for ireq in ireqs:
+                        print(ireq)
+                else:
+                    logger.info("No active bridges found")
+        elif args.action == "down":
+            down()
+        elif args.action == "check":
+            probe_docker()
+            probe_kubernetes()
+        elif args.action == "version":
+            logger.info(f"Gefyra client version: {configuration.__VERSION__}")
+        else:
+            parser.print_help()
     except Exception as e:
         logger.fatal(f"There was an error running Gefyra: {e}")
         exit(1)
+    exit(0)
+
+
+if __name__ == "__main__":  # noqa
+    main()

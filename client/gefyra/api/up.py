@@ -13,8 +13,12 @@ logger = logging.getLogger(__name__)
 def up(config=default_configuration) -> bool:
     from kubernetes.client import ApiException
     from gefyra.cluster.manager import install_operator
-    from gefyra.local.cargo import create_cargo_container, get_cargo_ip_from_netaddress
     from gefyra.local.networking import create_gefyra_network
+    from gefyra.local.cargo import (
+        create_cargo_container,
+        get_cargo_ip_from_netaddress,
+        probe_wireguard_connection,
+    )
     from docker.errors import APIError
 
     logger.info("Installing Gefyra Operator")
@@ -68,4 +72,13 @@ def up(config=default_configuration) -> bool:
             logger.warning("Cargo is already deployed and running")
         else:
             raise e
+
+    #
+    # Confirm the wireguard connection working
+    #
+    try:
+        probe_wireguard_connection(config)
+    except Exception as e:
+        logger.error(e)
+        down(config)
     return True
