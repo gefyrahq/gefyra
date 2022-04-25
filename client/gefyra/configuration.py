@@ -62,8 +62,13 @@ class ClientConfiguration(object):
         if docker_client:
             self.DOCKER = docker_client
         if cargo_endpoint:
+            if len(cargo_endpoint.split(":")) != 2:
+                raise Exception("Please provide the endpoint in the form <ip:port>")
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
+            logger.info(
+                "There was no --endpoint argument provided. Connecting to a local Kubernetes node."
+            )
             if sys.platform in ["darwin", "win32"]:
                 # docker for mac/win publishes ports on a special internal ip
                 try:
@@ -91,6 +96,7 @@ class ClientConfiguration(object):
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
         self.BRIDGE_TIMEOUT = 60  # in seconds
+        self.CARGO_PROBE_TIMEOUT = 10  # in seconds
 
     def _init_docker(self):
         import docker
