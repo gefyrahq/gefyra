@@ -165,7 +165,7 @@ def test_parse_combination_c():
 
 
 def test_parse_endpoint():
-    args = up_parser.parse_args(["-e", "10.30.34.25"])
+    args = up_parser.parse_args(["-e", "10.30.34.25:31820"])
     configuration = ClientConfiguration(
         cargo_endpoint=args.endpoint,
         registry_url=args.registry,
@@ -174,10 +174,10 @@ def test_parse_endpoint():
         cargo_image_url=args.cargo,
         carrier_image_url=args.carrier,
     )
-    assert configuration.CARGO_ENDPOINT == "10.30.34.25"
+    assert configuration.CARGO_ENDPOINT == "10.30.34.25:31820"
 
 
 def test_parse_up_fct(monkeypatch):
     monkeypatch.setattr("gefyra.api.up", lambda config: True)
-    args = up_parser.parse_args(["-e", "10.30.34.25"])
+    args = up_parser.parse_args(["-e", "10.30.34.25:31820"])
     up_command(args)
