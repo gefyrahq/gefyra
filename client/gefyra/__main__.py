@@ -2,6 +2,8 @@
 import argparse
 import logging
 
+from gefyra.configuration import ClientConfiguration
+
 logger = logging.getLogger("gefyra")
 parser = argparse.ArgumentParser(
     prog="gefyra",
@@ -16,6 +18,36 @@ up_parser.add_argument(
     "-e",
     "--endpoint",
     help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to",
+    required=False,
+)
+up_parser.add_argument(
+    "-o",
+    "--operator",
+    help="Registry url for the operator image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-s",
+    "--stowaway",
+    help="Registry url for the stowaway image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-c",
+    "--carrier",
+    help="Registry url for the carrier image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-a",
+    "--cargo",
+    help="Registry url for the cargo image.",
+    required=False,
+)
+up_parser.add_argument(
+    "-r",
+    "--registry",
+    help="Base url for registry to pull images from.",
     required=False,
 )
 run_parser = action.add_parser("run")
@@ -120,13 +152,27 @@ def get_intercept_kwargs(parser_args):
     return kwargs
 
 
+def up_command(args):
+    from gefyra.api import up
+
+    configuration = ClientConfiguration(
+        cargo_endpoint=args.endpoint,
+        registry_url=args.registry,
+        operator_image_url=args.operator,
+        stowaway_image_url=args.stowaway,
+        cargo_image_url=args.cargo,
+        carrier_image_url=args.carrier,
+    )
+
+    up(config=configuration)
+
+
 def main():
     from gefyra import configuration
     from gefyra.api import (
         bridge,
         down,
         run,
-        up,
         unbridge,
         unbridge_all,
         list_interceptrequests,
@@ -140,7 +186,7 @@ def main():
         logger.setLevel(logging.INFO)
     logger.addHandler(configuration.console)
     if args.action == "up":
-        up(cargo_endpoint=args.endpoint)
+        up_command(args)
     elif args.action == "run":
         run(
             image=args.image,

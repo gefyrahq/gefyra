@@ -1,5 +1,4 @@
 import os
-import sys
 from datetime import datetime
 from typing import List, Optional
 
@@ -7,7 +6,7 @@ from docker.models.containers import Container
 
 from gefyra.cluster.utils import decode_secret
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.cargoimage.Dockerfile import Dockerfile, Dockerfile_windows
+from gefyra.local.cargoimage.Dockerfile import get_dockerfile
 
 
 def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str]]:
@@ -48,12 +47,9 @@ def build_cargo_image(
     }
     tag = f"{config.CARGO_CONTAINER_NAME}:{datetime.now().strftime('%Y%m%d%H%M%S')}"
     # check for Cargo updates
-    config.DOCKER.images.pull("quay.io/gefyra/cargo")
+    config.DOCKER.images.pull(config.CARGO_IMAGE)
     # build this instance
-    if sys.platform == "win32":
-        _Dockerfile = Dockerfile_windows
-    else:
-        _Dockerfile = Dockerfile
+    _Dockerfile = get_dockerfile(config.CARGO_IMAGE)
     image, build_logs = config.DOCKER.images.build(
         fileobj=_Dockerfile, rm=True, forcerm=True, buildargs=build_args, tag=tag
     )

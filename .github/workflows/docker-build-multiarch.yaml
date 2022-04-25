@@ -38,63 +38,77 @@ jobs:
       - name: Operator Image meta
         uses: docker/metadata-action@v3
         with:
+          flavor: |
+            latest=false
           images: |
             quay.io/gefyra/operator
+          tags: |
+            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+            type=raw,value={{tag}},enable=${{ github.event_name == 'tags') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: operator/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: quay.io/gefyra/operator:latest
+          tags: ${{ steps.meta.outputs.tags }}
       #
       # Gefyra Cargo
       #
       - name: Cargo Image meta
         uses: docker/metadata-action@v3
         with:
+          flavor: |
+            latest=false
           images: |
             quay.io/gefyra/cargo
+          tags: |
+            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+            type=raw,value={{tag}},enable=${{ github.event_name == 'tags') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: cargo/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: quay.io/gefyra/cargo:latest
+          tags: ${{ steps.meta.outputs.tags }}
       #
       # Gefyra Carrier
       #
       - name: Carrier Image meta
         uses: docker/metadata-action@v3
         with:
+          flavor: |
+            latest=false
           images: |
             quay.io/gefyra/carrier
           tags: |
-            type=schedule
-            type=sha
+            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+            type=raw,value={{tag}},enable=${{ github.event_name == 'tags') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: carrier/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: quay.io/gefyra/carrier:latest
+          tags: ${{ steps.meta.outputs.tags }}
       #
       # Gefyra Stowaway
       #
       - name: Stowaway Image meta
         uses: docker/metadata-action@v3
         with:
+          flavor: |
+            latest=false
           images: |
             quay.io/gefyra/stowaway
           tags: |
-            type=schedule
-            type=sha
+            type=raw,value=latest,enable=${{ github.event_name == 'push' }}
+            type=raw,value={{tag}},enable=${{ github.event_name == 'tags') }}
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
           context: stowaway/
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: quay.io/gefyra/stowaway:latest
+          tags: ${{ steps.meta.outputs.tags }}

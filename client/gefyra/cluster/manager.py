@@ -101,7 +101,7 @@ def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) ->
         serviceaccount, clusterrole, config.NAMESPACE
     )
     operator_deployment = create_operator_deployment(
-        serviceaccount, config.NAMESPACE, f"{gefyra_network_subnet}"
+        serviceaccount, config, f"{gefyra_network_subnet}"
     )
     handle_serviceaccount(config, serviceaccount)
     handle_clusterrole(config, clusterrole)
@@ -139,9 +139,7 @@ def uninstall_operator(config: ClientConfiguration):
     clusterrolebinding = create_operator_clusterrolebinding(
         serviceaccount, clusterrole, config.NAMESPACE
     )
-    operator_deployment = create_operator_deployment(
-        serviceaccount, config.NAMESPACE, ""
-    )
+    operator_deployment = create_operator_deployment(serviceaccount, config, "")
     try:
         config.K8S_APP_API.delete_namespaced_deployment(
             name=operator_deployment.metadata.name, namespace=config.NAMESPACE
