@@ -8,6 +8,7 @@ STOWAWAY_LATEST = "my-reg.io/gefyra/stowaway:latest"
 CARGO_LATEST = "my-reg.io/gefyra/cargo:latest"
 OPERATOR_LATEST = "my-reg.io/gefyra/operator:latest"
 CARRIER_LATEST = "my-reg.io/gefyra/carrier:latest"
+KUBE_CONFIG = "~/.kube/config"
 
 
 def test_parse_registry_a():
@@ -181,3 +182,13 @@ def test_parse_up_fct(monkeypatch):
     monkeypatch.setattr("gefyra.api.up", lambda config: True)
     args = up_parser.parse_args(["-e", "10.30.34.25:31820"])
     up_command(args)
+
+
+def test_parse_up_kube_conf():
+    configuration = ClientConfiguration(kube_config_file=KUBE_CONFIG)
+    assert configuration.KUBE_CONFIG_FILE == KUBE_CONFIG
+
+
+def test_parse_up_no_kube_conf():
+    configuration = ClientConfiguration()
+    assert configuration.KUBE_CONFIG_FILE is None
