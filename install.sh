@@ -26,4 +26,4 @@ download_url=$(curl -L -s https://api.github.com/repos/gefyrahq/gefyra/releases/
 file_name=$(echo $download_url | grep -oE '[^/]+$')
 curl -L $download_url -o /tmp/$file_name
 unzip -o /tmp/$file_name -d /tmp/gefyra
-sudo install -o root -g root -m 0755 /tmp/gefyra/gefyra /usr/local/bin/gefyra
+sudo install -m 0755 /tmp/gefyra/gefyra /usr/local/bin/gefyra
