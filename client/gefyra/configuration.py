@@ -25,6 +25,7 @@ class ClientConfiguration(object):
         stowaway_image_url: str = None,
         carrier_image_url: str = None,
         cargo_image_url: str = None,
+        kube_config_file: str = None,
     ):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
         self.REGISTRY_URL = (
@@ -97,6 +98,7 @@ class ClientConfiguration(object):
         self.NETWORK_NAME = network_name or "gefyra"
         self.BRIDGE_TIMEOUT = 60  # in seconds
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
+        self.KUBE_CONFIG_FILE = kube_config_file
 
     def _init_docker(self):
         import docker
@@ -118,7 +120,10 @@ class ClientConfiguration(object):
         )
         from kubernetes.config import load_kube_config
 
-        load_kube_config()
+        if self.KUBE_CONFIG_FILE:
+            load_kube_config(self.KUBE_CONFIG_FILE)
+        else:
+            load_kube_config()
         self.K8S_CORE_API = CoreV1Api()
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()
