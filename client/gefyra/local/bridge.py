@@ -68,7 +68,9 @@ def get_all_containers(config: ClientConfiguration) -> list:
     # filter out gefyra-cargo container as well as fields other than name and ip
     for _, entry in containers.items():
         if entry.get("Name") != "gefyra-cargo":
-            containers_with_ips.append((entry["Name"], entry["IPv4Address"].split("/")[0]))
+            containers_with_ips.append(
+                (entry["Name"], entry["IPv4Address"].split("/")[0])
+            )
     return containers_with_ips
 
 
