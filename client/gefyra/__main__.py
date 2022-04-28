@@ -167,6 +167,24 @@ def up_command(args):
     up(config=configuration)
 
 
+def get_containers_and_print():
+    from gefyra.api import list_containers
+    containers = list_containers()
+    containers.insert(0, ("NAME", "IP_ADDRESS"))
+    for name, ip in containers:
+        print("{:<30}{}".format(name, ip))
+
+
+def get_bridges_and_print():
+    from gefyra.api import list_interceptrequests
+    ireqs = list_interceptrequests()
+    if ireqs:
+        for ireq in ireqs:
+            print(ireq)
+    else:
+        logger.info("No active bridges found")
+
+
 def main():
     try:
         from gefyra import configuration
@@ -176,8 +194,6 @@ def main():
             run,
             unbridge,
             unbridge_all,
-            list_interceptrequests,
-            list_containers,
         )
         from gefyra.local.check import probe_kubernetes, probe_docker
 
@@ -216,17 +232,9 @@ def main():
                 unbridge_all()
         elif args.action == "list":
             if args.containers:
-                containers = list_containers()
-                containers.insert(0, ("NAME", "IP_ADDRESS"))
-                for name, ip in containers:
-                    print("{:<30}{}".format(name, ip))
+                get_containers_and_print()
             elif args.bridges:
-                ireqs = list_interceptrequests()
-                if ireqs:
-                    for ireq in ireqs:
-                        print(ireq)
-                else:
-                    logger.info("No active bridges found")
+                get_bridges_and_print()
         elif args.action == "down":
             down()
         elif args.action == "check":
