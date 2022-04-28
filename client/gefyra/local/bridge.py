@@ -61,6 +61,17 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
         logger.error("Error getting InterceptRequests: " + str(e))
 
 
+def get_all_containers(config: ClientConfiguration) -> list:
+    containers_with_ips = []
+    gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
+    containers = gefyra_net.attrs.get("Containers")
+    # filter out gefyra-cargo container as well as fields other than name and ip
+    for _, entry in containers.items():
+        if entry.get("Name") != "gefyra-cargo":
+            containers_with_ips.append((entry["Name"], entry["IPv4Address"].split("/")[0]))
+    return containers_with_ips
+
+
 def remove_interceptrequest_remainder(config: ClientConfiguration):
     from kubernetes.client import ApiException
 

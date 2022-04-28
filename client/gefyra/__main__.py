@@ -177,6 +177,7 @@ def main():
             unbridge,
             unbridge_all,
             list_interceptrequests,
+            list_containers,
         )
         from gefyra.local.check import probe_kubernetes, probe_docker
 
@@ -215,7 +216,10 @@ def main():
                 unbridge_all()
         elif args.action == "list":
             if args.containers:
-                pass
+                containers = list_containers()
+                containers.insert(0, ("NAME", "IP_ADDRESS"))
+                for name, ip in containers:
+                    print("{:<30}{}".format(name, ip))
             elif args.bridges:
                 ireqs = list_interceptrequests()
                 if ireqs:
