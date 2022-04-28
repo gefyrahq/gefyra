@@ -169,6 +169,7 @@ def up_command(args):
 
 def get_containers_and_print():
     from gefyra.api import list_containers
+
     containers = list_containers()
     containers.insert(0, ("NAME", "IP_ADDRESS"))
     for name, ip in containers:
@@ -177,6 +178,7 @@ def get_containers_and_print():
 
 def get_bridges_and_print():
     from gefyra.api import list_interceptrequests
+
     ireqs = list_interceptrequests()
     if ireqs:
         for ireq in ireqs:
