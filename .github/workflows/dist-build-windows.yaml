@@ -1,6 +1,6 @@
 # This workflow will build a PyOxidizer binary for Mac OS when a tag is pushed
 
-name: Build OSX binary
+name: Build Windows binary
 
 env:
   PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
