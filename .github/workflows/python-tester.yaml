@@ -54,6 +54,10 @@ jobs:
       working-directory: ./client
       run: |
         poetry run coverage run -a -m gefyra list --bridges
+    - name: "Run gefyra list --containers"
+      working-directory: ./client
+      run: |
+        poetry run coverage run -a -m gefyra list --containers
     - name: Run gefyra down
       working-directory: ./client
       run: |
