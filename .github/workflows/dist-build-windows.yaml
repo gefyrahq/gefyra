@@ -1,0 +1,51 @@
+# This workflow will build a PyOxidizer binary for Mac OS when a tag is pushed
+
+name: Build OSX binary
+
+env:
+  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
+
+on:
+  workflow_dispatch: {}
+  push:
+    tags:
+      - '*'
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: macos-10.15
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.9'
+    - name: Setup PyOxidizer and build
+      working-directory: client/
+      run: |
+        wget ${PYOXIDIZER_DOWNLOAD}
+        7z x PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
+        ls
+        pyoxidizer.exe build exe --release
+        cp `find build/ -name "gefyra"` ../gefyra
+        cp README.md ../README.md
+        cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows
+        path: |
+          gefyra
+          LICENSE
+          README.md
+        retention-days: 5
+    - name: Create release zip
+      if: ${{ github.event.release && github.event.action == 'published' }}
+      run: 7z a gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows.zip "gefyra" "LICENSE" "README.md"
+    - name: Attach files to release
+      uses: softprops/action-gh-release@v1
+      if: ${{ github.event.release && github.event.action == 'published' }}
+      with:
+        files: gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows.zip
