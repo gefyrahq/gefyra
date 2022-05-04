@@ -232,6 +232,10 @@ def main():
                 unbridge(args.name)
             elif args.all:
                 unbridge_all()
+            else:
+                logger.warning(
+                    "Unbridge failed. Please use command with either -N or -A flag."
+                )
         elif args.action == "list":
             if args.containers:
                 get_containers_and_print()
