@@ -34,6 +34,9 @@ jobs:
         7z x PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
         ls
         ./pyoxidizer.exe build exe --release
+        ls .\build\x86_64-pc-windows-msvc\release\
+        ls .\build\x86_64-pc-windows-msvc\release\exe\
+        ls .\build\x86_64-pc-windows-msvc\
         copy .\build\x86_64-pc-windows-msvc\release\exe\gefyra.exe ../gefyra.exe
         copy README.md ../README.md
     - name: Upload Artifact
