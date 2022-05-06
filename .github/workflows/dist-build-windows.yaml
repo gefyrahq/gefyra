@@ -38,6 +38,7 @@ jobs:
         ls .\build\x86_64-pc-windows-msvc\release\exe\
         ls .\build\x86_64-pc-windows-msvc\
         copy .\build\x86_64-pc-windows-msvc\release\exe\gefyra.exe ../gefyra.exe
+        ./pyoxidizer analyze .\build\x86_64-pc-windows-msvc\release\exe\gefyra.exe
         copy README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
