@@ -36,6 +36,8 @@ jobs:
         ./pyoxidizer.exe build exe resources install --release
         ls .\build\x86_64-pc-windows-msvc\release\
         ls .\build\x86_64-pc-windows-msvc\release\exe\
+        ls .\build\x86_64-pc-windows-msvc\release\install\
+        ls .\build\x86_64-pc-windows-msvc\release\resources\
         ls .\build\x86_64-pc-windows-msvc\
         copy .\build\x86_64-pc-windows-msvc\release\exe\gefyra.exe ../gefyra.exe
         copy README.md ../README.md
