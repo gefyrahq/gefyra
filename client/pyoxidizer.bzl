@@ -102,6 +102,10 @@ def make_exe():
     # to our binary.
     exe.add_python_resources(exe.pip_install(["docker==5.0.3", "kubernetes==19.15.0"]))
 
+    # Install Windows runtime DLLs.
+    exe.windows_runtime_dlls_mode = "always"
+    exe.windows_subsystem = "console"
+
     # Read Python files from a local directory and add them to our embedded
     # context, taking just the resources belonging to the `foo` and `bar`
     # Python packages.
