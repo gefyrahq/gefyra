@@ -19,3 +19,7 @@ file_name=$(echo $download_url | grep -oE '[^/]+$')
 curl -L $download_url -o /tmp/$file_name
 unzip -o /tmp/$file_name -d /tmp/gefyra
 sudo install -m 0755 /tmp/gefyra/gefyra /usr/local/bin/gefyra
+
+# cleanup 
+rm -rf /tmp/$file_name
+rm -rf /tmp/deck
