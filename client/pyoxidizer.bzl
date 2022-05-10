@@ -3,6 +3,12 @@
 # https://pyoxidizer.readthedocs.io/en/stable/ for details of this
 # configuration file format.
 
+def resource_callback(policy, resource):
+    if type(resource) in ("PythonExtensionModule"):
+        if resource.name == "_ssl":
+            resource.add_location = "filesystem-relative:lib"
+            resource.add_include = True
+
 def make_exe():
     # Obtain the default PythonDistribution for our build target. We link
     # this distribution into our produced executable and extract the Python
@@ -75,6 +81,8 @@ def make_exe():
     # Attempt to add resources relative to the built binary when
     # `resources_location` fails.
     policy.resources_location_fallback = "filesystem-relative:prefix"
+
+    policy.register_resource_callback(resource_callback)
 
     # The configuration of the embedded Python interpreter can be modified
     # by setting attributes on the instance. Some of these are
