@@ -40,6 +40,7 @@ jobs:
         copy .\build\x86_64-pc-windows-msvc\release\install\python39.dll ../python39.dll
         copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140.dll ../vcruntime140.dll
         copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140_1.dll ../vcruntime140_1.dll
+        xcopy .\build\x86_64-pc-windows-msvc\release\install\lib ../lib /s/e
         copy README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
@@ -53,10 +54,11 @@ jobs:
           python39.dll
           vcruntime140.dll
           vcruntime140_1.dll
+          lib/
         retention-days: 5
     - name: Create release zip
       if: ${{ github.event.release && github.event.action == 'published' }}
-      run: 7z a gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows.zip "gefyra" "LICENSE" "README.md" "python3" "python39" "vcruntime140" "vcruntime140_1"
+      run: 7z a -r gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows.zip "gefyra" "LICENSE" "README.md" "python3.dll" "python39.dll" "vcruntime140.dll" "vcruntime140_1.dll" "/lib"
     - name: Attach files to release
       uses: softprops/action-gh-release@v1
       if: ${{ github.event.release && github.event.action == 'published' }}
