@@ -40,7 +40,8 @@ jobs:
         copy .\build\x86_64-pc-windows-msvc\release\install\python39.dll ../python39.dll
         copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140.dll ../vcruntime140.dll
         copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140_1.dll ../vcruntime140_1.dll
-        xcopy .\build\x86_64-pc-windows-msvc\release\install\lib ../lib /s/e
+        xcopy .\build\x86_64-pc-windows-msvc\release\install\lib ..\lib /s/e
+        ls ..
         copy README.md ../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
