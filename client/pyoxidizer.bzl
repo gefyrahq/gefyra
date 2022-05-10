@@ -9,8 +9,9 @@ def resource_callback(policy, resource):
             resource.add_location = "filesystem-relative:."
             resource.add_include = True
     elif type(resource) in ("PythonModuleSource", "PythonPackageResource", "PythonPackageDistributionResource"):
-        if resource.package == "pywin32":
+        if resource.name == "pywin32":
             resource.add_location = "filesystem-relative:."
+            resource.add_include = True
 
 
 def make_exe():
