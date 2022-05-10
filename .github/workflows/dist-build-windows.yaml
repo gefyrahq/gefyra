@@ -34,6 +34,7 @@ jobs:
         7z x PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
         ls
         ./pyoxidizer.exe build install --release
+        ls copy .\build\x86_64-pc-windows-msvc\release\install\
         copy .\build\x86_64-pc-windows-msvc\release\install\gefyra.exe ../gefyra.exe
         copy .\build\x86_64-pc-windows-msvc\release\install\python3.dll ../python3.dll
         copy .\build\x86_64-pc-windows-msvc\release\install\python39.dll ../python39.dll
