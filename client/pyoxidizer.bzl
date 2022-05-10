@@ -70,7 +70,7 @@ def make_exe():
     policy.include_test = False
 
     # Use in-memory location for adding resources by default.
-    policy.resources_location = "filesystem-relative:lib"
+    policy.resources_location = "in-memory"
 
     # Attempt to add resources relative to the built binary when
     # `resources_location` fails.
