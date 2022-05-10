@@ -35,8 +35,9 @@ jobs:
         ls
         ./pyoxidizer.exe build install --release
         ls .\build\x86_64-pc-windows-msvc\release\install\
+
         copy .\build\x86_64-pc-windows-msvc\release\install\* ../build
-        copy README.md ../build/README.md
+        copy README.md ../build/
         ls ../build
     - name: Upload Artifact
       uses: actions/upload-artifact@v2

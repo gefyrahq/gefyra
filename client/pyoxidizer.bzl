@@ -9,7 +9,7 @@ def resource_callback(policy, resource):
             resource.add_location = "filesystem-relative:."
             resource.add_include = True
     elif type(resource) in ("PythonModuleSource", "PythonPackageResource", "PythonPackageDistributionResource"):
-        if resource.name == "pywin32":
+        if resource.name in ["pywin32", "pythonwin", "win32", "win32com", "win32comext"]:
             resource.add_location = "filesystem-relative:."
             resource.add_include = True
 
