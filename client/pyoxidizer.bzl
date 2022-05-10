@@ -45,7 +45,7 @@ def make_exe():
     # policy.extension_module_filter = "all"
 
     # Controls whether `File` instances are emitted by the file scanner.
-    # policy.file_scanner_emit_files = False
+    # policy.file_scanner_emit_files = True
 
     # Controls the `add_include` attribute of "classified" resources
     # (`PythonModuleSource`, `PythonPackageResource`, etc).
@@ -70,7 +70,7 @@ def make_exe():
     policy.include_test = False
 
     # Use in-memory location for adding resources by default.
-    policy.resources_location = "in-memory"
+    policy.resources_location = "filesystem-relative:lib"
 
     # Attempt to add resources relative to the built binary when
     # `resources_location` fails.
