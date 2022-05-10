@@ -22,7 +22,7 @@ def make_exe():
     # Control support for loading Python extensions and other shared libraries
     # from memory. This is only supported on Windows and is ignored on other
     # platforms.
-    policy.allow_in_memory_shared_library_loading = True
+    policy.allow_in_memory_shared_library_loading = False
 
     # Control whether to generate Python bytecode at various optimization
     # levels. The default optimization level used by Python is 0.
@@ -74,7 +74,7 @@ def make_exe():
 
     # Attempt to add resources relative to the built binary when
     # `resources_location` fails.
-    policy.resources_location_fallback = "filesystem-relative:prefix"
+    policy.resources_location_fallback = "filesystem-relative:Lib"
 
     # The configuration of the embedded Python interpreter can be modified
     # by setting attributes on the instance. Some of these are
