@@ -7,7 +7,7 @@ def make_exe():
     # Obtain the default PythonDistribution for our build target. We link
     # this distribution into our produced executable and extract the Python
     # standard library from it.
-    dist = default_python_distribution(flavor="standalone_static")
+    dist = default_python_distribution()
 
     # This function creates a `PythonPackagingPolicy` instance, which
     # influences how executables are built and how resources are added to
