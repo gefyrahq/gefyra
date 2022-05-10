@@ -40,7 +40,6 @@ jobs:
         copy .\build\x86_64-pc-windows-msvc\release\install\python39.dll ../python39.dll
         copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140.dll ../vcruntime140.dll
         copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140_1.dll ../vcruntime140_1.dll
-        xcopy .\build\x86_64-pc-windows-msvc\release\install\lib\ ..\lib /s/h/e/k/f/c
         ls ..
         copy README.md ../README.md
     - name: Upload Artifact
@@ -55,7 +54,7 @@ jobs:
           python39.dll
           vcruntime140.dll
           vcruntime140_1.dll
-          lib/
+          build/x86_64-pc-windows-msvc/release/install/lib/
         retention-days: 5
     - name: Create release zip
       if: ${{ github.event.release && github.event.action == 'published' }}
