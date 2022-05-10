@@ -54,7 +54,7 @@ jobs:
           python39.dll
           vcruntime140.dll
           vcruntime140_1.dll
-          build/x86_64-pc-windows-msvc/release/install/lib/
+          client/build/x86_64-pc-windows-msvc/release/install/lib/
         retention-days: 5
     - name: Create release zip
       if: ${{ github.event.release && github.event.action == 'published' }}
