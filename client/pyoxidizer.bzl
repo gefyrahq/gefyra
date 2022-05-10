@@ -6,8 +6,12 @@
 def resource_callback(policy, resource):
     if type(resource) in ("PythonExtensionModule"):
         if resource.name == "_ssl":
-            resource.add_location = "filesystem-relative:lib"
+            resource.add_location = "filesystem-relative:."
             resource.add_include = True
+    elif type(resource) in ("PythonModuleSource", "PythonPackageResource", "PythonPackageDistributionResource"):
+        if resource.package == "pywin32":
+            resource.add_location = "filesystem-relative:."
+
 
 def make_exe():
     # Obtain the default PythonDistribution for our build target. We link

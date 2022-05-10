@@ -35,26 +35,16 @@ jobs:
         ls
         ./pyoxidizer.exe build install --release
         ls .\build\x86_64-pc-windows-msvc\release\install\
-        copy .\build\x86_64-pc-windows-msvc\release\install\gefyra.exe ../gefyra.exe
-        copy .\build\x86_64-pc-windows-msvc\release\install\python3.dll ../python3.dll
-        copy .\build\x86_64-pc-windows-msvc\release\install\python39.dll ../python39.dll
-        copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140.dll ../vcruntime140.dll
-        copy .\build\x86_64-pc-windows-msvc\release\install\vcruntime140_1.dll ../vcruntime140_1.dll
-        ls ..
-        copy README.md ../README.md
+        copy .\build\x86_64-pc-windows-msvc\release\install\* ../build
+        copy README.md ../build/README.md
+        ls ../build
     - name: Upload Artifact
       uses: actions/upload-artifact@v2
       with:
         name: gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows
         path: |
-          gefyra.exe
+          build/*
           LICENSE
-          README.md
-          python3.dll
-          python39.dll
-          vcruntime140.dll
-          vcruntime140_1.dll
-          client/build/x86_64-pc-windows-msvc/release/install/lib/
         retention-days: 5
     - name: Create release zip
       if: ${{ github.event.release && github.event.action == 'published' }}
