@@ -115,7 +115,7 @@ def make_exe():
 
     # Invoke `pip install` using a requirements file and add the collected resources
     # to our binary.
-    exe.add_python_resources(exe.pip_install(["docker==5.0.3", "kubernetes==19.15.0", "pywin32==304"]))
+    exe.add_python_resources(exe.pip_install(["docker==5.0.3", "kubernetes==19.15.0"]))
 
     # Install Windows runtime DLLs.
     exe.windows_runtime_dlls_mode = "always"
