@@ -21,7 +21,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 kubernetes = "^19.15.0"
 docker = "^5.0.3"
 
