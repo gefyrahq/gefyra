@@ -4,6 +4,7 @@
 # configuration file format.
 
 def resource_callback(policy, resource):
+    print(resource)
     if type(resource) in ("PythonExtensionModule"):
         if resource.name == "_ssl":
             resource.add_location = "filesystem-relative:."
