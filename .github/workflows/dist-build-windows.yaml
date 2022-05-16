@@ -21,7 +21,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.7'
     - name: Determine App Version
       working-directory: client/
       run: |
@@ -48,7 +48,7 @@ jobs:
         retention-days: 5
     - name: Create release zip
       if: ${{ github.event.release && github.event.action == 'published' }}
-      run: 7z a -r gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows.zip "gefyra" "LICENSE" "README.md" "python3.dll" "python39.dll" "vcruntime140.dll" "vcruntime140_1.dll" "/lib"
+      run: 7z a -r gefyra-${{ env.APP_VERSION }}-x86_64-pc-windows.zip "gefyra" "LICENSE" "README.md" "python3.dll" "python37.dll" "vcruntime140.dll" "vcruntime140_1.dll" "/lib"
     - name: Attach files to release
       uses: softprops/action-gh-release@v1
       if: ${{ github.event.release && github.event.action == 'published' }}
