@@ -142,6 +142,14 @@ down_parser = action.add_parser("down")
 check_parser = action.add_parser("check")
 version_parser = action.add_parser("version")
 
+version_parser.add_argument(
+    "-n",
+    "--no-check",
+    help="Do not check whether there is a new version",
+    action="store_true",
+    default=False,
+)
+
 
 def get_intercept_kwargs(parser_args):
     kwargs = {}
@@ -185,6 +193,25 @@ def get_bridges_and_print():
             print(ireq)
     else:
         logger.info("No active bridges found")
+
+
+def version(config, check: bool):
+    import requests
+
+    logger.info(f"Gefyra client version: {config.__VERSION__}")
+    if check:
+        release = requests.get(
+            "https://api.github.com/repos/gefyrahq/gefyra/releases/latest"
+        )
+        if release.status_code == 403:
+            logger.info("Versions cannot be compared, as API rate limit was exceeded")
+            return None
+        latest_release_version = release.json()["tag_name"].replace("-", ".")
+        if config.__VERSION__ != latest_release_version:
+            logger.info(
+                f"You are using gefyra version {config.__VERSION__}; however, version {latest_release_version} is "
+                f"available."
+            )
 
 
 def main():
@@ -247,7 +274,8 @@ def main():
             probe_docker()
             probe_kubernetes()
         elif args.action == "version":
-            logger.info(f"Gefyra client version: {configuration.__VERSION__}")
+            check = not args.no_check
+            version(configuration, check)
         else:
             parser.print_help()
     except Exception as e:
