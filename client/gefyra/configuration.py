@@ -10,7 +10,7 @@ console.setFormatter(formatter)
 logger = logging.getLogger("gefyra")
 logger.addHandler(console)
 
-__VERSION__ = "0.7.2"
+__VERSION__ = "0.8.0"
 
 
 class ClientConfiguration(object):
