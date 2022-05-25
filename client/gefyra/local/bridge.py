@@ -151,6 +151,10 @@ def deploy_app_container(
     container = handle_docker_run_container(config, image, **not_none_kwargs)
 
     cargo = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+
+    if container.status != "running":
+        raise RuntimeError("Container is not running. Did you miss a valid startup command?")
+
     exit_code, output = cargo.exec_run(
         f"bash patchContainerGateway.sh {container.name} {cargo_ip}"
     )
