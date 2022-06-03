@@ -3,7 +3,7 @@ import os
 
 from gefyra.configuration import default_configuration
 from .utils import stopwatch
-
+from ..local.cargo import probe_wireguard_connection
 
 logger = logging.getLogger(__name__)
 
@@ -30,10 +30,23 @@ def run(
 
     dns_search = f"{namespace}.svc.cluster.local"
     try:
+        item = "network"
         config.DOCKER.networks.get(config.NETWORK_NAME)
+        item = "Cargo"
+        config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
     except NotFound:
-        logger.error("Gefyra network not found. Please run 'gefyra up' first.")
+        logger.error(f"Gefyra {item} not found. Please run 'gefyra up' first.")
         return False
+
+    #
+    # Confirm the wireguard connection working
+    #
+    try:
+        probe_wireguard_connection(config)
+    except Exception as e:
+        logger.error(e)
+        return False
+
     volumes = get_processed_paths(os.getcwd(), volumes)
     #
     # 1. get the ENV together a) from a K8s container b) from override
