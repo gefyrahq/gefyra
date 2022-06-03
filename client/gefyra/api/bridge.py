@@ -1,12 +1,60 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 
 from gefyra.configuration import default_configuration
 
 from .utils import stopwatch
 
 logger = logging.getLogger(__name__)
+
+
+def get_pods_to_intercept(
+    deployment: str, namespace: str, statefulset: str, pod: str, config
+) -> Dict[str, List[str]]:
+    from gefyra.cluster.resources import get_pods_and_containers_for_workload
+
+    pods_to_intercept = {}
+    if deployment:
+        pods_to_intercept.update(
+            get_pods_and_containers_for_workload(config, deployment, namespace)
+        )
+    if statefulset:
+        pods_to_intercept.update(
+            get_pods_and_containers_for_workload(config, statefulset, namespace)
+        )
+    if pod:
+        pods_to_intercept.update(
+            get_pods_and_containers_for_workload(config, pod, namespace)
+        )
+    return pods_to_intercept
+
+
+def check_workloads(pods_to_intercept, deployment, statefulset, container_name):
+    if len(pods_to_intercept.keys()) == 0:
+        raise Exception("Could find any pod to bridge.")
+    elif len(pods_to_intercept.keys()) > 1:
+        use_index = True
+    else:
+        use_index = False
+
+    cleaned_names = ["-".join(key.split("-")[:-2]) for key in pods_to_intercept.keys()]
+
+    if deployment and deployment not in cleaned_names:
+        raise RuntimeError(
+            f"Could not find deployment {deployment} to bridge. Available deployments:"
+            f" {', '.join(cleaned_names)}"
+        )
+    if statefulset and statefulset not in cleaned_names:
+        raise RuntimeError(
+            f"Could not find statefulset {statefulset} to bridge. Available statefulsets:"
+            f" {', '.join(cleaned_names)}"
+        )
+    if container_name not in [
+        container for c_list in pods_to_intercept.values() for container in c_list
+    ]:
+        raise RuntimeError(f"Could not find container {container_name} to bridge.")
+    return use_index
 
 
 @stopwatch
@@ -42,17 +90,13 @@ def bridge(
         )
         return False
 
-    pods_to_intercept = []
-
-    from gefyra.cluster.resources import get_pods_for_workload
-
-    if deployment:
-        pods_to_intercept.extend(get_pods_for_workload(config, deployment, namespace))
-    if statefulset:
-        pods_to_intercept.extend(get_pods_for_workload(config, statefulset, namespace))
-    if pod:
-        pods_to_intercept.extend(pod)
-    pass
+    pods_to_intercept = get_pods_to_intercept(
+        deployment=deployment,
+        statefulset=statefulset,
+        namespace=namespace,
+        pod=pod,
+        config=config,
+    )
 
     if not bridge_name:
         ireq_base_name = (
@@ -60,10 +104,13 @@ def bridge(
         )
     else:
         ireq_base_name = bridge_name
-    if len(pods_to_intercept) > 1:
-        use_index = True
-    else:
-        use_index = False
+
+    use_index = check_workloads(
+        pods_to_intercept,
+        deployment=deployment,
+        statefulset=statefulset,
+        container_name=container_name,
+    )
 
     # is is required to copy at least the service account tokens from the bridged container
     if sync_down_dirs:

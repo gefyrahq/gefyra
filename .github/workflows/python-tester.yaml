@@ -46,6 +46,18 @@ jobs:
       working-directory: ./client
       run: |
         poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default
+    - name: Run gefyra bridge with invalid deployment
+      working-directory: ./client
+      shell: bash --noprofile --norc -o pipefail {0}
+      run: |
+        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo-not --port 80:8000 --container-name hello-nginx -I mypybridge
+        test $? -eq 1
+    - name: Run gefyra bridge with invalid container
+      working-directory: ./client
+      shell: bash --noprofile --norc -o pipefail {0}
+      run: |
+        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx-not -I mypybridge
+        test $? -eq 1
     - name: Run gefyra bridge
       working-directory: ./client
       run: |
