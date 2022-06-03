@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Dict
 
 from kubernetes.client import (
     V1ServiceAccount,
@@ -157,10 +157,10 @@ def create_operator_deployment(
     return deployment
 
 
-def get_pods_for_workload(
+def get_pods_and_containers_for_workload(
     config: ClientConfiguration, name: str, namespace: str
-) -> List[str]:
-    result = []
+) -> Dict[str, List[str]]:
+    result = {}
     name = name.split("-")
     pods = config.K8S_CORE_API.list_namespaced_pod(namespace)
     for pod in pods.items:
@@ -169,5 +169,7 @@ def get_pods_for_workload(
             name
         ):
             # this pod name containers all segments of name
-            result.append(pod.metadata.name)
+            result[pod.metadata.name] = [
+                container.name for container in pod.spec.containers
+            ]
     return result
