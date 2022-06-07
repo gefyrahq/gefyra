@@ -10,11 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 def create_gefyra_network(config: ClientConfiguration) -> Network:
-    try:
-        gefyra_network = handle_create_network(config)
-        logger.debug(f"Network {gefyra_network.attrs}")
-    except APIError as e:
-        raise e
+    gefyra_network = handle_create_network(config)
+    logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
 
