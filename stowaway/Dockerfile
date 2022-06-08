@@ -1,8 +1,7 @@
-ARG ARCH=
 ARG GOLANG_VERSION=1.17.6
 ARG ALPINE_VERSION=3.15
 
-FROM ${ARCH}golang:${GOLANG_VERSION}-bullseye as builder
+FROM golang:${GOLANG_VERSION}-bullseye as builder
 
 ARG go_tag=0.0.20220117
 ARG tools_tag=v1.0.20210914
@@ -40,6 +39,7 @@ LABEL maintainer="Schille"
 
 ENV DEBIAN_FRONTEND="noninteractive"
 
+ARG TARGETARCH
 RUN \
  echo "**** install dependencies ****" && \
  apt-get update && \
@@ -61,7 +61,7 @@ RUN \
 	| awk '/tag_name/{print $4;exit}' FS='[""]' | awk '{print substr($1,2); }') && \
  curl -o \
 	/tmp/coredns.tar.gz -L \
-	"https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_amd64.tgz" && \
+	"https://github.com/coredns/coredns/releases/download/v${COREDNS_VERSION}/coredns_${COREDNS_VERSION}_linux_${TARGETARCH}.tgz" && \
  tar xf \
 	/tmp/coredns.tar.gz -C \
 	/app && \
