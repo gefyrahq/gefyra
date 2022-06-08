@@ -40,7 +40,7 @@ def fix_pywin32_in_frozen_build() -> None:
         filename = os.path.join(path, name + "39.dll")
         loader = importlib.machinery.ExtensionFileLoader(name, filename)
         spec = importlib.machinery.ModuleSpec(name=name, loader=loader, origin=filename)
-        _mod = importlib._bootstrap._load(spec)  # type: ignore
+        importlib._bootstrap._load(spec)  # type: ignore
 
 
 class ClientConfiguration(object):
