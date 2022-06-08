@@ -162,7 +162,7 @@ async def check_carrier_ready(
             # iterate all container statuses
             for container_status in pod.status.container_statuses:
                 # if one container is carrier...
-                if container_status.image_id.startswith(configuration.CARRIER_IMAGE):
+                if configuration.CARRIER_IMAGE in container_status.image_id:
                     _ready = True
                     break
             if _ready:
