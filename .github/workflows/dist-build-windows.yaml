@@ -25,7 +25,7 @@ jobs:
     - name: Determine App Version
       working-directory: client/
       run: |
-        python .github\scripts\get_version.py
+        python ..\.github\scripts\get_version.py
         echo "${{ env.APP_VERSION }}"
     - name: Setup PyOxidizer and build
       working-directory: client/
