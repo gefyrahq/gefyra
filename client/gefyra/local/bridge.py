@@ -58,7 +58,9 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
         else:
             return []
     except ApiException as e:
-        logger.error("Error getting InterceptRequests: " + str(e))
+        if e.status != 404:
+            logger.error("Error getting InterceptRequests: " + str(e))
+            raise e
 
 
 def get_all_containers(config: ClientConfiguration) -> list:
