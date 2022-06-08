@@ -23,6 +23,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: Determine App Version
+      working-directory: client/
       run: |
         python .github\scripts\get_version.py
         echo "${{ env.APP_VERSION }}"
