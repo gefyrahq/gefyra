@@ -13,6 +13,34 @@ logger.addHandler(console)
 __VERSION__ = "0.8.0"
 
 
+def fix_pywin32_in_frozen_build() -> None:
+    import os
+    import site
+
+    if sys.platform != "win32" or not getattr(sys, "frozen", False):
+        return
+
+    site.addsitedir(sys.path[0])
+    customsite = os.path.join(sys.path[0], "lib")
+    site.addsitedir(customsite)
+
+    # sys.path has been extended; use final
+    # path to locate dll folder and add it to path
+    path = sys.path[-1]
+    path = path.replace("Pythonwin", "pywin32_system32")
+    os.environ["PATH"] += ";" + path
+
+    # import pythoncom module
+    import importlib
+    import importlib.machinery
+
+    for name in ["pythoncom", "pywintypes"]:
+        filename = os.path.join(path, name + "39.dll")
+        loader = importlib.machinery.ExtensionFileLoader(name, filename)
+        spec = importlib.machinery.ModuleSpec(name=name, loader=loader, origin=filename)
+        importlib._bootstrap._load(spec)  # type: ignore
+
+
 class ClientConfiguration(object):
     def __init__(
         self,
@@ -27,6 +55,8 @@ class ClientConfiguration(object):
         cargo_image_url: str = None,
         kube_config_file: str = None,
     ):
+        if sys.platform == "win32":
+            fix_pywin32_in_frozen_build()
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
         self.REGISTRY_URL = (
             registry_url.rstrip("/") if registry_url else "quay.io/gefyra"
@@ -59,7 +89,6 @@ class ClientConfiguration(object):
         self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
         if cargo_image_url:
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
-
         if docker_client:
             self.DOCKER = docker_client
         if cargo_endpoint:
