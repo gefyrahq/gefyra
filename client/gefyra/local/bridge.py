@@ -58,7 +58,9 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
         else:
             return []
     except ApiException as e:
-        logger.error("Error getting InterceptRequests: " + str(e))
+        if e.status != 404:
+            logger.error("Error getting InterceptRequests: " + str(e))
+            raise e
 
 
 def get_all_containers(config: ClientConfiguration) -> list:
@@ -128,6 +130,7 @@ def deploy_app_container(
     auto_remove: bool = None,
     dns_search: str = "default",
 ) -> Container:
+    import docker
 
     gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
 
@@ -151,6 +154,26 @@ def deploy_app_container(
     container = handle_docker_run_container(config, image, **not_none_kwargs)
 
     cargo = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+
+    # busy wait for the container to start
+    try:
+        _i = 0
+        while container.status == "created" and _i < (
+            config.CONTAINER_RUN_TIMEOUT * 10
+        ):
+            sleep(0.1)
+            container = config.DOCKER.containers.get(container.id)
+            _i = _i + 1
+    except docker.errors.NotFound:
+        raise RuntimeError(
+            "Container is not running. Did you miss a valid startup command?"
+        )
+
+    if container.status != "running":
+        raise RuntimeError(
+            "Container is not running. Did you miss a valid startup command?"
+        )
+
     exit_code, output = cargo.exec_run(
         f"bash patchContainerGateway.sh {container.name} {cargo_ip}"
     )

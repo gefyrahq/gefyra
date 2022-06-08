@@ -2,8 +2,6 @@ import struct
 import socket
 import sys
 import logging
-import traceback
-
 
 console = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("[%(levelname)s] %(message)s")
@@ -110,9 +108,6 @@ class ClientConfiguration(object):
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
                     self.CARGO_ENDPOINT = f"{_ip}:31820"
                 except Exception as e:
-                    print(type(e))
-                    print(str(e))
-                    print(traceback.format_exc())
                     logger.error("Could not create a valid configuration: " + str(e))
             else:
                 # get linux docker0 network address
@@ -132,6 +127,7 @@ class ClientConfiguration(object):
         self.NETWORK_NAME = network_name or "gefyra"
         self.BRIDGE_TIMEOUT = 60  # in seconds
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
+        self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.KUBE_CONFIG_FILE = kube_config_file
 
     def _init_docker(self):
