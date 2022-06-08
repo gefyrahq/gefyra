@@ -98,6 +98,7 @@ class ClientConfiguration(object):
         self.NETWORK_NAME = network_name or "gefyra"
         self.BRIDGE_TIMEOUT = 60  # in seconds
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
+        self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.KUBE_CONFIG_FILE = kube_config_file
 
     def _init_docker(self):
