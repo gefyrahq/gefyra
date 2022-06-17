@@ -1,227 +1,32 @@
 
-__unikube_complete_flags_app() {
-    if [[ $com == $prev ]]; then
-        opts="${opts} --help"
-    else
-        case "$prev" in
-
-        (env)
-            opts="${opts} --init --organization --project --deck --help"
-            ;;
-
-        (exec)
-            opts="${opts} --organization --project --deck --help"
-            ;;
-
-        (info)
-            opts="${opts} --organization --project --deck --help"
-            ;;
-
-        (list)
-            opts="${opts} --organization --project --deck --help"
-            ;;
-
-        (logs)
-            opts="${opts} --container --organization --project --deck --follow --help"
-            ;;
-
-        (shell)
-            opts="${opts} --organization --project --deck --container --help"
-            ;;
-
-        (switch)
-            opts="${opts} --organization --project --deck --deployment --unikubefile --no-build --help"
-            ;;
-
-        (update)
-            opts="${opts} --organization --project --deck --help"
-            ;;
-        esac
-    fi
+__gefyra_complete_flags_up() {
+    opts="${opts} --endpoint --operator --stowaway --carrier --cargo --registry --help"
 }
 
-
-__unikube_complete_flags_auth() {
-    if [[ $com == $prev ]]; then
-        opts="${opts} --help"
-    else
-        case "$prev" in
-
-        (login)
-            opts="${opts} --email --password --help"
-            ;;
-
-        (logout)
-            opts="${opts} --help"
-            ;;
-
-        (status)
-            opts="${opts} --token --help"
-            ;;
-        esac
-    fi
+__gefyra_complete_flags_run() {
+    opts="${opts} --image --name --command --namespace --env --volume --env-from --help"
 }
 
-
-__unikube_complete_flags_context() {
-    if [[ $com == $prev ]]; then
-        opts="${opts} --help"
-    else
-        case "$prev" in
-
-        (remove)
-            opts="${opts} --organization --project --deck --help"
-            ;;
-
-        (set)
-            opts="${opts} --organization --project --deck --help"
-            ;;
-
-        (show)
-            opts="${opts} --help"
-            ;;
-        esac
-    fi
+__gefyra_complete_flags_bridge() {
+    opts="${opts} --name --container-name --bridge-name --port --namespace --no-probe-handling --help --deployment --statefulset --pod --container"
 }
 
-
-__unikube_complete_flags_deck() {
-    if [[ $com == $prev ]]; then
-        opts="${opts} --help"
-    else
-        case "$prev" in
-
-        (info)
-            opts="${opts} --organization --project --help"
-            ;;
-
-        (ingress)
-            opts="${opts} --organization --project --help"
-            ;;
-
-        (install)
-            opts="${opts} --organization --project --help"
-            ;;
-
-        (list)
-            opts="${opts} --organization --project --help"
-            ;;
-
-        (uninstall)
-            opts="${opts} --organization --project --help"
-            ;;
-        esac
-    fi
+__gefyra_complete_flags_unbridge() {
+    opts="${opts} --name --all --help"
 }
 
-
-__unikube_complete_flags_install() {
-    opts="${opts} --organization --project --help"
+__gefyra_complete_flags_list() {
+    opts="${opts} --containers --bridges --help"
 }
 
-
-__unikube_complete_flags_login() {
-    opts="${opts} --email --password --help"
+__gefyra_complete_flags_version() {
+    opts="${opts} --no-check"
 }
 
-
-__unikube_complete_flags_logout() {
+__gefyra_complete_flags_noargs() {
     opts="${opts} --help"
 }
 
-
-__unikube_complete_flags_orga() {
-    if [[ $com == $prev ]]; then
-        opts="${opts} --help"
-    else
-        case "$prev" in
-
-        (info)
-            opts="${opts} --help"
-            ;;
-
-        (list)
-            opts="${opts} --help"
-            ;;
-        esac
-    fi
-}
-
-
-__unikube_complete_flags_project() {
-    if [[ $com == $prev ]]; then
-        opts="${opts} --help"
-    else
-        case "$prev" in
-
-        (delete)
-            opts="${opts} --organization --help"
-            ;;
-
-        (down)
-            opts="${opts} --organization --help"
-            ;;
-
-        (info)
-            opts="${opts} --organization --help"
-            ;;
-
-        (list)
-            opts="${opts} --organization --help"
-            ;;
-
-        (prune)
-            opts="${opts} --help"
-            ;;
-
-        (up)
-            opts="${opts} --organization --ingress --provider --workers --help"
-            ;;
-        esac
-    fi
-}
-
-
-__unikube_complete_flags_ps() {
-    opts="${opts} --help"
-}
-
-
-__unikube_complete_flags_shell() {
-    opts="${opts} --organization --project --deck --container --help"
-}
-
-
-__unikube_complete_flags_system() {
-    if [[ $com == $prev ]]; then
-        opts="${opts} --help"
-    else
-        case "$prev" in
-
-        (completion)
-            opts="${opts} --help"
-            ;;
-
-        (install)
-            opts="${opts} --reinstall --help"
-            ;;
-
-        (verify)
-            opts="${opts} --verbose --help"
-            ;;
-        esac
-    fi
-}
-
-
-__unikube_complete_flags_up() {
-    opts="${opts} --organization --ingress --provider --workers --help"
-}
-
-
-__unikube_complete_flags_version() {
-    opts="${opts} --help"
-}
 
 _gefyra_complete()
 {
@@ -246,61 +51,36 @@ _gefyra_complete()
     if [[ ${cur} == --* ]] ; then
         opts=""
         case "$com" in
-
-            (app)
-                __unikube_complete_flags_app
-                ;;
-
-            (auth)
-                __unikube_complete_flags_auth
-                ;;
-
-            (context)
-                __unikube_complete_flags_context
-                ;;
-
-            (deck)
-                __unikube_complete_flags_deck
-                ;;
-
-            (install)
-                __unikube_complete_flags_install
-                ;;
-
-            (login)
-                __unikube_complete_flags_login
-                ;;
-
-            (logout)
-                __unikube_complete_flags_logout
-                ;;
-
-            (orga)
-                __unikube_complete_flags_orga
-                ;;
-
-            (project)
-                __unikube_complete_flags_project
-                ;;
-
-            (ps)
-                __unikube_complete_flags_ps
-                ;;
-
-            (shell)
-                __unikube_complete_flags_shell
-                ;;
-
-            (system)
-                __unikube_complete_flags_system
-                ;;
-
             (up)
-                __unikube_complete_flags_up
+                __gefyra_complete_flags_up
+                ;;
+
+            (run)
+                __gefyra_complete_flags_run
+                ;;
+
+            (bridge)
+                __gefyra_complete_flags_bridge
+                ;;
+
+            (unbridge)
+                __gefyra_complete_flags_unbridge
+                ;;
+
+            (list)
+                __gefyra_complete_flags_list
                 ;;
 
             (version)
-                __unikube_complete_flags_version
+                __gefyra_complete_flags_version
+                ;;
+
+            (down)
+                __gefyra_complete_flags_noargs
+                ;;
+
+            (check)
+                __gefyra_complete_flags_noargs
                 ;;
         esac
         COMPREPLY=($(compgen -W "${opts}" -- ${cur}))
@@ -308,70 +88,47 @@ _gefyra_complete()
         return 0;
     fi
 
-    if [[ $prev == $com ]]; then
+    if [[ $prev != $com ]]; then
         case "$com" in
-            
-    (app)
-        coms="env exec info list logs shell switch update"
-        COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
-        __ltrim_colon_completions "$cur"
-        return 0;
+        (bridge)
+          case $prev in
+          (--name)
+            coms=$(docker ps --format '{{ .Names }}' | tr '\n' ' ')
+            COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
+            __ltrim_colon_completions "$cur"
+            return 0;
+            ;;
+          (--namespace)
+            coms=$(kubectl get ns --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+            COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
+            __ltrim_colon_completions "$cur"
+            return 0;
+            ;;
+          esac
         ;;
-    
+        (run)
+          case $prev in
+          (--image)
+            coms=$(docker image ls --format '{{ .Repository }}' | tr '\n' ' ')
+            COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
+            __ltrim_colon_completions "$cur"
+            return 0;
+            ;;
 
-    (auth)
-        coms="login logout status"
-        COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
-        __ltrim_colon_completions "$cur"
-        return 0;
+          (--namespace)
+            coms=$(kubectl get ns --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+            COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
+            __ltrim_colon_completions "$cur"
+            return 0;
+            ;;
+          esac
         ;;
-    
-
-    (context)
-        coms="remove set show"
-        COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
-        __ltrim_colon_completions "$cur"
-        return 0;
-        ;;
-    
-
-    (deck)
-        coms="info ingress install list uninstall"
-        COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
-        __ltrim_colon_completions "$cur"
-        return 0;
-        ;;
-    
-
-    (orga)
-        coms="info list"
-        COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
-        __ltrim_colon_completions "$cur"
-        return 0;
-        ;;
-    
-
-    (project)
-        coms="delete down info list prune up"
-        COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
-        __ltrim_colon_completions "$cur"
-        return 0;
-        ;;
-    
-
-    (run)
-        coms=$(docker ps --format '{{ .Names }}' | tr '\n' ' ')
-        COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
-        __ltrim_colon_completions "$cur"
-        return 0;
-        ;;
-    
         esac
     fi
 
     # completing for a command
     if [[ $cur == $com ]]; then
-        coms="run"
+        coms="up run bridge unbridge version check list down"
         COMPREPLY=($(compgen -W "${coms}" -- ${cur}))
         __ltrim_colon_completions "$cur"
         return 0
