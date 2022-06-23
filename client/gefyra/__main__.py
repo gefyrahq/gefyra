@@ -3,6 +3,7 @@ import argparse
 import logging
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.local.telemetry import CliTelemetry
 
 logger = logging.getLogger("gefyra")
 parser = argparse.ArgumentParser(
@@ -150,6 +151,12 @@ version_parser.add_argument(
     default=False,
 )
 
+telemetry_parser = action.add_parser("telemetry")
+telemetry_parser.add_argument("--off", help="Turn off telemetry", action="store_true")
+telemetry_parser.add_argument("--on", help="Turn on telemetry", action="store_true")
+
+telemetry = CliTelemetry()
+
 
 def get_intercept_kwargs(parser_args):
     kwargs = {}
@@ -214,6 +221,15 @@ def version(config, check: bool):
             )
 
 
+def telemetry_command(on, off):
+    if off and not on:
+        telemetry.off()
+    elif on and not off:
+        telemetry.on()
+    else:
+        logger.info("Invalid flags. Please use either --off or --on.")
+
+
 def main():
     try:
         from gefyra import configuration
@@ -276,6 +292,8 @@ def main():
         elif args.action == "version":
             check = not args.no_check
             version(configuration, check)
+        elif args.action == "telemetry":
+            telemetry_command(on=args.on, off=args.off)
         else:
             parser.print_help()
     except Exception as e:
