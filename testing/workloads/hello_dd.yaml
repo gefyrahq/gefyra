@@ -1,0 +1,54 @@
+# Example workload for Docker Desktop getting started guide
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-nginx
+  labels:
+    run: hello-nginx
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: hello-nginx
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-nginxdemo
+spec:
+  selector:
+    matchLabels:
+      app: hello-nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: hello-nginx
+    spec:
+      containers:
+      - name: hello-nginx
+        image: nginxdemos/hello
+        ports:
+        - containerPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: hello.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: hello-nginx
+                port:
+                  number: 80

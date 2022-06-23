@@ -1,0 +1,7 @@
+spec:
+  ports:
+  - appProtocol: http
+    name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
