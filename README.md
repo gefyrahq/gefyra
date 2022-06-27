@@ -37,6 +37,13 @@
   <summary>Table of Contents</summary>
   <ol>
     <li>
+      <a href="#quick-start">Quick Start</a>
+      <ul>
+        <li><a href="#installation">Installation</a></li>
+        <li><a href="#your-first-bridge">Your First Bridge</a></li>
+      </ul>
+    </li>
+    <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
         <li><a href="#built-with">Built With</a></li>
@@ -55,6 +62,36 @@
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
+
+<!-- QUICK START -->
+## Quick Start
+Short manual on where and how to start. You can find detailed information
+[here](https://gefyra.dev/try-it-out/).
+
+### Installation
+Run the installation with the following command:
+```shell
+curl -sSL https://raw.githubusercontent.com/gefyrahq/gefyra/main/install.sh | sh -
+```
+### Your First Bridge
+Bridge a local container into an existing cluster. For a detailed guide please
+check out this [article](https://gefyra.dev/try-it-out/#running-gefyra).
+1. Run a local available image with Gefyra:
+```shell
+gefyra run -i <image_name> -N <container_name> -n default
+```
+2. Create a bridge:
+```shell
+gefyra bridge -N <container_name> -n <k8s_namespace> --deployment <k8s_deployment> --container-name <k8s_deployment_container> -I <bridge_name>
+```
+Explanation for placeholders:
+- `container_name` the name of the container you created in the previous step
+- `k8s_namespace` the namespace your target workload runs in
+- `k8s_deployment` the name of your target deployment
+- `k8s_deployment_container` the name of the container within `k8s_deployment`
+- `bridge_name` the name for the bridge being created
+
+All available `bridge` flags are listed [here](https://gefyra.dev/reference/cli/#bridge).
 
 <!-- ABOUT THE PROJECT -->
 ## About the project
