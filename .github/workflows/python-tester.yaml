@@ -76,6 +76,14 @@ jobs:
     - name: Apply some workload
       run: |
         kubectl apply -f testing/workloads/hello.yaml
+    - name: Set Gefyra to no tracking
+      shell: bash
+      run: |
+        mkdir ~/.gefyra
+        cd ~/gefyra
+        touch config
+        echo [telemetry] >> config
+        echo track = False >> config
     - name: Run gefyra up
       working-directory: ./client
       run: |
