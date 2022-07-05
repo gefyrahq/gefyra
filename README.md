@@ -69,10 +69,28 @@ Short manual on where and how to start. You can find detailed information
 [here](https://gefyra.dev/try-it-out/).
 
 ### Installation
-Run the installation with the following command:
+We offer platform specific installations:
+<details>
+  <summary>Linux/MacOS via script/cURL</summary>
+
 ```shell
 curl -sSL https://raw.githubusercontent.com/gefyrahq/gefyra/main/install.sh | sh -
 ```
+</details>
+<details>
+  <summary>MacOS via Homebrew</summary>
+
+```shell
+brew tap gefyrahq/gefyra
+brew install gefyra
+```
+</details>
+<details>
+  <summary>Windows (Manual)</summary>
+
+Download the latest binary for Windows under [here](https://github.com/gefyrahq/gefyra/releases/). 
+</details>
+
 ### Your First Bridge
 Bridge a local container into an existing cluster. For a detailed guide please
 check out this [article](https://gefyra.dev/try-it-out/#running-gefyra).
