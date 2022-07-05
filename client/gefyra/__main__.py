@@ -3,6 +3,7 @@ import argparse
 import logging
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.local.utils import StoreDictKeyPair
 
 logger = logging.getLogger("gefyra")
 parser = argparse.ArgumentParser(
@@ -88,6 +89,12 @@ run_parser.add_argument(
     help="copy the environment from the container in the notation 'Pod/Container'",
     required=False,
 )
+run_parser.add_argument(
+    "--port",
+    help="Add port mapping in form of <container_port>:<host_port>",
+    required=False,
+    action=StoreDictKeyPair,
+)
 bridge_parser = action.add_parser("bridge")
 bridge_parser.add_argument(
     "-N", "--name", help="the name of the container running in Gefyra", required=True
@@ -102,7 +109,11 @@ bridge_parser.add_argument(
     "-I", "--bridge-name", help="the name of the bridge", required=False
 )
 bridge_parser.add_argument(
-    "-p", "--port", help="the port mapping", required=True, action="append"
+    "-p",
+    "--port",
+    help="Add port mapping in form of <container_port>:<host_port>",
+    required=True,
+    action=StoreDictKeyPair,
 )
 bridge_parser.add_argument(
     "-n",
@@ -242,6 +253,7 @@ def main():
                 namespace=args.namespace,
                 env_from=args.env_from,
                 env=args.env,
+                ports=args.port,
                 volumes=args.volume,
             )
         elif args.action == "bridge":

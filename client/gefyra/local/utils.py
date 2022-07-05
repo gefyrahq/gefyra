@@ -1,3 +1,4 @@
+import argparse
 import os
 from datetime import datetime
 from typing import List, Optional
@@ -5,7 +6,7 @@ from typing import List, Optional
 from docker.models.containers import Container
 
 from gefyra.cluster.utils import decode_secret
-from gefyra.configuration import ClientConfiguration
+from gefyra.configuration import ClientConfiguration, logger
 from gefyra.local.cargoimage.Dockerfile import get_dockerfile
 
 
@@ -126,3 +127,20 @@ def handle_docker_run_container(
     # docker.errors.ImageNotFound – If the specified image does not exist.
     # docker.errors.APIError – If the server returns an error.
     return config.DOCKER.containers.run(image, **kwargs)
+
+
+class StoreDictKeyPair(argparse.Action):
+    """Adapted from https://stackoverflow.com/questions/29986185/python-argparse-dict-arg"""
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        my_dict = {}
+        try:
+            for kv in values.split(","):
+                k, v = kv.split(":")
+                my_dict[k] = v
+        except Exception:
+            logger.error(
+                "Invalid port mapping. Example valid port mapping: 8080:8081 (container_port:host_port)."
+            )
+            exit(1)
+        setattr(namespace, self.dest, my_dict)

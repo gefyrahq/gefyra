@@ -60,7 +60,7 @@ def check_workloads(pods_to_intercept, deployment, statefulset, container_name):
 @stopwatch
 def bridge(
     name: str,
-    ports: List[str],
+    ports: dict,
     deployment: str = None,
     statefulset: str = None,
     pod: str = None,
@@ -78,6 +78,8 @@ def bridge(
     except NotFound:
         logger.error(f"Could not find target container '{name}'")
         return False
+
+    ports = [f"{key}:{value}" for key, value in ports.items()]
 
     try:
         local_container_ip = container.attrs["NetworkSettings"]["Networks"][
