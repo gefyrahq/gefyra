@@ -93,7 +93,7 @@ Download the latest binary for Windows under [here](https://github.com/gefyrahq/
 
 ### Your First Bridge
 Bridge a local container into an existing cluster. For a detailed guide please
-check out this [article](https://gefyra.dev/try-it-out/#running-gefyra).
+check out this [article](https://gefyra.dev/getting-started/k3d/#running-gefyra).
 1. Run a local available image with Gefyra:
 ```shell
 gefyra run -i <image_name> -N <container_name> -n default
