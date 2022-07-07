@@ -158,18 +158,51 @@ def create_operator_deployment(
 
 
 def get_pods_and_containers_for_workload(
+    config: ClientConfiguration, name: str, namespace: str, workload_type: str
+) -> Dict[str, List[str]]:
+    workload = None
+    result = {}
+    if workload_type == "deployment":
+        workload = config.K8S_APP_API.read_namespaced_deployment(
+            name=name, namespace=namespace
+        )
+    elif workload_type == "statefulset":
+        workload = config.K8S_APP_API.read_namespaced_stateful_set(
+            name=name, namespace=namespace
+        )
+
+    if not workload:
+        logger.error(f"Could not find {workload_type} - {name}.")
+        exit(1)
+    v1_label_selector = workload.spec.selector.match_labels
+
+    label_selector = ",".join(
+        [f"{key}={value}" for key, value in v1_label_selector.items()]
+    )
+
+    if not label_selector:
+        logger.error(f"No label selector set for {workload_type} - {name}.")
+        exit(1)
+
+    pods = config.K8S_CORE_API.list_namespaced_pod(
+        namespace=namespace, label_selector=label_selector
+    )
+    for pod in pods.items:
+        result[pod.metadata.name] = [
+            container.name for container in pod.spec.containers
+        ]
+
+    return result
+
+
+def get_pods_and_containers_for_pod_name(
     config: ClientConfiguration, name: str, namespace: str
 ) -> Dict[str, List[str]]:
     result = {}
-    name = name.split("-")
     pods = config.K8S_CORE_API.list_namespaced_pod(namespace)
     for pod in pods.items:
-        pod_name = pod.metadata.name.split("-")
-        if all(x == y for x, y in zip(name, pod_name)) and len(pod_name) - 2 == len(
-            name
-        ):
+        pod_name = pod.metadata.name
+        if pod_name == name:
             # this pod name containers all segments of name
-            result[pod.metadata.name] = [
-                container.name for container in pod.spec.containers
-            ]
+            result[pod_name] = [container.name for container in pod.spec.containers]
     return result
