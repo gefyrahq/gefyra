@@ -160,17 +160,17 @@ def bridge(
     from kubernetes.watch import Watch
 
     w = Watch()
+    bridges = {str(ireq["metadata"]["uid"]): False for ireq in ireqs}
     for event in w.stream(
         config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
     ):
         if event["object"].reason == "Established":
             for ireq in ireqs:
                 if ireq["metadata"]["uid"] == event["object"].involved_object.uid:
+                    bridges[str(ireq["metadata"]["uid"])] = True
                     logger.info(f"Bridge {ireq['metadata']['name']} established")
-                    if len(ireqs) - 1 == 0:
+                    if all(bridges.values()):
                         return True
-                    else:
-                        ireqs.pop(ireq)
     return True
 
 
