@@ -1,8 +1,11 @@
 import logging
 from datetime import datetime
+from time import sleep
 from typing import List, Dict
 
+from gefyra.cluster.resources import get_pods_and_containers_for_workload
 from gefyra.configuration import default_configuration
+from gefyra.local.bridge import get_all_interceptrequests
 
 from .utils import stopwatch
 
@@ -69,6 +72,7 @@ def bridge(
     bridge_name: str = None,
     sync_down_dirs: List[str] = None,
     handle_probes: bool = True,
+    timeout: int = 0,
     config=default_configuration,
 ) -> bool:
     from docker.errors import NotFound
@@ -157,20 +161,31 @@ def bridge(
     # block until all bridges are in place
     #
     logger.info("Waiting for the bridge(s) to become active")
-    from kubernetes.watch import Watch
 
-    w = Watch()
-    for event in w.stream(
-        config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
-    ):
-        if event["object"].reason == "Established":
-            for ireq in ireqs:
-                if ireq["metadata"]["uid"] == event["object"].involved_object.uid:
-                    logger.info(f"Bridge {ireq['metadata']['name']} established")
-                    if len(ireqs) - 1 == 0:
-                        return True
-                    else:
-                        ireqs.pop(ireq)
+    bridges = {str(ireq["metadata"]["uid"]): False for ireq in ireqs}
+    waiting_time = 0
+    # timeout = 0  means no timeout
+    if timeout:
+        waiting_time = timeout
+    while True:
+        # watch whether all relevant bridges have been established
+        kube_ireqs = get_all_interceptrequests(config)
+        for kube_ireq in kube_ireqs:
+            if kube_ireq["metadata"]["uid"] in bridges.keys() and kube_ireq.get(
+                "established", False
+            ):
+                bridges[str(kube_ireq["metadata"]["uid"])] = True
+                logger.info(
+                    f"Bridge {kube_ireq['metadata']['name']} ({sum(bridges.values())}/{len(ireqs)}) established."
+                )
+        if all(bridges.values()):
+            break
+        sleep(1)
+        # Raise exception in case timeout is reached
+        waiting_time -= 1
+        if timeout and waiting_time <= 0:
+            raise RuntimeError("Timeout for bridging operation exceeded")
+
     return True
 
 
