@@ -1,11 +1,13 @@
 import logging
 from datetime import datetime
+from time import sleep
 from typing import List, Dict
 
+from gefyra.cluster.resources import get_pods_and_containers_for_workload
 from gefyra.configuration import default_configuration
+from gefyra.local.bridge import get_all_interceptrequests
 
 from .utils import stopwatch
-from ..cluster.resources import get_pods_and_containers_for_workload
 
 logger = logging.getLogger(__name__)
 
@@ -162,20 +164,26 @@ def bridge(
     # block until all bridges are in place
     #
     logger.info("Waiting for the bridge(s) to become active")
-    from kubernetes.watch import Watch
 
-    w = Watch()
     bridges = {str(ireq["metadata"]["uid"]): False for ireq in ireqs}
-    for event in w.stream(
-        config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
-    ):
-        if event["object"].reason == "Established":
-            for ireq in ireqs:
-                if ireq["metadata"]["uid"] == event["object"].involved_object.uid:
-                    bridges[str(ireq["metadata"]["uid"])] = True
-                    logger.info(f"Bridge {ireq['metadata']['name']} established")
-                    if all(bridges.values()):
-                        return True
+    counter = len(bridges) * 15  # give 15s per to establish
+    while counter:
+        # watch whether all relevant bridges have been established
+        kube_ireqs = get_all_interceptrequests(config)
+        for kube_ireq in kube_ireqs:
+            if (
+                kube_ireq["metadata"]["uid"] in bridges.keys()
+                and kube_ireq["status"] == "established"
+            ):
+                bridges[str(kube_ireq["metadata"]["uid"])] = True
+                logger.info(
+                    f"Bridge {kube_ireq['metadata']['name']} ({sum(bridges.values())}/{len(ireqs)}) established."
+                )
+        if all(bridges.values()):
+            break
+        counter -= 1
+        sleep(1)
+
     return True
 
 
