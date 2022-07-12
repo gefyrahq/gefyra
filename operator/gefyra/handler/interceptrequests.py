@@ -214,14 +214,13 @@ async def interceptrequest_created(body, logger, **kwargs):
         configure_tasks.append(_task)
     # wait for all configurations to happen
     await asyncio.wait(configure_tasks)
-    body["status"] = "established"
     k8s.client.CustomObjectsApi().patch_namespaced_custom_object(
         name=body.metadata.name,
         namespace=body.metadata.namespace,
         group="gefyra.dev",
         plural="interceptrequests",
         version="v1",
-        body=body,
+        body={"established": True},
     )
     kopf.info(
         body,

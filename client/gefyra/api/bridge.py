@@ -76,6 +76,7 @@ def bridge(
     bridge_name: str = None,
     sync_down_dirs: List[str] = None,
     handle_probes: bool = True,
+    timeout: int = 0,
     config=default_configuration,
 ) -> bool:
     from docker.errors import NotFound
@@ -166,14 +167,16 @@ def bridge(
     logger.info("Waiting for the bridge(s) to become active")
 
     bridges = {str(ireq["metadata"]["uid"]): False for ireq in ireqs}
-    counter = len(bridges) * 15  # give 15s per to establish
-    while counter:
+    waiting_time = 0
+    # timeout = 0  means no timeout
+    if timeout:
+        waiting_time = timeout
+    while True:
         # watch whether all relevant bridges have been established
         kube_ireqs = get_all_interceptrequests(config)
         for kube_ireq in kube_ireqs:
-            if (
-                kube_ireq["metadata"]["uid"] in bridges.keys()
-                and kube_ireq["status"] == "established"
+            if kube_ireq["metadata"]["uid"] in bridges.keys() and kube_ireq.get(
+                "established", False
             ):
                 bridges[str(kube_ireq["metadata"]["uid"])] = True
                 logger.info(
@@ -181,8 +184,11 @@ def bridge(
                 )
         if all(bridges.values()):
             break
-        counter -= 1
         sleep(1)
+        # Raise exception in case timeout is reached
+        waiting_time -= 1
+        if timeout and waiting_time <= 0:
+            raise RuntimeError("Timeout for bridging operation exceeded")
 
     return True
 
