@@ -116,7 +116,6 @@ def get_ireq_body(
         "portMappings": port_mappings,
         "syncDownDirectories": sync_down_directories,
         "handleProbes": handle_probes,
-        "status": "pending",
     }
 
 
