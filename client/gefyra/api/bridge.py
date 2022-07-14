@@ -3,7 +3,6 @@ from datetime import datetime
 from time import sleep
 from typing import List, Dict
 
-from gefyra.cluster.resources import get_pods_and_containers_for_workload
 from gefyra.configuration import default_configuration
 from gefyra.local.bridge import get_all_interceptrequests
 
