@@ -47,7 +47,7 @@ jobs:
           platforms: linux/amd64
           push: ${{ github.event_name == 'pull_request' }}
           tags: ${{ steps.operator_meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          labels: ${{ steps.operator_meta.outputs.labels }}
   test:
     needs: build_operator
     runs-on: ubuntu-latest
