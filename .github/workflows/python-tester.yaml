@@ -38,6 +38,8 @@ jobs:
             quay.io/gefyra/operator
           tags: |
             type=raw,value=test-run-${{github.run_id}},enable=true
+          labels: |
+            quay.expires-after=24h
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
@@ -45,6 +47,7 @@ jobs:
           platforms: linux/amd64
           push: ${{ github.event_name == 'pull_request' }}
           tags: ${{ steps.operator_meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
   test:
     needs: build_operator
     runs-on: ubuntu-latest
