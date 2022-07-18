@@ -15,6 +15,7 @@ from kubernetes.client import (
     V1Container,
     V1EnvVar,
     V1DeploymentSpec,
+    ApiException,
 )
 
 from gefyra.configuration import ClientConfiguration
@@ -162,18 +163,24 @@ def get_pods_and_containers_for_workload(
 ) -> Dict[str, List[str]]:
     workload = None
     result = {}
-    if workload_type == "deployment":
-        workload = config.K8S_APP_API.read_namespaced_deployment(
-            name=name, namespace=namespace
-        )
-    elif workload_type == "statefulset":
-        workload = config.K8S_APP_API.read_namespaced_stateful_set(
-            name=name, namespace=namespace
-        )
+    API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
+    NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."
+    try:
+        if workload_type == "deployment":
+            workload = config.K8S_APP_API.read_namespaced_deployment(
+                name=name, namespace=namespace
+            )
+        elif workload_type == "statefulset":
+            workload = config.K8S_APP_API.read_namespaced_stateful_set(
+                name=name, namespace=namespace
+            )
+    except ApiException as e:
+        if e.status == 404:
+            raise RuntimeError(NOT_FOUND_MSG)
+        raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
     if not workload:
-        logger.error(f"Could not find {workload_type} - {name}.")
-        exit(1)
+        raise RuntimeError(f"Could not find {workload_type} - {name}.")
     v1_label_selector = workload.spec.selector.match_labels
 
     label_selector = ",".join(
@@ -181,8 +188,7 @@ def get_pods_and_containers_for_workload(
     )
 
     if not label_selector:
-        logger.error(f"No label selector set for {workload_type} - {name}.")
-        exit(1)
+        raise RuntimeError(f"No label selector set for {workload_type} - {name}.")
 
     pods = config.K8S_CORE_API.list_namespaced_pod(
         namespace=namespace, label_selector=label_selector
@@ -199,10 +205,12 @@ def get_pods_and_containers_for_pod_name(
     config: ClientConfiguration, name: str, namespace: str
 ) -> Dict[str, List[str]]:
     result = {}
-    pods = config.K8S_CORE_API.list_namespaced_pod(namespace)
-    for pod in pods.items:
-        pod_name = pod.metadata.name
-        if pod_name == name:
-            # this pod name containers all segments of name
-            result[pod_name] = [container.name for container in pod.spec.containers]
+    API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
+    try:
+        pod = config.K8S_CORE_API.read_namespaced_pod(name=name, namespace=namespace)
+    except ApiException as e:
+        if e.status == 404:
+            raise RuntimeError("Pod not found.")
+        raise RuntimeError(API_EXCEPTION_MSG.format(e))
+    result[pod.metadata.name] = [container.name for container in pod.spec.containers]
     return result
