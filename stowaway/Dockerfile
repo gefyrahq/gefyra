@@ -19,6 +19,13 @@ RUN git clone https://git.zx2c4.com/wireguard-go && \
     make && \
     make install
 
+
+ENV WG_QUICK_USERSPACE_IMPLEMENTATION=wireguard-go
+ENV WG_THREADS=4
+ENV WG_SUDO=1
+ENV WG_LOG_LEVEL=info
+ENV WG_LOG_FILE=/dev/stdout
+ENV WG_ERR_LOG_FILE=/dev/stderr
 ENV WITH_WGQUICK=yes
 RUN git clone https://git.zx2c4.com/wireguard-tools && \
     cd wireguard-tools && \
