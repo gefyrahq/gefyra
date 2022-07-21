@@ -6,7 +6,7 @@ import kubernetes as k8s
 from gefyra.configuration import OperatorConfiguration
 from gefyra.resources.crds import create_interceptrequest_definition
 from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
-from gefyra.resources.deployments import create_stowaway_deployment
+from gefyra.resources.deployments import create_stowaway_deployment, create_stowaway_serviceaccount
 from gefyra.resources.services import (
     create_stowaway_nodeport_service,
     create_stowaway_rsync_service,
@@ -18,6 +18,20 @@ app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 extension_api = k8s.client.ApiextensionsV1Api()
 events = k8s.client.EventsV1Api()
+
+
+def handle_serviceaccount(logger, configuration: OperatorConfiguration):
+    serviceaccount = create_stowaway_serviceaccount()
+    try:
+        core_v1_api.create_namespaced_service_account(
+            body=serviceaccount, namespace=configuration.NAMESPACE
+        )
+        logger.info("Gefyra Stowaway Serviceaccount created")
+    except k8s.client.exceptions.ApiException as e:
+        if e.status == 409:
+            pass
+        else:
+            raise e
 
 
 def handle_crds(logger) -> k8s.client.V1CustomResourceDefinition:
@@ -161,6 +175,11 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     # handle Gefyra CRDs and Permissions
     #
     handle_crds(logger)
+
+    #
+    # handle Stowaway serviceaccount
+    #
+    handle_serviceaccount(logger, configuration)
 
     #
     # handle Stowaway proxy route configmap

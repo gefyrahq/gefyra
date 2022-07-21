@@ -3,6 +3,16 @@ import kubernetes as k8s
 from gefyra.configuration import configuration
 
 
+def create_stowaway_serviceaccount() -> k8s.client.V1ServiceAccount:
+    return k8s.client.V1ServiceAccount(
+        metadata=k8s.client.V1ObjectMeta(
+            # this name is referenced by Stowaway
+            name="gefyra-stowaway",
+            namespace=configuration.NAMESPACE,
+        )
+    )
+
+
 def create_stowaway_deployment() -> k8s.client.V1Deployment:
 
     container = k8s.client.V1Container(
@@ -31,8 +41,9 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
             ),
         ],
         security_context=k8s.client.V1SecurityContext(
-            privileged=True,
-            capabilities=k8s.client.V1Capabilities(add=["NET_ADMIN", "SYS_MODULE"]),
+            # privileged=True,
+            # capabilities=k8s.client.V1Capabilities(add=["NET_ADMIN", "SYS_MODULE"]),
+            capabilities=k8s.client.V1Capabilities(add=["NET_ADMIN"]),
         ),
         volume_mounts=[
             k8s.client.V1VolumeMount(
@@ -45,6 +56,7 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
     template = k8s.client.V1PodTemplateSpec(
         metadata=k8s.client.V1ObjectMeta(labels={"app": "stowaway"}),
         spec=k8s.client.V1PodSpec(
+            service_account_name="gefyra-stowaway",
             containers=[container],
             volumes=[
                 k8s.client.V1Volume(
