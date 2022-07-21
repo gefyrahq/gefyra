@@ -52,6 +52,7 @@ def create_operator_clusterrole() -> V1ClusterRole:
             "secrets",
             "deployments",
             "services",
+            "serviceaccounts",
             "pods",
             "pods/exec",
             "events",
