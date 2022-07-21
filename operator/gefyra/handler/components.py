@@ -6,7 +6,10 @@ import kubernetes as k8s
 from gefyra.configuration import OperatorConfiguration
 from gefyra.resources.crds import create_interceptrequest_definition
 from gefyra.resources.configmaps import create_stowaway_proxyroute_configmap
-from gefyra.resources.deployments import create_stowaway_deployment, create_stowaway_serviceaccount
+from gefyra.resources.deployments import (
+    create_stowaway_deployment,
+    create_stowaway_serviceaccount,
+)
 from gefyra.resources.services import (
     create_stowaway_nodeport_service,
     create_stowaway_rsync_service,
