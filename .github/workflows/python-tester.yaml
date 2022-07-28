@@ -123,7 +123,7 @@ jobs:
     - name: Run gefyra bridge with pod
       working-directory: ./client
       run: |
-        k = $(kubectl get pods -n ofa -o=go-template='{{ (index .items 0).metadata.name  }}')
+        k = $(kubectl get pods -n default -o=go-template='{{ (index .items 0).metadata.name  }}')
         echo $k
         poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --pod $k --port 80:8000 --container-name hello-nginx -I mypybridge
 
