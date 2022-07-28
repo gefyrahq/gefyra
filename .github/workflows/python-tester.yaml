@@ -111,10 +111,22 @@ jobs:
       run: |
         poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx-not -I mypybridge
         test $? -eq 1
-    - name: Run gefyra bridge
+    - name: Run gefyra bridge with deployment
       working-directory: ./client
       run: |
         poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
+    - name: Run gefyra unbridge
+      working-directory: ./client
+      run: |
+        poetry run coverage run -a -m gefyra unbridge -A
+
+    - name: Run gefyra bridge with pod
+      working-directory: ./client
+      run: |
+        k = $(kubectl get pods -n ofa -o=go-template='{{ (index .items 0).metadata.name  }}')
+        echo $k
+        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --pod $k --port 80:8000 --container-name hello-nginx -I mypybridge
+
     - name: "Run gefyra list --bridges"
       working-directory: ./client
       run: |
