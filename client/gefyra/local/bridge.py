@@ -64,16 +64,22 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
 
 
 def get_all_containers(config: ClientConfiguration) -> list:
-    containers_with_ips = []
+    container_information = []
     gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
-    containers = gefyra_net.attrs.get("Containers")
+    containers = gefyra_net.containers
     # filter out gefyra-cargo container as well as fields other than name and ip
-    for _, entry in containers.items():
-        if entry.get("Name") != "gefyra-cargo":
-            containers_with_ips.append(
-                (entry["Name"], entry["IPv4Address"].split("/")[0])
+    for container in containers:
+        if container.name != "gefyra-cargo":
+            container_information.append(
+                (
+                    container.name,
+                    container.attrs["NetworkSettings"]["Networks"]["gefyra"][
+                        "IPAddress"
+                    ].split("/")[0],
+                    container.attrs["HostConfig"]["DnsSearch"][0].split(".")[0],
+                )
             )
-    return containers_with_ips
+    return container_information
 
 
 def remove_interceptrequest_remainder(config: ClientConfiguration):
