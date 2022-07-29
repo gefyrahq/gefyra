@@ -2,6 +2,7 @@
 import argparse
 import logging
 
+from gefyra.api import get_containers_and_print, get_bridges_and_print
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import StoreDictKeyPair
 
@@ -186,26 +187,6 @@ def up_command(args):
     up(config=configuration)
 
 
-def get_containers_and_print():
-    from gefyra.api import list_containers
-
-    containers = list_containers()
-    containers.insert(0, ("NAME", "IP_ADDRESS"))
-    for name, ip in containers:
-        print("{:<30}{}".format(name, ip))
-
-
-def get_bridges_and_print():
-    from gefyra.api import list_interceptrequests
-
-    ireqs = list_interceptrequests()
-    if ireqs:
-        for ireq in ireqs:
-            print(ireq)
-    else:
-        logger.info("No active bridges found")
-
-
 def version(config, check: bool):
     import requests
 
@@ -279,6 +260,9 @@ def main():
             if args.containers:
                 get_containers_and_print()
             elif args.bridges:
+                get_bridges_and_print()
+            else:
+                get_containers_and_print()
                 get_bridges_and_print()
         elif args.action == "down":
             down()

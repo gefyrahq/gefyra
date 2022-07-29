@@ -1,4 +1,5 @@
 import logging
+from tabulate import tabulate
 from typing import List
 
 from gefyra.configuration import default_configuration
@@ -7,6 +8,28 @@ from .utils import stopwatch
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_containers_and_print():
+    from gefyra.api import list_containers
+
+    containers = list_containers()
+    print(
+        tabulate(
+            containers, headers=["NAME", "IP ADDRESS", "NAMESPACE"], tablefmt="plain"
+        )
+    )
+
+
+def get_bridges_and_print():
+    from gefyra.api import list_interceptrequests
+
+    ireqs = list_interceptrequests()
+    if ireqs:
+        for ireq in ireqs:
+            print(ireq)
+    else:
+        logger.info("No active bridges found")
 
 
 @stopwatch
