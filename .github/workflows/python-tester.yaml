@@ -60,6 +60,14 @@ jobs:
         python-version: '3.x'
     - name: Install Poetry
       uses: snok/install-poetry@v1
+    - name: Set Gefyra to no tracking
+      shell: bash
+      run: |
+        mkdir -p ~/.gefyra
+        cd ~/.gefyra
+        touch config
+        echo [telemetry] >> config
+        echo track = False >> config
     - name: Pytest
       working-directory: ./client
       run: |
@@ -76,14 +84,6 @@ jobs:
     - name: Apply some workload
       run: |
         kubectl apply -f testing/workloads/hello.yaml
-    - name: Set Gefyra to no tracking
-      shell: bash
-      run: |
-        mkdir -p ~/.gefyra
-        cd ~/.gefyra
-        touch config
-        echo [telemetry] >> config
-        echo track = False >> config
     - name: Run gefyra up
       working-directory: ./client
       run: |
