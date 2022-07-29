@@ -79,7 +79,7 @@ jobs:
     - name: Set Gefyra to no tracking
       shell: bash
       run: |
-        mkdir ~/.gefyra
+        mkdir -p ~/.gefyra
         cd ~/gefyra
         touch config
         echo [telemetry] >> config
