@@ -40,6 +40,7 @@ def make_exe():
     exe.add_python_resources(exe.read_package_root(CWD, ["gefyra"]))
     exe.add_python_resources(exe.pip_install(["--no-deps", "docker"]))
     exe.add_python_resources(exe.pip_install(["kubernetes"]))
+    exe.add_python_resources(exe.pip_install(["tabulate"]))
     return exe
 
 def make_win_exe():
@@ -74,6 +75,7 @@ def make_win_exe():
     exe.add_python_resources(exe.pip_install(["--no-deps", "docker"]))
     exe.add_python_resources(exe.pip_install(["kubernetes"]))
     exe.add_python_resources(exe.pip_install(["pywin32"]))
+    exe.add_python_resources(exe.pip_install(["tabulate"]))
     exe.windows_runtime_dlls_mode = "always"
     return exe
 
