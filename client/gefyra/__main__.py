@@ -261,6 +261,9 @@ def main():
                 get_containers_and_print()
             elif args.bridges:
                 get_bridges_and_print()
+            else:
+                get_containers_and_print()
+                get_bridges_and_print()
         elif args.action == "down":
             down()
         elif args.action == "check":
