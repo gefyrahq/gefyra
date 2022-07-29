@@ -66,8 +66,8 @@ jobs:
         mkdir -p ~/.gefyra
         cd ~/.gefyra
         touch config
-        echo [telemetry] >> config
-        echo track = False >> config
+        echo "[telemetry]" >> config
+        echo "track = False" >> config
     - name: Pytest
       working-directory: ./client
       run: |
