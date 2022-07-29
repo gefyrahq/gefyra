@@ -43,7 +43,6 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
         security_context=k8s.client.V1SecurityContext(
             privileged=True,
             capabilities=k8s.client.V1Capabilities(add=["NET_ADMIN", "SYS_MODULE"]),
-            # capabilities=k8s.client.V1Capabilities(add=["NET_ADMIN"]),
         ),
         volume_mounts=[
             k8s.client.V1VolumeMount(
