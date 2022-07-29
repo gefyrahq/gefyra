@@ -80,7 +80,7 @@ jobs:
       shell: bash
       run: |
         mkdir -p ~/.gefyra
-        cd ~/gefyra
+        cd ~/.gefyra
         touch config
         echo [telemetry] >> config
         echo track = False >> config
