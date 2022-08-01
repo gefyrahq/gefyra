@@ -141,13 +141,13 @@ class PortMappingParser(argparse.Action):
                 if len(res) == 2:
                     my_dict[res[1]] = res[0]
                 # ip - port - port
-                if len(res) == 3:
+                elif len(res) == 3:
                     my_dict[res[2]] = (res[0], res[1])
                 else:
                     raise ValueError
         except Exception:
             logger.error(
-                "Invalid port mapping. Example valid port mapping: 8080:8081 (container_port:host_port)."
+                "Invalid port mapping. Example valid port mapping: 8080:8081 (<ip>:host_port:container_port)."
             )
             exit(1)
         setattr(namespace, self.dest, my_dict)
