@@ -129,15 +129,22 @@ def handle_docker_run_container(
     return config.DOCKER.containers.run(image, **kwargs)
 
 
-class StoreDictKeyPair(argparse.Action):
+class PortMappingParser(argparse.Action):
     """Adapted from https://stackoverflow.com/questions/29986185/python-argparse-dict-arg"""
 
     def __call__(self, parser, namespace, values, option_string=None):
         my_dict = {}
         try:
             for kv in values.split(","):
-                k, v = kv.split(":")
-                my_dict[k] = v
+                res = kv.split(":")
+                # port - port
+                if len(res) == 2:
+                    my_dict[res[1]] = res[0]
+                # ip - port - port
+                if len(res) == 3:
+                    my_dict[res[2]] = (res[0], res[1])
+                else:
+                    raise ValueError
         except Exception:
             logger.error(
                 "Invalid port mapping. Example valid port mapping: 8080:8081 (container_port:host_port)."
