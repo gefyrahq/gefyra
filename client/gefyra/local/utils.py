@@ -159,7 +159,9 @@ class IpPortMappingParser(PortMappingParser):
     def parse_split(self, split):
         # port - port
         res = {}
-        if len(split) == 3:
+        if len(split) == 2:
+            res[split[1]] = split[0]
+        elif len(split) == 3:
             res[split[2]] = (split[0], split[1])
             return res
         else:
