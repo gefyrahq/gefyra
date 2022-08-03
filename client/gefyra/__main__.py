@@ -235,7 +235,7 @@ def main():
                 namespace=args.namespace,
                 env_from=args.env_from,
                 env=args.env,
-                ports=args.port,
+                ports=args.expose,
                 volumes=args.volume,
             )
         elif args.action == "bridge":
