@@ -1,11 +1,45 @@
 import logging
 import os
 
-from gefyra.configuration import default_configuration
+from gefyra.configuration import default_configuration, ClientConfiguration
 from .utils import stopwatch
+from ..cluster.resources import (
+    get_pods_and_containers_for_workload,
+    get_pods_and_containers_for_pod_name,
+)
 from ..local.cargo import probe_wireguard_connection
 
 logger = logging.getLogger(__name__)
+
+
+def retrieve_pod_and_container(
+    env_from: str, namespace: str, config: ClientConfiguration
+) -> (str, str):
+    container_name = ""
+    workload_type, workload_name = env_from.split("/")
+
+    if workload_type not in ["pod", "deployment", "statefulset"]:
+        raise RuntimeError(f"Unknown workload type {workload_type}")
+
+    if "/" in workload_name:
+        workload_name, container_name = workload_name.split("/")
+
+    if workload_type != "pod":
+        pods = get_pods_and_containers_for_workload(
+            config, name=workload_name, namespace=namespace, workload_type=workload_type
+        )
+    else:
+        pods = get_pods_and_containers_for_pod_name(
+            config=config, name=workload_name, namespace=namespace
+        )
+    pod_name, containers = pods.popitem()
+
+    if container_name and container_name not in containers:
+        raise RuntimeError(
+            f"{container_name} was not found for {workload_type}/{workload_name}"
+        )
+
+    return pod_name, container_name or containers[0]
 
 
 @stopwatch
@@ -54,7 +88,11 @@ def run(
     env_dict = {}
     try:
         if env_from:
-            env_from_pod, env_from_container = env_from.split("/")
+
+            env_from_pod, env_from_container = retrieve_pod_and_container(
+                env_from, namespace=namespace, config=config
+            )
+
             raw_env = get_env_from_pod_container(
                 config, env_from_pod, namespace, env_from_container
             )
