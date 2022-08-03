@@ -161,6 +161,7 @@ class IpPortMappingParser(PortMappingParser):
         res = {}
         if len(split) == 2:
             res[split[1]] = split[0]
+            return res
         elif len(split) == 3:
             res[split[2]] = (split[0], split[1])
             return res
