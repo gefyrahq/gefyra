@@ -4,7 +4,7 @@ import logging
 
 from gefyra.api import get_containers_and_print, get_bridges_and_print
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.utils import StoreDictKeyPair
+from gefyra.local.utils import PortMappingParser, IpPortMappingParser
 from gefyra.local.telemetry import CliTelemetry
 
 logger = logging.getLogger("gefyra")
@@ -92,10 +92,11 @@ run_parser.add_argument(
     required=False,
 )
 run_parser.add_argument(
-    "--port",
+    "-p",
+    "--expose",
     help="Add port mapping in form of <container_port>:<host_port>",
     required=False,
-    action=StoreDictKeyPair,
+    action=IpPortMappingParser,
 )
 bridge_parser = action.add_parser("bridge")
 bridge_parser.add_argument(
@@ -115,7 +116,7 @@ bridge_parser.add_argument(
     "--port",
     help="Add port mapping in form of <container_port>:<host_port>",
     required=True,
-    action=StoreDictKeyPair,
+    action=PortMappingParser,
 )
 bridge_parser.add_argument(
     "-n",
@@ -255,7 +256,7 @@ def main():
                 namespace=args.namespace,
                 env_from=args.env_from,
                 env=args.env,
-                ports=args.port,
+                ports=args.expose,
                 volumes=args.volume,
             )
         elif args.action == "bridge":
