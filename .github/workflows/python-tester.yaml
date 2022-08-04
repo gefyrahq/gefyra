@@ -88,14 +88,14 @@ jobs:
       working-directory: ./client
       shell: bash --noprofile --norc -o pipefail {0}
       run: |
-        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --port 8000
+        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000
         test $? -eq 1
         curl localhost:8000
         test $? -ne 0
     - name: Run gefyra run with localhost port mapping
       working-directory: ./client
       run: |
-        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --port 8000:8000
+        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000:8000
         test $? -eq 0
         curl localhost:8000
         test $? -eq 0
