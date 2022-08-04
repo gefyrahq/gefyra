@@ -12,14 +12,30 @@ from ..local.cargo import probe_wireguard_connection
 logger = logging.getLogger(__name__)
 
 
+def get_workload_type(workload_type_str: str):
+    POD = ["pod", "po", "pods"]
+    DEPLOYMENT = ["deploy", "deployment", "deployments"]
+    STATEFULSET = ["statefulset", "sts", "statefulsets"]
+    VALID_TYPES = POD + DEPLOYMENT + STATEFULSET
+
+    if workload_type_str not in VALID_TYPES:
+        raise RuntimeError(f"Unknown workload type {workload_type_str}")
+
+    if workload_type_str in POD:
+        return "pod"
+    elif workload_type_str in DEPLOYMENT:
+        return "deployment"
+    elif workload_type_str in STATEFULSET:
+        return "statefulset"
+
+
 def retrieve_pod_and_container(
     env_from: str, namespace: str, config: ClientConfiguration
 ) -> (str, str):
     container_name = ""
-    workload_type, workload_name = env_from.split("/")
+    workload_type, workload_name = env_from.split("/", 1)
 
-    if workload_type not in ["pod", "deployment", "statefulset"]:
-        raise RuntimeError(f"Unknown workload type {workload_type}")
+    workload_type = get_workload_type(workload_type)
 
     if "/" in workload_name:
         workload_name, container_name = workload_name.split("/")
