@@ -213,8 +213,10 @@ def up_command(args):
         configuration._init_kubeapi()
         _, active_context = kube_config.list_kube_config_contexts()
         if active_context["name"] == "minikube":
-            logger.warning("You are running 'gefyra up' with a context called 'minikube': if you are running a local "
-                           "Minikube cluster, please use 'gefyra run --minikube' to set up Gefyra.")
+            logger.warning(
+                "You are running 'gefyra up' with a context called 'minikube': if you are running a local "
+                "Minikube cluster, please use 'gefyra run --minikube' to set up Gefyra."
+            )
 
     up(config=configuration)
 
