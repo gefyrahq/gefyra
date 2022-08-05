@@ -60,6 +60,14 @@ jobs:
         python-version: '3.x'
     - name: Install Poetry
       uses: snok/install-poetry@v1
+    - name: Set Gefyra to no tracking
+      shell: bash
+      run: |
+        mkdir -p ~/.gefyra
+        cd ~/.gefyra
+        touch config.ini
+        echo "[telemetry]" >> config.ini
+        echo "track = False" >> config.ini
     - name: Pytest
       working-directory: ./client
       run: |
