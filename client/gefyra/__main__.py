@@ -4,7 +4,6 @@ import logging
 
 from gefyra.api import get_containers_and_print, get_bridges_and_print
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.telemetry import CliTelemetry
 from gefyra.local.utils import PortMappingParser, IpPortMappingParser
 from gefyra.local.telemetry import CliTelemetry
 
