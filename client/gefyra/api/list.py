@@ -35,7 +35,9 @@ def get_bridges_and_print():
 @stopwatch
 def list_interceptrequests(config=default_configuration) -> List[str]:
     from gefyra.local.bridge import get_all_interceptrequests
+    from gefyra.local.utils import set_gefyra_network_from_cargo
 
+    config = set_gefyra_network_from_cargo(config)
     ireqs = []
     for ireq in get_all_interceptrequests(config):
         ireqs.append(ireq["metadata"]["name"])
@@ -45,5 +47,8 @@ def list_interceptrequests(config=default_configuration) -> List[str]:
 @stopwatch
 def list_containers(config=default_configuration) -> List[str]:
     from gefyra.local.bridge import get_all_containers
+    from gefyra.local.utils import set_gefyra_network_from_cargo
+
+    config = set_gefyra_network_from_cargo(config)
 
     return get_all_containers(config)

@@ -3,7 +3,7 @@ import os
 
 from gefyra.configuration import default_configuration
 from .utils import stopwatch
-from ..local.cargo import probe_wireguard_connection
+
 
 logger = logging.getLogger(__name__)
 
@@ -25,18 +25,12 @@ def run(
     from kubernetes.client import ApiException
     from gefyra.cluster.utils import get_env_from_pod_container
     from gefyra.local.bridge import deploy_app_container
-    from ..local.utils import get_processed_paths
-    from docker.errors import NotFound, APIError
+    from gefyra.local.utils import get_processed_paths, set_gefyra_network_from_cargo
+    from gefyra.local.cargo import probe_wireguard_connection
+    from docker.errors import APIError
 
     dns_search = f"{namespace}.svc.cluster.local"
-    try:
-        item = "network"
-        config.DOCKER.networks.get(config.NETWORK_NAME)
-        item = "Cargo"
-        config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
-    except NotFound:
-        logger.error(f"Gefyra {item} not found. Please run 'gefyra up' first.")
-        return False
+    config = set_gefyra_network_from_cargo(config)
 
     #
     # Confirm the wireguard connection working

@@ -54,6 +54,7 @@ class ClientConfiguration(object):
         carrier_image_url: str = None,
         cargo_image_url: str = None,
         kube_config_file: str = None,
+        kube_context: str = None,
     ):
         if sys.platform == "win32":
             fix_pywin32_in_frozen_build()
@@ -129,6 +130,7 @@ class ClientConfiguration(object):
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.KUBE_CONFIG_FILE = kube_config_file
+        self.KUBE_CONTEXT = kube_context
 
     def _init_docker(self):
         import docker
@@ -151,9 +153,9 @@ class ClientConfiguration(object):
         from kubernetes.config import load_kube_config
 
         if self.KUBE_CONFIG_FILE:
-            load_kube_config(self.KUBE_CONFIG_FILE)
+            load_kube_config(self.KUBE_CONFIG_FILE, context=self.KUBE_CONTEXT)
         else:
-            load_kube_config()
+            load_kube_config(context=self.KUBE_CONTEXT)
         self.K8S_CORE_API = CoreV1Api()
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()

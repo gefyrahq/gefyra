@@ -8,6 +8,28 @@ from docker.models.containers import Container
 from gefyra.cluster.utils import decode_secret
 from gefyra.configuration import ClientConfiguration, logger
 from gefyra.local.cargoimage.Dockerfile import get_dockerfile
+from gefyra.local import CREATED_BY_LABEL
+
+
+def set_gefyra_network_from_cargo(config) -> ClientConfiguration:
+    from docker.errors import NotFound
+
+    try:
+        cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+        networks = list(cargo_container.attrs["NetworkSettings"]["Networks"].keys())
+        try:
+            networks.remove("bridge")
+        except ValueError:
+            pass
+        config.NETWORK_NAME = networks[0]
+    except NotFound:
+        raise RuntimeError("Gefyra Cargo not running. Please run 'gefyra up' first.")
+    except KeyError:
+        raise RuntimeError(
+            "Gefyra Cargo is not configured properly. "
+            "Please set up Gefyra again with 'gefyra down' and 'gefyra up'."
+        )
+    return config
 
 
 def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str]]:
@@ -114,7 +136,13 @@ def handle_docker_remove_container(
 def handle_docker_create_container(
     config: ClientConfiguration, image: str, **kwargs
 ) -> Container:
-    return config.DOCKER.containers.create(image, **kwargs)
+    return config.DOCKER.containers.create(
+        image,
+        labels={
+            CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
+        },
+        **kwargs,
+    )
 
 
 def handle_docker_run_container(
@@ -126,7 +154,13 @@ def handle_docker_run_container(
     # docker.errors.ContainerError – If the container exits with a non-zero exit code and detach is False.
     # docker.errors.ImageNotFound – If the specified image does not exist.
     # docker.errors.APIError – If the server returns an error.
-    return config.DOCKER.containers.run(image, **kwargs)
+    return config.DOCKER.containers.run(
+        image,
+        labels={
+            CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
+        },
+        **kwargs,
+    )
 
 
 class PortMappingParser(argparse.Action):
