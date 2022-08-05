@@ -161,7 +161,6 @@ class ClientConfiguration(object):
         self.K8S_APP_API = AppsV1Api()
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
 
-
     def __getattr__(self, item):
         if item in [
             "K8S_CORE_API",
