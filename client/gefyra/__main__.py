@@ -194,6 +194,7 @@ def get_intercept_kwargs(parser_args):
 
 def up_command(args):
     from gefyra.api import up
+    from kubernetes.config import kube_config
 
     if args.minikube and bool(args.endpoint):
         raise RuntimeError("You cannot use --endpoint together with --minikube.")
@@ -209,6 +210,11 @@ def up_command(args):
             cargo_image_url=args.cargo,
             carrier_image_url=args.carrier,
         )
+        configuration._init_kubeapi()
+        _, active_context = kube_config.list_kube_config_contexts()
+        if active_context["name"] == "minikube":
+            logger.warning("You are running 'gefyra up' with a context called 'minikube': if you are running a local "
+                           "Minikube cluster, please use 'gefyra run --minikube' to set up Gefyra.")
 
     up(config=configuration)
 

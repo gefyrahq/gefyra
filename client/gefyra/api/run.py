@@ -5,7 +5,6 @@ from gefyra.configuration import default_configuration, ClientConfiguration
 from .utils import stopwatch
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -33,6 +32,7 @@ def retrieve_pod_and_container(
         get_pods_and_containers_for_workload,
         get_pods_and_containers_for_pod_name,
     )
+
     container_name = ""
     workload_type, workload_name = env_from.split("/", 1)
 
