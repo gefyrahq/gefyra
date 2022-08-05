@@ -38,7 +38,7 @@ def handle_create_network(config: ClientConfiguration) -> Network:
     ipam_config = IPAMConfig(pool_configs=[ipam_pool])
     network = config.DOCKER.networks.create(
         config.NETWORK_NAME,
-        driver="macvlan",
+        driver="bridge",
         ipam=ipam_config,
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],

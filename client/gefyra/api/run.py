@@ -82,7 +82,6 @@ def run(
 
     dns_search = f"{namespace}.svc.cluster.local"
     config = set_gefyra_network_from_cargo(config)
-
     #
     # Confirm the wireguard connection working
     #
