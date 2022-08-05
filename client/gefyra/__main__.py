@@ -5,6 +5,7 @@ import logging
 from gefyra.api import get_containers_and_print, get_bridges_and_print
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import PortMappingParser, IpPortMappingParser
+from gefyra.local.minikube import detect_minikube_config
 from gefyra.local.telemetry import CliTelemetry
 
 logger = logging.getLogger("gefyra")
@@ -22,6 +23,14 @@ up_parser.add_argument(
     "--endpoint",
     help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to",
     required=False,
+)
+up_parser.add_argument(
+    "-M",
+    "--minikube",
+    help="let Gefyra automatically find out the connection parameters for a local Minikube cluster",
+    required=False,
+    action="store_true",
+    default=False,
 )
 up_parser.add_argument(
     "-o",
@@ -186,14 +195,20 @@ def get_intercept_kwargs(parser_args):
 def up_command(args):
     from gefyra.api import up
 
-    configuration = ClientConfiguration(
-        cargo_endpoint=args.endpoint,
-        registry_url=args.registry,
-        operator_image_url=args.operator,
-        stowaway_image_url=args.stowaway,
-        cargo_image_url=args.cargo,
-        carrier_image_url=args.carrier,
-    )
+    if args.minikube and bool(args.endpoint):
+        raise RuntimeError("You cannot use --endpoint together with --minikube.")
+
+    if args.minikube:
+        configuration = detect_minikube_config(args)
+    else:
+        configuration = ClientConfiguration(
+            cargo_endpoint=args.endpoint,
+            registry_url=args.registry,
+            operator_image_url=args.operator,
+            stowaway_image_url=args.stowaway,
+            cargo_image_url=args.cargo,
+            carrier_image_url=args.carrier,
+        )
 
     up(config=configuration)
 

@@ -135,5 +135,5 @@ def probe_wireguard_connection(config: ClientConfiguration):
             f"Gefyra could not successfully confirm the Wireguard connection working. Please make sure you "
             f"are using the --endpoint argument for remote clusters and that {config.CARGO_ENDPOINT} can "
             f"reach Kubernetes node port 31820 from this machine. Please check your firewall "
-            f"settings, too."
+            f"settings, too. If you are running a local Minikube cluster, please use the 'gefyra up --minikube' flag."
         )

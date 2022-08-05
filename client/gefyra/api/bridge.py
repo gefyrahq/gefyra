@@ -80,6 +80,9 @@ def bridge(
     config=default_configuration,
 ) -> bool:
     from docker.errors import NotFound
+    from gefyra.local.utils import set_gefyra_network_from_cargo
+
+    config = set_gefyra_network_from_cargo(config)
 
     try:
         container = config.DOCKER.containers.get(name)

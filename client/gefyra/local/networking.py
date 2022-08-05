@@ -5,6 +5,7 @@ from docker.models.networks import Network
 from docker.types import IPAMConfig, IPAMPool
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.local import CREATED_BY_LABEL
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,11 @@ def handle_create_network(config: ClientConfiguration) -> Network:
     try:
         network = config.DOCKER.networks.get(config.NETWORK_NAME)
         logger.info("Gefyra network already exists")
+        if (
+            CREATED_BY_LABEL[0] not in network.attrs["Labels"]
+            or network.attrs["Labels"][CREATED_BY_LABEL[0]] != "true"
+        ):
+            logger.debug(f"Docker network '{network.name}' is not managed by Gefyra")
         return network
     except NotFound:
         pass
@@ -31,7 +37,12 @@ def handle_create_network(config: ClientConfiguration) -> Network:
     ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
     ipam_config = IPAMConfig(pool_configs=[ipam_pool])
     network = config.DOCKER.networks.create(
-        config.NETWORK_NAME, driver="bridge", ipam=ipam_config
+        config.NETWORK_NAME,
+        driver="bridge",
+        ipam=ipam_config,
+        labels={
+            CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
+        },
     )
     logger.info(f"Created network '{config.NETWORK_NAME}' ({network.short_id})")
     return network
@@ -43,7 +54,16 @@ def handle_remove_network(config: ClientConfiguration) -> None:
     # the given name, under the assumption that no other docker network inadvertently uses the same name
     try:
         gefyra_network = config.DOCKER.networks.get(config.NETWORK_NAME)
-        gefyra_network.remove()
+        if (
+            CREATED_BY_LABEL[0] in gefyra_network.attrs["Labels"]
+            and gefyra_network.attrs["Labels"][CREATED_BY_LABEL[0]] == "true"
+        ):
+            logger.info(f"Removing Docker network {gefyra_network.name}")
+            gefyra_network.remove()
+        else:
+            logger.info(
+                f"Docker network {gefyra_network.name} is not managed by Gefyra"
+            )
     except NotFound:
         pass
     except APIError as e:
@@ -59,6 +79,10 @@ def kill_remainder_container_in_network(
         containers = network.attrs["Containers"].keys()
         for container in containers:
             c = config.DOCKER.containers.get(container)
-            c.kill()
+            if (
+                CREATED_BY_LABEL[0] in c.attrs["Config"]["Labels"]
+                and c.attrs["Config"]["Labels"][CREATED_BY_LABEL[0]] == "true"
+            ):
+                c.kill()
     except NotFound:
         pass

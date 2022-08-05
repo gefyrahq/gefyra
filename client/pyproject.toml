@@ -22,7 +22,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-kubernetes = "^19.15.0"
+kubernetes = "^24.2.0"
 docker = "^5.0.3"
 cli-tracker = "0.2.5"
 tabulate = "^0.8.10"

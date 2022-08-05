@@ -4,6 +4,7 @@ from gefyra.configuration import default_configuration
 
 from .utils import stopwatch
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -16,15 +17,19 @@ def down(config=default_configuration) -> bool:
         kill_remainder_container_in_network,
     )
     from gefyra.local.bridge import remove_interceptrequest_remainder
+    from gefyra.local.utils import set_gefyra_network_from_cargo
 
-    logger.info("Removing running bridges")
-    remove_interceptrequest_remainder(config)
-    logger.info("Uninstalling Operator")
-    uninstall_operator(config)
-    logger.info("Removing Cargo")
+    config = set_gefyra_network_from_cargo(config)
+    try:
+        logger.info("Removing running bridges")
+        remove_interceptrequest_remainder(config)
+        logger.info("Uninstalling Operator")
+        uninstall_operator(config)
+        logger.info("Removing Cargo")
+    except Exception as e:
+        logger.error(f"Could not remove all Gefyra cluster components: {e}")
+
     remove_cargo_container(config)
-    logger.info("Stopping remainder container from Gefyra network")
     kill_remainder_container_in_network(config, config.NETWORK_NAME)
-    logger.info("Removing Docker network")
     handle_remove_network(config)
     return True
