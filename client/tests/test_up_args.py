@@ -1,3 +1,4 @@
+import pytest
 from gefyra.__main__ import up_parser, up_command
 from gefyra.configuration import ClientConfiguration, __VERSION__
 
@@ -182,6 +183,20 @@ def test_parse_up_fct(monkeypatch):
     monkeypatch.setattr("gefyra.api.up", lambda config: True)
     args = up_parser.parse_args(["-e", "10.30.34.25:31820"])
     up_command(args)
+
+
+def test_parse_up_endpoint_and_minikube(monkeypatch):
+    monkeypatch.setattr("gefyra.api.up", lambda config: True)
+    args = up_parser.parse_args(["-e", "10.30.34.25:31820", "--minikube"])
+    with pytest.raises(RuntimeError):
+        up_command(args)
+
+
+def test_parse_up_minikube_not_started(monkeypatch):
+    monkeypatch.setattr("gefyra.api.up", lambda config: True)
+    args = up_parser.parse_args(["--minikube"])
+    with pytest.raises(RuntimeError):
+        up_command(args)
 
 
 def test_parse_up_kube_conf():
