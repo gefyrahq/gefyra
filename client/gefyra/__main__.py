@@ -4,7 +4,11 @@ import logging
 
 from gefyra.api import get_containers_and_print, get_bridges_and_print
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.utils import PortMappingParser, IpPortMappingParser
+from gefyra.local.utils import (
+    PortMappingParser,
+    IpPortMappingParser,
+    get_connection_from_kubeconfig,
+)
 from gefyra.local.minikube import detect_minikube_config
 from gefyra.local.telemetry import CliTelemetry
 
@@ -201,8 +205,15 @@ def up_command(args):
     if args.minikube:
         configuration = detect_minikube_config(args)
     else:
+        if not args.endpoint:
+            # #138: Read in the --endpoint parameter from kubeconf
+            endpoint = get_connection_from_kubeconfig()
+            logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
+        else:
+            endpoint = args.endpoint
+
         configuration = ClientConfiguration(
-            cargo_endpoint=args.endpoint,
+            cargo_endpoint=endpoint,
             registry_url=args.registry,
             operator_image_url=args.operator,
             stowaway_image_url=args.stowaway,

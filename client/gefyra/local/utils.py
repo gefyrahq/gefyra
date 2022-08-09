@@ -163,6 +163,28 @@ def handle_docker_run_container(
     )
 
 
+def get_connection_from_kubeconfig() -> Optional[str]:
+    from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
+    from pathlib import Path
+    import yaml
+
+    try:
+        with open(Path(KUBE_CONFIG_DEFAULT_LOCATION).expanduser(), "r") as kubeconfig:
+            kubecfg = yaml.safe_load(kubeconfig)
+        active_ctx = next(
+            filter(
+                lambda x: x["name"] == kubecfg["current-context"], kubecfg["contexts"]
+            )
+        )
+        if gefyra_connection := active_ctx.get("gefyra"):
+            return gefyra_connection
+        else:
+            return None
+    except Exception as e:  # noqa
+        logger.error(f"Could not load Gefyra --endpoint from kubeconfig due to: {e}")
+        return None
+
+
 class PortMappingParser(argparse.Action):
     """Adapted from https://stackoverflow.com/questions/29986185/python-argparse-dict-arg"""
 
