@@ -83,6 +83,7 @@ def run(
     # #125: Fallback to namespace in kube config
     if namespace is None:
         from kubernetes.config import kube_config
+
         _, active_context = kube_config.list_kube_config_contexts()
         namespace = active_context["context"].get("namespace") or "default"
         ns_source = "kubeconfig"
