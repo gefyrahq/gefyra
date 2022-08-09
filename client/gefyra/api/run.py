@@ -68,7 +68,7 @@ def run(
     ports: dict = None,
     detach: bool = True,
     auto_remove: bool = True,
-    namespace: str = "default",
+    namespace: str = None,
     env: list = None,
     env_from: str = None,
     config=default_configuration,
@@ -79,6 +79,15 @@ def run(
     from gefyra.local.utils import get_processed_paths, set_gefyra_network_from_cargo
     from gefyra.local.cargo import probe_wireguard_connection
     from docker.errors import APIError
+
+    # #125: Fallback to namespace in kube config
+    if namespace is None:
+        from kubernetes.config import kube_config
+        _, active_context = kube_config.list_kube_config_contexts()
+        namespace = active_context["context"].get("namespace") or "default"
+        ns_source = "kubeconfig"
+    else:
+        ns_source = "--namespace argument"
 
     dns_search = f"{namespace}.svc.cluster.local"
     config = set_gefyra_network_from_cargo(config)
@@ -146,7 +155,7 @@ def run(
 
     logger.info(
         f"Container image '{', '.join(container.image.tags)}' started with name '{container.name}' in "
-        f"Kubernetes namespace '{namespace}'"
+        f"Kubernetes namespace '{namespace}' (from {ns_source})"
     )
     if detach:
         return True

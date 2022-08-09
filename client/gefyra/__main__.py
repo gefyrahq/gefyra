@@ -80,7 +80,6 @@ run_parser.add_argument(
     "-n",
     "--namespace",
     help="the namespace for this container to run in",
-    default="default",
 )
 run_parser.add_argument(
     "--env",
