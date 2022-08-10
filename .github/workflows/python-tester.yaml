@@ -113,6 +113,22 @@ jobs:
         test $? -eq 0
         curl localhost:8000
         test $? -eq 0
+    - name: Run gefyra run with no given namespace and no fallback (uses default)
+      working-directory: ./client
+      run: |
+        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver1
+        test $? -eq 0
+        test $(docker inspect mypyserver1 --format {{.HostConfig.DnsSearch}}) == [default.svc.cluster.local]
+        docker kill mypyserver1
+    - name: Run gefyra run with default namespace from kubeconfig (uses 'fancy')
+      working-directory: ./client
+      run: |
+        kubectl config set-context --current --namespace=fancy
+        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver2
+        test $? -eq 0
+        test $(docker inspect mypyserver2 --format {{.HostConfig.DnsSearch}}) == [fancy.svc.cluster.local]
+        kubectl config set-context --current --namespace=default
+        docker kill mypyserver2
     - name: Run gefyra bridge with invalid deployment
       working-directory: ./client
       shell: bash --noprofile --norc -o pipefail {0}
