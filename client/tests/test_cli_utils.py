@@ -1,5 +1,4 @@
 import os
-from unittest import mock
 from unittest.mock import patch
 
 import yaml
@@ -41,4 +40,3 @@ def test_get_connection_from_kubeconfig_connection():
 def test_get_connection_from_kubeconfig_no_file():
     endpoint = get_connection_from_kubeconfig()
     assert endpoint is None
-
