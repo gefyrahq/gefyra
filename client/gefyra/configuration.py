@@ -55,6 +55,7 @@ class ClientConfiguration(object):
         cargo_image_url: str = None,
         kube_config_file: str = None,
         kube_context: str = None,
+        wireguard_mtu: str = None,
     ):
         if sys.platform == "win32":
             fix_pywin32_in_frozen_build()
@@ -131,6 +132,8 @@ class ClientConfiguration(object):
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.KUBE_CONFIG_FILE = kube_config_file
         self.KUBE_CONTEXT = kube_context
+
+        self.WIREGUARD_MTU = wireguard_mtu or "1340"
 
     def _init_docker(self):
         import docker

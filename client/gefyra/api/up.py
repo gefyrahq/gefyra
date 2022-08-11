@@ -10,7 +10,7 @@ from . import down
 logger = logging.getLogger(__name__)
 
 
-def up(config=default_configuration, wireguard_mtu: str = "1340") -> bool:
+def up(config=default_configuration) -> bool:
     from kubernetes.client import ApiException
     from gefyra.cluster.manager import install_operator
     from gefyra.local.networking import create_gefyra_network
@@ -62,7 +62,7 @@ def up(config=default_configuration, wireguard_mtu: str = "1340") -> bool:
     #
     # Connect Docker network with K8s cluster
     #
-    cargo_connection_details["MTU"] = wireguard_mtu
+    cargo_connection_details["MTU"] = config.WIREGUARD_MTU
     try:
         cargo_container = create_cargo_container(config, cargo_connection_details)
         logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
