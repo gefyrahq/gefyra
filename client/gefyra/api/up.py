@@ -62,6 +62,7 @@ def up(config=default_configuration) -> bool:
     #
     # Connect Docker network with K8s cluster
     #
+    cargo_connection_details["MTU"] = config.WIREGUARD_MTU
     try:
         cargo_container = create_cargo_container(config, cargo_connection_details)
         logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")

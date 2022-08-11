@@ -54,6 +54,7 @@ def get_cargo_connection_data(config: ClientConfiguration):
 def build_cargo_image(
     config: ClientConfiguration,
     wireguard_ip: str,
+    mtu: str,
     private_key: str,
     dns: str,
     public_key: str,
@@ -62,6 +63,7 @@ def build_cargo_image(
 ):
     build_args = {
         "ADDRESS": wireguard_ip,
+        "MTU": str(mtu),
         "PRIVATE_KEY": private_key,
         "DNS": dns,
         "PUBLIC_KEY": public_key,
