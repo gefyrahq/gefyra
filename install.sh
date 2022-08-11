@@ -23,3 +23,12 @@ sudo install -m 0755 /tmp/gefyra/gefyra /usr/local/bin/gefyra
 # cleanup 
 rm -rf /tmp/$file_name
 rm -rf /tmp/deck
+
+# additional information
+echo ""
+echo "🎉 Gefyra has been successfully installed"
+echo ""
+echo "🚀 Here's our getting started guide: https://gefyra.dev/getting-started/ "
+echo "💡 Some exciting use cases: https://gefyra.dev/usecases/ "
+echo ""
+echo "❓ Any problems? Feel free to provide us with feedback: https://github.com/gefyrahq/gefyra/issues/ "
