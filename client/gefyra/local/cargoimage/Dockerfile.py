@@ -19,6 +19,7 @@ ARG ALLOWED_IPS
 
 RUN echo '[Interface] \\n\
 Address = '"$ADDRESS"' \\n\
+MTU = '"$MTU"' \\n\
 PrivateKey = '"$PRIVATE_KEY"' \\n\
 DNS = '"$DNS"' \\n\
 PreUp = sysctl -w net.ipv4.ip_forward=1 \\n\
@@ -42,6 +43,7 @@ RUN cat /config/wg0.conf
 FROM {cargo_image}
 
 ARG ADDRESS
+ARG MTU
 ARG PRIVATE_KEY
 ARG DNS
 ARG PUBLIC_KEY
@@ -50,6 +52,7 @@ ARG ALLOWED_IPS
 
 RUN echo '[Interface] \\n\
 Address = '"$ADDRESS"' \\n\
+MTU = '"$MTU"' \\n\
 PrivateKey = '"$PRIVATE_KEY"' \\n\
 DNS = '"$DNS"' \\n\
 PreUp = sysctl -w net.ipv4.ip_forward=1 \\n\

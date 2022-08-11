@@ -62,6 +62,11 @@ up_parser.add_argument(
     help="Base url for registry to pull images from.",
     required=False,
 )
+up_parser.add_argument(
+    "--wireguard-mtu",
+    help="The MTU value for the local Wireguard endpoint (default: 1340).",
+    default="1340",
+)
 run_parser = action.add_parser("run")
 run_parser.add_argument(
     "-i", "--image", help="the docker image to run in Gefyra", required=True
@@ -209,8 +214,7 @@ def up_command(args):
             cargo_image_url=args.cargo,
             carrier_image_url=args.carrier,
         )
-
-    up(config=configuration)
+    up(config=configuration, wireguard_mtu=args.wireguard_mtu)
 
 
 def version(config, check: bool):

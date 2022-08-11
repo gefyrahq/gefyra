@@ -27,11 +27,13 @@ def create_cargo_container(
     public_key = cargo_connection_data["Peer.PublicKey"]
     # docker to work with ipv4 only
     allowed_ips = cargo_connection_data["Peer.AllowedIPs"].split(",")[0]
+    mtu = cargo_connection_data["MTU"]
 
     # build image
     image, build_logs = build_cargo_image(
         config,
         wireguard_ip=wireguard_ip,
+        mtu=mtu,
         private_key=private_key,
         dns=dns,
         public_key=public_key,
