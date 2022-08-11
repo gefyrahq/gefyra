@@ -14,13 +14,13 @@ jobs:
         uses: actions/checkout@v2
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: Login to quay.io
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_ROBOT }}
@@ -30,24 +30,26 @@ jobs:
       #
       - name: Operator Image meta
         id: operator_meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           flavor: |
             latest=false
           images: |
             quay.io/gefyra/operator
           tags: |
-            type=raw,value=test-run-${{github.run_id}},enable=true
+            type=ref,event=pr,enable=true
           labels: |
             quay.expires-after=24h
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: operator/
           platforms: linux/amd64
           push: true
           tags: ${{ steps.operator_meta.outputs.tags }}
           labels: ${{ steps.operator_meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ steps.operator_meta.outputs.tags }}
+          cache-to: type=inline
   test:
     needs: build_operator
     runs-on: ubuntu-latest
