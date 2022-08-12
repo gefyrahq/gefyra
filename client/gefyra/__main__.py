@@ -211,7 +211,8 @@ def up_command(args):
         if not args.endpoint:
             # #138: Read in the --endpoint parameter from kubeconf
             endpoint = get_connection_from_kubeconfig()
-            logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
+            if endpoint:
+                logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
         else:
             endpoint = args.endpoint
 
