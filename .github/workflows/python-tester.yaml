@@ -39,7 +39,7 @@ jobs:
           images: |
             quay.io/gefyra/operator
           tags: |
-            type=ref,event=pr,enable=${{ github.event.pull_request }}
+            type=ref,event=pr,enable=${{ !!github.event.pull_request }}
             type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
           labels: |
             quay.expires-after=24h
