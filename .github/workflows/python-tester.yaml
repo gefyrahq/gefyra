@@ -39,7 +39,8 @@ jobs:
           images: |
             quay.io/gefyra/operator
           tags: |
-            type=ref,event=pr,enable=true
+            type=ref,event=pr,enable=${{ github.event.pull_request }}
+            type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
           labels: |
             quay.expires-after=24h
       - name: Build and push
