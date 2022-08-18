@@ -10,10 +10,10 @@ from .utils import stopwatch
 logger = logging.getLogger(__name__)
 
 
-def get_containers_and_print():
+def get_containers_and_print(config: default_configuration):
     from gefyra.api import list_containers
 
-    containers = list_containers()
+    containers = list_containers(config=config)
     print(
         tabulate(
             containers, headers=["NAME", "IP ADDRESS", "NAMESPACE"], tablefmt="plain"
@@ -21,10 +21,10 @@ def get_containers_and_print():
     )
 
 
-def get_bridges_and_print():
+def get_bridges_and_print(config: default_configuration):
     from gefyra.api import list_interceptrequests
 
-    ireqs = list_interceptrequests()
+    ireqs = list_interceptrequests(config=config)
     if ireqs:
         for ireq in ireqs:
             print(ireq)

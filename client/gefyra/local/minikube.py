@@ -2,8 +2,6 @@ import json
 import logging
 from pathlib import Path
 
-from gefyra.configuration import ClientConfiguration
-
 logger = logging.getLogger("gefyra")
 
 MINIKUBE_CONFIG = "~/.minikube/profiles/minikube/config.json"
@@ -24,10 +22,9 @@ def _get_a_worker_ip(config: dict):
     raise RuntimeError("This Minikube cluster does not have a worker node.")
 
 
-def detect_minikube_config(args) -> ClientConfiguration:
+def detect_minikube_config() -> dict:
     """
     Read the config for a local Minikube cluster from its configuration file and set Gefyra accordingly
-    :param args: CLI args
     :return: a preped ClientConfiguration object
     """
     try:
@@ -58,14 +55,9 @@ def detect_minikube_config(args) -> ClientConfiguration:
         f"Minikube setup with driver '{driver}' network '{network_name}' and endpoint '{endpoint}'"
     )
 
-    configuration = ClientConfiguration(
-        network_name=network_name,
-        cargo_endpoint=f"{endpoint}:31820",
-        registry_url=args.registry,
-        operator_image_url=args.operator,
-        stowaway_image_url=args.stowaway,
-        cargo_image_url=args.cargo,
-        carrier_image_url=args.carrier,
-        kube_context="minikube",
-    )
-    return configuration
+    configuration_parameters = {
+        "network_name": network_name,
+        "cargo_endpoint": f"{endpoint}:31820",
+        "kube_context": "minikube",
+    }
+    return configuration_parameters
