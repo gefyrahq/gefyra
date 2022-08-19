@@ -268,17 +268,16 @@ def main():
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
-
-        if args.action == "version":
-            check = not args.no_check
-            version(configuration_package, check)
-            exit(0)
-
         if args.debug:
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
         logger.addHandler(configuration_package.console)
+
+        if args.action == "version":
+            check = not args.no_check
+            version(configuration_package, check)
+            exit(0)
 
         configuration = get_client_configuration(args)
 
