@@ -201,43 +201,6 @@ def get_intercept_kwargs(parser_args):
     return kwargs
 
 
-def up_command(args):
-    from gefyra.api import up
-
-    if args.minikube and bool(args.endpoint):
-        raise RuntimeError("You cannot use --endpoint together with --minikube.")
-
-    config_params = {}
-    if hasattr(args, "kubeconfig") and args.kubeconfig:
-        config_params["kube_config_file"] = args.kubeconfig
-    if hasattr(args, "context") and args.context:
-        config_params["kube_context"] = args.context
-
-    if args.minikube:
-        config_params.update(detect_minikube_config())
-    else:
-        if not args.endpoint:
-            # #138: Read in the --endpoint parameter from kubeconf
-            endpoint = get_connection_from_kubeconfig()
-            if endpoint:
-                logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
-        else:
-            endpoint = args.endpoint
-
-        config_params["cargo_endpoint"] = endpoint
-
-    configuration = ClientConfiguration(
-        registry_url=args.registry,
-        operator_image_url=args.operator,
-        stowaway_image_url=args.stowaway,
-        cargo_image_url=args.cargo,
-        carrier_image_url=args.carrier,
-        wireguard_mtu=args.wireguard_mtu,
-        **config_params,
-    )
-    up(config=configuration)
-
-
 def version(config, check: bool):
     import requests
 
@@ -269,17 +232,30 @@ def telemetry_command(on, off):
 
 
 def get_client_configuration(args) -> ClientConfiguration:
-    configuration = ClientConfiguration()
+    configuration_params = {}
 
-    if args.kubeconfig or args.context:
-        configuration_params = {}
+    if args.kubeconfig:
+        configuration_params["kube_config_file"] = args.kubeconfig
+    if args.context:
+        configuration_params["kube_context"] = args.context
 
-        if args.kubeconfig:
-            configuration_params["kube_config_file"] = args.kubeconfig
-        if args.context:
-            configuration_params["kube_context"] = args.context
+    if args.minikube and bool(args.endpoint):
+        raise RuntimeError("You cannot use --endpoint together with --minikube.")
 
-        configuration = ClientConfiguration(**configuration_params)
+    if args.minikube:
+        configuration_params.update(detect_minikube_config())
+    else:
+        if not args.endpoint:
+            # #138: Read in the --endpoint parameter from kubeconf
+            endpoint = get_connection_from_kubeconfig()
+            if endpoint:
+                logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
+        else:
+            endpoint = args.endpoint
+
+        configuration_params["cargo_endpoint"] = endpoint
+
+    configuration = ClientConfiguration(**configuration_params)
 
     return configuration
 
@@ -287,13 +263,7 @@ def get_client_configuration(args) -> ClientConfiguration:
 def main():
     try:
         from gefyra import configuration
-        from gefyra.api import (
-            bridge,
-            down,
-            run,
-            unbridge,
-            unbridge_all,
-        )
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, up
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -306,7 +276,7 @@ def main():
         configuration = get_client_configuration(args)
 
         if args.action == "up":
-            up_command(args)
+            up(config=configuration)
         elif args.action == "run":
             run(
                 image=args.image,
