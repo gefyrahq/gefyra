@@ -65,14 +65,17 @@ jobs:
         python-version: '3.x'
     - name: Install Poetry
       uses: snok/install-poetry@v1
-    - name: Set Gefyra to no tracking
+    - name: Set Gefyra tracking config / fake kubeconfig
       shell: bash
       run: |
         mkdir -p ~/.gefyra
+        mkdir -p ~/.kube
         cd ~/.gefyra
         touch config.ini
         echo "[telemetry]" >> config.ini
         echo "track = False" >> config.ini
+        cd ~/.kube
+        touch config
     - name: Pytest
       working-directory: ./client
       run: |
@@ -89,6 +92,22 @@ jobs:
     - name: Apply some workload
       run: |
         kubectl apply -f testing/workloads/hello.yaml
+    - name: Run gefyra check
+      working-directory: ./client
+      run: |
+        poetry run coverage run -a -m gefyra check
+    - name: Run gefyra up with invalid kubeconfig path
+      working-directory: ./client
+      shell: bash --noprofile --norc -o pipefail {0}
+      run: |
+        poetry run coverage run -a -m gefyra --kubeconfig=/there/is/no/config up
+        test $? -eq 1
+    - name: Run gefyra up with invalid context
+      working-directory: ./client
+      shell: bash --noprofile --norc -o pipefail {0}
+      run: |
+        poetry run coverage run -a -m gefyra --context=invalid-context up
+        test $? -eq 1
     - name: Run gefyra up
       working-directory: ./client
       run: |

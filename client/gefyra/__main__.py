@@ -19,6 +19,8 @@ parser = argparse.ArgumentParser(
 )
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
+parser.add_argument("--kubeconfig", required=False, help="path to kubeconfig file")
+parser.add_argument("--context", required=False, help="context name from kubeconfig")
 
 
 up_parser = action.add_parser("up")
@@ -199,35 +201,6 @@ def get_intercept_kwargs(parser_args):
     return kwargs
 
 
-def up_command(args):
-    from gefyra.api import up
-
-    if args.minikube and bool(args.endpoint):
-        raise RuntimeError("You cannot use --endpoint together with --minikube.")
-
-    if args.minikube:
-        configuration = detect_minikube_config(args)
-    else:
-        if not args.endpoint:
-            # #138: Read in the --endpoint parameter from kubeconf
-            endpoint = get_connection_from_kubeconfig()
-            if endpoint:
-                logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
-        else:
-            endpoint = args.endpoint
-
-        configuration = ClientConfiguration(
-            cargo_endpoint=endpoint,
-            registry_url=args.registry,
-            operator_image_url=args.operator,
-            stowaway_image_url=args.stowaway,
-            cargo_image_url=args.cargo,
-            carrier_image_url=args.carrier,
-            wireguard_mtu=args.wireguard_mtu,
-        )
-    up(config=configuration)
-
-
 def version(config, check: bool):
     import requests
 
@@ -258,16 +231,40 @@ def telemetry_command(on, off):
         logger.info("Invalid flags. Please use either --off or --on.")
 
 
+def get_client_configuration(args) -> ClientConfiguration:
+    configuration_params = {}
+
+    if args.kubeconfig:
+        configuration_params["kube_config_file"] = args.kubeconfig
+    if args.context:
+        configuration_params["kube_context"] = args.context
+
+    if args.action == "up":
+        if args.minikube and bool(args.endpoint):
+            raise RuntimeError("You cannot use --endpoint together with --minikube.")
+
+        if args.minikube:
+            configuration_params.update(detect_minikube_config())
+        else:
+            if not args.endpoint:
+                # #138: Read in the --endpoint parameter from kubeconf
+                endpoint = get_connection_from_kubeconfig()
+                if endpoint:
+                    logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
+            else:
+                endpoint = args.endpoint
+
+            configuration_params["cargo_endpoint"] = endpoint
+
+    configuration = ClientConfiguration(**configuration_params)
+
+    return configuration
+
+
 def main():
     try:
         from gefyra import configuration
-        from gefyra.api import (
-            bridge,
-            down,
-            run,
-            unbridge,
-            unbridge_all,
-        )
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, up
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -276,8 +273,11 @@ def main():
         else:
             logger.setLevel(logging.INFO)
         logger.addHandler(configuration.console)
+
+        configuration = get_client_configuration(args)
+
         if args.action == "up":
-            up_command(args)
+            up(config=configuration)
         elif args.action == "run":
             run(
                 image=args.image,
@@ -288,6 +288,7 @@ def main():
                 env=args.env,
                 ports=args.expose,
                 volumes=args.volume,
+                config=configuration,
             )
         elif args.action == "bridge":
             bridge(
@@ -297,30 +298,31 @@ def main():
                 namespace=args.namespace,
                 bridge_name=args.bridge_name,
                 handle_probes=not args.no_probe_handling,
+                config=configuration,
                 **get_intercept_kwargs(args),
             )
         elif args.action == "unbridge":
             if args.name:
-                unbridge(args.name)
+                unbridge(args.name, config=configuration)
             elif args.all:
-                unbridge_all()
+                unbridge_all(config=configuration)
             else:
                 logger.warning(
                     "Unbridge failed. Please use command with either -N or -A flag."
                 )
         elif args.action == "list":
             if args.containers:
-                get_containers_and_print()
+                get_containers_and_print(config=configuration)
             elif args.bridges:
-                get_bridges_and_print()
+                get_bridges_and_print(config=configuration)
             else:
-                get_containers_and_print()
-                get_bridges_and_print()
+                get_containers_and_print(config=configuration)
+                get_bridges_and_print(config=configuration)
         elif args.action == "down":
-            down()
+            down(config=configuration)
         elif args.action == "check":
             probe_docker()
-            probe_kubernetes()
+            probe_kubernetes(config=configuration)
         elif args.action == "version":
             check = not args.no_check
             version(configuration, check)

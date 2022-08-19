@@ -1,3 +1,4 @@
+from os import path
 import struct
 import socket
 import sys
@@ -131,6 +132,11 @@ class ClientConfiguration(object):
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.KUBE_CONFIG_FILE = kube_config_file
+        if self.KUBE_CONFIG_FILE:
+            if not path.isfile(path.expanduser(self.KUBE_CONFIG_FILE)):
+                raise RuntimeError(
+                    f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found."
+                )
         self.KUBE_CONTEXT = kube_context
 
         self.WIREGUARD_MTU = wireguard_mtu or "1340"
