@@ -268,6 +268,12 @@ def main():
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
+
+        if args.action == "version":
+            check = not args.no_check
+            version(configuration_package, check)
+            exit(0)
+
         if args.debug:
             logger.setLevel(logging.DEBUG)
         else:
@@ -323,9 +329,6 @@ def main():
         elif args.action == "check":
             probe_docker()
             probe_kubernetes(config=configuration)
-        elif args.action == "version":
-            check = not args.no_check
-            version(configuration_package, check)
         elif args.action == "telemetry":
             telemetry_command(on=args.on, off=args.off)
         else:
