@@ -96,6 +96,10 @@ jobs:
       working-directory: ./client
       run: |
         poetry run coverage run -a -m gefyra check
+    - name: Run gefyra version
+      working-directory: ./client
+      run: |
+        poetry run coverage run -a -m gefyra version
     - name: Run gefyra up with invalid kubeconfig path
       working-directory: ./client
       shell: bash --noprofile --norc -o pipefail {0}

@@ -263,7 +263,7 @@ def get_client_configuration(args) -> ClientConfiguration:
 
 def main():
     try:
-        from gefyra import configuration
+        from gefyra import configuration as configuration_package
         from gefyra.api import bridge, down, run, unbridge, unbridge_all, up
         from gefyra.local.check import probe_kubernetes, probe_docker
 
@@ -272,7 +272,7 @@ def main():
             logger.setLevel(logging.DEBUG)
         else:
             logger.setLevel(logging.INFO)
-        logger.addHandler(configuration.console)
+        logger.addHandler(configuration_package.console)
 
         configuration = get_client_configuration(args)
 
@@ -325,7 +325,7 @@ def main():
             probe_kubernetes(config=configuration)
         elif args.action == "version":
             check = not args.no_check
-            version(configuration, check)
+            version(configuration_package, check)
         elif args.action == "telemetry":
             telemetry_command(on=args.on, off=args.off)
         else:
