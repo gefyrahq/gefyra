@@ -38,7 +38,7 @@ def make_exe():
 
     # linux, mac
     exe.add_python_resources(exe.read_package_root(CWD, ["gefyra"]))
-    exe.add_python_resources(exe.pip_install(["--no-deps", "docker"]))
+    exe.add_python_resources(exe.pip_install(["--no-deps", "docker==5.0.3"]))
     exe.add_python_resources(exe.pip_install(["kubernetes"]))
     exe.add_python_resources(exe.pip_install(["tabulate"]))
     exe.add_python_resources(exe.pip_install(["cli-tracker"]))
@@ -73,7 +73,7 @@ def make_win_exe():
 
     # windows
     exe.add_python_resources(exe.read_package_root(CWD, ["gefyra"]))
-    exe.add_python_resources(exe.pip_install(["--no-deps", "docker"]))
+    exe.add_python_resources(exe.pip_install(["--no-deps", "docker==5.0.3"]))
     exe.add_python_resources(exe.pip_install(["kubernetes"]))
     exe.add_python_resources(exe.pip_install(["pywin32"]))
     exe.add_python_resources(exe.pip_install(["tabulate"]))
