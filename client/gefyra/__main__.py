@@ -239,21 +239,22 @@ def get_client_configuration(args) -> ClientConfiguration:
     if args.context:
         configuration_params["kube_context"] = args.context
 
-    if args.minikube and bool(args.endpoint):
-        raise RuntimeError("You cannot use --endpoint together with --minikube.")
+    if args.action == "up":
+        if args.minikube and bool(args.endpoint):
+            raise RuntimeError("You cannot use --endpoint together with --minikube.")
 
-    if args.minikube:
-        configuration_params.update(detect_minikube_config())
-    else:
-        if not args.endpoint:
-            # #138: Read in the --endpoint parameter from kubeconf
-            endpoint = get_connection_from_kubeconfig()
-            if endpoint:
-                logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
+        if args.minikube:
+            configuration_params.update(detect_minikube_config())
         else:
-            endpoint = args.endpoint
+            if not args.endpoint:
+                # #138: Read in the --endpoint parameter from kubeconf
+                endpoint = get_connection_from_kubeconfig()
+                if endpoint:
+                    logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
+            else:
+                endpoint = args.endpoint
 
-        configuration_params["cargo_endpoint"] = endpoint
+            configuration_params["cargo_endpoint"] = endpoint
 
     configuration = ClientConfiguration(**configuration_params)
 
