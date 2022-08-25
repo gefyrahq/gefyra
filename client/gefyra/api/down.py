@@ -19,7 +19,10 @@ def down(config=default_configuration) -> bool:
     from gefyra.local.bridge import remove_interceptrequest_remainder
     from gefyra.local.utils import set_gefyra_network_from_cargo
 
-    config = set_gefyra_network_from_cargo(config)
+    try:
+        config = set_gefyra_network_from_cargo(config)
+    except RuntimeError:
+        logger.info("Gefyra client is not running.")
     try:
         logger.info("Removing running bridges")
         remove_interceptrequest_remainder(config)

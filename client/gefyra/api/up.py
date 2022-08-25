@@ -27,7 +27,6 @@ def up(config=default_configuration) -> bool:
     #
     try:
         logger.debug("Creating Docker network")
-        # The 'pool overlap' error was not yet resolved other than retry
         gefyra_network = create_gefyra_network(config)
 
         cargo_connection_details = install_operator(
