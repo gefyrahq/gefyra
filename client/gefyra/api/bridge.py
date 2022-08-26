@@ -194,7 +194,19 @@ def bridge(
         waiting_time -= 1
         if timeout and waiting_time <= 0:
             raise RuntimeError("Timeout for bridging operation exceeded")
-
+    logger.info("Following bridges have been established:")
+    for ki in kube_ireqs:
+        for port in ports:
+            pod_name, ns, = (
+                ki["targetPod"],
+                ki["targetNamespace"],
+            )
+            bridge_ports = port.split(":")[0]
+            container_port, pod_port = bridge_ports[0], bridge_ports[1]
+            logger.info(
+                f"Bridge for pod {pod_name} in namespace {ns} on port {pod_port} "
+                f"to local container {container_name} on port {container_port}"
+            )
     return True
 
 
