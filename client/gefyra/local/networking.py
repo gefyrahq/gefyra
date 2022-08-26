@@ -17,6 +17,7 @@ def create_gefyra_network(config: ClientConfiguration) -> Network:
 
 
 def handle_create_network(config: ClientConfiguration) -> Network:
+    DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
     try:
         network = config.DOCKER.networks.get(config.NETWORK_NAME)
         logger.info("Gefyra network already exists")
@@ -27,15 +28,14 @@ def handle_create_network(config: ClientConfiguration) -> Network:
             logger.debug(f"Docker network '{network.name}' is not managed by Gefyra")
         if (
             "Options" in network.attrs
-            and "com.docker.network.driver.mtu" in network.attrs["Options"]
-            and network.attrs["Options"]["com.docker.network.driver.mtu"]
-            != config.WIREGUARD_MTU
+            and DOCKER_MTU_OPTION in network.attrs["Options"]
+            and network.attrs["Options"][DOCKER_MTU_OPTION] != config.WIREGUARD_MTU
         ) or (
             "Options" in network.attrs
-            and "com.docker.network.driver.mtu" not in network.attrs["Options"]
+            and DOCKER_MTU_OPTION not in network.attrs["Options"]
         ):
             _mtu = (
-                network.attrs["Options"].get("com.docker.network.driver.mtu")
+                network.attrs["Options"].get(DOCKER_MTU_OPTION)
                 if "Options" in network.attrs
                 else "default"
             )
@@ -62,7 +62,7 @@ def handle_create_network(config: ClientConfiguration) -> Network:
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
         },
-        options={"com.docker.network.driver.mtu": config.WIREGUARD_MTU},
+        options={DOCKER_MTU_OPTION: config.WIREGUARD_MTU},
     )
     logger.info(f"Created network '{config.NETWORK_NAME}' ({network.short_id})")
     return network
