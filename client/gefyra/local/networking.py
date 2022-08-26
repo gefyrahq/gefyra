@@ -17,6 +17,7 @@ def create_gefyra_network(config: ClientConfiguration) -> Network:
 
 
 def handle_create_network(config: ClientConfiguration) -> Network:
+    DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
     try:
         network = config.DOCKER.networks.get(config.NETWORK_NAME)
         logger.info("Gefyra network already exists")
@@ -25,6 +26,24 @@ def handle_create_network(config: ClientConfiguration) -> Network:
             or network.attrs["Labels"][CREATED_BY_LABEL[0]] != "true"
         ):
             logger.debug(f"Docker network '{network.name}' is not managed by Gefyra")
+        if (
+            "Options" in network.attrs
+            and DOCKER_MTU_OPTION in network.attrs["Options"]
+            and network.attrs["Options"][DOCKER_MTU_OPTION] != config.WIREGUARD_MTU
+        ) or (
+            "Options" in network.attrs
+            and DOCKER_MTU_OPTION not in network.attrs["Options"]
+        ):
+            _mtu = (
+                network.attrs["Options"].get(DOCKER_MTU_OPTION)
+                if "Options" in network.attrs
+                else "default"
+            )
+            logger.warning(
+                f"The MTU value of the 'gefyra' network (={_mtu}) is different from the --wireguard-mtu parameter "
+                f"(={config.WIREGUARD_MTU}) or default. You may experience bad network connections. Consider removing "
+                f"the network 'gefyra' with 'docker network rm gefyra' before running 'gefyra up'."
+            )
         return network
     except NotFound:
         pass
@@ -43,6 +62,7 @@ def handle_create_network(config: ClientConfiguration) -> Network:
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
         },
+        options={DOCKER_MTU_OPTION: config.WIREGUARD_MTU},
     )
     logger.info(f"Created network '{config.NETWORK_NAME}' ({network.short_id})")
     return network

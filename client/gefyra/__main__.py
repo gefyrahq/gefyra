@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import logging
+import traceback
 
 from gefyra.api import get_containers_and_print, get_bridges_and_print
 from gefyra.configuration import ClientConfiguration
@@ -19,14 +20,25 @@ parser = argparse.ArgumentParser(
 )
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
-parser.add_argument("--kubeconfig", required=False, help="path to kubeconfig file")
-parser.add_argument("--context", required=False, help="context name from kubeconfig")
+parser.add_argument(
+    "--kubeconfig",
+    dest="kube_config_file",
+    required=False,
+    help="path to kubeconfig file",
+)
+parser.add_argument(
+    "--context",
+    dest="kube_context",
+    required=False,
+    help="context name from kubeconfig",
+)
 
 
 up_parser = action.add_parser("up")
 up_parser.add_argument(
     "-e",
     "--endpoint",
+    dest="cargo_endpoint",
     help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to",
     required=False,
 )
@@ -41,35 +53,41 @@ up_parser.add_argument(
 up_parser.add_argument(
     "-o",
     "--operator",
+    dest="operator_image_url",
     help="Registry url for the operator image.",
     required=False,
 )
 up_parser.add_argument(
     "-s",
     "--stowaway",
+    dest="stowaway_image_url",
     help="Registry url for the stowaway image.",
     required=False,
 )
 up_parser.add_argument(
     "-c",
     "--carrier",
+    dest="carrier_image_url",
     help="Registry url for the carrier image.",
     required=False,
 )
 up_parser.add_argument(
     "-a",
     "--cargo",
+    dest="cargo_image_url",
     help="Registry url for the cargo image.",
     required=False,
 )
 up_parser.add_argument(
     "-r",
     "--registry",
+    dest="registry_url",
     help="Base url for registry to pull images from.",
     required=False,
 )
 up_parser.add_argument(
     "--wireguard-mtu",
+    dest="wireguard_mtu",
     help="The MTU value for the local Wireguard endpoint (default: 1340).",
 )
 run_parser = action.add_parser("run")
@@ -234,27 +252,30 @@ def telemetry_command(on, off):
 def get_client_configuration(args) -> ClientConfiguration:
     configuration_params = {}
 
-    if args.kubeconfig:
-        configuration_params["kube_config_file"] = args.kubeconfig
-    if args.context:
-        configuration_params["kube_context"] = args.context
-
     if args.action == "up":
-        if args.minikube and bool(args.endpoint):
+        if args.minikube and bool(args.cargo_endpoint):
             raise RuntimeError("You cannot use --endpoint together with --minikube.")
 
         if args.minikube:
             configuration_params.update(detect_minikube_config())
         else:
-            if not args.endpoint:
+            if not args.cargo_endpoint:
                 # #138: Read in the --endpoint parameter from kubeconf
                 endpoint = get_connection_from_kubeconfig()
                 if endpoint:
                     logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
             else:
-                endpoint = args.endpoint
+                endpoint = args.cargo_endpoint
 
             configuration_params["cargo_endpoint"] = endpoint
+        for argument in vars(args):
+            if argument not in ["action", "debug", "cargo_endpoint", "minikube"]:
+                configuration_params[argument] = getattr(args, argument)
+    else:
+        if args.kube_config_file:
+            configuration_params["kube_config_file"] = args.kube_config_file
+        if args.kube_context:
+            configuration_params["kube_context"] = args.kube_context
 
     configuration = ClientConfiguration(**configuration_params)
 
@@ -333,6 +354,8 @@ def main():
         else:
             parser.print_help()
     except Exception as e:
+        if args.debug:
+            traceback.print_exc()
         logger.fatal(f"There was an error running Gefyra: {e}")
         exit(1)
     exit(0)
