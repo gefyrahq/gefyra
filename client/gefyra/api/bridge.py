@@ -201,7 +201,7 @@ def bridge(
                 ki["targetPod"],
                 ki["targetNamespace"],
             )
-            bridge_ports = port.split(":")[0]
+            bridge_ports = port.split(":")
             container_port, pod_port = bridge_ports[0], bridge_ports[1]
             logger.info(
                 f"Bridge for pod {pod_name} in namespace {ns} on port {pod_port} "
