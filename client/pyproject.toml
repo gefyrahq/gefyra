@@ -31,7 +31,7 @@ tabulate = "^0.8.10"
 flake8-bugbear = "^22.1.11"
 black = "^22.1.0"
 flake8 = "^4.0.1"
-flake8-black = "^0.2.4"
+flake8-black = "^0.3.3"
 pytest = "^7.1.1"
 coverage = {extras = ["toml"], version = "^6.3.2"}
 coveralls = "^3.3.1"
