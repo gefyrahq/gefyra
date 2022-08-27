@@ -24,7 +24,7 @@ classifiers = [
 python = "^3.8"
 kubernetes = "^24.2.0"
 docker = "^6.0.0"
-cli-tracker = "0.2.5"
+cli-tracker = "0.2.7"
 tabulate = "^0.8.10"
 
 [tool.poetry.dev-dependencies]
