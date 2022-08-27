@@ -207,7 +207,7 @@ python-versions = ">=3.6.2,<4.0"
 
 [[package]]
 name = "kopf"
-version = "1.35.5"
+version = "1.35.6"
 description = "Kubernetes Operator Pythonic Framework (Kopf)"
 category = "main"
 optional = false
@@ -553,7 +553,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "01fef394648e895eed06cf6a4a198920f33548eaeb1fc40698af1c0d055ef403"
+content-hash = "30dc138e48aa0bb56b560ca11e1d9343f4efd4ce2430ac8b0f807cf3c7b92eb1"
 
 [metadata.files]
 aiohttp = [
@@ -777,8 +777,8 @@ iso8601 = [
     {file = "iso8601-1.0.2.tar.gz", hash = "sha256:27f503220e6845d9db954fb212b95b0362d8b7e6c1b2326a87061c3de93594b1"},
 ]
 kopf = [
-    {file = "kopf-1.35.5-py3-none-any.whl", hash = "sha256:cec72b9730e1ecccee06ec122c92fda4905b177a4af9f7ab526f91fbc3bab048"},
-    {file = "kopf-1.35.5.tar.gz", hash = "sha256:2d88778cc1be474a7bb0eb764f5f9e73794172bbe7917b720e109f1c7992ee3f"},
+    {file = "kopf-1.35.6-py3-none-any.whl", hash = "sha256:152dfa5b964cb5f77be00f9b18360f12fe0b2c032d7b5d7e95f4690558ab9ba7"},
+    {file = "kopf-1.35.6.tar.gz", hash = "sha256:b3f812072da7c16aa20e3807d9a35bb9d65df4423a68b039c6424f4e68014b82"},
 ]
 kubernetes = [
     {file = "kubernetes-19.15.0-py2.py3-none-any.whl", hash = "sha256:52312adda60d92ba45b325f2c1505924656389222005f7e089718e1ad03bc07f"},
