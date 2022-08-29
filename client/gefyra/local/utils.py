@@ -193,6 +193,7 @@ class PortMappingParser(argparse.Action):
     def parse_split(self, split):
         # port - port
         res = {}
+        print(split)
         if len(split) == 2:
             res[split[1]] = split[0]
             return res
@@ -200,17 +201,18 @@ class PortMappingParser(argparse.Action):
             raise ValueError
 
     def __call__(self, parser, namespace, values, option_string=None):
-        my_dict = {}
         try:
-            for kv in values.split(","):
-                res = kv.split(":")
-                my_dict.update(self.parse_split(res))
+            res = values.split(":")
+            mapping = self.parse_split(res)
         except Exception:
             logger.error(
                 "Invalid port mapping. Example valid port mapping: 8080:8081 (<ip>:host_port:container_port)."
             )
             exit(1)
-        setattr(namespace, self.dest, my_dict)
+        else:
+            if getattr(namespace, self.dest):
+                mapping.update(getattr(namespace, self.dest))
+            setattr(namespace, self.dest, mapping)
 
 
 class IpPortMappingParser(PortMappingParser):
