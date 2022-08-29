@@ -21,9 +21,9 @@ def test_ip_port_mapper():
 
 def test_port_mapper():
     args = bridge_parser.parse_args(
-        ["--port=8080:8080", "--port=9090:9090", "-C=test", "-N=random"]
+        ["--port=8081:8080", "--port=9091:9090", "-C=test", "-N=random"]
     )
     assert "9090" in args.port
     assert "8080" in args.port
-    assert args.port["9090"] == "9090"
-    assert args.port["8080"] == "8080"
+    assert args.port["9090"] == "9091"
+    assert args.port["8080"] == "8081"
