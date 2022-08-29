@@ -193,7 +193,6 @@ class PortMappingParser(argparse.Action):
     def parse_split(self, split):
         # port - port
         res = {}
-        print(split)
         if len(split) == 2:
             res[split[1]] = split[0]
             return res
