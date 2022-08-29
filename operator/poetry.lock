@@ -227,7 +227,7 @@ full-auth = ["kubernetes", "pykube-ng"]
 
 [[package]]
 name = "kubernetes"
-version = "19.15.0"
+version = "24.2.0"
 description = "Kubernetes python client"
 category = "main"
 optional = false
@@ -545,7 +545,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "3dba25b82e5af2bbab419cce88ae4cb45e54f53fd7d28d77864920fa358d0075"
+content-hash = "923bb48f6b77784791f626d8acfaca35af16ea8262210c9ffb925080f51ba726"
 
 [metadata.files]
 aiohttp = [
@@ -773,8 +773,8 @@ kopf = [
     {file = "kopf-1.35.6.tar.gz", hash = "sha256:b3f812072da7c16aa20e3807d9a35bb9d65df4423a68b039c6424f4e68014b82"},
 ]
 kubernetes = [
-    {file = "kubernetes-19.15.0-py2.py3-none-any.whl", hash = "sha256:52312adda60d92ba45b325f2c1505924656389222005f7e089718e1ad03bc07f"},
-    {file = "kubernetes-19.15.0.tar.gz", hash = "sha256:08c93f300a9837104282ecc81458b903a56444c5c1ec3d990d237557312af47f"},
+    {file = "kubernetes-24.2.0-py2.py3-none-any.whl", hash = "sha256:da19d58865cf903a8c7b9c3691a2e6315d583a98f0659964656dfdf645bf7e49"},
+    {file = "kubernetes-24.2.0.tar.gz", hash = "sha256:9900f12ae92007533247167d14cdee949cd8c7721f88b4a7da5f5351da3834cd"},
 ]
 mccabe = [
     {file = "mccabe-0.7.0-py2.py3-none-any.whl", hash = "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e"},
