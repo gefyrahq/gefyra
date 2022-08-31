@@ -38,7 +38,7 @@ During the startup, Operator runs the following:
    client)
 4) create a headless service for Carriers to connect   
 6) wait for Stowaway to become ready
-7) extract ad-hoc generated connection details (secrets, IP range, ect.) from Stowaway and create a well-known secret 
+7) extract ad-hoc generated connection details (secrets, IP range, etc.) from Stowaway and create a well-known secret 
    (for Gefyra to process)
 8) register _InterceptionRequest_ custom resource definition, clusterroles and bindings
    

@@ -113,7 +113,7 @@ RUN set -x \
     " \
     && case "$dpkgArch" in \
         amd64|arm64) \
-            # arches officialy built by upstream
+            # arches officially built by upstream
             echo "deb https://nginx.org/packages/ubuntu/ bionic nginx" >> /etc/apt/sources.list.d/nginx.list \
             && apt-get update \
             ;; \
