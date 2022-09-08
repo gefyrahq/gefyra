@@ -146,11 +146,16 @@ class ClientConfiguration(object):
             self.KUBE_CONTEXT = kube_context
         else:
             from kubernetes.config.kube_config import list_kube_config_contexts
+            from kubernetes.config.config_exception import ConfigException
 
-            _, active_context = list_kube_config_contexts(
-                config_file=self.KUBE_CONFIG_FILE
-            )
-            self.KUBE_CONTEXT = active_context.get("name", None)
+            try:
+                _, active_context = list_kube_config_contexts(
+                    config_file=self.KUBE_CONFIG_FILE
+                )
+                self.KUBE_CONTEXT = active_context.get("name", None)
+            except ConfigException:
+                logger.error("Could not read active 'kubeconfig' context.")
+                self.KUBE_CONTEXT = None
 
         self.WIREGUARD_MTU = wireguard_mtu or "1340"
 
