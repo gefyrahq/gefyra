@@ -77,11 +77,18 @@ def run(
     config=default_configuration,
 ) -> bool:
     from kubernetes.client import ApiException
+    from docker.errors import APIError
     from gefyra.cluster.utils import get_env_from_pod_container
     from gefyra.local.bridge import deploy_app_container
-    from gefyra.local.utils import get_processed_paths, set_gefyra_network_from_cargo
+    from gefyra.local.utils import (
+        get_processed_paths,
+        set_gefyra_network_from_cargo,
+        set_kubeconfig_from_cargo,
+    )
     from gefyra.local.cargo import probe_wireguard_connection
-    from docker.errors import APIError
+
+    # Check if kubeconfig is available through running Cargo
+    config = set_kubeconfig_from_cargo(config)
 
     # #125: Fallback to namespace in kube config
     if namespace is None:

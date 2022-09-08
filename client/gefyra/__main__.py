@@ -20,18 +20,6 @@ parser = argparse.ArgumentParser(
 )
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
-parser.add_argument(
-    "--kubeconfig",
-    dest="kube_config_file",
-    required=False,
-    help="path to kubeconfig file",
-)
-parser.add_argument(
-    "--context",
-    dest="kube_context",
-    required=False,
-    help="context name from kubeconfig",
-)
 
 
 up_parser = action.add_parser("up")
@@ -90,6 +78,20 @@ up_parser.add_argument(
     dest="wireguard_mtu",
     help="The MTU value for the local Wireguard endpoint (default: 1340).",
 )
+up_parser.add_argument(
+    "--kubeconfig",
+    dest="kube_config_file",
+    required=False,
+    help="The path to kubeconfig file",
+)
+up_parser.add_argument(
+    "--context",
+    dest="kube_context",
+    required=False,
+    help="The context name from kubeconfig",
+)
+
+
 run_parser = action.add_parser("run")
 run_parser.add_argument(
     "-i", "--image", help="the docker image to run in Gefyra", required=True
@@ -271,11 +273,6 @@ def get_client_configuration(args) -> ClientConfiguration:
         for argument in vars(args):
             if argument not in ["action", "debug", "cargo_endpoint", "minikube"]:
                 configuration_params[argument] = getattr(args, argument)
-    else:
-        if args.kube_config_file:
-            configuration_params["kube_config_file"] = args.kube_config_file
-        if args.kube_context:
-            configuration_params["kube_context"] = args.kube_context
 
     configuration = ClientConfiguration(**configuration_params)
 

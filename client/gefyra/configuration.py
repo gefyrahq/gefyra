@@ -131,13 +131,26 @@ class ClientConfiguration(object):
         self.BRIDGE_TIMEOUT = 60  # in seconds
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
-        self.KUBE_CONFIG_FILE = kube_config_file
-        if self.KUBE_CONFIG_FILE:
-            if not path.isfile(path.expanduser(self.KUBE_CONFIG_FILE)):
-                raise RuntimeError(
-                    f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found."
-                )
-        self.KUBE_CONTEXT = kube_context
+        if kube_config_file:
+            self.KUBE_CONFIG_FILE = kube_config_file
+            if self.KUBE_CONFIG_FILE:
+                if not path.isfile(path.expanduser(self.KUBE_CONFIG_FILE)):
+                    raise RuntimeError(
+                        f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found."
+                    )
+        else:
+            from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
+
+            self.KUBE_CONFIG_FILE = KUBE_CONFIG_DEFAULT_LOCATION
+        if kube_context:
+            self.KUBE_CONTEXT = kube_context
+        else:
+            from kubernetes.config.kube_config import list_kube_config_contexts
+
+            _, active_context = list_kube_config_contexts(
+                config_file=self.KUBE_CONFIG_FILE
+            )
+            self.KUBE_CONTEXT = active_context.get("name", None)
 
         self.WIREGUARD_MTU = wireguard_mtu or "1340"
 
@@ -161,10 +174,7 @@ class ClientConfiguration(object):
         )
         from kubernetes.config import load_kube_config
 
-        if self.KUBE_CONFIG_FILE:
-            load_kube_config(self.KUBE_CONFIG_FILE, context=self.KUBE_CONTEXT)
-        else:
-            load_kube_config(context=self.KUBE_CONTEXT)
+        load_kube_config(self.KUBE_CONFIG_FILE, context=self.KUBE_CONTEXT)
         self.K8S_CORE_API = CoreV1Api()
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()
