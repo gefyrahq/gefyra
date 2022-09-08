@@ -207,4 +207,5 @@ def test_parse_up_kube_conf():
 def test_parse_up_no_kube_conf():
     configuration = ClientConfiguration()
     from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
+
     assert configuration.KUBE_CONFIG_FILE == KUBE_CONFIG_DEFAULT_LOCATION
