@@ -4,7 +4,7 @@
 
 # Gefyra
 Gefyra gives Kubernetes-("cloud-native")-developers a completely new way of writing and testing their applications. 
-Gone are the times of custom Docker-compose setups, Vagrants, custom scrips or other scenarios in order to develop (micro-)services
+Gone are the times of custom Docker-compose setups, Vagrants, custom scripts or other scenarios in order to develop (micro-)services
 for Kubernetes.  
 
 # Gefyra Client

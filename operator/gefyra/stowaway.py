@@ -52,7 +52,7 @@ async def check_stowaway_ready(stowaway_deployment: k8s.client.V1Deployment):
         dep = app.read_namespaced_deployment(
             name=stowaway_deployment.metadata.name, namespace=configuration.NAMESPACE
         )
-    # reached this in an error case a) timout (build took too long) or b) build could not be successfully executed
+    # reached this in an error case a) timeout (build took too long) or b) build could not be successfully executed
     logger.error("Stowaway error: Stowaway did not become ready")
     return False
 
