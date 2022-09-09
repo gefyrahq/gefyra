@@ -289,6 +289,7 @@ def print_status(status: GefyraStatus):
             if dataclasses.is_dataclass(o):
                 return dataclasses.asdict(o)
             return super().default(o)
+
     print(json.dumps(status, cls=EnhancedJSONEncoder, indent=2))
 
 

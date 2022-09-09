@@ -60,8 +60,8 @@ class GefyraStatus:
 
 def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
     from docker.errors import NotFound
-    import gefyra.configuration
     from gefyra.local import CARGO_ENDPOINT_LABEL, VERSION_LABEL
+
     # these are the default values
     _status = GefyraClientStatus(
         cargo=False,
@@ -73,15 +73,19 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
         bridges=0,
         kubeconfig=config.KUBE_CONFIG_FILE,
         context=config.KUBE_CONTEXT,
-        cargo_endpoint=""
+        cargo_endpoint="",
     )
     try:
         logger.debug("Checking cargo container running")
         cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
         if cargo_container.status == "running":
             _status.cargo = True
-            _status.cargo_endpoint = cargo_container.attrs["Config"]["Labels"].get(CARGO_ENDPOINT_LABEL)
-            _status.version = cargo_container.attrs["Config"]["Labels"].get(VERSION_LABEL)
+            _status.cargo_endpoint = cargo_container.attrs["Config"]["Labels"].get(
+                CARGO_ENDPOINT_LABEL
+            )
+            _status.version = cargo_container.attrs["Config"]["Labels"].get(
+                VERSION_LABEL
+            )
             _status.cargo_image = cargo_container.image.tags[0]
     except NotFound:
         pass
@@ -89,11 +93,16 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
         logger.debug("Checking gefyra network available")
         gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
         _status.network = True
-        _status.containers = len(gefyra_net.containers) - 1 if _status.cargo is True else len(gefyra_net.containers)
+        _status.containers = (
+            len(gefyra_net.containers) - 1
+            if _status.cargo is True
+            else len(gefyra_net.containers)
+        )
     except NotFound:
         return _status
 
     from gefyra.local.cargo import probe_wireguard_connection
+
     try:
         logger.debug("Probing wireguard connection")
         if _status.cargo:
@@ -103,6 +112,7 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
         return _status
 
     from gefyra.local.bridge import get_all_interceptrequests
+
     logger.debug("Counting all active bridges")
     _status.bridges = len(get_all_interceptrequests(config))
     return _status
@@ -112,14 +122,16 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
     from kubernetes.client import ApiException
     from kubernetes.config import ConfigException
     from urllib3.exceptions import MaxRetryError
+
     # these are the default values
-    _status = GefyraClusterStatus(connected=False,
-                                  operator=False,
-                                  operator_image="",
-                                  stowaway=False,
-                                  stowaway_image="",
-                                  namespace=False
-                                  )
+    _status = GefyraClusterStatus(
+        connected=False,
+        operator=False,
+        operator_image="",
+        stowaway=False,
+        stowaway_image="",
+        namespace=False,
+    )
     # check if connected to the cluster
     try:
         logger.debug("Reading API resources from Kubernetes")
@@ -130,7 +142,9 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
     # check if gefyra namespace is available
     try:
         logger.debug("Reading gefyra namespace")
-        config.K8S_CORE_API.read_namespace(name=config.NAMESPACE, _request_timeout=(1, 5))
+        config.K8S_CORE_API.read_namespace(
+            name=config.NAMESPACE, _request_timeout=(1, 5)
+        )
         _status.namespace = True
     except ApiException:
         return _status
@@ -138,13 +152,13 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
     try:
         logger.debug("Checking operator deployment")
         operator_deploy = config.K8S_APP_API.read_namespaced_deployment(
-            name="gefyra-operator",
-            namespace=config.NAMESPACE,
-            _request_timeout=(1, 5)
+            name="gefyra-operator", namespace=config.NAMESPACE, _request_timeout=(1, 5)
         )
         if operator_deploy.status.ready_replicas >= 1:
             _status.operator = True
-            _status.operator_image = operator_deploy.spec.template.spec.containers[0].image
+            _status.operator_image = operator_deploy.spec.template.spec.containers[
+                0
+            ].image
     except ApiException:
         return _status
 
@@ -152,13 +166,13 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
     try:
         logger.debug("Checking Stowaway deployment")
         stowaway_deploy = config.K8S_APP_API.read_namespaced_deployment(
-            name="gefyra-stowaway",
-            namespace=config.NAMESPACE,
-            _request_timeout=(1, 5)
+            name="gefyra-stowaway", namespace=config.NAMESPACE, _request_timeout=(1, 5)
         )
         if stowaway_deploy.status.ready_replicas >= 1:
             _status.stowaway = True
-            _status.stowaway_image = stowaway_deploy.spec.template.spec.containers[0].image
+            _status.stowaway_image = stowaway_deploy.spec.template.spec.containers[
+                0
+            ].image
     except ApiException:
         pass
 
@@ -177,17 +191,10 @@ def status(config=default_configuration) -> GefyraStatus:
     if client.connection:
         summary = StatusSummary.UP
     else:
-        if client.cargo or (cluster.connected and cluster.operator and cluster.stowaway):
+        if client.cargo or (
+            cluster.connected and cluster.operator and cluster.stowaway
+        ):
             summary = StatusSummary.INCOMPLETE
         else:
             summary = StatusSummary.DOWN
-    return GefyraStatus(
-        cluster=cluster,
-        client=client,
-        summary=summary
-    )
-
-
-
-
-
+    return GefyraStatus(cluster=cluster, client=client, summary=summary)
