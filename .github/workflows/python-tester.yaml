@@ -100,6 +100,13 @@ jobs:
       working-directory: ./client
       run: |
         poetry run coverage run -a -m gefyra version
+    - name: Run gefyra status
+      working-directory: ./client
+      shell: bash --noprofile --norc -o pipefail {0}
+      run: |
+        summary=$(poetry run coverage run -a -m gefyra status | sed 's/\[INFO\].*//' | python3 -c "import sys, json; print(json.load(sys.stdin)['summary'])")
+        echo $summary
+        [[ $summary == 'Gefyra is not running' ]]
     - name: Run gefyra up with invalid kubeconfig path
       working-directory: ./client
       shell: bash --noprofile --norc -o pipefail {0}
@@ -116,6 +123,13 @@ jobs:
       working-directory: ./client
       run: |
         poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tag_name }}
+    - name: Run gefyra status running
+      working-directory: ./client
+      shell: bash --noprofile --norc -o pipefail {0}
+      run: |
+        summary=$(poetry run coverage run -a -m gefyra status | sed 's/\[INFO\].*//' | python3 -c "import sys, json; print(json.load(sys.stdin)['summary'])")
+        echo $summary
+        [[ $summary == 'Gefyra is up and connected' ]]
     - name: Build a docker file
       working-directory: testing/images/
       run: |
@@ -173,6 +187,16 @@ jobs:
       working-directory: ./client
       run: |
         poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
+    - name: Run gefyra status check containers and bridge
+      working-directory: ./client
+      shell: bash --noprofile --norc -o pipefail {0}
+      run: |
+        containers=$(poetry run gefyra status | sed 's/\[INFO\].*//' | python3 -u -c "import sys, json; print(json.load(sys.stdin)['client']['containers'])")
+        echo $containers
+        [[ $containers == 1 ]]
+        bridges=$(poetry run gefyra status | sed 's/\[INFO\].*//' | python3 -u -c "import sys, json; print(json.load(sys.stdin)['client']['bridges'])")
+        echo $bridges
+        [[ $bridges == 1 ]]
     - name: Run gefyra unbridge
       working-directory: ./client
       run: |

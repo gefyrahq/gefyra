@@ -12,6 +12,8 @@ from gefyra.local import (
     CREATED_BY_LABEL,
     ACTIVE_KUBECONFIG_LABEL,
     ACTIVE_KUBECONFIG_CONTEXT_LABEL,
+    CARGO_ENDPOINT_LABEL,
+    VERSION_LABEL,
 )
 
 
@@ -142,12 +144,16 @@ def handle_docker_remove_container(
 def handle_docker_create_container(
     config: ClientConfiguration, image: str, **kwargs
 ) -> Container:
+    import gefyra.configuration
+
     return config.DOCKER.containers.create(
         image,
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
             ACTIVE_KUBECONFIG_LABEL: config.KUBE_CONFIG_FILE,
             ACTIVE_KUBECONFIG_CONTEXT_LABEL: config.KUBE_CONTEXT,
+            CARGO_ENDPOINT_LABEL: config.CARGO_ENDPOINT,
+            VERSION_LABEL: gefyra.configuration.__VERSION__,
         },
         **kwargs,
     )
