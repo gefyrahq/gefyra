@@ -3,7 +3,7 @@ import argparse
 import logging
 import traceback
 
-from gefyra.api import get_containers_and_print, get_bridges_and_print
+from gefyra.api import get_containers_and_print, get_bridges_and_print, GefyraStatus
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import (
     PortMappingParser,
@@ -192,6 +192,7 @@ list_parser.add_argument(
 )
 down_parser = action.add_parser("down")
 check_parser = action.add_parser("check")
+status_parser = action.add_parser("status")
 version_parser = action.add_parser("version")
 
 version_parser.add_argument(
@@ -279,10 +280,22 @@ def get_client_configuration(args) -> ClientConfiguration:
     return configuration
 
 
+def print_status(status: GefyraStatus):
+    import json
+    import dataclasses
+
+    class EnhancedJSONEncoder(json.JSONEncoder):
+        def default(self, o):
+            if dataclasses.is_dataclass(o):
+                return dataclasses.asdict(o)
+            return super().default(o)
+    print(json.dumps(status, cls=EnhancedJSONEncoder, indent=2))
+
+
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, up
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, up, status
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -343,6 +356,9 @@ def main():
                 get_bridges_and_print(config=configuration)
         elif args.action == "down":
             down(config=configuration)
+        elif args.action == "status":
+            _status = status(config=configuration)
+            print_status(_status)
         elif args.action == "check":
             probe_docker()
             probe_kubernetes(config=configuration)
