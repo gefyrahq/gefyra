@@ -3,9 +3,7 @@ from datetime import datetime
 from time import sleep
 from typing import List, Dict
 
-from gefyra.cluster.resources import get_pods_and_containers_for_workload
 from gefyra.configuration import default_configuration
-from gefyra.local.bridge import get_all_interceptrequests
 
 from .utils import stopwatch
 
@@ -15,7 +13,7 @@ logger = logging.getLogger(__name__)
 def get_pods_to_intercept(
     deployment: str, namespace: str, statefulset: str, pod: str, config
 ) -> Dict[str, List[str]]:
-    from gefyra.cluster.resources import get_pods_and_containers_for_pod_name
+    from gefyra.cluster.resources import get_pods_and_containers_for_pod_name, get_pods_and_containers_for_workload
 
     pods_to_intercept = {}
     if deployment:
