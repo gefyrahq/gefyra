@@ -172,7 +172,7 @@ def deploy_app_container(
             _i = _i + 1
     except docker.errors.NotFound:
         raise RuntimeError(
-            "Container is not running. Did you miss a valid startup command?"
+            f"Container {container.id} is not running. Did you miss a valid startup command?"
         )
 
     if container.status != "running":
