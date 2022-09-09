@@ -17,9 +17,13 @@ def down(config=default_configuration) -> bool:
         kill_remainder_container_in_network,
     )
     from gefyra.local.bridge import remove_interceptrequest_remainder
-    from gefyra.local.utils import set_gefyra_network_from_cargo
+    from gefyra.local.utils import (
+        set_gefyra_network_from_cargo,
+        set_kubeconfig_from_cargo,
+    )
 
     try:
+        config = set_kubeconfig_from_cargo(config)
         config = set_gefyra_network_from_cargo(config)
     except RuntimeError:
         logger.info("Gefyra client is not running.")

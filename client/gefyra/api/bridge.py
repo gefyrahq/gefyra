@@ -80,8 +80,13 @@ def bridge(
     config=default_configuration,
 ) -> bool:
     from docker.errors import NotFound
-    from gefyra.local.utils import set_gefyra_network_from_cargo
+    from gefyra.local.utils import (
+        set_gefyra_network_from_cargo,
+        set_kubeconfig_from_cargo,
+    )
 
+    # Check if kubeconfig is available through running Cargo
+    config = set_kubeconfig_from_cargo(config)
     config = set_gefyra_network_from_cargo(config)
 
     try:

@@ -104,13 +104,13 @@ jobs:
       working-directory: ./client
       shell: bash --noprofile --norc -o pipefail {0}
       run: |
-        poetry run coverage run -a -m gefyra --kubeconfig=/there/is/no/config up
+        poetry run coverage run -a -m gefyra up --kubeconfig=/there/is/no/config
         test $? -eq 1
     - name: Run gefyra up with invalid context
       working-directory: ./client
       shell: bash --noprofile --norc -o pipefail {0}
       run: |
-        poetry run coverage run -a -m gefyra --context=invalid-context up
+        poetry run coverage run -a -m gefyra up --context=invalid-context
         test $? -eq 1
     - name: Run gefyra up
       working-directory: ./client

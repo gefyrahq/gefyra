@@ -35,7 +35,13 @@ def get_bridges_and_print(config: default_configuration):
 @stopwatch
 def list_interceptrequests(config=default_configuration) -> List[str]:
     from gefyra.local.bridge import get_all_interceptrequests
-    from gefyra.local.utils import set_gefyra_network_from_cargo
+    from gefyra.local.utils import (
+        set_gefyra_network_from_cargo,
+        set_kubeconfig_from_cargo,
+    )
+
+    # Check if kubeconfig is available through running Cargo
+    config = set_kubeconfig_from_cargo(config)
 
     config = set_gefyra_network_from_cargo(config)
     ireqs = []

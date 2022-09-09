@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 def up(config=default_configuration) -> bool:
     from kubernetes.client import ApiException
+    from docker.errors import APIError
     from gefyra.cluster.manager import install_operator
     from gefyra.local.networking import create_gefyra_network
     from gefyra.local.cargo import (
@@ -19,7 +20,10 @@ def up(config=default_configuration) -> bool:
         get_cargo_ip_from_netaddress,
         probe_wireguard_connection,
     )
-    from docker.errors import APIError
+    from gefyra.local.utils import set_kubeconfig_from_cargo
+
+    # Check if kubeconfig is available through running Cargo
+    config = set_kubeconfig_from_cargo(config)
 
     logger.info("Installing Gefyra Operator")
     #

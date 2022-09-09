@@ -8,7 +8,11 @@ from docker.models.containers import Container
 from gefyra.cluster.utils import decode_secret
 from gefyra.configuration import ClientConfiguration, logger
 from gefyra.local.cargoimage.Dockerfile import get_dockerfile
-from gefyra.local import CREATED_BY_LABEL
+from gefyra.local import (
+    CREATED_BY_LABEL,
+    ACTIVE_KUBECONFIG_LABEL,
+    ACTIVE_KUBECONFIG_CONTEXT_LABEL,
+)
 
 
 def set_gefyra_network_from_cargo(config) -> ClientConfiguration:
@@ -142,6 +146,8 @@ def handle_docker_create_container(
         image,
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
+            ACTIVE_KUBECONFIG_LABEL: config.KUBE_CONFIG_FILE,
+            ACTIVE_KUBECONFIG_CONTEXT_LABEL: config.KUBE_CONTEXT,
         },
         **kwargs,
     )
@@ -150,6 +156,7 @@ def handle_docker_create_container(
 def handle_docker_run_container(
     config: ClientConfiguration, image: str, **kwargs
 ) -> Container:
+
     # if detach=True is in kwargs, this will return a container; otherwise the container logs (see
     # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run)
     # TODO: handle exception(s):
@@ -185,6 +192,36 @@ def get_connection_from_kubeconfig() -> Optional[str]:
     except Exception as e:  # noqa
         logger.error(f"Could not load Gefyra --endpoint from kubeconfig due to: {e}")
         return None
+
+
+def set_kubeconfig_from_cargo(config: ClientConfiguration) -> ClientConfiguration:
+    from docker.errors import NotFound
+
+    try:
+        cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+        kube_config_path = cargo_container.attrs["Config"]["Labels"][
+            ACTIVE_KUBECONFIG_LABEL
+        ]
+        kube_context = cargo_container.attrs["Config"]["Labels"][
+            ACTIVE_KUBECONFIG_CONTEXT_LABEL
+        ]
+        if config.KUBE_CONFIG_FILE != kube_context:
+            logger.debug(
+                f"Setting a different kubeconfig path from {config.KUBE_CONFIG_FILE} to {kube_config_path}"
+            )
+            config.KUBE_CONFIG_FILE = kube_config_path
+        if config.KUBE_CONTEXT != kube_context:
+            logger.debug(
+                f"Setting a different kubeconfig context from {config.KUBE_CONTEXT} to {kube_context}"
+            )
+            config.KUBE_CONTEXT = kube_context
+        return config
+    except NotFound:
+        logger.debug("Cargo not running, no kubeconfig set")
+        return config
+    except KeyError:
+        logger.debug("Cargo found, but Gefyra labels missing, no kubeconfig set")
+        return config
 
 
 class PortMappingParser(argparse.Action):
