@@ -14,7 +14,7 @@ body:
   - type: textarea
     id: reason
     attributes:
-      label: Why would such a feature important for you?
+      label: Why would such a feature be important to you?
     validations:
       required: true
 
