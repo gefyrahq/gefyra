@@ -13,7 +13,10 @@ logger = logging.getLogger(__name__)
 def get_pods_to_intercept(
     deployment: str, namespace: str, statefulset: str, pod: str, config
 ) -> Dict[str, List[str]]:
-    from gefyra.cluster.resources import get_pods_and_containers_for_pod_name, get_pods_and_containers_for_workload
+    from gefyra.cluster.resources import (
+        get_pods_and_containers_for_pod_name,
+        get_pods_and_containers_for_workload,
+    )
 
     pods_to_intercept = {}
     if deployment:
@@ -82,6 +85,7 @@ def bridge(
         set_gefyra_network_from_cargo,
         set_kubeconfig_from_cargo,
     )
+    from gefyra.local.bridge import get_all_interceptrequests
 
     # Check if kubeconfig is available through running Cargo
     config = set_kubeconfig_from_cargo(config)
