@@ -94,27 +94,27 @@ up_parser.add_argument(
 
 run_parser = action.add_parser("run")
 run_parser.add_argument(
-    "-i", "--image", help="the docker image to run in Gefyra", required=True
+    "-i", "--image", help="The docker image to run in Gefyra", required=True
 )
 run_parser.add_argument(
-    "-N", "--name", help="the name of the container running in Gefyra", required=True
+    "-N", "--name", help="The name of the container running in Gefyra", required=True
 )
 run_parser.add_argument(
     "-c",
     "--command",
-    help="the command for this container to in Gefyra",
+    help="The command for this container to in Gefyra",
     nargs="+",
     required=False,
 )
 run_parser.add_argument(
     "-n",
     "--namespace",
-    help="the namespace for this container to run in",
+    help="The namespace for this container to run in",
 )
 run_parser.add_argument(
     "--env",
     action="append",
-    help="set or override environment variables in the form ENV=value, allowed multiple times",
+    help="Set or override environment variables in the form ENV=value, allowed multiple times",
     required=False,
 )
 run_parser.add_argument(
@@ -126,7 +126,7 @@ run_parser.add_argument(
 )
 run_parser.add_argument(
     "--env-from",
-    help="copy the environment from the container in the notation 'Pod/Container'",
+    help="Copy the environment from the container in the notation 'Pod/Container'",
     required=False,
 )
 run_parser.add_argument(
@@ -136,18 +136,26 @@ run_parser.add_argument(
     required=False,
     action=IpPortMappingParser,
 )
+run_parser.add_argument(
+    "--rm",
+    help="Automatically remove the container when it exits",
+    dest="auto_remove",
+    action="store_true",
+    default=False,
+    required=False,
+)
 bridge_parser = action.add_parser("bridge")
 bridge_parser.add_argument(
-    "-N", "--name", help="the name of the container running in Gefyra", required=True
+    "-N", "--name", help="The name of the container running in Gefyra", required=True
 )
 bridge_parser.add_argument(
     "-C",
     "--container-name",
-    help="the name for the locally running container",
+    help="The name for the locally running container",
     required=True,
 )
 bridge_parser.add_argument(
-    "-I", "--bridge-name", help="the name of the bridge", required=False
+    "-I", "--bridge-name", help="The name of the bridge", required=False
 )
 bridge_parser.add_argument(
     "-p",
@@ -159,14 +167,14 @@ bridge_parser.add_argument(
 bridge_parser.add_argument(
     "-n",
     "--namespace",
-    help="the namespace for this container to run in",
+    help="The namespace for this container to run in",
     default="default",
 )
 bridge_parser.add_argument(
     "-P",
     "--no-probe-handling",
     action="store_true",
-    help="make Carrier to not handle probes during switch operation",
+    help="Make Carrier to not handle probes during switch operation",
     default=False,
 )
 intercept_flags = [
@@ -179,16 +187,16 @@ for flag in intercept_flags:
     bridge_parser.add_argument(f"--{flag['name']}")
 
 unbridge_parser = action.add_parser("unbridge")
-unbridge_parser.add_argument("-N", "--name", help="the name of the bridge")
+unbridge_parser.add_argument("-N", "--name", help="The name of the bridge")
 unbridge_parser.add_argument(
-    "-A", "--all", help="removes all active bridges", action="store_true"
+    "-A", "--all", help="Removes all active bridges", action="store_true"
 )
 list_parser = action.add_parser("list")
 list_parser.add_argument(
-    "--containers", help="list all containers running in Gefyra", action="store_true"
+    "--containers", help="List all containers running in Gefyra", action="store_true"
 )
 list_parser.add_argument(
-    "--bridges", help="list all active bridges in Gefyra", action="store_true"
+    "--bridges", help="List all active bridges in Gefyra", action="store_true"
 )
 down_parser = action.add_parser("down")
 check_parser = action.add_parser("check")
@@ -324,6 +332,7 @@ def main():
                 env_from=args.env_from,
                 env=args.env,
                 ports=args.expose,
+                auto_remove=args.auto_remove,
                 volumes=args.volume,
                 config=configuration,
             )

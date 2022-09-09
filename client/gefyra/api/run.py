@@ -70,7 +70,7 @@ def run(
     volumes: dict = None,
     ports: dict = None,
     detach: bool = True,
-    auto_remove: bool = True,
+    auto_remove: bool = False,
     namespace: str = None,
     env: list = None,
     env_from: str = None,
@@ -158,7 +158,7 @@ def run(
         )
     except APIError as e:
         if e.status_code == 409:
-            logger.warning("This container is already deployed and running")
+            logger.warning(e.explanation)
             return True
         else:
             logger.error(e)
