@@ -1,0 +1,24 @@
+name: Feature Request
+description: Request a feature for Gefyra
+labels: enhancement
+body:
+  - type: textarea
+    id: feature
+    attributes:
+      label: What is the new feature about?
+      description: |
+        Please provide as much info as possible.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why would such a feature important for you?
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Anything else we need to know?
