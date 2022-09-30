@@ -223,6 +223,11 @@ def unbridge(
     config=default_configuration,
 ) -> bool:
     from gefyra.local.bridge import handle_delete_interceptrequest
+    from gefyra.local.utils import (
+        set_kubeconfig_from_cargo,
+    )
+
+    config = set_kubeconfig_from_cargo(config)
 
     success = handle_delete_interceptrequest(config, name)
     if success:
@@ -238,6 +243,11 @@ def unbridge_all(
         handle_delete_interceptrequest,
         get_all_interceptrequests,
     )
+    from gefyra.local.utils import (
+        set_kubeconfig_from_cargo,
+    )
+
+    config = set_kubeconfig_from_cargo(config)
 
     ireqs = get_all_interceptrequests(config)
     for ireq in ireqs:
