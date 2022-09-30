@@ -252,6 +252,7 @@ def version(config, check: bool):
 def telemetry_command(on, off):
     if not telemetry:
         logger.info("Telemetry in not working on your machine. No action taken.")
+        return
     if off and not on:
         telemetry.off()
     elif on and not off:
