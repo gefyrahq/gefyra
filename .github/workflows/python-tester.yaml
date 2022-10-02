@@ -127,6 +127,7 @@ jobs:
       working-directory: ./client
       shell: bash --noprofile --norc -o pipefail {0}
       run: |
+        poetry run coverage run -a -m gefyra status
         summary=$(poetry run coverage run -a -m gefyra status | sed 's/\[INFO\].*//' | python3 -c "import sys, json; print(json.load(sys.stdin)['summary'])")
         echo $summary
         [[ $summary == 'Gefyra is up and connected' ]]
