@@ -1,0 +1,28 @@
+name: Send mail on release
+
+on:
+  workflow_dispatch: {}
+  release:
+    types:
+      - published
+
+jobs:
+  send_mail:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: dawidd6/action-send-mail@v3
+      name: Send Release Mail
+      with:
+        server_address: ${{secrets.SMTP_SERVER}}
+        server_port: ${{secrets.SMTP_PORT}}
+        secure: true
+        username: ${{secrets.MAIL_USERNAME}}
+        password: ${{secrets.MAIL_PASSWORD}}
+        subject: Gefyra Release
+        to: ${{secrets.RELEASE_MAIL_RECIPIENTS}}
+        cc: ${{secrets.RELEASE_MAIL_CC}}
+        from: Gefyra Github
+        body: Gefyra Version ${{ github.ref }} is out. [Here's](https://github.com/gefyrahq/gefyra/releases) the changelog.
+        reply_to: ${{secrets.REPLY_TO}}
+        ignore_cert: true
+        convert_markdown: true
