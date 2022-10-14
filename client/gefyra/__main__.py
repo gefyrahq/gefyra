@@ -173,7 +173,9 @@ bridge_parser.add_argument(
 )
 bridge_parser.add_argument(
     "--target",
-    help="Intercept the container given in the notation 'resource/name/containername'. Can be deployment, statefulset or pod. E.g.: --target deployment/hello-nginx/nginx",
+    help="Intercept the container given in the notation 'resource/name/container'. "
+         "Resource can be one of 'deployment', 'statefulset' or 'pod'. "
+         "E.g.: --target deployment/hello-nginx/nginx",
     required=False,
 )
 
