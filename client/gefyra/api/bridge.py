@@ -60,7 +60,6 @@ def bridge(
         ports: dict,
         target: str,
         namespace: str = "default",
-        bridge_name: str = None,
         sync_down_dirs: List[str] = None,
         handle_probes: bool = True,
         timeout: int = 0,
@@ -105,12 +104,9 @@ def bridge(
         config=config,
     )
 
-    if not bridge_name:
-        ireq_base_name = (
-            f"{name}-to-{namespace}.{workload_type}.{workload_name}"
-        )
-    else:
-        ireq_base_name = bridge_name
+    ireq_base_name = (
+        f"{name}-to-{namespace}.{workload_type}.{workload_name}"
+    )
 
     use_index = check_workloads(
         pods_to_intercept,

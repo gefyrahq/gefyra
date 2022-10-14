@@ -149,9 +149,6 @@ bridge_parser.add_argument(
     "-N", "--name", help="The name of the container running in Gefyra", required=True
 )
 bridge_parser.add_argument(
-    "-I", "--bridge-name", help="The name of the bridge", required=False
-)
-bridge_parser.add_argument(
     "-p",
     "--port",
     help="Add port mapping in form of <container_port>:<host_port>",
@@ -326,7 +323,6 @@ def main():
                 args.name,
                 args.port,
                 namespace=args.namespace,
-                bridge_name=args.bridge_name,
                 handle_probes=not args.no_probe_handling,
                 config=configuration,
                 target=args.target,
