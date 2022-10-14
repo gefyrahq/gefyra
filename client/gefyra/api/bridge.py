@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_pods_to_intercept(
-    deployment: str, namespace: str, statefulset: str, pod: str, config
+    workload_name: str, workload_type: str, namespace: str, config
 ) -> Dict[str, List[str]]:
     from gefyra.cluster.resources import (
         get_pods_and_containers_for_pod_name,
@@ -19,26 +19,20 @@ def get_pods_to_intercept(
     )
 
     pods_to_intercept = {}
-    if deployment:
+    if workload_type != "pod":
         pods_to_intercept.update(
             get_pods_and_containers_for_workload(
-                config, deployment, namespace, "deployment"
+                config, workload_name, namespace, workload_type
             )
         )
-    if statefulset:
+    else:
         pods_to_intercept.update(
-            get_pods_and_containers_for_workload(
-                config, statefulset, namespace, "statefulset"
-            )
-        )
-    if pod:
-        pods_to_intercept.update(
-            get_pods_and_containers_for_pod_name(config, pod, namespace)
+            get_pods_and_containers_for_pod_name(config, workload_name, namespace)
         )
     return pods_to_intercept
 
 
-def check_workloads(pods_to_intercept, deployment, statefulset, container_name):
+def check_workloads(pods_to_intercept, workload_type, workload_name, container_name):
     if len(pods_to_intercept.keys()) == 0:
         raise Exception("Could find any pod to bridge.")
     elif len(pods_to_intercept.keys()) > 1:
@@ -48,14 +42,9 @@ def check_workloads(pods_to_intercept, deployment, statefulset, container_name):
 
     cleaned_names = ["-".join(key.split("-")[:-2]) for key in pods_to_intercept.keys()]
 
-    if deployment and deployment not in cleaned_names:
+    if workload_type != "pod" and workload_name not in cleaned_names:
         raise RuntimeError(
-            f"Could not find deployment {deployment} to bridge. Available deployments:"
-            f" {', '.join(cleaned_names)}"
-        )
-    if statefulset and statefulset not in cleaned_names:
-        raise RuntimeError(
-            f"Could not find statefulset {statefulset} to bridge. Available statefulsets:"
+            f"Could not find {workload_type}/{workload_name} to bridge. Available {workload_type}:"
             f" {', '.join(cleaned_names)}"
         )
     if container_name not in [
@@ -67,18 +56,15 @@ def check_workloads(pods_to_intercept, deployment, statefulset, container_name):
 
 @stopwatch
 def bridge(
-    name: str,
-    ports: dict,
-    deployment: str = None,
-    statefulset: str = None,
-    pod: str = None,
-    container_name: str = None,
-    namespace: str = "default",
-    bridge_name: str = None,
-    sync_down_dirs: List[str] = None,
-    handle_probes: bool = True,
-    timeout: int = 0,
-    config=default_configuration,
+        name: str,
+        ports: dict,
+        target: str,
+        namespace: str = "default",
+        bridge_name: str = None,
+        sync_down_dirs: List[str] = None,
+        handle_probes: bool = True,
+        timeout: int = 0,
+        config=default_configuration,
 ) -> bool:
     from docker.errors import NotFound
     from gefyra.local.utils import (
@@ -110,25 +96,26 @@ def bridge(
         )
         return False
 
+    workload_type, workload_name, container_name = target.split("/", 2)
+
     pods_to_intercept = get_pods_to_intercept(
-        deployment=deployment,
-        statefulset=statefulset,
+        workload_name=workload_name,
+        workload_type=workload_type,
         namespace=namespace,
-        pod=pod,
         config=config,
     )
 
     if not bridge_name:
         ireq_base_name = (
-            f"{container_name}-ireq-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            f"{name}-to-{namespace}.{workload_type}.{workload_name}"
         )
     else:
         ireq_base_name = bridge_name
 
     use_index = check_workloads(
         pods_to_intercept,
-        deployment=deployment,
-        statefulset=statefulset,
+        workload_type=workload_type,
+        workload_name=workload_name,
         container_name=container_name,
     )
 
