@@ -56,14 +56,14 @@ def check_workloads(pods_to_intercept, workload_type, workload_name, container_n
 
 @stopwatch
 def bridge(
-        name: str,
-        ports: dict,
-        target: str,
-        namespace: str = "default",
-        sync_down_dirs: List[str] = None,
-        handle_probes: bool = True,
-        timeout: int = 0,
-        config=default_configuration,
+    name: str,
+    ports: dict,
+    target: str,
+    namespace: str = "default",
+    sync_down_dirs: List[str] = None,
+    handle_probes: bool = True,
+    timeout: int = 0,
+    config=default_configuration,
 ) -> bool:
     from docker.errors import NotFound
     from gefyra.local.utils import (
@@ -104,9 +104,7 @@ def bridge(
         config=config,
     )
 
-    ireq_base_name = (
-        f"{name}-to-{namespace}.{workload_type}.{workload_name}"
-    )
+    ireq_base_name = f"{name}-to-{namespace}.{workload_type}.{workload_name}"
 
     use_index = check_workloads(
         pods_to_intercept,
