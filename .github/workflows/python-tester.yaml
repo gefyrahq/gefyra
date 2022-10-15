@@ -9,8 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    outputs:
-      tag_name: ${{ steps.operator_meta.outputs.tags }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -58,7 +56,7 @@ jobs:
           cache-from: type=registry,ref=quay.io/gefyra/operator:latest
       - name: Import Operator to k3d
         run: |
-          k3d image import ${{ steps.operator_meta.outputs.tag_name }} -c mycluster --verbose
+          k3d image import ${{ steps.operator_meta.outputs.tags }} -c mycluster --verbose
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -115,7 +113,7 @@ jobs:
       - name: Run gefyra up
         working-directory: ./client
         run: |
-          poetry run coverage run -a -m gefyra up --operator ${{ steps.operator_meta.outputs.tag_name }}
+          poetry run coverage run -a -m gefyra up --operator ${{ steps.operator_meta.outputs.tags }}
       - name: Run gefyra status running
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
