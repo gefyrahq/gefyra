@@ -24,10 +24,6 @@ jobs:
       #
       # Create a cluster with registry
       #
-      - name: Create a local container registry
-        shell: bash
-        run: |
-          k3d registry create registry.localhost --port 9876
       - uses: AbsaOSS/k3d-action@v2
         name: Create Single Cluster
         with:
@@ -35,7 +31,6 @@ jobs:
           args: >-
             --agents 1
             -p "31820:31820/UDP@agent:0"
-            --registry-use k3d-registry.localhost:9876
       #
       # Gefyra Operator
       #
@@ -46,7 +41,7 @@ jobs:
           flavor: |
             latest=false
           images: |
-            k3d-registry.localhost:9876/operator
+            gefyra/operator
           tags: |
             type=ref,event=pr,enable=${{ !!github.event.pull_request }}
             type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
@@ -57,11 +52,13 @@ jobs:
         with:
           context: operator/
           platforms: linux/amd64
-          push: true
+          push: false
           tags: ${{ steps.operator_meta.outputs.tags }}
           labels: ${{ steps.operator_meta.outputs.labels }}
           cache-from: type=registry,ref=quay.io/gefyra/operator:latest
-
+      - name: Import Operator to k3d
+        run: |
+          k3d image import ${{ needs.build_operator.outputs.tag_name }} -c mycluster --verbose
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
