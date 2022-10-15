@@ -100,7 +100,7 @@ gefyra run -i <image_name> -N <container_name> -n default
 ```
 2. Create a bridge:
 ```shell
-gefyra bridge -N <container_name> -n <k8s_namespace> --deployment <k8s_deployment> --container-name <k8s_deployment_container> -I <bridge_name>
+gefyra bridge -N <container_name> -n <k8s_namespace> --target deployment/<k8s_deployment>/<k8s_deployment_container>
 ```
 Explanation for placeholders:
 - `container_name` the name of the container you created in the previous step
@@ -178,7 +178,7 @@ Check out this workload running under: http://hello.127.0.0.1.nip.io:8080/
    `docker exec -it mypyserver bash`  
    `wget -O- hello-nginx` will print out the website of the cluster service _hello-nginx_ from within the cluster.
 6) Create a bridge in order to intercept the traffic to the cluster application with the one running locally:    
-`gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge`    
+`gefyra bridge -N mypyserver -n default --target deployment/hello-nginxdemo/hello-nginx --port 80:8000`    
 Check out the locally running server comes up under: http://hello.127.0.0.1.nip.io:8080/  
 7) List all running _bridges_:  
 `gefyra list --bridges`
