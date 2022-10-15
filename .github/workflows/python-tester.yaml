@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build_operator:
+  test:
     runs-on: ubuntu-latest
     outputs:
       tag_name: ${{ steps.operator_meta.outputs.tags }}
@@ -21,12 +21,21 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
-      - name: Login to quay.io
-        uses: docker/login-action@v2
+      #
+      # Create a cluster with registry
+      #
+      - name: Create a local container registry
+        shell: bash
+        run: |
+          k3d registry create registry.localhost --port 9876
+      - uses: AbsaOSS/k3d-action@v2
+        name: Create Single Cluster
         with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_ROBOT }}
-          password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+          cluster-name: "mycluster"
+          args: >-
+            --agents 1
+            -p "31820:31820/UDP@agent:0"
+            --registry-use k3d-registry.localhost:9876
       #
       # Gefyra Operator
       #
@@ -37,7 +46,7 @@ jobs:
           flavor: |
             latest=false
           images: |
-            quay.io/gefyra/operator
+            k3d-registry.localhost:9876/operator
           tags: |
             type=ref,event=pr,enable=${{ !!github.event.pull_request }}
             type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
@@ -51,200 +60,189 @@ jobs:
           push: true
           tags: ${{ steps.operator_meta.outputs.tags }}
           labels: ${{ steps.operator_meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ steps.operator_meta.outputs.tags }}
-          cache-to: type=inline
-  test:
-    needs: build_operator
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.x'
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-    - name: Set Gefyra tracking config / fake kubeconfig
-      shell: bash
-      run: |
-        mkdir -p ~/.gefyra
-        mkdir -p ~/.kube
-        cd ~/.gefyra
-        touch config.ini
-        echo "[telemetry]" >> config.ini
-        echo "track = False" >> config.ini
-        cd ~/.kube
-        touch config
-    - name: Pytest
-      working-directory: ./client
-      run: |
-        poetry install
-        poetry run coverage run -m pytest
-    # Run the 'Try it yourself'
-    - uses: AbsaOSS/k3d-action@v2
-      name: Create Single Cluster
-      with:
-        cluster-name: "mycluster"
-        args: >-
-          --agents 1
-          -p "31820:31820/UDP@agent:0"
-    - name: Apply some workload
-      run: |
-        kubectl apply -f testing/workloads/hello.yaml
-    - name: Run gefyra check
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra check
-    - name: Run gefyra version
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra version
-    - name: Run gefyra status
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        summary=$(poetry run coverage run -a -m gefyra status | sed 's/\[INFO\].*//' | python3 -c "import sys, json; print(json.load(sys.stdin)['summary'])")
-        echo $summary
-        [[ $summary == 'Gefyra is not running' ]]
-    - name: Run gefyra up with invalid kubeconfig path
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        poetry run coverage run -a -m gefyra up --kubeconfig=/there/is/no/config
-        test $? -eq 1
-    - name: Run gefyra up with invalid context
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        poetry run coverage run -a -m gefyra up --context=invalid-context
-        test $? -eq 1
-    - name: Run gefyra up
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tag_name }}
-    - name: Run gefyra status running
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        poetry run coverage run -a -m gefyra status
-        summary=$(poetry run coverage run -a -m gefyra status | sed 's/\[INFO\].*//' | python3 -c "import sys, json; print(json.load(sys.stdin)['summary'])")
-        echo $summary
-        [[ $summary == 'Gefyra is up and connected' ]]
-    - name: Build a docker file
-      working-directory: testing/images/
-      run: |
-        docker build -f Dockerfile.local . -t pyserver
-    - name: Run gefyra run with faulty port flag
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000
-        test $? -eq 1
-        curl localhost:8000
-        test $? -ne 0
-    - name: Run gefyra run with faulty env-from flag
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000:8000 --env-from=noDeployment/hello-nginxdemo
-        test $? -eq 1
-    - name: Run gefyra run with localhost port mapping
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000:8000 --env-from=deployment/hello-nginxdemo
-        test $? -eq 0
-        curl localhost:8000
-        test $? -eq 0
-    - name: Run gefyra run with no given namespace and no fallback (uses default)
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver1
-        test $? -eq 0
-        test $(docker inspect mypyserver1 --format {{.HostConfig.DnsSearch}}) == [default.svc.cluster.local]
-        docker kill mypyserver1
-    - name: Run gefyra run with default namespace from kubeconfig (uses 'fancy')
-      working-directory: ./client
-      run: |
-        kubectl config set-context --current --namespace=fancy
-        poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver2
-        test $? -eq 0
-        test $(docker inspect mypyserver2 --format {{.HostConfig.DnsSearch}}) == [fancy.svc.cluster.local]
-        kubectl config set-context --current --namespace=default
-        docker kill mypyserver2
-    - name: Run gefyra bridge with invalid deployment
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo-not --port 80:8000 --container-name hello-nginx -I mypybridge
-        test $? -eq 1
-    - name: Run gefyra bridge with invalid container
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx-not -I mypybridge
-        test $? -eq 1
-    - name: Run gefyra bridge with deployment
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
-    - name: Run gefyra status check containers and bridge
-      working-directory: ./client
-      shell: bash --noprofile --norc -o pipefail {0}
-      run: |
-        containers=$(poetry run gefyra status | sed 's/\[INFO\].*//' | python3 -u -c "import sys, json; print(json.load(sys.stdin)['client']['containers'])")
-        echo $containers
-        [[ $containers == 1 ]]
-        bridges=$(poetry run gefyra status | sed 's/\[INFO\].*//' | python3 -u -c "import sys, json; print(json.load(sys.stdin)['client']['bridges'])")
-        echo $bridges
-        [[ $bridges == 1 ]]
-    - name: Run gefyra unbridge (works with wrong kubeconfig)
-      working-directory: ./client
-      run: |
-        export KUBECONFIG=/some/invalid/kubeconfig.yaml
-        poetry run coverage run -a -m gefyra unbridge -A
+          cache-from: type=registry,ref=quay.io/gefyra/operator:latest
 
-    - name: Run gefyra bridge with pod
-      working-directory: ./client
-      run: |
-        k=$(kubectl get pods -n default -o=go-template='{{ (index .items 0).metadata.name  }}')
-        echo $k
-        poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --pod $k --port 80:8000 --container-name hello-nginx -I mypybridge
-
-    - name: "Run gefyra list --bridges"
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra list --bridges
-    - name: "Run gefyra list --containers"
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra list --containers
-    - name: Run gefyra down
-      working-directory: ./client
-      run: |
-        poetry run coverage run -a -m gefyra down
-    - name: Show coverage report
-      working-directory: ./client
-      run: |
-        poetry run coverage report
-    - name: Upload coverage data to coveralls.io
-      working-directory: ./client
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
-        COVERALLS_PARALLEL: true
-      run: |
-        poetry run coveralls --service=github
-  coveralls:
-    name: Indicate completion to coveralls.io
-    # need secrets.GITHUB_TOKEN
-    needs: test
-    runs-on: ubuntu-latest
-    container: python:3-slim
-    steps:
-      - name: Finished
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Set Gefyra tracking config / fake kubeconfig
+        shell: bash
         run: |
-          pip3 install --upgrade coveralls
-          coveralls --finish
+          mkdir -p ~/.gefyra
+          mkdir -p ~/.kube
+          cd ~/.gefyra
+          touch config.ini
+          echo "[telemetry]" >> config.ini
+          echo "track = False" >> config.ini
+          cd ~/.kube
+          touch config
+      - name: Pytest
+        working-directory: ./client
+        run: |
+          poetry install
+          poetry run coverage run -m pytest
+      # Run the 'Try it yourself'
+      - name: Apply some workload
+        run: |
+          kubectl apply -f testing/workloads/hello.yaml
+      - name: Run gefyra check
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra check
+      - name: Run gefyra version
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra version
+      - name: Run gefyra status
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          summary=$(poetry run coverage run -a -m gefyra status | sed 's/\[INFO\].*//' | python3 -c "import sys, json; print(json.load(sys.stdin)['summary'])")
+          echo $summary
+          [[ $summary == 'Gefyra is not running' ]]
+      - name: Run gefyra up with invalid kubeconfig path
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra up --kubeconfig=/there/is/no/config
+          test $? -eq 1
+      - name: Run gefyra up with invalid context
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra up --context=invalid-context
+          test $? -eq 1
+      - name: Run gefyra up
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tag_name }}
+      - name: Run gefyra status running
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra status
+          summary=$(poetry run coverage run -a -m gefyra status | sed 's/\[INFO\].*//' | python3 -c "import sys, json; print(json.load(sys.stdin)['summary'])")
+          echo $summary
+          [[ $summary == 'Gefyra is up and connected' ]]
+      - name: Build a docker file
+        working-directory: testing/images/
+        run: |
+          docker build -f Dockerfile.local . -t pyserver
+      - name: Run gefyra run with faulty port flag
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000
+          test $? -eq 1
+          curl localhost:8000
+          test $? -ne 0
+      - name: Run gefyra run with faulty env-from flag
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000:8000 --env-from=noDeployment/hello-nginxdemo
+          test $? -eq 1
+      - name: Run gefyra run with localhost port mapping
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver -n default --expose 8000:8000 --env-from=deployment/hello-nginxdemo
+          test $? -eq 0
+          curl localhost:8000
+          test $? -eq 0
+      - name: Run gefyra run with no given namespace and no fallback (uses default)
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver1
+          test $? -eq 0
+          test $(docker inspect mypyserver1 --format {{.HostConfig.DnsSearch}}) == [default.svc.cluster.local]
+          docker kill mypyserver1
+      - name: Run gefyra run with default namespace from kubeconfig (uses 'fancy')
+        working-directory: ./client
+        run: |
+          kubectl config set-context --current --namespace=fancy
+          poetry run coverage run -a -m gefyra run -i pyserver -N mypyserver2
+          test $? -eq 0
+          test $(docker inspect mypyserver2 --format {{.HostConfig.DnsSearch}}) == [fancy.svc.cluster.local]
+          kubectl config set-context --current --namespace=default
+          docker kill mypyserver2
+      - name: Run gefyra bridge with invalid deployment
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo-not --port 80:8000 --container-name hello-nginx -I mypybridge
+          test $? -eq 1
+      - name: Run gefyra bridge with invalid container
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx-not -I mypybridge
+          test $? -eq 1
+      - name: Run gefyra bridge with deployment
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
+      - name: Run gefyra status check containers and bridge
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          containers=$(poetry run gefyra status | sed 's/\[INFO\].*//' | python3 -u -c "import sys, json; print(json.load(sys.stdin)['client']['containers'])")
+          echo $containers
+          [[ $containers == 1 ]]
+          bridges=$(poetry run gefyra status | sed 's/\[INFO\].*//' | python3 -u -c "import sys, json; print(json.load(sys.stdin)['client']['bridges'])")
+          echo $bridges
+          [[ $bridges == 1 ]]
+      - name: Run gefyra unbridge (works with wrong kubeconfig)
+        working-directory: ./client
+        run: |
+          export KUBECONFIG=/some/invalid/kubeconfig.yaml
+          poetry run coverage run -a -m gefyra unbridge -A
+
+      - name: Run gefyra bridge with pod
+        working-directory: ./client
+        run: |
+          k=$(kubectl get pods -n default -o=go-template='{{ (index .items 0).metadata.name  }}')
+          echo $k
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --pod $k --port 80:8000 --container-name hello-nginx -I mypybridge
+
+      - name: "Run gefyra list --bridges"
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra list --bridges
+      - name: "Run gefyra list --containers"
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra list --containers
+      - name: Run gefyra down
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra down
+      - name: Show coverage report
+        working-directory: ./client
+        run: |
+          poetry run coverage report
+      - name: Upload coverage data to coveralls.io
+        if: github.event_name != 'pull_request'
+        working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_PARALLEL: true
+        run: |
+          poetry run coveralls --service=github
+    coveralls:
+      name: Indicate completion to coveralls.io
+      if: github.event_name != 'pull_request'
+      # need secrets.GITHUB_TOKEN
+      needs: test
+      runs-on: ubuntu-latest
+      container: python:3-slim
+      steps:
+        - name: Finished
+          run: |
+            pip3 install --upgrade coveralls
+            coveralls --finish
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
