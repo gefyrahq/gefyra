@@ -168,18 +168,18 @@ jobs:
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
         run: |
-          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo-not --port 80:8000 --container-name hello-nginx -I mypybridge
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deployment/hello-nginxdemo-not/hello-nginx --port 80:8000
           test $? -eq 1
       - name: Run gefyra bridge with invalid container
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
         run: |
-          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx-not -I mypybridge
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deployment/hello-nginxdemo/hello-nginx-not --port 80:8000
           test $? -eq 1
       - name: Run gefyra bridge with deployment
         working-directory: ./client
         run: |
-          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --deployment hello-nginxdemo --port 80:8000 --container-name hello-nginx -I mypybridge
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deployment/hello-nginxdemo/hello-nginx --port 80:8000
       - name: Run gefyra status check containers and bridge
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
@@ -201,7 +201,7 @@ jobs:
         run: |
           k=$(kubectl get pods -n default -o=go-template='{{ (index .items 0).metadata.name  }}')
           echo $k
-          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --pod $k --port 80:8000 --container-name hello-nginx -I mypybridge
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target pod/$k/hello-nginx --port 80:8000
 
       - name: "Run gefyra list --bridges"
         working-directory: ./client

@@ -149,15 +149,6 @@ bridge_parser.add_argument(
     "-N", "--name", help="The name of the container running in Gefyra", required=True
 )
 bridge_parser.add_argument(
-    "-C",
-    "--container-name",
-    help="The name for the locally running container",
-    required=True,
-)
-bridge_parser.add_argument(
-    "-I", "--bridge-name", help="The name of the bridge", required=False
-)
-bridge_parser.add_argument(
     "-p",
     "--port",
     help="Add port mapping in form of <container_port>:<host_port>",
@@ -177,14 +168,13 @@ bridge_parser.add_argument(
     help="Make Carrier to not handle probes during switch operation",
     default=False,
 )
-intercept_flags = [
-    {"name": "deployment"},
-    {"name": "statefulset"},
-    {"name": "pod"},
-    {"name": "container"},
-]
-for flag in intercept_flags:
-    bridge_parser.add_argument(f"--{flag['name']}")
+bridge_parser.add_argument(
+    "--target",
+    help="Intercept the container given in the notation 'resource/name/container'. "
+    "Resource can be one of 'deployment', 'statefulset' or 'pod'. "
+    "E.g.: --target deployment/hello-nginx/nginx",
+    required=False,
+)
 
 unbridge_parser = action.add_parser("unbridge")
 unbridge_parser.add_argument("-N", "--name", help="The name of the bridge")
@@ -219,15 +209,6 @@ try:
     telemetry = CliTelemetry()
 except Exception:
     telemetry = False
-
-
-def get_intercept_kwargs(parser_args):
-    kwargs = {}
-    for flag in intercept_flags:
-        _f = flag["name"].replace("-", "_")
-        if getattr(parser_args, _f):
-            kwargs[_f] = getattr(parser_args, _f)
-    return kwargs
 
 
 def version(config, check: bool):
@@ -341,12 +322,10 @@ def main():
             bridge(
                 args.name,
                 args.port,
-                container_name=args.container_name,
                 namespace=args.namespace,
-                bridge_name=args.bridge_name,
                 handle_probes=not args.no_probe_handling,
                 config=configuration,
-                **get_intercept_kwargs(args),
+                target=args.target,
             )
         elif args.action == "unbridge":
             if args.name:
