@@ -161,9 +161,16 @@ class ClientConfiguration(object):
 
     def _init_docker(self):
         import docker
+        from docker.context import ContextAPI
 
         try:
-            self.DOCKER = docker.from_env()
+            ctx = ContextAPI.get_context()
+            if ctx.name != "default":
+                endpoint = ctx.endpoints["docker"]["Host"]
+                self.DOCKER = docker.DockerClient(base_url=endpoint)
+                logger.debug(f"Docker Context: {ctx.name}")
+            else:
+                self.DOCKER = docker.from_env()
         except docker.errors.DockerException as de:
             logger.fatal(f"Docker init error: {de}")
             raise docker.errors.DockerException(
