@@ -154,7 +154,10 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
         operator_deploy = config.K8S_APP_API.read_namespaced_deployment(
             name="gefyra-operator", namespace=config.NAMESPACE, _request_timeout=(1, 5)
         )
-        if operator_deploy.status.ready_replicas >= 1:
+        if (
+            operator_deploy.status.ready_replicas
+            and operator_deploy.status.ready_replicas >= 1
+        ):
             _status.operator = True
             _status.operator_image = operator_deploy.spec.template.spec.containers[
                 0
@@ -168,7 +171,10 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
         stowaway_deploy = config.K8S_APP_API.read_namespaced_deployment(
             name="gefyra-stowaway", namespace=config.NAMESPACE, _request_timeout=(1, 5)
         )
-        if stowaway_deploy.status.ready_replicas >= 1:
+        if (
+            stowaway_deploy.status.ready_replicas
+            and stowaway_deploy.status.ready_replicas >= 1
+        ):
             _status.stowaway = True
             _status.stowaway_image = stowaway_deploy.spec.template.spec.containers[
                 0
