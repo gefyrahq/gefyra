@@ -11,7 +11,7 @@ kubernetes = "^24.2.0"
 python-decouple = "^3.5"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.1"
+pytest = "^7.2"
 black = "^22.10.0"
 flake8 = "^5.0.4"
 flake8-black = "^0.3.3"
