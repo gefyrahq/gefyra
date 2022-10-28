@@ -144,6 +144,14 @@ run_parser.add_argument(
     default=False,
     required=False,
 )
+run_parser.add_argument(
+    "-d",
+    "--detach",
+    help="Run container in background and print container ID",
+    action="store_true",
+    default=False,
+    required=False,
+)
 bridge_parser = action.add_parser("bridge")
 bridge_parser.add_argument(
     "-N", "--name", help="The name of the container running in Gefyra", required=True
@@ -317,6 +325,7 @@ def main():
                 auto_remove=args.auto_remove,
                 volumes=args.volume,
                 config=configuration,
+                detach=args.detach,
             )
         elif args.action == "bridge":
             bridge(

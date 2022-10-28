@@ -176,4 +176,4 @@ def run(
         #
         logger.debug("Now printing out logs")
         for logline in container.logs(stream=True):
-            print(logline)
+            print(logline.decode("utf-8"), end="")
