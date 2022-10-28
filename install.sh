@@ -27,6 +27,10 @@ if ! [ -x "$(command -v sudo)" ]; then
        echo "❌ sudo is required to execute the installation. Please install it and run the installer again!"
        exit
 fi
+if ! [ -x "$(command -v install)" ]; then
+       echo "❌ install is required to execute the installation. Please install it and run the installer again!"
+       exit
+fi
 
 download_url=$(curl -L -s https://api.github.com/repos/gefyrahq/gefyra/releases/latest | grep '"browser_download_url": ".*'$OS'.*"' | grep -Eo "(http|https)://[a-zA-Z0-9./?=_%:-]*")
 file_name=$(echo $download_url | grep -oE '[^/]+$')
