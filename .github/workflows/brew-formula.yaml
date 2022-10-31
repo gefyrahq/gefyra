@@ -21,4 +21,7 @@ jobs:
       run: |
         export APP_VERSION=`cat pyproject.toml | grep version -m 1 | awk '{ print substr($3, 2, length($3) -2)}'`
         brew tap gefyrahq/gefyra
+        brew config
+        brew doctor
+        echo $APP_VERSION
         brew bump-formula-pr --version=$APP_VERSION gefyra
