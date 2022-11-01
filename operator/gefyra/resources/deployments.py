@@ -1,4 +1,5 @@
 import kubernetes as k8s
+from kubernetes.client import V1Probe, V1ExecAction
 
 from gefyra.configuration import configuration
 
@@ -24,6 +25,13 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
         resources=k8s.client.V1ResourceRequirements(
             requests={"cpu": "0.1", "memory": "100Mi"},
             limits={"cpu": "0.75", "memory": "500Mi"},
+        ),
+        readiness_probe=V1Probe(
+            _exec=V1ExecAction(
+                command=["cat", "/config/peer1/peer1.conf"],
+            ),
+            period_seconds=1,
+            initial_delay_seconds=5,
         ),
         env=[
             k8s.client.V1EnvVar(name="PEERS", value="1"),
