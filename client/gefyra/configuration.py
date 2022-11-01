@@ -99,9 +99,6 @@ class ClientConfiguration(object):
                 raise Exception("Please provide the endpoint in the form <ip:port>")
             self.CARGO_ENDPOINT = cargo_endpoint
         else:
-            logger.info(
-                "There was no --endpoint argument provided. Connecting to a local Kubernetes node."
-            )
             if sys.platform in ["darwin", "win32"]:
                 # docker for mac/win publishes ports on a special internal ip
                 try:
