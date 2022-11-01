@@ -27,7 +27,7 @@ up_parser.add_argument(
     "-e",
     "--endpoint",
     dest="cargo_endpoint",
-    help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to",
+    help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to. <Port> defaults to 31820.",
     required=False,
 )
 up_parser.add_argument(
@@ -250,6 +250,20 @@ def telemetry_command(on, off):
         logger.info("Invalid flags. Please use either --off or --on.")
 
 
+def prepare_cargo_endpoint(endpoint: str):
+    delimiter_count = endpoint.count(":")
+    if delimiter_count == 0:
+        return f"{endpoint}:31820"
+    elif delimiter_count == 1:
+        if endpoint[-1] == ":":
+            return f"{endpoint}:31820"
+        return endpoint
+    else:
+        raise RuntimeError(
+            "Invalid endpoint format. Endpoint must be in format <IP>:<Port>."
+        )
+
+
 def get_client_configuration(args) -> ClientConfiguration:
     configuration_params = {}
 
@@ -269,7 +283,7 @@ def get_client_configuration(args) -> ClientConfiguration:
                 if endpoint:
                     logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
             else:
-                endpoint = args.cargo_endpoint
+                endpoint = prepare_cargo_endpoint(args.cargo_endpoint)
 
             configuration_params["cargo_endpoint"] = endpoint
         for argument in vars(args):
