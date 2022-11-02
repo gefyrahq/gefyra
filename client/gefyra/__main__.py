@@ -256,7 +256,7 @@ def prepare_cargo_endpoint(endpoint: str):
         return f"{endpoint}:31820"
     elif delimiter_count == 1:
         if endpoint[-1] == ":":
-            return f"{endpoint}:31820"
+            return f"{endpoint}31820"
         return endpoint
     else:
         raise RuntimeError(
