@@ -261,6 +261,9 @@ def get_client_configuration(args) -> ClientConfiguration:
             configuration_params.update(detect_minikube_config())
         else:
             if not args.cargo_endpoint:
+                logger.info(
+                    "There was no --endpoint argument provided. Connecting to a local Kubernetes node."
+                )
                 # #138: Read in the --endpoint parameter from kubeconf
                 endpoint = get_connection_from_kubeconfig()
                 if endpoint:
