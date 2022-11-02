@@ -31,7 +31,7 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
                 command=["cat", "/config/peer1/peer1.conf"],
             ),
             period_seconds=1,
-            initial_delay_seconds=5,
+            initial_delay_seconds=1,
         ),
         env=[
             k8s.client.V1EnvVar(name="PEERS", value="1"),
