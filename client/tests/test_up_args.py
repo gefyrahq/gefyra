@@ -168,7 +168,7 @@ def test_parse_combination_c():
 
 def test_parse_endpoint():
     args = parser.parse_args(["up", "--host", "10.30.34.25"])
-    configuration = ClientConfiguration(**get_client_configuration(args))
+    configuration = get_client_configuration(args)
     assert configuration.CARGO_ENDPOINT == "10.30.34.25:31820"
 
 
