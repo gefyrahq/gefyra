@@ -24,10 +24,16 @@ parser.add_argument("-d", "--debug", action="store_true", help="add debug output
 
 up_parser = action.add_parser("up")
 up_parser.add_argument(
-    "-e",
-    "--endpoint",
-    dest="cargo_endpoint",
-    help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to. <Port> defaults to 31820.",
+    "--host",
+    dest="cargo_endpoint_host",
+    help="Hostname or IP of a K8s node for Gefyra to connect to."
+    "Gefyra tries to extract this from the current kubeconfig and context.",
+    required=False,
+)
+up_parser.add_argument(
+    "--port",
+    dest="cargo_endpoint_port",
+    help="Open UDP port of the K8S node to connect to. Default to 31820.",
     required=False,
 )
 up_parser.add_argument(
@@ -250,44 +256,48 @@ def telemetry_command(on, off):
         logger.info("Invalid flags. Please use either --off or --on.")
 
 
-def prepare_cargo_endpoint(endpoint: str):
-    delimiter_count = endpoint.count(":")
-    if delimiter_count == 0:
-        return f"{endpoint}:31820"
-    elif delimiter_count == 1:
-        if endpoint[-1] == ":":
-            return f"{endpoint}31820"
-        return endpoint
-    else:
-        raise RuntimeError(
-            "Invalid endpoint format. Endpoint must be in format <IP>:<Port>."
-        )
+def prepare_cargo_endpoint(host: str, port: str):
+    if host and not port:
+        return f"{host}:31820"
+    if port and not host:
+        raise RuntimeError(f"Please provide a host for port {port}.")
+    if host and port and not not port.isnumeric():
+        raise RuntimeError(f"Please provide an integer as port. {port} is not valid.")
+    return f"{host}:{port}"
 
 
 def get_client_configuration(args) -> ClientConfiguration:
     configuration_params = {}
 
     if args.action == "up":
-        if args.minikube and bool(args.cargo_endpoint):
+        if args.minikube and bool(args.cargo_endpoint_host):
             raise RuntimeError("You cannot use --endpoint together with --minikube.")
 
         if args.minikube:
             configuration_params.update(detect_minikube_config())
         else:
-            if not args.cargo_endpoint:
+            if not args.cargo_endpoint_host and not args.cargo_endpoint_port:
                 logger.info(
-                    "There was no --endpoint argument provided. Connecting to a local Kubernetes node."
+                    "There was no --host argument provided. Connecting to a local Kubernetes node."
                 )
-                # #138: Read in the --endpoint parameter from kubeconf
+                # #138: Read in the endpoint from kubeconfig
                 endpoint = get_connection_from_kubeconfig()
                 if endpoint:
-                    logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
+                    logger.info(f"Setting host and port from kubeconfig {endpoint}")
             else:
-                endpoint = prepare_cargo_endpoint(args.cargo_endpoint)
+                endpoint = prepare_cargo_endpoint(
+                    args.cargo_endpoint_host, args.cargo_endpoint_port
+                )
 
             configuration_params["cargo_endpoint"] = endpoint
         for argument in vars(args):
-            if argument not in ["action", "debug", "cargo_endpoint", "minikube"]:
+            if argument not in [
+                "action",
+                "debug",
+                "cargo_endpoint_host",
+                "cargo_endpoint_host",
+                "minikube",
+            ]:
                 configuration_params[argument] = getattr(args, argument)
 
     configuration = ClientConfiguration(**configuration_params)
