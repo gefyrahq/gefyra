@@ -168,14 +168,7 @@ def test_parse_combination_c():
 
 def test_parse_endpoint():
     args = parser.parse_args(["up", "--host", "10.30.34.25"])
-    configuration = ClientConfiguration(
-        cargo_endpoint=args.cargo_endpoint,
-        registry_url=args.registry_url,
-        stowaway_image_url=args.stowaway_image_url,
-        operator_image_url=args.operator_image_url,
-        cargo_image_url=args.cargo_image_url,
-        carrier_image_url=args.carrier_image_url,
-    )
+    configuration = ClientConfiguration(**get_client_configuration(args))
     assert configuration.CARGO_ENDPOINT == "10.30.34.25:31820"
 
 

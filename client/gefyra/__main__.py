@@ -261,7 +261,7 @@ def prepare_cargo_endpoint(host: str, port: str):
         return f"{host}:31820"
     if port and not host:
         raise RuntimeError(f"Please provide a host for port {port}.")
-    if host and port and not not port.isnumeric():
+    if host and port and not port.isnumeric():
         raise RuntimeError(f"Please provide an integer as port. {port} is not valid.")
     return f"{host}:{port}"
 
