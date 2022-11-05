@@ -94,7 +94,16 @@ def bridge(
         )
         return False
 
-    workload_type, workload_name, container_name = target.split("/", 2)
+    if target.count("/") == 2:
+        workload_type, workload_name, container_name = target.split("/", 2)
+    elif target.count("/") == 1:
+        workload_type, workload_name = target.split("/", 2)
+        container_name = None
+    else:
+        logger.error(
+            "Invalid --target notation. Use <workload_type>/<workload_name>(/<container_name>)."
+        )
+        return False
 
     pods_to_intercept = get_pods_to_intercept(
         workload_name=workload_name,
@@ -102,6 +111,8 @@ def bridge(
         namespace=namespace,
         config=config,
     )
+    if not container_name:
+        container_name = pods_to_intercept[list(pods_to_intercept.keys())[0]][0]
 
     ireq_base_name = f"{name}-to-{namespace}.{workload_type}.{workload_name}"
 
