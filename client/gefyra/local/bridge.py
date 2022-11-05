@@ -11,14 +11,21 @@ from .utils import handle_docker_run_container
 logger = logging.getLogger(__name__)
 
 
-def handle_create_interceptrequest(config: ClientConfiguration, body):
-    ireq = config.K8S_CUSTOM_OBJECT_API.create_namespaced_custom_object(
-        namespace=config.NAMESPACE,
-        body=body,
-        group="gefyra.dev",
-        plural="interceptrequests",
-        version="v1",
-    )
+def handle_create_interceptrequest(config: ClientConfiguration, body, target: str):
+    from kubernetes.client import ApiException
+
+    try:
+        ireq = config.K8S_CUSTOM_OBJECT_API.create_namespaced_custom_object(
+            namespace=config.NAMESPACE,
+            body=body,
+            group="gefyra.dev",
+            plural="interceptrequests",
+            version="v1",
+        )
+    except ApiException as e:
+        if e.status == 409:
+            raise RuntimeError(f"Workload {target} already bridged.")
+        return False
     return ireq
 
 

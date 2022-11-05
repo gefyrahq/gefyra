@@ -152,7 +152,7 @@ def bridge(
             sync_down_directories=sync_down_dirs,
             handle_probes=handle_probes,
         )
-        ireq = handle_create_interceptrequest(config, ireq_body)
+        ireq = handle_create_interceptrequest(config, ireq_body, target)
         logger.debug(f"Bridge {ireq['metadata']['name']} created")
         for syncdown_dir in sync_down_dirs:
             add_syncdown_job(
