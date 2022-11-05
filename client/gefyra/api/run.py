@@ -2,30 +2,10 @@ import logging
 import os
 
 from gefyra.configuration import default_configuration, ClientConfiguration
-from .utils import stopwatch
+from .utils import stopwatch, get_workload_type
 
 
 logger = logging.getLogger(__name__)
-
-
-def get_workload_type(workload_type_str: str):
-    POD = ["pod", "po", "pods"]
-    DEPLOYMENT = ["deploy", "deployment", "deployments"]
-    STATEFULSET = ["statefulset", "sts", "statefulsets"]
-    VALID_TYPES = POD + DEPLOYMENT + STATEFULSET
-
-    if workload_type_str not in VALID_TYPES:
-        raise RuntimeError(
-            f"Unknown workload type {workload_type_str}\n"
-            f'Valid workload types include: {", ".join(str(valid_type) for valid_type in VALID_TYPES)}'
-        )
-
-    if workload_type_str in POD:
-        return "pod"
-    elif workload_type_str in DEPLOYMENT:
-        return "deployment"
-    elif workload_type_str in STATEFULSET:
-        return "statefulset"
 
 
 def retrieve_pod_and_container(
