@@ -67,7 +67,7 @@ jobs:
         echo "Now running codesign"
         /usr/bin/codesign --deep --force --options=runtime --entitlements ./entitlements.plist --sign $MACOS_APP_HASH --timestamp ./gefyra
     - name: Upload Artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: gefyra-${{ env.APP_VERSION }}-darwin-universal
         path: |
