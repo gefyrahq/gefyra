@@ -8,6 +8,9 @@ on:
 
 jobs:
   test:
+    strategy:
+      matrix:
+        k3d: [v1.22.15-k3s1, v1.23.13-k3s1, v1.24.7-k3s1, v1.25.3-k3s1]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,6 +32,7 @@ jobs:
           args: >-
             --agents 1
             -p "31820:31820/UDP@agent:0"
+            --image docker.io/rancher/k3s:${{ matrix.k3d }}
       #
       # Gefyra Operator
       #
