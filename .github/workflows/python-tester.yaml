@@ -59,7 +59,7 @@ jobs:
         run: |
           k3d image import ${{ steps.operator_meta.outputs.tags }} -c mycluster --verbose
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
       - name: Install Poetry
