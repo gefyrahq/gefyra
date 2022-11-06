@@ -13,7 +13,7 @@ jobs:
     runs-on: macos-11
     if: ${{ github.event.workflow_run.event == 'release' }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Update Homebrew formula
       working-directory: client/
       env:
