@@ -119,6 +119,7 @@ def bridge(
         workload_name=workload_name,
         container_name=container_name,
         namespace=namespace,
+        config=config,
     )
 
     if len(pods_to_intercept.keys()) > 1:
