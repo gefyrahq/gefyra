@@ -33,6 +33,13 @@ spec:
         ports:
         - containerPort: 80
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: commands
+  labels:
+    name: commands
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
