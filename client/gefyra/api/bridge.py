@@ -32,7 +32,12 @@ def get_pods_to_intercept(
 
 
 def check_workloads(
-    pods_to_intercept, workload_type, workload_name, container_name, namepace: str
+    pods_to_intercept,
+    workload_type,
+    workload_name,
+    container_name,
+    namespace: str,
+    config,
 ):
     from client.gefyra.cluster.resources import check_pod_valid_for_bridge
 
@@ -53,7 +58,7 @@ def check_workloads(
         raise RuntimeError(f"Could not find container {container_name} to bridge.")
 
     for name in pod_names:
-        check_pod_valid_for_bridge(name, namepace)
+        check_pod_valid_for_bridge(config, name, namespace)
 
 
 @stopwatch
