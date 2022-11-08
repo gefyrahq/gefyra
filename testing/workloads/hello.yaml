@@ -37,6 +37,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hello-nginxdemo-command
+  namespace: commands
 spec:
   selector:
     matchLabels:
