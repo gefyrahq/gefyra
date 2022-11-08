@@ -86,7 +86,14 @@ def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) ->
     tic = time.perf_counter()
     try:
         config.K8S_CORE_API.create_namespace(
-            body=V1Namespace(metadata=V1ObjectMeta(name=config.NAMESPACE))
+            body=V1Namespace(
+                metadata=V1ObjectMeta(
+                    name=config.NAMESPACE,
+                    labels={
+                        "pod-security.kubernetes.io/enforce": "privileged",
+                    },
+                )
+            )
         )
     except ApiException as e:
         if e.status == 409:
