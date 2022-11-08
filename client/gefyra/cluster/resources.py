@@ -163,11 +163,11 @@ def create_operator_deployment(
 def _check_pod_for_command(pod: V1Pod, index=0):
     containers: list[V1Container] = pod.spec.containers
     if not len(containers):
-        raise RuntimeError("No container available in pod {pod.metadata.name}.")
+        raise RuntimeError(f"No container available in pod {pod.metadata.name}.")
 
     if containers[index].command:
         raise RuntimeError(
-            "Cannot bridge pod {pod.metadata.name} since it has a `command` defined."
+            f"Cannot bridge pod {pod.metadata.name} since it has a `command` defined."
         )
 
 
