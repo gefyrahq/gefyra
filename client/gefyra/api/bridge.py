@@ -39,7 +39,7 @@ def check_workloads(
     namespace: str,
     config,
 ):
-    from client.gefyra.cluster.resources import check_pod_valid_for_bridge
+    from gefyra.cluster.resources import check_pod_valid_for_bridge
 
     pod_names = pods_to_intercept.keys()
     if len(pod_names) == 0:

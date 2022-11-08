@@ -191,7 +191,7 @@ jobs:
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
         run: |
-          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deployment/hello-nginxdemo-command --port 80:8000
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deployment/hello-nginxdemo-command/hello-nginx --port 80:8000
           test $? -eq 1
       - name: Run gefyra bridge with deployment
         working-directory: ./client
