@@ -35,6 +35,7 @@ up_parser.add_argument(
     dest="cargo_endpoint_port",
     help="Open UDP port of the K8S node to connect to. Default to 31820.",
     required=False,
+    default="31820",
 )
 up_parser.add_argument(
     "-M",
@@ -254,16 +255,6 @@ def telemetry_command(on, off):
         telemetry.on()
     else:
         logger.info("Invalid flags. Please use either --off or --on.")
-
-
-def prepare_cargo_endpoint(host: str, port: str):
-    if host and not port:
-        return f"{host}:31820"
-    if port and not host:
-        raise RuntimeError(f"Please provide a host for port {port}.")
-    if host and port and not port.isnumeric():
-        raise RuntimeError(f"Please provide an integer as port. {port} is not valid.")
-    return f"{host}:{port}"
 
 
 def get_client_configuration(args) -> ClientConfiguration:
