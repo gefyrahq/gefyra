@@ -284,8 +284,8 @@ def get_client_configuration(args) -> ClientConfiguration:
                 endpoint = get_connection_from_kubeconfig()
                 if endpoint:
                     logger.info(f"Setting host and port from kubeconfig {endpoint}")
-
-            configuration_params["cargo_endpoint"] = endpoint
+                    configuration_params["cargo_endpoint_host"] = endpoint.split(":")[0]
+                    configuration_params["cargo_endpoint_port"] = endpoint.split(":")[1]
         for argument in vars(args):
             if argument not in [
                 "action",
