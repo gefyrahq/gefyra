@@ -284,18 +284,12 @@ def get_client_configuration(args) -> ClientConfiguration:
                 endpoint = get_connection_from_kubeconfig()
                 if endpoint:
                     logger.info(f"Setting host and port from kubeconfig {endpoint}")
-            else:
-                endpoint = prepare_cargo_endpoint(
-                    args.cargo_endpoint_host, args.cargo_endpoint_port
-                )
 
             configuration_params["cargo_endpoint"] = endpoint
         for argument in vars(args):
             if argument not in [
                 "action",
                 "debug",
-                "cargo_endpoint_host",
-                "cargo_endpoint_port",
                 "minikube",
             ]:
                 configuration_params[argument] = getattr(args, argument)
