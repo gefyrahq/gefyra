@@ -94,12 +94,11 @@ def bridge(
         )
         return False
 
-    if target.count("/") == 2:
-        workload_type, workload_name, container_name = target.split("/", 2)
-    elif target.count("/") == 1:
-        workload_type, workload_name = target.split("/", 2)
-        container_name = None
-    else:
+    try:
+        _bits = list(filter(None, target.split("/")))
+        workload_type, workload_name = _bits[0:2]
+        container_name = _bits[2] if _bits[2:] else None
+    except IndexError:
         logger.error(
             "Invalid --target notation. Use <workload_type>/<workload_name>(/<container_name>)."
         )
