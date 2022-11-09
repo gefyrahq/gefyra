@@ -165,7 +165,12 @@ def _check_pod_for_command(pod: V1Pod, index=0):
     if not len(containers):
         raise RuntimeError(f"No container available in pod {pod.metadata.name}.")
 
-    if containers[index].command:
+    ALLOWED_COMMANDS = ["sh", "bash", "zsh", "ash", "/entrypoint.sh"]
+
+    if (
+        containers[index].command
+        and containers[index].command[0] not in ALLOWED_COMMANDS
+    ):
         raise RuntimeError(
             f"Cannot bridge pod {pod.metadata.name} since it has a `command` defined."
         )
