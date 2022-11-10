@@ -278,7 +278,6 @@ jobs:
           docker --version
       - name: Sanity run Gefyra
         run: |
-          unzip gefyra-${{ env.APP_VERSION }}-darwin-universal.zip
-          cd gefyra-${{ env.APP_VERSION }}-darwin-universal/
+          ls -la
           chmod u+x ./gefyra
           ./gefyra version
