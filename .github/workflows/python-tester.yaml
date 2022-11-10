@@ -254,18 +254,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  binary_check:
-    runs-on: macos-11
+  mac_build:
+    uses: ./.github/workflows/dist-build-mac.yaml
     needs: test
+  
+  mac_binary_test:
+    needs: mac_build
+    runs-on: macos-11
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - uses: ./.github/workflows/dist-build-mac.yaml
+      - name: Get version
+        working-directory: client/
+        run: |
+          cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+      - uses: actions/download-artifact@v3
+        with:
+          name: gefyra-${{ env.APP_VERSION }}-darwin-universal
       - name: Setup Docker
         run: |
           brew install docker
           docker --version
       - name: Sanity run Gefyra
         run: |
+          unzip gefyra-${{ env.APP_VERSION }}-darwin-universal.zip
+          cd gefyra-${{ env.APP_VERSION }}-darwin-universal/
           chmod u+x ./gefyra
           ./gefyra version
