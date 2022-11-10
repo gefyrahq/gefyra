@@ -253,3 +253,16 @@ jobs:
           coveralls --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  binary_check:
+    runs-on: macos-11
+    steps:
+      - uses: ./.github/workflows/dist-build-mac.yaml
+      - name: Setup Docker
+        run: |
+          brew install docker
+          docker --version
+      - name: Sanity run Gefyra
+        run: |
+          chmod u+x ./gefyra
+          ./gefyra version
