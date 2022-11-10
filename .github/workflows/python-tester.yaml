@@ -256,6 +256,7 @@ jobs:
 
   mac_build:
     uses: ./.github/workflows/dist-build-mac.yaml
+    secrets: inherit
     needs: test
   
   mac_binary_test:
