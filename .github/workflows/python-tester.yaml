@@ -257,6 +257,8 @@ jobs:
   binary_check:
     runs-on: macos-11
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
       - uses: ./.github/workflows/dist-build-mac.yaml
       - name: Setup Docker
         run: |
