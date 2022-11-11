@@ -12,6 +12,7 @@ jobs:
       matrix:
         k3d: [v1.22.15-k3s1, v1.23.13-k3s1, v1.24.7-k3s1, v1.25.3-k3s1]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -116,6 +117,7 @@ jobs:
           poetry run coverage run -a -m gefyra up --context=invalid-context
           test $? -eq 1
       - name: Run gefyra up
+        timeout-minutes: 3
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra up --operator ${{ steps.operator_meta.outputs.tags }}
