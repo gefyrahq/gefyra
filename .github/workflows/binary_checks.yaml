@@ -80,4 +80,5 @@ jobs:
           name: gefyra-${{ env.APP_VERSION }}-linux-amd64
       - name: Sanity run Gefyra
         run: |
+          chmod u+x ./gefyra
           ./gefyra version
