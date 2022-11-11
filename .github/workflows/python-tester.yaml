@@ -231,7 +231,7 @@ jobs:
         run: |
           poetry run coverage report
       - name: Upload coverage data to coveralls.io
-        if: github.event_name != 'pull_request'
+        if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -241,7 +241,7 @@ jobs:
           poetry run coveralls --service=github
   coveralls:
     name: Indicate completion to coveralls.io
-    if: github.event_name != 'pull_request'
+    if: github.repository == 'gefyrahq/gefyra'
     # need secrets.GITHUB_TOKEN
     needs: test
     runs-on: ubuntu-latest
