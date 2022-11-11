@@ -60,3 +60,24 @@ jobs:
       - name: Sanity run Gefyra
         run: |
           ./gefyra version
+
+  linux_build:
+    uses: ./.github/workflows/dist-build-linux.yaml
+    secrets: inherit
+  
+  linux_binary_test:
+    needs: linux_build
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Get version
+        working-directory: client/
+        run: |
+          cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+      - uses: actions/download-artifact@v3
+        with:
+          name: gefyra-${{ env.APP_VERSION }}-linux-amd64
+      - name: Sanity run Gefyra
+        run: |
+          ./gefyra version
