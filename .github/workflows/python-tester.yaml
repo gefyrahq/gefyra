@@ -117,7 +117,7 @@ jobs:
           poetry run coverage run -a -m gefyra up --context=invalid-context
           test $? -eq 1
       - name: Run gefyra up
-        timeout-minutes: 3
+        timeout-minutes: 8
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra up --operator ${{ steps.operator_meta.outputs.tags }}
