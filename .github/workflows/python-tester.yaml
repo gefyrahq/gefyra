@@ -253,31 +253,3 @@ jobs:
           coveralls --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  mac_build:
-    uses: ./.github/workflows/dist-build-mac.yaml
-    secrets: inherit
-    needs: test
-  
-  mac_binary_test:
-    needs: mac_build
-    runs-on: macos-11
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Get version
-        working-directory: client/
-        run: |
-          cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
-      - uses: actions/download-artifact@v3
-        with:
-          name: gefyra-${{ env.APP_VERSION }}-darwin-universal
-      - name: Setup Docker
-        run: |
-          brew install docker
-          docker --version
-      - name: Sanity run Gefyra
-        run: |
-          ls -la
-          chmod u+x ./gefyra
-          ./gefyra version
