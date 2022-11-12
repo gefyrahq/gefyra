@@ -14,7 +14,7 @@ logger.addHandler(console)
 __VERSION__ = "0.13.2"
 
 
-def fix_pywin32_in_frozen_build() -> None:
+def fix_pywin32_in_frozen_build() -> None:  # pragma: no cover
     import os
     import site
 
@@ -58,7 +58,7 @@ class ClientConfiguration(object):
         kube_context: str = None,
         wireguard_mtu: str = None,
     ):
-        if sys.platform == "win32":
+        if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
         self.REGISTRY_URL = (
@@ -130,11 +130,10 @@ class ClientConfiguration(object):
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         if kube_config_file:
             self.KUBE_CONFIG_FILE = kube_config_file
-            if self.KUBE_CONFIG_FILE:
-                if not path.isfile(path.expanduser(self.KUBE_CONFIG_FILE)):
-                    raise RuntimeError(
-                        f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found."
-                    )
+            if not path.isfile(path.expanduser(self.KUBE_CONFIG_FILE)):
+                raise RuntimeError(
+                    f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found."
+                )
         else:
             from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
 

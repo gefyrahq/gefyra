@@ -110,12 +110,27 @@ jobs:
         run: |
           poetry run coverage run -a -m gefyra up --kubeconfig=/there/is/no/config
           test $? -eq 1
+      - name: Run gefyra up with invalid endpoint
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra up --endpoint 127.0.0.1::8000
+          test $? -eq 1
       - name: Run gefyra up with invalid context
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
         run: |
           poetry run coverage run -a -m gefyra up --context=invalid-context
           test $? -eq 1
+      - name: Run gefyra up in another docker context
+        timeout-minutes: 8
+        working-directory: ./client
+        run: |
+          docker context create another-context
+          docker context use another-context
+          poetry run coverage run -a -m gefyra up --operator ${{ steps.operator_meta.outputs.tags }}
+          poetry run coverage run -a -m gefyra down
+          docker context use default
       - name: Run gefyra up
         timeout-minutes: 8
         working-directory: ./client
