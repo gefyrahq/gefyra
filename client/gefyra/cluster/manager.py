@@ -35,6 +35,10 @@ def handle_serviceaccount(
     except ApiException as e:
         if e.status == 409:
             pass
+        elif e.status == 403:
+            raise RuntimeError(
+                f"You're not allowed to create a serviceaccount in namespace {config.NAMESPACE}."
+            )
         else:
             raise e
 
