@@ -9,6 +9,8 @@ on:
 jobs:
   build_operator:
     runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.operator_meta.outputs.tags }}
     steps:
     - name: Checkout
       uses: actions/checkout@v3
