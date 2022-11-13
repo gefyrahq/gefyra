@@ -61,6 +61,7 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
         if e.status != 404:
             logger.error("Error getting InterceptRequests: " + str(e))
             raise e
+        return []
 
 
 def get_all_containers(config: ClientConfiguration) -> list:
