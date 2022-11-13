@@ -47,6 +47,12 @@ jobs:
         tags: ${{ steps.operator_meta.outputs.tags }}
         labels: ${{ steps.operator_meta.outputs.labels }}
         cache-from: type=registry,ref=quay.io/gefyra/operator:latest
+        outputs: type=docker,dest=/tmp/operator.tar
+    - name: Upload operator image
+      uses: actions/upload-artifact@v2
+      with:
+        name: operator
+        path: /tmp/operator.tar
 
   test_minikube:
     needs: build_operator
@@ -136,6 +142,15 @@ jobs:
             --agents 1
             -p "31820:31820/UDP@agent:0"
             --image docker.io/rancher/k3s:${{ matrix.k3d }}
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: operator
+          path: /tmp
+      - name: Load Operator image
+        run: |
+          docker load --input /tmp/operator.tar
+          docker image ls -a
       - name: Import Operator to k3d
         run: |
           k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
