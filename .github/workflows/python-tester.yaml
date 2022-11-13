@@ -202,7 +202,7 @@ jobs:
         run: |
           docker context create another-context
           docker context use another-context
-          poetry run coverage run -a -m gefyra up --operator ${{ steps.operator_meta.outputs.tags }}
+          poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tags }}
           poetry run coverage run -a -m gefyra down
           docker context use default
       - name: Run gefyra up
