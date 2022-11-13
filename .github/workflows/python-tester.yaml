@@ -72,6 +72,10 @@ jobs:
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@latest
+      - name: Install dependencies
+        working-directory: ./client
+        run: |
+          poetry install
       - name: Run gefyra up
         timeout-minutes: 8
         working-directory: ./client
@@ -132,7 +136,7 @@ jobs:
             --image docker.io/rancher/k3s:${{ matrix.k3d }}
       - name: Import Operator to k3d
         run: |
-          k3d image import ${{ steps.operator_meta.outputs.tags }} -c mycluster --verbose
+          k3d image import ${{ jobs.build.outputs.tags }} -c mycluster --verbose
       - name: Pytest
         working-directory: ./client
         run: |
@@ -313,7 +317,9 @@ jobs:
     name: Indicate completion to coveralls.io
     if: github.repository == 'gefyrahq/gefyra'
     # need secrets.GITHUB_TOKEN
-    needs: test
+    needs:
+      - test
+      - test_minikube
     runs-on: ubuntu-latest
     container: python:3-slim
     steps:
