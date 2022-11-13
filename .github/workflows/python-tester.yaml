@@ -49,7 +49,7 @@ jobs:
         cache-from: type=registry,ref=quay.io/gefyra/operator:latest
         outputs: type=docker,dest=/tmp/operator.tar
     - name: Upload operator image
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: operator
         path: /tmp/operator.tar
@@ -143,7 +143,7 @@ jobs:
             -p "31820:31820/UDP@agent:0"
             --image docker.io/rancher/k3s:${{ matrix.k3d }}
       - name: Download artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: operator
           path: /tmp
@@ -209,7 +209,7 @@ jobs:
         timeout-minutes: 8
         working-directory: ./client
         run: |
-          poetry run coverage run -a -m gefyra up --operator ${{ steps.operator_meta.outputs.tags }}
+          poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tags }}
       - name: Run gefyra status running
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
