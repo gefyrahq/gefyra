@@ -138,7 +138,7 @@ jobs:
             --image docker.io/rancher/k3s:${{ matrix.k3d }}
       - name: Import Operator to k3d
         run: |
-          k3d image import ${{ needs.build.outputs.tags }} -c mycluster --verbose
+          k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
       - name: Pytest
         working-directory: ./client
         run: |
