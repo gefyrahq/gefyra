@@ -213,5 +213,7 @@ def get_pods_and_containers_for_pod_name(
         if e.status == 404:
             raise RuntimeError("Pod not found.")
         raise RuntimeError(API_EXCEPTION_MSG.format(e))
+    if not pod.spec:  # `.spec` is optional in python kubernetes client
+        raise RuntimeError(f"Could not retrieve spec for pod - {name}.")
     result[pod.metadata.name] = [container.name for container in pod.spec.containers]
     return result
