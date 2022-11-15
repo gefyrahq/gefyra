@@ -33,9 +33,9 @@ def get_pods_to_intercept(
 
 def check_workloads(
     pods_to_intercept,
-    workload_type,
-    workload_name,
-    container_name,
+    workload_type: str,
+    workload_name: str,
+    container_name: str,
     namespace: str,
     config,
 ):
@@ -58,7 +58,7 @@ def check_workloads(
         raise RuntimeError(f"Could not find container {container_name} to bridge.")
 
     for name in pod_names:
-        check_pod_valid_for_bridge(config, name, namespace)
+        check_pod_valid_for_bridge(config, name, namespace, container_name)
 
 
 @stopwatch
