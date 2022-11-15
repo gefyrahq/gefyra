@@ -94,7 +94,15 @@ def bridge(
         )
         return False
 
-    workload_type, workload_name, container_name = target.split("/", 2)
+    try:
+        _bits = list(filter(None, target.split("/")))
+        workload_type, workload_name = _bits[0:2]
+        container_name = _bits[2] if _bits[2:] else None
+    except IndexError:
+        raise RuntimeError(
+            "Invalid --target notation. Use <workload_type>/<workload_name>(/<container_name>)."
+        )
+        return False
 
     pods_to_intercept = get_pods_to_intercept(
         workload_name=workload_name,
@@ -102,6 +110,8 @@ def bridge(
         namespace=namespace,
         config=config,
     )
+    if not container_name:
+        container_name = pods_to_intercept[list(pods_to_intercept.keys())[0]][0]
 
     ireq_base_name = f"{name}-to-{namespace}.{workload_type}.{workload_name}"
 
@@ -141,7 +151,7 @@ def bridge(
             sync_down_directories=sync_down_dirs,
             handle_probes=handle_probes,
         )
-        ireq = handle_create_interceptrequest(config, ireq_body)
+        ireq = handle_create_interceptrequest(config, ireq_body, target)
         logger.debug(f"Bridge {ireq['metadata']['name']} created")
         for syncdown_dir in sync_down_dirs:
             add_syncdown_job(

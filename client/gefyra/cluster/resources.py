@@ -18,6 +18,7 @@ from kubernetes.client import (
     ApiException,
 )
 
+from gefyra.api.utils import get_workload_type
 from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
@@ -166,6 +167,7 @@ def get_pods_and_containers_for_workload(
     result = {}
     API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
     NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."
+    workload_type = get_workload_type(workload_type)
     try:
         if workload_type == "deployment":
             workload = config.K8S_APP_API.read_namespaced_deployment(
