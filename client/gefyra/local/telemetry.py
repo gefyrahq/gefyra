@@ -40,7 +40,7 @@ class CliTelemetry:
         try:
             config["telemetry"].getboolean("track")
             # This was added later and is here for backwards compatbility
-            if "id" in config:
+            if config["telemetry"].get("id"):
                 user_id = config["telemetry"].get("id")
             else:
                 user_id = self.create_id()
