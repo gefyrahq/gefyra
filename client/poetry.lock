@@ -63,7 +63,7 @@ unicode-backport = ["unicodedata2"]
 
 [[package]]
 name = "cli-tracker"
-version = "0.2.8"
+version = "0.3.0"
 description = ""
 category = "main"
 optional = false
@@ -585,7 +585,7 @@ test = ["websockets"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "a40e606eb5b87c863273f8a08bc9a9d0cfada38a43e43c3b09e182a49ddb5be2"
+content-hash = "d23d86beff1ff497c2da2a6dd3cd5fd4d39eef364f76dba2a7987fe43f7b65bb"
 
 [metadata.files]
 attrs = [
@@ -628,8 +628,8 @@ charset-normalizer = [
     {file = "charset_normalizer-2.1.1-py3-none-any.whl", hash = "sha256:83e9a75d1911279afd89352c68b45348559d1fc0506b054b346651b5e7fee29f"},
 ]
 cli-tracker = [
-    {file = "cli_tracker-0.2.8-py3-none-any.whl", hash = "sha256:0451760686c26c935351845969a1dd0b49221afddb73259912dfee7af032194e"},
-    {file = "cli_tracker-0.2.8.tar.gz", hash = "sha256:ad64ef972d38ad9b371db9208ea49f0eb52d789f22b6f937567457ccc1de5a27"},
+    {file = "cli_tracker-0.3.0-py3-none-any.whl", hash = "sha256:5b9efbd6a748dc550c9d164dd2e3121bda6d69e4906217809c5401adbb0d6232"},
+    {file = "cli_tracker-0.3.0.tar.gz", hash = "sha256:c7ed858b3fa361e1e2a12e5abe7a3d14e521c9feda6f968b3379146a9b7e4d9c"},
 ]
 click = [
     {file = "click-8.1.3-py3-none-any.whl", hash = "sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48"},
