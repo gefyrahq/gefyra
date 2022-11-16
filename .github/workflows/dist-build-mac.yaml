@@ -38,6 +38,7 @@ jobs:
         cp README.md ../README.md
         cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Codesign executable
+      if: ${{ github.event.release && github.event.action == 'published' }}
       env:
         MACOS_DEVELOPER_HASH: ${{ secrets.MACOS_DEVELOPER_HASH }}
         MACOS_APP_HASH: ${{ secrets.MACOS_APP_HASH }}
