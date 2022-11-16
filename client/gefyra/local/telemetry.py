@@ -40,10 +40,7 @@ class CliTelemetry:
         try:
             config["telemetry"].getboolean("track")
             # This was added later and is here for backwards compatbility
-            if config["telemetry"].get("id"):
-                user_id = config["telemetry"].get("id")
-            else:
-                user_id = self.create_id()
+            user_id = self._get_user_id(config)
         except KeyError:
             config = self.create_config(gefyra_dir / self.file_name)
 
@@ -57,6 +54,13 @@ class CliTelemetry:
             release=__VERSION__,
             fingerprint=user_id,
         )
+
+    def _get_user_id(self, config):
+        if config["telemetry"].get("id"):
+            user_id = config["telemetry"].get("id")
+        else:
+            user_id = self.create_id()
+        return user_id
 
     def load_config(self, path):
         config = configparser.ConfigParser()
@@ -94,12 +98,14 @@ class CliTelemetry:
             self.tracker.report_opt_out()
         logger.info("Disabled telemetry.")
 
-    def on(self):
+    def on(self, test=False):
         config = configparser.ConfigParser()
         config.read(self.path)
         config["telemetry"]["track"] = "True"
         with open(str(self.path), "w") as config_file:
             config.write(config_file)
-        self._init_tracker()
-        self.tracker.report_opt_in()
+        user_id = self._get_user_id(config)
+        self._init_tracker(user_id=user_id)
+        if not test:
+            self.tracker.report_opt_in()
         logger.info("Enabled telemetry.")
