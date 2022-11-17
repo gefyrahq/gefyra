@@ -105,6 +105,7 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         k3d: [v1.22.15-k3s1, v1.23.13-k3s1, v1.24.7-k3s1, v1.25.3-k3s1]
     needs: build_operator
