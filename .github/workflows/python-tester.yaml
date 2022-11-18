@@ -40,7 +40,7 @@ jobs:
         platforms: linux/amd64
         push: false
         load: true
-        file: "{{context}}/Dockerfile.local"
+        file: ${{context}}/Dockerfile.local
         tags: pyserver
         outputs: type=docker,dest=/tmp/pyserver.tar
     - name: Upload pyserver image
