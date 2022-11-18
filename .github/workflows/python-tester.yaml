@@ -19,7 +19,7 @@ jobs:
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
-    
+
     - name: PyServer Test Image meta
       id: test_image_meta
       uses: docker/metadata-action@v4
@@ -215,7 +215,7 @@ jobs:
         k3d: [v1.22.15-k3s1, v1.23.13-k3s1, v1.24.7-k3s1, v1.25.3-k3s1]
     needs:
       - build_operator
-      - build_test_image 
+      - build_test_image
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -311,7 +311,7 @@ jobs:
         shell: bash --noprofile --norc -o pipefail {0}
         run: |
           export KUBECONFIG=/some/invalid/kubeconfig.yaml
-          poetry run coverage run -a -m gefyra up 
+          poetry run coverage run -a -m gefyra up
           test $? -eq 1
       - name: Run gefyra up with invalid endpoint
         working-directory: ./client
@@ -424,20 +424,21 @@ jobs:
           export KUBECONFIG=/some/invalid/kubeconfig.yaml
           poetry run coverage run -a -m gefyra unbridge --wait -A
           test $? -eq 1
-      - name: Run gefyra unbridge 
+      - name: Run gefyra unbridge
         working-directory: ./client
         run: poetry run coverage run -a -m gefyra unbridge --wait -A
+      - name: Run gefyra unbridge
+        working-directory: ./client
+        run: poetry run coverage run -a -m gefyra unbridge -A
       - name: Run gefyra bridge with deployment short name (deploy)
         working-directory: ./client
-        run: |
-          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo/hello-nginx --port 80:8000
+        run: poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo/hello-nginx --port 80:8000
       - name: Run gefyra unbridge 
         working-directory: ./client
         run: poetry run coverage run -a -m gefyra unbridge --wait -A
       - name: Run gefyra bridge with deployment short name (deploy) without container name
         working-directory: ./client
-        run: |
-          poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo --port 80:8000
+        run: poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo --port 80:8000
       - name: Run gefyra unbridge 
         working-directory: ./client
         run: poetry run coverage run -a -m gefyra unbridge --wait -A
