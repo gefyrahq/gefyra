@@ -18,6 +18,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Set Gefyra tracking config 
+        shell: bash
+        run: |
+          mkdir -p ~/.gefyra
+          cd ~/.gefyra
+          touch config.ini
+          echo "[telemetry]" >> config.ini
+          echo "track = False" >> config.ini
       - name: Get version
         working-directory: client/
         run: |
@@ -49,6 +57,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+      - name: Set Gefyra tracking config 
+        shell: bash
+        run: |
+          mkdir -p ~/.gefyra
+          cd ~/.gefyra
+          touch config.ini
+          echo "[telemetry]" >> config.ini
+          echo "track = False" >> config.ini
       - name: Determine App Version
         working-directory: client/
         run: |
@@ -71,6 +87,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Set Gefyra tracking config 
+        shell: bash
+        run: |
+          mkdir -p ~/.gefyra
+          cd ~/.gefyra
+          touch config.ini
+          echo "[telemetry]" >> config.ini
+          echo "track = False" >> config.ini
       - name: Get version
         working-directory: client/
         run: |
