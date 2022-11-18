@@ -96,6 +96,42 @@ jobs:
         name: operator
         path: /tmp/operator.tar
 
+  test_python:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Pytest
+        working-directory: ./client
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install --no-interaction --no-root
+          poetry run coverage run -m pytest
+      - name: Upload coverage data to coveralls.io
+        if: github.repository == 'gefyrahq/gefyra'
+        working-directory: ./client
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_PARALLEL: true
+        run: poetry run coveralls --service=github
+
   test_minikube:
     needs: build_operator
     runs-on: ubuntu-latest
@@ -108,6 +144,10 @@ jobs:
           python-version: '3.9'
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
       - name: Set Gefyra tracking config / fake kubeconfig
         shell: bash
         run: |
@@ -122,10 +162,16 @@ jobs:
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@latest
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Install dependencies
         working-directory: ./client
-        run: |
-          poetry install
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
       - name: Run gefyra up
         timeout-minutes: 8
         working-directory: ./client
@@ -165,6 +211,10 @@ jobs:
           python-version: '3.9'
       - name: Install Poetry
         uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
       - name: Set Gefyra tracking config / fake kubeconfig
         shell: bash
         run: |
@@ -199,11 +249,16 @@ jobs:
       - name: Import Operator to k3d
         run: |
           k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Pytest
         working-directory: ./client
-        run: |
-          poetry install
-          poetry run coverage run -m pytest
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
       # Run the 'Try it yourself'
       - name: Apply some workload
         run: |
