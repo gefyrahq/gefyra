@@ -211,16 +211,20 @@ def wait_for_deletion(ireqs: List, config=default_configuration):
     from kubernetes.watch import Watch
 
     w = Watch()
-
+    deleted = []
+    uids = [ireq["metadata"]["uid"] for ireq in ireqs]
     for event in w.stream(
-        config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
-            namespace=config.NAMESPACE,
-            group="gefyra.dev",
-            version="v1",
-            plural="interceptrequests",
-        )
+        config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object,
+        namespace=config.NAMESPACE,
+        group="gefyra.dev",
+        version="v1",
+        plural="interceptrequests",
     ):
-        print(event)
+        if event["type"] == "DELETED":
+            if event["object"]["metadata"]["uid"] in uids:
+                deleted.append(event["object"]["metadata"]["uid"])
+                if set(deleted) == set(uids):
+                    break
 
 
 @stopwatch
@@ -236,8 +240,10 @@ def unbridge(
 
     config = set_kubeconfig_from_cargo(config)
 
-    success = handle_delete_interceptrequest(config, name)
-    if success:
+    ireq = handle_delete_interceptrequest(config, name)
+    if ireq:
+        if wait:
+            wait_for_deletion([ireq], config)
         logger.info(f"Bridge {name} removed")
     return True
 
@@ -245,6 +251,7 @@ def unbridge(
 @stopwatch
 def unbridge_all(
     config=default_configuration,
+    wait: bool = False,
 ) -> bool:
     from gefyra.local.bridge import (
         handle_delete_interceptrequest,
@@ -261,5 +268,6 @@ def unbridge_all(
         name = ireq["metadata"]["name"]
         logger.info(f"Removing Bridge {name}")
         handle_delete_interceptrequest(config, name)
-    wait_for_deletion(config=config, ireqs=ireq)
+    if wait:
+        wait_for_deletion(config=config, ireqs=ireqs)
     return True
