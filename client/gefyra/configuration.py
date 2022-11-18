@@ -61,8 +61,6 @@ class ClientConfiguration(object):
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
-        self._kube_config_path = None
-        self._kube_context = None
         self.REGISTRY_URL = (
             registry_url.rstrip("/") if registry_url else "quay.io/gefyra"
         )
@@ -132,15 +130,17 @@ class ClientConfiguration(object):
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         if kube_config_file:
             self.KUBE_CONFIG_FILE = kube_config_file
+            if not path.isfile(path.expanduser(self.KUBE_CONFIG_FILE)):
+                raise RuntimeError(
+                    f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found."
+                )
+        else:
+            from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
 
+            self.KUBE_CONFIG_FILE = KUBE_CONFIG_DEFAULT_LOCATION
         if kube_context:
             self.KUBE_CONTEXT = kube_context
-
-        self.WIREGUARD_MTU = wireguard_mtu or "1340"
-
-    @property
-    def KUBE_CONTEXT(self):
-        if not self._kube_context:
+        else:
             from kubernetes.config.kube_config import list_kube_config_contexts
             from kubernetes.config.config_exception import ConfigException
 
@@ -152,25 +152,8 @@ class ClientConfiguration(object):
             except ConfigException:
                 logger.error("Could not read active 'kubeconfig' context.")
                 self.KUBE_CONTEXT = None
-        return self._kube_context
 
-    @KUBE_CONTEXT.setter
-    def KUBE_CONTEXT(self, context):
-        self._kube_context = context
-
-    @property
-    def KUBE_CONFIG_FILE(self):
-        if not self._kube_config_path:
-            from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
-
-            self.KUBE_CONFIG_FILE = KUBE_CONFIG_DEFAULT_LOCATION
-        return self._kube_config_path
-
-    @KUBE_CONFIG_FILE.setter
-    def KUBE_CONFIG_FILE(self, kube_config_path):
-        if not path.isfile(path.expanduser(kube_config_path)):
-            raise RuntimeError(f"KUBE_CONFIG_FILE {kube_config_path} not found.")
-        self._kube_config_path = kube_config_path
+        self.WIREGUARD_MTU = wireguard_mtu or "1340"
 
     def _init_docker(self):
         import docker
