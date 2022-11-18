@@ -135,10 +135,7 @@ class ClientConfiguration(object):
             from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
 
             self.KUBE_CONFIG_FILE = KUBE_CONFIG_DEFAULT_LOCATION
-        if check_kube_config and not path.isfile(
-            path.expanduser(self.KUBE_CONFIG_FILE)
-        ):
-            raise RuntimeError(f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found.")
+
         if kube_context:
             self.KUBE_CONTEXT = kube_context
         else:
@@ -155,6 +152,16 @@ class ClientConfiguration(object):
                 self.KUBE_CONTEXT = None
 
         self.WIREGUARD_MTU = wireguard_mtu or "1340"
+
+    @property
+    def KUBE_CONFIG_FILE(self):
+        return self._kube_config_path
+
+    @KUBE_CONFIG_FILE.setter
+    def KUBE_CONFIG_FILE(self, kube_config_path):
+        if not path.isfile(path.expanduser(kube_config_path)):
+            raise RuntimeError(f"KUBE_CONFIG_FILE {kube_config_path} not found.")
+        self._kube_config_path = kube_config_path
 
     def _init_docker(self):
         import docker

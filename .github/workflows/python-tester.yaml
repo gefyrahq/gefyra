@@ -300,11 +300,13 @@ jobs:
           bridges=$(poetry run gefyra status | sed 's/\[INFO\].*//' | python3 -u -c "import sys, json; print(json.load(sys.stdin)['client']['bridges'])")
           echo $bridges
           [[ $bridges == 1 ]]
-      - name: Run gefyra unbridge (works with wrong kubeconfig)
+      - name: Run gefyra unbridge (fails with wrong kubeconfig)
         working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
         run: |
           export KUBECONFIG=/some/invalid/kubeconfig.yaml
           poetry run coverage run -a -m gefyra unbridge -A
+          test $? -eq 1
       - name: Run gefyra bridge with deployment short name (deploy)
         working-directory: ./client
         run: |
