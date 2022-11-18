@@ -187,6 +187,14 @@ bridge_parser.add_argument(
 unbridge_parser = action.add_parser("unbridge")
 unbridge_parser.add_argument("-N", "--name", help="The name of the bridge")
 unbridge_parser.add_argument(
+    "-w",
+    "--wait",
+    help="Block until deletion is complete",
+    action="store_true",
+    default=False,
+    required=False,
+)
+unbridge_parser.add_argument(
     "-A", "--all", help="Removes all active bridges", action="store_true"
 )
 list_parser = action.add_parser("list")
@@ -341,9 +349,9 @@ def main():
             )
         elif args.action == "unbridge":
             if args.name:
-                unbridge(args.name, config=configuration)
+                unbridge(args.name, wait=args.wait, config=configuration)
             elif args.all:
-                unbridge_all(config=configuration)
+                unbridge_all(wait=args.wait, config=configuration)
             else:
                 logger.warning(
                     "Unbridge failed. Please use command with either -N or -A flag."

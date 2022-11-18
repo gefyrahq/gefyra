@@ -41,7 +41,7 @@ def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bo
             version="v1",
         )
         delete_syncdown_job(config, ireq["metadata"]["name"])
-        return True
+        return ireq
     except ApiException as e:
         if e.status == 404:
             logger.debug(f"InterceptRequest {name} not found")
