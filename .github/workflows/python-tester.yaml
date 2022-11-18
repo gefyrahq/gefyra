@@ -307,6 +307,9 @@ jobs:
           export KUBECONFIG=/some/invalid/kubeconfig.yaml
           poetry run coverage run -a -m gefyra unbridge -A
           test $? -eq 1
+      - name: Run gefyra unbridge 
+        working-directory: ./client
+        run: poetry run coverage run -a -m gefyra unbridge -A
       - name: Run gefyra bridge with deployment short name (deploy)
         working-directory: ./client
         run: |
