@@ -276,8 +276,6 @@ def get_client_configuration(args) -> ClientConfiguration:
             if argument not in ["action", "debug", "cargo_endpoint", "minikube"]:
                 configuration_params[argument] = getattr(args, argument)
 
-        configuration_params["check_kube_config"] = True
-
     configuration = ClientConfiguration(**configuration_params)
 
     return configuration

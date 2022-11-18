@@ -57,11 +57,11 @@ class ClientConfiguration(object):
         kube_config_file: str = None,
         kube_context: str = None,
         wireguard_mtu: str = None,
-        check_kube_config: bool = False,
     ):
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
+        self._kube_config_path = None
         self.REGISTRY_URL = (
             registry_url.rstrip("/") if registry_url else "quay.io/gefyra"
         )
@@ -131,10 +131,6 @@ class ClientConfiguration(object):
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         if kube_config_file:
             self.KUBE_CONFIG_FILE = kube_config_file
-        else:
-            from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
-
-            self.KUBE_CONFIG_FILE = KUBE_CONFIG_DEFAULT_LOCATION
 
         if kube_context:
             self.KUBE_CONTEXT = kube_context
@@ -155,6 +151,10 @@ class ClientConfiguration(object):
 
     @property
     def KUBE_CONFIG_FILE(self):
+        if not self._kube_config_path:
+            from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
+
+            self.KUBE_CONFIG_FILE = KUBE_CONFIG_DEFAULT_LOCATION
         return self._kube_config_path
 
     @KUBE_CONFIG_FILE.setter
