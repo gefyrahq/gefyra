@@ -57,6 +57,7 @@ class ClientConfiguration(object):
         kube_config_file: str = None,
         kube_context: str = None,
         wireguard_mtu: str = None,
+        check_kube_config: bool = False,
     ):
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
@@ -134,7 +135,9 @@ class ClientConfiguration(object):
             from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
 
             self.KUBE_CONFIG_FILE = KUBE_CONFIG_DEFAULT_LOCATION
-        if not path.isfile(path.expanduser(self.KUBE_CONFIG_FILE)):
+        if check_kube_config and not path.isfile(
+            path.expanduser(self.KUBE_CONFIG_FILE)
+        ):
             raise RuntimeError(f"KUBE_CONFIG_FILE {self.KUBE_CONFIG_FILE} not found.")
         if kube_context:
             self.KUBE_CONTEXT = kube_context
