@@ -128,12 +128,13 @@ jobs:
         with:
           path: ./client/.venv
           key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-      - name: Pytest
+      - name: Install dependencies
         working-directory: ./client
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: |
-          poetry install --no-interaction --no-root
-          poetry run coverage run -m pytest
+        run: poetry install --no-interaction --no-root
+      - name: Run PyTest
+        working-directory: ./client
+        run: poetry run coverage run -m pytest
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
