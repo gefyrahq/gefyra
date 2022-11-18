@@ -62,6 +62,7 @@ class ClientConfiguration(object):
             fix_pywin32_in_frozen_build()
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
         self._kube_config_path = None
+        self._kube_context = None
         self.REGISTRY_URL = (
             registry_url.rstrip("/") if registry_url else "quay.io/gefyra"
         )
@@ -134,7 +135,12 @@ class ClientConfiguration(object):
 
         if kube_context:
             self.KUBE_CONTEXT = kube_context
-        else:
+
+        self.WIREGUARD_MTU = wireguard_mtu or "1340"
+
+    @property
+    def KUBE_CONTEXT(self):
+        if not self._kube_context:
             from kubernetes.config.kube_config import list_kube_config_contexts
             from kubernetes.config.config_exception import ConfigException
 
@@ -146,8 +152,11 @@ class ClientConfiguration(object):
             except ConfigException:
                 logger.error("Could not read active 'kubeconfig' context.")
                 self.KUBE_CONTEXT = None
+        return self._kube_context
 
-        self.WIREGUARD_MTU = wireguard_mtu or "1340"
+    @KUBE_CONTEXT.setter
+    def KUBE_CONTEXT(self, context):
+        self._kube_context = context
 
     @property
     def KUBE_CONFIG_FILE(self):
