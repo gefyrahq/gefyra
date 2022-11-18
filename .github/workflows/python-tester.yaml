@@ -310,7 +310,7 @@ jobs:
       - name: Run gefyra bridge with deployment short name (deploy)
         working-directory: ./client
         run: |
-          sleep 10
+          sleep 20
           poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo/hello-nginx --port 80:8000
       - name: Run gefyra unbridge 
         working-directory: ./client
@@ -318,7 +318,7 @@ jobs:
       - name: Run gefyra bridge with deployment short name (deploy) without container name
         working-directory: ./client
         run: |
-          sleep 10
+          sleep 20
           poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo --port 80:8000
       - name: Run gefyra unbridge 
         working-directory: ./client
@@ -326,7 +326,7 @@ jobs:
       - name: Run gefyra bridge with pod
         working-directory: ./client
         run: |
-          sleep 10
+          sleep 20
           k=$(kubectl get pods -n default -o=go-template='{{ (index .items 0).metadata.name  }}')
           echo $k
           poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target pod/$k/hello-nginx --port 80:8000
