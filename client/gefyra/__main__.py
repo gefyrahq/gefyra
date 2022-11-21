@@ -24,6 +24,14 @@ parser.add_argument("-d", "--debug", action="store_true", help="add debug output
 
 up_parser = action.add_parser("up")
 up_parser.add_argument(
+    "-e",
+    "--endpoint",
+    dest="cargo_endpoint",
+    help="the Wireguard endpoint in the form <IP>:<Port> for Gefyra to connect to",
+    required=False,
+)
+up_parser.add_argument(
+    "-H",
     "--host",
     dest="cargo_endpoint_host",
     help="Hostname or IP of a K8s node for Gefyra to connect to."
@@ -31,6 +39,7 @@ up_parser.add_argument(
     required=False,
 )
 up_parser.add_argument(
+    "-p",
     "--port",
     dest="cargo_endpoint_port",
     help="Open UDP port of the K8S node to connect to. Default to 31820.",
@@ -261,6 +270,11 @@ def get_client_configuration(args) -> ClientConfiguration:
     configuration_params = {}
 
     if args.action == "up":
+        if args.cargo_endpoint:
+            logger.warning(
+                "`--endpoint`/`-e` has been removed. Please consider `--host` and `--port` instead."
+            )
+            exit(1)
         if args.minikube and bool(args.cargo_endpoint_host):
             raise RuntimeError("You cannot use --endpoint together with --minikube.")
 
