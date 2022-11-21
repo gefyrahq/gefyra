@@ -296,6 +296,7 @@ def get_client_configuration(args) -> ClientConfiguration:
                 "action",
                 "debug",
                 "minikube",
+                "cargo_endpoint",
             ]:
                 configuration_params[argument] = getattr(args, argument)
 
