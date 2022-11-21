@@ -249,7 +249,7 @@ python-versions = "*"
 
 [[package]]
 name = "kubernetes"
-version = "24.2.0"
+version = "25.3.0"
 description = "Kubernetes python client"
 category = "main"
 optional = false
@@ -588,7 +588,7 @@ test = ["websockets"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "1da2adcd6d31c2d938db8e4caa5660c7ac5b0ae84e314285542079ee8488649b"
+content-hash = "c605a54ca91ad91fee1cd35691f7ff7053e8dc952188fa9d4aa3c1fde95ce6e4"
 
 [metadata.files]
 attrs = [
@@ -738,8 +738,8 @@ iniconfig = [
     {file = "iniconfig-1.1.1.tar.gz", hash = "sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32"},
 ]
 kubernetes = [
-    {file = "kubernetes-24.2.0-py2.py3-none-any.whl", hash = "sha256:da19d58865cf903a8c7b9c3691a2e6315d583a98f0659964656dfdf645bf7e49"},
-    {file = "kubernetes-24.2.0.tar.gz", hash = "sha256:9900f12ae92007533247167d14cdee949cd8c7721f88b4a7da5f5351da3834cd"},
+    {file = "kubernetes-25.3.0-py2.py3-none-any.whl", hash = "sha256:eb42333dad0bb5caf4e66460c6a4a1a36f0f057a040f35018f6c05a699baed86"},
+    {file = "kubernetes-25.3.0.tar.gz", hash = "sha256:213befbb4e5aed95f94950c7eed0c2322fc5a2f8f40932e58d28fdd42d90836c"},
 ]
 mccabe = [
     {file = "mccabe-0.7.0-py2.py3-none-any.whl", hash = "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e"},
