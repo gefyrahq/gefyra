@@ -29,7 +29,8 @@ def test_port_mapper():
     assert "8080" in args.port
     assert args.port["9090"] == "9091"
     assert args.port["8080"] == "8081"
-    with pytest.raises(ValueError):
+
+    with pytest.raises(SystemExit):
         args = bridge_parser.parse_args(
             ["--port=8081", "--port=9091:9090", "-N=random"]
         )
