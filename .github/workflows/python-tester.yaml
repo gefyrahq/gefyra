@@ -448,7 +448,7 @@ jobs:
         run: poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo/hello-nginx --port 80:8000
       - name: Run gefyra unbridge 
         working-directory: ./client
-        run: poetry run coverage run -a -m gefyra unbridge --wait -A
+        run: poetry run coverage run -a -m gefyra unbridge --wait --name mypyserver-to-default.deploy.hello-nginxdemo
       - name: Run gefyra bridge with deployment short name (deploy) without container name
         working-directory: ./client
         run: poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo --port 80:8000
