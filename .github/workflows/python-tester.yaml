@@ -474,6 +474,10 @@ jobs:
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra down
+      - name: Run gefyra down (again) without errors
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra down
       - name: Show coverage report
         working-directory: ./client
         run: |
