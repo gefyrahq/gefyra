@@ -156,9 +156,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        driver: [docker, virtualbox]
+        include:
+          - os: ubuntu-latest
+            driver: ''
+          - os: macos-11
+            driver: virtualbox
     needs: build_operator
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
