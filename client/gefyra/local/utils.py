@@ -79,41 +79,6 @@ def build_cargo_image(
     return image, build_logs
 
 
-def get_container_ip(
-    config: ClientConfiguration, container: Container = None, container_id: str = None
-) -> str:
-    assert container or container_id, "Either container or id must be specified!"
-
-    # TODO handle exceptions
-    if container:
-        # we might need to reload attrs
-        container.reload()
-    else:
-        container = config.DOCKER.containers.get(container_id)
-    return container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME][
-        "IPAddress"
-    ]
-
-
-def handle_docker_stop_container(
-    config: ClientConfiguration, container: Container = None, container_id: str = None
-):
-    """Stop docker container, either `container` or `container_id` must be specified.
-
-    :param config: gefyra.configuration.ClientConfiguration instance
-    :param container: docker.models.containers.Container instance
-    :param container_id: id or name of a docker container
-
-    :raises AssertionError: if neither container nor container_id is specified
-    :raises docker.errors.APIError: when stopping of container fails
-    """
-    assert container or container_id, "Either container or id must be specified!"
-    if not container:
-        container = config.DOCKER.containers.get(container_id)
-
-    container.stop()
-
-
 def handle_docker_remove_container(
     config: ClientConfiguration, container: Container = None, container_id: str = None
 ):
