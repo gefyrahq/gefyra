@@ -6,7 +6,7 @@ from typing import List, Optional
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration, logger
-from gefyra.local.cargoimage.Dockerfile import get_dockerfile
+from gefyra.local.cargoimage.cargo_dockerfile import get_dockerfile
 from gefyra.local import (
     CREATED_BY_LABEL,
     ACTIVE_KUBECONFIG_LABEL,
