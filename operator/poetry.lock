@@ -234,7 +234,7 @@ uvloop = ["uvloop"]
 
 [[package]]
 name = "kubernetes"
-version = "24.2.0"
+version = "25.3.0"
 description = "Kubernetes python client"
 category = "main"
 optional = false
@@ -557,7 +557,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "ceaef696fa533edfac624a9c16f5c16294d6eb2338d10dbffc5958df5bc2d252"
+content-hash = "a2d1ed68d4844a07b7cef5ba1157cfcffcf25147b07831cb83d6bf8f0afd6910"
 
 [metadata.files]
 aiohttp = [
@@ -783,8 +783,8 @@ kopf = [
     {file = "kopf-1.36.0.tar.gz", hash = "sha256:b618c0cd19398681dd4a0a263a0a265b5267a05064a5d0c69025d0ed710bd0af"},
 ]
 kubernetes = [
-    {file = "kubernetes-24.2.0-py2.py3-none-any.whl", hash = "sha256:da19d58865cf903a8c7b9c3691a2e6315d583a98f0659964656dfdf645bf7e49"},
-    {file = "kubernetes-24.2.0.tar.gz", hash = "sha256:9900f12ae92007533247167d14cdee949cd8c7721f88b4a7da5f5351da3834cd"},
+    {file = "kubernetes-25.3.0-py2.py3-none-any.whl", hash = "sha256:eb42333dad0bb5caf4e66460c6a4a1a36f0f057a040f35018f6c05a699baed86"},
+    {file = "kubernetes-25.3.0.tar.gz", hash = "sha256:213befbb4e5aed95f94950c7eed0c2322fc5a2f8f40932e58d28fdd42d90836c"},
 ]
 mccabe = [
     {file = "mccabe-0.7.0-py2.py3-none-any.whl", hash = "sha256:6c2d30ab6be0e4a46919781807b4f0d834ebdd6c6e3dca0bda5a15f863427b6e"},
