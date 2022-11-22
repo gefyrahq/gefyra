@@ -356,6 +356,7 @@ def main():
                 logger.warning(
                     "Unbridge failed. Please use command with either -N or -A flag."
                 )
+                exit(1)
         elif args.action == "list":
             if args.containers:
                 get_containers_and_print(config=configuration)
