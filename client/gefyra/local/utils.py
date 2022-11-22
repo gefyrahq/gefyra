@@ -5,7 +5,6 @@ from typing import List, Optional
 
 from docker.models.containers import Container
 
-from gefyra.cluster.utils import decode_secret
 from gefyra.configuration import ClientConfiguration, logger
 from gefyra.local.cargoimage.Dockerfile import get_dockerfile
 from gefyra.local import (
@@ -48,13 +47,6 @@ def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str
             source = os.path.realpath(os.path.join(base_path, source))
         results.append(f"{source}:{target}")
     return results
-
-
-def get_cargo_connection_data(config: ClientConfiguration):
-    cargo_connection_secret = config.K8S_CORE_API.read_namespaced_secret(
-        name="gefyra-cargo-connection", namespace=config.NAMESPACE
-    )
-    return decode_secret(cargo_connection_secret.data)
 
 
 def build_cargo_image(
