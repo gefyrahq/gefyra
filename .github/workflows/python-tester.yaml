@@ -347,6 +347,11 @@ jobs:
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tags }}
+      - name: Run gefyra up again changes nothing
+        timeout-minutes: 8
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tags }}
       - name: Run gefyra status running
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
