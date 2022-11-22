@@ -153,6 +153,10 @@ jobs:
         run: poetry run coveralls --service=github
 
   test_minikube:
+    strategy:
+      fail-fast: false
+      matrix:
+        driver: [docker, virtualbox]
     needs: build_operator
     runs-on: ubuntu-latest
     steps:
@@ -187,6 +191,8 @@ jobs:
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@latest
+        with:
+          driver: ${{ matrix.driver }}
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
