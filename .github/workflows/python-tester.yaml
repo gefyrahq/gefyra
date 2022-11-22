@@ -174,7 +174,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.local  # the path depends on the OS
-          key: poetry-0  # increment to reset cache
+          key: poetry-${{ matrix.os }}-0  # increment to reset cache
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -446,6 +446,13 @@ jobs:
         run: |
           export KUBECONFIG=/some/invalid/kubeconfig.yaml
           poetry run coverage run -a -m gefyra unbridge --wait -A
+          test $? -eq 1      
+      - name: Run gefyra unbridge without -A flag and no name
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          export KUBECONFIG=/some/invalid/kubeconfig.yaml
+          poetry run coverage run -a -m gefyra unbridge --wait
           test $? -eq 1
       - name: Run gefyra unbridge
         working-directory: ./client
