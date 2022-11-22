@@ -159,7 +159,7 @@ jobs:
         include:
           - os: ubuntu-latest
             driver: ''
-          - os: macos-11
+          - os: macos-12
             driver: virtualbox
     needs: build_operator
     runs-on: ${{ matrix.os }}
