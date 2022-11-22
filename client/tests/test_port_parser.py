@@ -31,6 +31,4 @@ def test_port_mapper():
     assert args.port["8080"] == "8081"
 
     with pytest.raises(SystemExit):
-        args = bridge_parser.parse_args(
-            ["--port=8081", "--port=9091:9090", "-N=random"]
-        )
+        bridge_parser.parse_args(["--port=8081", "--port=9091:9090", "-N=random"])
