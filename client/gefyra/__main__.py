@@ -223,7 +223,7 @@ telemetry_parser.add_argument("--on", help="Turn on telemetry", action="store_tr
 
 try:
     telemetry = CliTelemetry()
-except Exception:
+except Exception:  # pragma: no cover
     telemetry = False
 
 
@@ -235,11 +235,11 @@ def version(config, check: bool):
         release = requests.get(
             "https://api.github.com/repos/gefyrahq/gefyra/releases/latest"
         )
-        if release.status_code == 403:
+        if release.status_code == 403:  # pragma: no cover
             logger.info("Versions cannot be compared, as API rate limit was exceeded")
             return None
         latest_release_version = release.json()["tag_name"].replace("-", ".")
-        if config.__VERSION__ != latest_release_version:
+        if config.__VERSION__ != latest_release_version:  # pragma: no cover
             logger.info(
                 f"You are using gefyra version {config.__VERSION__}; however, version {latest_release_version} is "
                 f"available."
@@ -356,6 +356,7 @@ def main():
                 logger.warning(
                     "Unbridge failed. Please use command with either -N or -A flag."
                 )
+                exit(1)
         elif args.action == "list":
             if args.containers:
                 get_containers_and_print(config=configuration)

@@ -153,8 +153,16 @@ jobs:
         run: poetry run coveralls --service=github
 
   test_minikube:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            driver: ''
+          - os: macos-12
+            driver: virtualbox
     needs: build_operator
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -162,11 +170,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
+      - run: brew install docker
+        if: ${{ matrix.os == 'macos-12' }}
+      - run: colima start
+        if: ${{ matrix.os == 'macos-12' }}
       - name: Load cached Poetry installation
         uses: actions/cache@v3
         with:
           path: ~/.local  # the path depends on the OS
-          key: poetry-0  # increment to reset cache
+          key: poetry-${{ matrix.os }}-0  # increment to reset cache
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -187,6 +199,8 @@ jobs:
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@latest
+        with:
+          driver: ${{ matrix.driver }}
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
@@ -347,6 +361,11 @@ jobs:
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tags }}
+      - name: Run gefyra up again changes nothing
+        timeout-minutes: 8
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra up --operator ${{ needs.build_operator.outputs.tags }}
       - name: Run gefyra status running
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}
@@ -431,6 +450,12 @@ jobs:
         run: |
           export KUBECONFIG=/some/invalid/kubeconfig.yaml
           poetry run coverage run -a -m gefyra unbridge --wait -A
+          test $? -eq 1      
+      - name: Run gefyra unbridge without -A flag and no name
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra unbridge --wait
           test $? -eq 1
       - name: Run gefyra unbridge
         working-directory: ./client
@@ -443,7 +468,7 @@ jobs:
         run: poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo/hello-nginx --port 80:8000
       - name: Run gefyra unbridge 
         working-directory: ./client
-        run: poetry run coverage run -a -m gefyra unbridge --wait -A
+        run: poetry run coverage run -a -m gefyra unbridge --wait --name mypyserver-to-default.deploy.hello-nginxdemo
       - name: Run gefyra bridge with deployment short name (deploy) without container name
         working-directory: ./client
         run: poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deploy/hello-nginxdemo --port 80:8000
@@ -466,6 +491,10 @@ jobs:
         run: |
           poetry run coverage run -a -m gefyra list --containers
       - name: Run gefyra down
+        working-directory: ./client
+        run: |
+          poetry run coverage run -a -m gefyra down
+      - name: Run gefyra down (again) without errors
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra down
