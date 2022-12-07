@@ -393,6 +393,7 @@ jobs:
         run: |
           poetry run coverage run -a -m gefyra run -d -i pyserver -N mypyserver -n default --expose 8000:8000 --env-from=deployment/hello-nginxdemo
           test $? -eq 0
+          sleep 10
           curl localhost:8000
           test $? -eq 0
       - name: Run gefyra run attached
