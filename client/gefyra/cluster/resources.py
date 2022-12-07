@@ -16,6 +16,7 @@ from kubernetes.client import (
     V1EnvVar,
     V1DeploymentSpec,
     ApiException,
+    V1Pod,
 )
 
 from gefyra.api.utils import get_workload_type
@@ -158,6 +159,34 @@ def create_operator_deployment(
     )
 
     return deployment
+
+
+def _check_pod_for_command(pod: V1Pod, container_name: str):
+    containers: list[V1Container] = pod.spec.containers
+    if not len(containers):
+        raise RuntimeError(f"No container available in pod {pod.metadata.name}.")
+
+    ALLOWED_COMMANDS = ["sh", "bash", "zsh", "ash", "/entrypoint.sh"]
+    for container in containers:
+        if (
+            container.name == container_name
+            and container.command
+            and container.command[0] not in ALLOWED_COMMANDS
+        ):
+            raise RuntimeError(
+                f"Cannot bridge pod {pod.metadata.name} since it has a `command` defined."
+            )
+
+
+def check_pod_valid_for_bridge(
+    config: ClientConfiguration, pod_name: str, namespace: str, container_name: str
+):
+    pod = config.K8S_CORE_API.read_namespaced_pod(
+        name=pod_name,
+        namespace=namespace,
+    )
+
+    _check_pod_for_command(pod, container_name)
 
 
 def get_pods_and_containers_for_workload(

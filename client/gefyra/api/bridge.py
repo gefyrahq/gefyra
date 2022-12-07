@@ -31,15 +31,21 @@ def get_pods_to_intercept(
     return pods_to_intercept
 
 
-def check_workloads(pods_to_intercept, workload_type, workload_name, container_name):
-    if len(pods_to_intercept.keys()) == 0:
-        raise Exception("Could find any pod to bridge.")
-    elif len(pods_to_intercept.keys()) > 1:
-        use_index = True
-    else:
-        use_index = False
+def check_workloads(
+    pods_to_intercept,
+    workload_type: str,
+    workload_name: str,
+    container_name: str,
+    namespace: str,
+    config,
+):
+    from gefyra.cluster.resources import check_pod_valid_for_bridge
 
-    cleaned_names = ["-".join(key.split("-")[:-2]) for key in pods_to_intercept.keys()]
+    pod_names = pods_to_intercept.keys()
+    if len(pod_names) == 0:
+        raise Exception("Could not find any pod to bridge.")
+
+    cleaned_names = ["-".join(name.split("-")[:-2]) for name in pod_names]
 
     if workload_type != "pod" and workload_name not in cleaned_names:
         raise RuntimeError(
@@ -50,7 +56,9 @@ def check_workloads(pods_to_intercept, workload_type, workload_name, container_n
         container for c_list in pods_to_intercept.values() for container in c_list
     ]:
         raise RuntimeError(f"Could not find container {container_name} to bridge.")
-    return use_index
+
+    for name in pod_names:
+        check_pod_valid_for_bridge(config, name, namespace, container_name)
 
 
 @stopwatch
@@ -115,12 +123,19 @@ def bridge(
 
     ireq_base_name = f"{name}-to-{namespace}.{workload_type}.{workload_name}"
 
-    use_index = check_workloads(
+    check_workloads(
         pods_to_intercept,
         workload_type=workload_type,
         workload_name=workload_name,
         container_name=container_name,
+        namespace=namespace,
+        config=config,
     )
+
+    if len(pods_to_intercept.keys()) > 1:
+        use_index = True
+    else:
+        use_index = False
 
     # is is required to copy at least the service account tokens from the bridged container
     if sync_down_dirs:

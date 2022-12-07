@@ -430,6 +430,12 @@ jobs:
         run: |
           poetry run coverage run -a -m gefyra bridge -N mypyserver -n default --target deployment/hello-nginxdemo/hello-nginx-not --port 80:8000
           test $? -eq 1
+      - name: Run gefyra bridge with container with command (fails)
+        working-directory: ./client
+        shell: bash --noprofile --norc -o pipefail {0}
+        run: |
+          poetry run coverage run -a -m gefyra bridge -N mypyserver -n commands --target deployment/hello-nginxdemo-command/hello-nginx-command --port 80:8000
+          test $? -eq 1
       - name: Run gefyra bridge with deployment
         working-directory: ./client
         run: |
