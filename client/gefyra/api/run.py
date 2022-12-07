@@ -154,6 +154,12 @@ def run(
         #
         # 3. print out logs if not detached
         #
-        logger.debug("Now printing out logs")
-        for logline in container.logs(stream=True):
-            print(logline.decode("utf-8"), end="")
+        try:
+            logger.debug("Now printing out logs")
+            for logline in container.logs(stream=True):
+                print(logline.decode("utf-8"), end="")
+        except KeyboardInterrupt:
+            container.stop()
+            logger.info(f"Container {name} stopped.")
+        except EOFError:
+            logger.info(f"Detached from container {name}.")
