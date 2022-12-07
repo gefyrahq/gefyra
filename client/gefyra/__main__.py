@@ -31,6 +31,22 @@ up_parser.add_argument(
     required=False,
 )
 up_parser.add_argument(
+    "-H",
+    "--host",
+    dest="cargo_endpoint_host",
+    help="Hostname or IP of a K8s node for Gefyra to connect to."
+    "Gefyra tries to extract this from the current kubeconfig and context.",
+    required=False,
+)
+up_parser.add_argument(
+    "-p",
+    "--port",
+    dest="cargo_endpoint_port",
+    help="Open UDP port of the K8S node to connect to. Default to 31820.",
+    required=False,
+    default="31820",
+)
+up_parser.add_argument(
     "-M",
     "--minikube",
     help="let Gefyra automatically find out the connection parameters for a local Minikube cluster",
@@ -262,26 +278,34 @@ def get_client_configuration(args) -> ClientConfiguration:
     configuration_params = {}
 
     if args.action == "up":
-        if args.minikube and bool(args.cargo_endpoint):
+        if args.cargo_endpoint:
+            logger.warning(
+                "`--endpoint`/`-e` has been removed. Please consider `--host` and `--port` instead."
+            )
+            exit(1)
+        if args.minikube and bool(args.cargo_endpoint_host):
             raise RuntimeError("You cannot use --endpoint together with --minikube.")
 
         if args.minikube:
             configuration_params.update(detect_minikube_config())
         else:
-            if not args.cargo_endpoint:
+            if not args.cargo_endpoint_host and not args.cargo_endpoint_port:
                 logger.info(
-                    "There was no --endpoint argument provided. Connecting to a local Kubernetes node."
+                    "There was no --host argument provided. Connecting to a local Kubernetes node."
                 )
-                # #138: Read in the --endpoint parameter from kubeconf
+                # #138: Read in the endpoint from kubeconfig
                 endpoint = get_connection_from_kubeconfig()
                 if endpoint:
-                    logger.info(f"Setting --endpoint from kubeconfig {endpoint}")
-            else:
-                endpoint = args.cargo_endpoint
-
-            configuration_params["cargo_endpoint"] = endpoint
+                    logger.info(f"Setting host and port from kubeconfig {endpoint}")
+                    configuration_params["cargo_endpoint_host"] = endpoint.split(":")[0]
+                    configuration_params["cargo_endpoint_port"] = endpoint.split(":")[1]
         for argument in vars(args):
-            if argument not in ["action", "debug", "cargo_endpoint", "minikube"]:
+            if argument not in [
+                "action",
+                "debug",
+                "minikube",
+                "cargo_endpoint",
+            ]:
                 configuration_params[argument] = getattr(args, argument)
 
     configuration = ClientConfiguration(**configuration_params)

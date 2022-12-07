@@ -57,7 +57,8 @@ def detect_minikube_config() -> dict:
 
     configuration_parameters = {
         "network_name": network_name,
-        "cargo_endpoint": f"{endpoint}:31820",
+        "cargo_endpoint_host": endpoint,
+        "cargo_endpoint_port": "31820",
         "kube_context": "minikube",
     }
     return configuration_parameters

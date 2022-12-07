@@ -216,13 +216,20 @@ class PortMappingParser(argparse.Action):
 
 class IpPortMappingParser(PortMappingParser):
     def parse_split(self, split):
+        def v(p: str):
+            if not p.isnumeric():
+                raise RuntimeError(
+                    f"Invalid port {p}. Please use integer numbers as port."
+                )
+            return p
+
         # port - port
         res = {}
         if len(split) == 2:
-            res[split[1]] = split[0]
+            res[v(split[1])] = v(split[0])
             return res
         elif len(split) == 3:
-            res[split[2]] = (split[0], split[1])
+            res[v(split[2])] = (split[0], v(split[1]))
             return res
         else:
             raise ValueError

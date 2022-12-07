@@ -47,7 +47,8 @@ class ClientConfiguration(object):
         self,
         docker_client=None,
         network_name: str = None,
-        cargo_endpoint: str = None,
+        cargo_endpoint_host: str = None,
+        cargo_endpoint_port: str = "31820",
         cargo_container_name: str = None,
         registry_url: str = None,
         operator_image_url: str = None,
@@ -96,10 +97,8 @@ class ClientConfiguration(object):
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:
             self.DOCKER = docker_client
-        if cargo_endpoint:
-            if len(cargo_endpoint.split(":")) != 2:
-                raise Exception("Please provide the endpoint in the form <ip:port>")
-            self.CARGO_ENDPOINT = cargo_endpoint
+        if cargo_endpoint_host:
+            self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{cargo_endpoint_port}"
         else:
             if sys.platform in ["darwin", "win32"]:
                 # docker for mac/win publishes ports on a special internal ip
@@ -108,7 +107,7 @@ class ClientConfiguration(object):
                         "alpine", "getent hosts host.docker.internal", remove=True
                     )
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
-                    self.CARGO_ENDPOINT = f"{_ip}:31820"
+                    self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
                 except Exception as e:
                     logger.error("Could not create a valid configuration: " + str(e))
             else:
@@ -123,7 +122,7 @@ class ClientConfiguration(object):
                         struct.pack("256s", "docker0".encode("utf-8")[:15]),
                     )[20:24]
                 )
-                self.CARGO_ENDPOINT = f"{_ip}:31820"
+                self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"

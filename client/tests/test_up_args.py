@@ -167,27 +167,20 @@ def test_parse_combination_c():
 
 
 def test_parse_endpoint():
-    args = parser.parse_args(["up", "-e", "10.30.34.25:31820"])
-    configuration = ClientConfiguration(
-        cargo_endpoint=args.cargo_endpoint,
-        registry_url=args.registry_url,
-        stowaway_image_url=args.stowaway_image_url,
-        operator_image_url=args.operator_image_url,
-        cargo_image_url=args.cargo_image_url,
-        carrier_image_url=args.carrier_image_url,
-    )
+    args = parser.parse_args(["up", "--host", "10.30.34.25"])
+    configuration = get_client_configuration(args)
     assert configuration.CARGO_ENDPOINT == "10.30.34.25:31820"
 
 
 def test_parse_up_fct(monkeypatch):
     monkeypatch.setattr("gefyra.api.up", lambda config: True)
-    args = parser.parse_args(["up", "-e", "10.30.34.25:31820"])
+    args = parser.parse_args(["up", "--host", "10.30.34.25", "--port", "31820"])
     get_client_configuration(args)
 
 
 def test_parse_up_endpoint_and_minikube(monkeypatch):
     monkeypatch.setattr("gefyra.api.up", lambda config: True)
-    args = parser.parse_args(["up", "-e", "10.30.34.25:31820", "--minikube"])
+    args = parser.parse_args(["up", "--host", "10.30.34.25", "--minikube"])
     with pytest.raises(RuntimeError):
         get_client_configuration(args)
 
