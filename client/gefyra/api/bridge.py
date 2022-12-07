@@ -43,7 +43,7 @@ def check_workloads(
 
     pod_names = pods_to_intercept.keys()
     if len(pod_names) == 0:
-        raise Exception("Could find any pod to bridge.")
+        raise Exception("Could not find any pod to bridge.")
 
     cleaned_names = ["-".join(name.split("-")[:-2]) for name in pod_names]
 
