@@ -1,5 +1,7 @@
 import logging
 import os
+import sys
+from threading import Thread
 
 from gefyra.configuration import default_configuration, ClientConfiguration
 from .utils import stopwatch, get_workload_type
@@ -40,6 +42,11 @@ def retrieve_pod_and_container(
         )
 
     return pod_name, container_name or containers[0]
+
+
+def print_logs(container):
+    for logline in container.logs(stream=True):
+        print(logline.decode("utf-8"), end="")
 
 
 @stopwatch
@@ -151,15 +158,15 @@ def run(
     if detach:
         return True
     else:
-        #
-        # 3. print out logs if not detached
-        #
         try:
             logger.debug("Now printing out logs")
-            for logline in container.logs(stream=True):
-                print(logline.decode("utf-8"), end="")
+            t = Thread(target=print_logs, args=[container], daemon=True)
+            t.start()
+            while True:
+                line = sys.stdin.readline()
+                if not line:
+                    logger.info(f"Detached from container: {name}")
+                    exit(0)
         except KeyboardInterrupt:
             container.stop()
-            logger.info(f"Container {name} stopped.")
-        except EOFError:
-            logger.info(f"Detached from container {name}.")
+            logger.info(f"Container stopped: {name}")
