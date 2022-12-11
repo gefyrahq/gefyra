@@ -239,8 +239,9 @@ telemetry_parser.add_argument("--on", help="Turn on telemetry", action="store_tr
 
 try:
     telemetry = CliTelemetry()
-except Exception:  # pragma: no cover
+except Exception as e:  # pragma: no cover
     telemetry = False
+    print(e)
 
 
 def version(config, check: bool):
