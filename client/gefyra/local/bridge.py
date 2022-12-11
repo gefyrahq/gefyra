@@ -25,7 +25,7 @@ def handle_create_interceptrequest(config: ClientConfiguration, body, target: st
     except ApiException as e:
         if e.status == 409:
             raise RuntimeError(f"Workload {target} already bridged.")
-        return False
+        raise e
     return ireq
 
 
