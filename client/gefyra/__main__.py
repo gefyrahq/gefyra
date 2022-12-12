@@ -401,6 +401,9 @@ def main():
             telemetry_command(on=args.on, off=args.off)
         else:
             parser.print_help()
+    except KeyboardInterrupt:
+        logger.warning("Program interrupted by user. Exiting...")
+        exit(1)
     except Exception as e:
         if args.debug:
             traceback.print_exc()
