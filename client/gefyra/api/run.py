@@ -166,7 +166,7 @@ def run(
                 line = sys.stdin.readline()
                 if not line:
                     logger.info(f"Detached from container: {name}")
-                    exit(0)
+                    return True
         except KeyboardInterrupt:
             container.stop()
             logger.info(f"Container stopped: {name}")
