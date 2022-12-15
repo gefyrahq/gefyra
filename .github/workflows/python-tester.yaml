@@ -123,7 +123,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.local  # the path depends on the OS
-          key: poetry-0  # increment to reset cache
+          key: poetry-py-1  # increment to reset cache
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -135,7 +135,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./client/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-py-1
       - name: Install dependencies
         working-directory: ./client
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -178,7 +178,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.local  # the path depends on the OS
-          key: poetry-${{ matrix.os }}-0  # increment to reset cache
+          key: poetry-${{ matrix.os }}-1  # increment to reset cache
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -206,7 +206,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./client/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-1
       - name: Install dependencies
         working-directory: ./client
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
@@ -252,7 +252,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.local  # the path depends on the OS
-          key: poetry-0  # increment to reset cache
+          key: poetry-op-1  # increment to reset cache
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -298,7 +298,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./client/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-test-1
       - name: Pytest
         working-directory: ./client
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
