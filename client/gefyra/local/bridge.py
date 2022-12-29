@@ -25,6 +25,9 @@ def handle_create_interceptrequest(config: ClientConfiguration, body, target: st
     except ApiException as e:
         if e.status == 409:
             raise RuntimeError(f"Workload {target} already bridged.")
+        logger.error(
+            f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
+        )
         raise e
     return ireq
 

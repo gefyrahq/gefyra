@@ -166,7 +166,17 @@ def _check_pod_for_command(pod: V1Pod, container_name: str):
     if not len(containers):
         raise RuntimeError(f"No container available in pod {pod.metadata.name}.")
 
-    ALLOWED_COMMANDS = ["sh", "bash", "zsh", "ash", "/entrypoint.sh"]
+    ALLOWED_COMMANDS = [
+        "sh",
+        "bash",
+        "zsh",
+        "ash",
+        "/bin/sh",
+        "/bin/bash",
+        "/bin/zsh",
+        "/bin/ash",
+        "/entrypoint.sh",
+    ]
     for container in containers:
         if (
             container.name == container_name
