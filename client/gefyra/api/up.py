@@ -85,4 +85,5 @@ def up(config=default_configuration) -> bool:
     except Exception as e:
         logger.error(e)
         down(config)
+        return False
     return True
