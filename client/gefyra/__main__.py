@@ -326,10 +326,18 @@ def print_status(status: GefyraStatus):
     print(json.dumps(status, cls=EnhancedJSONEncoder, indent=2))
 
 
+def cli_up(configuration):
+    from gefyra.api import up
+
+    success = up(config=configuration)
+    if not success:
+        raise RuntimeError("Failed to start Gefyra")
+
+
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, up, status
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -347,7 +355,7 @@ def main():
         configuration = get_client_configuration(args)
 
         if args.action == "up":
-            up(config=configuration)
+            cli_up(configuration=configuration)
         elif args.action == "run":
             run(
                 image=args.image,
