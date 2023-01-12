@@ -284,7 +284,7 @@ def get_client_configuration(args) -> ClientConfiguration:
             )
             exit(1)
         if args.minikube and bool(args.cargo_endpoint_host):
-            raise RuntimeError("You cannot use --endpoint together with --minikube.")
+            raise RuntimeError("You cannot use --host together with --minikube.")
 
         if args.minikube:
             configuration_params.update(detect_minikube_config())
