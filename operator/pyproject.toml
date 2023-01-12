@@ -8,7 +8,7 @@ authors = ["Michael Schilonka <michael@blueshoe.de>"]
 python = "^3.9"
 kopf = "^1.36.0"
 kubernetes = "^25.3.0"
-python-decouple = "^3.5"
+python-decouple = "^3.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2"
