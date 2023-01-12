@@ -40,7 +40,7 @@ RUN apt-get update \
         build-essential
 
 # install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+RUN curl -sSL https://install.python-poetry.org | python3 - 
 
 RUN python -m venv $VENV_PATH
 # copy project requirement files here to ensure they will be cached.
@@ -48,7 +48,7 @@ WORKDIR $PYSETUP_PATH
 COPY poetry.lock pyproject.toml ./
 
 # install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
-RUN poetry install --no-dev
+RUN bash -c 'source $VENV_PATH/bin/activate && poetry install --no-dev'
 
 
 FROM gcr.io/distroless/python3
