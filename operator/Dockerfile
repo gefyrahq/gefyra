@@ -40,7 +40,7 @@ RUN apt-get update \
         build-essential
 
 # install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+RUN curl -sSL https://install.python-poetry.org | python3 - \
 
 RUN python -m venv $VENV_PATH
 # copy project requirement files here to ensure they will be cached.
