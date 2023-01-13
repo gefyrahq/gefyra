@@ -7,13 +7,13 @@ from gefyra.local.utils import get_connection_from_kubeconfig
 
 
 @patch("kubernetes.config.kube_config.KUBE_CONFIG_DEFAULT_LOCATION", "/tmp/kube.yaml")
-def test_get_connection_from_kubeconfig_no_connection():
+def test_a_get_connection_from_kubeconfig_no_connection():
     endpoint = get_connection_from_kubeconfig()
     assert endpoint is None
 
 
 @patch("kubernetes.config.kube_config.KUBE_CONFIG_DEFAULT_LOCATION", "/tmp/kube.yaml")
-def test_get_connection_from_kubeconfig_connection():
+def test_b_get_connection_from_kubeconfig_connection():
     data = {
         "current-context": "fake",
         "contexts": [

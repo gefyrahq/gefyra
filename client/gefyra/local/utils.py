@@ -135,13 +135,19 @@ def handle_docker_run_container(
     )
 
 
-def get_connection_from_kubeconfig() -> Optional[str]:
-    from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
-    from pathlib import Path
+def get_connection_from_kubeconfig(kubeconfig: Optional[str] = None) -> Optional[str]:
     import yaml
 
+    if kubeconfig:
+        _file = kubeconfig
+    else:
+        from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
+        from pathlib import Path
+
+        _file = Path(KUBE_CONFIG_DEFAULT_LOCATION).expanduser()
+
     try:
-        with open(Path(KUBE_CONFIG_DEFAULT_LOCATION).expanduser(), "r") as kubeconfig:
+        with open(_file, "r") as kubeconfig:
             kubecfg = yaml.safe_load(kubeconfig)
         active_ctx = next(
             filter(
@@ -153,7 +159,9 @@ def get_connection_from_kubeconfig() -> Optional[str]:
         else:
             return None
     except Exception as e:  # noqa
-        logger.error(f"Could not load Gefyra --endpoint from kubeconfig due to: {e}")
+        logger.error(
+            f"Could not load Gefyra --host and --port from kubeconfig due to: {e}"
+        )
         return None
 
 

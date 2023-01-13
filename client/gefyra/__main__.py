@@ -49,10 +49,11 @@ up_parser.add_argument(
 up_parser.add_argument(
     "-M",
     "--minikube",
-    help="let Gefyra automatically find out the connection parameters for a local Minikube cluster",
+    help="Let Gefyra automatically find out the connection parameters for a "
+    "local Minikube cluster for the given profile (default 'minikube').",
     required=False,
-    action="store_true",
-    default=False,
+    nargs="?",
+    const="minikube",
 )
 up_parser.add_argument(
     "-o",
@@ -284,21 +285,22 @@ def get_client_configuration(args) -> ClientConfiguration:
             )
             exit(1)
         if args.minikube and bool(args.cargo_endpoint_host):
-            raise RuntimeError("You cannot use --endpoint together with --minikube.")
+            raise RuntimeError("You cannot use --host together with --minikube.")
 
         if args.minikube:
-            configuration_params.update(detect_minikube_config())
+            configuration_params.update(detect_minikube_config(args.minikube))
         else:
-            if not args.cargo_endpoint_host and not args.cargo_endpoint_port:
-                logger.info(
-                    "There was no --host argument provided. Connecting to a local Kubernetes node."
-                )
+            if not args.cargo_endpoint_host:
                 # #138: Read in the endpoint from kubeconfig
-                endpoint = get_connection_from_kubeconfig()
+                endpoint = get_connection_from_kubeconfig(args.kube_config_file)
                 if endpoint:
                     logger.info(f"Setting host and port from kubeconfig {endpoint}")
                     configuration_params["cargo_endpoint_host"] = endpoint.split(":")[0]
                     configuration_params["cargo_endpoint_port"] = endpoint.split(":")[1]
+                else:
+                    logger.info(
+                        "There was no --host argument provided. Connecting to a local Kubernetes node."
+                    )
         for argument in vars(args):
             if argument not in [
                 "action",
@@ -306,9 +308,15 @@ def get_client_configuration(args) -> ClientConfiguration:
                 "minikube",
                 "cargo_endpoint",
             ]:
-                configuration_params[argument] = getattr(args, argument)
+                # don't overwrite an option which has been determined already
+                if argument not in configuration_params:
+                    logger.debug(
+                        f"Setting remainder option: {argument}:{getattr(args, argument)}"
+                    )
+                    configuration_params[argument] = getattr(args, argument)
 
     configuration = ClientConfiguration(**configuration_params)
+    logger.debug("ClientConfiguration: " + str(vars(configuration)))
 
     return configuration
 
@@ -326,10 +334,18 @@ def print_status(status: GefyraStatus):
     print(json.dumps(status, cls=EnhancedJSONEncoder, indent=2))
 
 
+def cli_up(configuration):
+    from gefyra.api import up
+
+    success = up(config=configuration)
+    if not success:
+        raise RuntimeError("Failed to start Gefyra")
+
+
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, up, status
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -347,7 +363,7 @@ def main():
         configuration = get_client_configuration(args)
 
         if args.action == "up":
-            up(config=configuration)
+            cli_up(configuration=configuration)
         elif args.action == "run":
             run(
                 image=args.image,
