@@ -49,10 +49,11 @@ up_parser.add_argument(
 up_parser.add_argument(
     "-M",
     "--minikube",
-    help="let Gefyra automatically find out the connection parameters for a local Minikube cluster",
+    help="Let Gefyra automatically find out the connection parameters for a "
+    "local Minikube cluster for the given profile (default 'minikube').",
     required=False,
-    action="store_true",
-    default=False,
+    nargs="?",
+    const="minikube",
 )
 up_parser.add_argument(
     "-o",
@@ -287,18 +288,19 @@ def get_client_configuration(args) -> ClientConfiguration:
             raise RuntimeError("You cannot use --endpoint together with --minikube.")
 
         if args.minikube:
-            configuration_params.update(detect_minikube_config())
+            configuration_params.update(detect_minikube_config(args.minikube))
         else:
-            if not args.cargo_endpoint_host and not args.cargo_endpoint_port:
-                logger.info(
-                    "There was no --host argument provided. Connecting to a local Kubernetes node."
-                )
+            if not args.cargo_endpoint_host:
                 # #138: Read in the endpoint from kubeconfig
-                endpoint = get_connection_from_kubeconfig()
+                endpoint = get_connection_from_kubeconfig(args.kube_config_file)
                 if endpoint:
                     logger.info(f"Setting host and port from kubeconfig {endpoint}")
                     configuration_params["cargo_endpoint_host"] = endpoint.split(":")[0]
                     configuration_params["cargo_endpoint_port"] = endpoint.split(":")[1]
+                else:
+                    logger.info(
+                        "There was no --host argument provided. Connecting to a local Kubernetes node."
+                    )
         for argument in vars(args):
             if argument not in [
                 "action",
@@ -306,9 +308,15 @@ def get_client_configuration(args) -> ClientConfiguration:
                 "minikube",
                 "cargo_endpoint",
             ]:
-                configuration_params[argument] = getattr(args, argument)
+                # don't overwrite an option which has been determined already
+                if argument not in configuration_params:
+                    logger.debug(
+                        f"Setting remainder option: {argument}:{getattr(args, argument)}"
+                    )
+                    configuration_params[argument] = getattr(args, argument)
 
     configuration = ClientConfiguration(**configuration_params)
+    logger.debug("ClientConfiguration: " + str(vars(configuration)))
 
     return configuration
 
