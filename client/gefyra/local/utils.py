@@ -135,7 +135,7 @@ def handle_docker_run_container(
     )
 
 
-def get_connection_from_kubeconfig(kubeconfig: Optional[str]) -> Optional[str]:
+def get_connection_from_kubeconfig(kubeconfig: Optional[str] = None) -> Optional[str]:
     import yaml
 
     if kubeconfig:
