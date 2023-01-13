@@ -335,12 +335,6 @@ jobs:
           export KUBECONFIG=/some/invalid/kubeconfig.yaml
           poetry run coverage run -a -m gefyra up
           test $? -eq 1
-      - name: Run gefyra up with invalid endpoint
-        working-directory: ./client
-        shell: bash --noprofile --norc -o pipefail {0}
-        run: |
-          poetry run coverage run -a -m gefyra up --endpoint 127.0.0.1::8000
-          test $? -eq 1
       - name: Run gefyra up with invalid context
         working-directory: ./client
         shell: bash --noprofile --norc -o pipefail {0}

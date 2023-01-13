@@ -30,7 +30,6 @@ def up(config=default_configuration) -> bool:
     # Deploy Operator to cluster, aligned with local conditions
     #
     try:
-        logger.debug("Creating Docker network")
         gefyra_network = create_gefyra_network(config)
 
         cargo_connection_details = install_operator(
@@ -66,6 +65,7 @@ def up(config=default_configuration) -> bool:
     # Connect Docker network with K8s cluster
     #
     cargo_connection_details["MTU"] = config.WIREGUARD_MTU
+    logger.debug("Cargo connection details: " + str(cargo_connection_details))
     try:
         cargo_container = create_cargo_container(config, cargo_connection_details)
         logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
