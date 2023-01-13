@@ -159,7 +159,9 @@ def get_connection_from_kubeconfig(kubeconfig: Optional[str]) -> Optional[str]:
         else:
             return None
     except Exception as e:  # noqa
-        logger.error(f"Could not load Gefyra --host and --port from kubeconfig due to: {e}")
+        logger.error(
+            f"Could not load Gefyra --host and --port from kubeconfig due to: {e}"
+        )
         return None
 
 
