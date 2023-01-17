@@ -261,6 +261,7 @@ def version(config, check: bool):
                 f"You are using gefyra version {config.__VERSION__}; however, version {latest_release_version} is "
                 f"available."
             )
+    return True
 
 
 def telemetry_command(on, off):
