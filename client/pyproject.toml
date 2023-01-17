@@ -32,7 +32,7 @@ flake8-bugbear = "^22.12.6"
 black = "^22.12.0"
 flake8 = "^5.0.4"
 flake8-black = "^0.3.6"
-pytest = "^7.2.0"
+pytest = "^7.2.1"
 coverage = {extras = ["toml"], version = "^6.5.0"}
 coveralls = "^3.3.1"
 
