@@ -20,5 +20,5 @@ def test_gefyra_network_create_failed(monkeypatch):
         _raise_apierror_for_docker_network_create,
     )
     config = default_configuration
-    with pytest.raises(Exception):
+    with pytest.raises(APIError):
         create_gefyra_network(config)
