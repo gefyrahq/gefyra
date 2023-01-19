@@ -1,5 +1,4 @@
 from time import sleep
-import unittest
 
 from kubernetes.client import (
     CoreV1Api,
@@ -15,7 +14,7 @@ from gefyra.api.status import StatusSummary
 from gefyra.configuration import default_configuration
 
 
-class GefyraBaseTest(unittest.TestCase):
+class GefyraBaseTest:
     provider = None  # minikube or k3d
     params = {}
     kubeconfig = "~/.kube/config"
