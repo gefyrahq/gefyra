@@ -18,7 +18,6 @@ class GefyraBaseTest:
     provider = None  # minikube or k3d
     params = {}
     kubeconfig = "~/.kube/config"
-    context = "default"
 
     def setUp(self):
         if not self.provider:
@@ -31,7 +30,7 @@ class GefyraBaseTest:
         return super().setUp()
 
     def _init_kube_api(self):
-        load_kube_config(self.kubeconfig, context=self.context)
+        load_kube_config(self.kubeconfig)
         self.K8S_CORE_API = CoreV1Api()
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()
