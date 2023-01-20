@@ -115,23 +115,23 @@ class GefyraBaseTest:
         _status = status(default_configuration)
         self.assertEqual(_status.summary, StatusSummary.DOWN)
 
-    def test_run_gefyra_version(self):
+    def test_a_run_gefyra_version(self):
         res = version(config_package, True)
         self.assertTrue(res)
 
-    def test_run_gefyra_down_status(self):
+    def test_a_run_gefyra_down_status(self):
         self.assert_gefyra_not_connected()
 
-    def test_run_gefyra_up_with_invalid_kubeconfig_path(self):
+    def test_a_run_gefyra_up_with_invalid_kubeconfig_path(self):
         with self.assertRaises(RuntimeError):
             ClientConfiguration(kube_config_file="/tmp/invalid")
 
-    def test_run_gefyra_up_with_invalid_context(self):
+    def test_a_run_gefyra_up_with_invalid_context(self):
         with self.assertRaises(ConfigException):
             config = ClientConfiguration(kube_context="invalid-context")
             up(config=config)
 
-    def test_run_gefyra_up_in_another_docker_context(self):
+    def test_a_run_gefyra_up_in_another_docker_context(self):
         ContextAPI.create_context("another-context")
         ContextAPI.set_current_context("another-context")
         res = up(default_configuration)
@@ -141,7 +141,7 @@ class GefyraBaseTest:
         down()
         ContextAPI.set_current_context("default")
 
-    def test_run_gefyra_up(self):
+    def test_a_run_gefyra_up(self):
         res = up(default_configuration)
         self.assertTrue(res)
         self.assert_operator_ready()
@@ -149,7 +149,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
 
-    def test_run_gefyra_up_again_changes_nothing(self):
+    def test_a_run_gefyra_up_again_changes_nothing(self):
         res = up(default_configuration)
         self.assertTrue(res)
         self.assert_operator_ready()
@@ -157,7 +157,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
 
-    def test_run_gefyra_run_with_faulty_env_from_flag(self):
+    def test_b_run_gefyra_run_with_faulty_env_from_flag(self):
         run_params = self.default_run_params
         run_params["env_from"] = "noDeployment/hello-nginxdemo"
         res = run(**run_params)
