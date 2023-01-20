@@ -140,6 +140,7 @@ class GefyraBaseTest:
         self.assert_stowaway_ready()
         down()
         ContextAPI.set_current_context("default")
+        ContextAPI.remove_context("another-context")
 
     def test_a_run_gefyra_up(self):
         res = up(default_configuration)
@@ -160,6 +161,8 @@ class GefyraBaseTest:
     def test_b_run_gefyra_run_with_faulty_env_from_flag(self):
         run_params = self.default_run_params
         run_params["env_from"] = "noDeployment/hello-nginxdemo"
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
         res = run(**run_params)
         self.assertFalse(res)
 
