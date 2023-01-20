@@ -12,6 +12,7 @@ from gefyra.__main__ import version
 from gefyra.api import status, up
 from gefyra.api.status import StatusSummary
 from gefyra.configuration import default_configuration
+import gefyra.configuration as config_package
 
 
 class GefyraBaseTest:
@@ -75,7 +76,7 @@ class GefyraBaseTest:
         pass
 
     def test_run_gefyra_version(self):
-        res = version(default_configuration, True)
+        res = version(config_package, True)
         self.assertTrue(res)
 
     def test_run_gefyra_status(self):
