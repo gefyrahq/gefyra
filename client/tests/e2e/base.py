@@ -53,6 +53,7 @@ class GefyraBaseTest:
     def assert_operator_ready(self, timeout=60, interval=1):
         counter = 0
         while counter < timeout:
+            counter += 1
             operator_deployment = self.K8S_APP_API.read_namespaced_deployment(
                 name="gefyra-operator", namespace="gefyra"
             )
@@ -64,6 +65,7 @@ class GefyraBaseTest:
     def assert_stowaway_ready(self, timeout=60, interval=1):
         counter = 0
         while counter < timeout:
+            counter += 1
             stowaway_deployment = self.K8S_APP_API.read_namespaced_deployment(
                 name="gefyra-stowaway", namespace="gefyra"
             )
@@ -73,28 +75,30 @@ class GefyraBaseTest:
         raise AssertionError(f"Stowaway not ready within {timeout} seconds.")
 
     def assert_cargo_running(self, timeout=20, interval=1):
-        container = self.DOCKER_API.containers.get("gefyra-cargo")
-        assert container.status == "running"
+        self.assert_container_running("gefyra-cargo", timeout, interval)
 
     def assert_container_running(self, container: str, timeout=20, interval=1):
-        container = self.DOCKER_API.containers.get(container)
-        assert container.status == "running"
+        counter = 0
+        while counter < timeout:
+            container = self.DOCKER_API.containers.get(container)
+            if container.status == "running":
+                return True
+        raise AssertionError(f"{container} not running within {timeout} seconds.")
 
     def assert_in_container_logs(self, container: str, message: str):
         container = self.DOCKER_API.containers.get(container)
         logs = container.logs()
-        assert message in logs
+        if message in logs:
+            return True
+        raise AssertionError(f"{message} not found in {container} logs.")
 
     def assert_gefyra_connected(self):
         _status = status(default_configuration)
         self.assertEqual(_status.summary, StatusSummary.UP)
-        self.assertEqual(_status.client.cargo, False)
-        self.assertEqual(_status.client.bridges, 0)
-        self.assertEqual(_status.client.containers, 0)
-        self.assertEqual(_status.client.cargo_endpoint, "")
-        self.assertEqual(_status.client.network, False)
-        self.assertEqual(_status.cluster.operator, False)
-        self.assertEqual(_status.cluster.stowaway, False)
+        self.assertEqual(_status.client.cargo, True)
+        self.assertEqual(_status.client.network, True)
+        self.assertEqual(_status.cluster.operator, True)
+        self.assertEqual(_status.cluster.stowaway, True)
 
     def assert_gefyra_not_connected(self):
         _status = status(default_configuration)
