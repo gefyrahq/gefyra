@@ -152,12 +152,7 @@ class GefyraBaseTest:
         self.assert_gefyra_connected()
 
     def test_b_run_gefyra_up_again_changes_nothing(self):
-        res = up(default_configuration)
-        self.assertTrue(res)
-        self.assert_operator_ready()
-        self.assert_stowaway_ready()
-        self.assert_cargo_running()
-        self.assert_gefyra_connected()
+        self.test_b_run_gefyra_up()
 
     def test_c_run_gefyra_run_with_faulty_env_from_flag(self):
         run_params = self.default_run_params
