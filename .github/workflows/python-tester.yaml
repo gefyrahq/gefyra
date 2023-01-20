@@ -142,7 +142,7 @@ jobs:
         run: poetry install --no-interaction --no-root
       - name: Run PyTest
         working-directory: ./client
-        run: poetry run coverage run -m pytest
+        run: poetry run coverage run -m pytest tests/unit/
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
@@ -311,7 +311,7 @@ jobs:
       - name: Run Gefyra K3D Tests
         working-directory: ./client
         run: |
-          poetry run coverage run -m pytest tests/test_k3d.py
+          poetry run coverage run -m pytest tests/e2e/
 
       - name: Show coverage report
         working-directory: ./client
