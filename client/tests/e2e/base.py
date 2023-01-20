@@ -13,7 +13,7 @@ from kubernetes.config import load_kube_config
 from gefyra.__main__ import version
 from gefyra.api import down, status, up
 from gefyra.api.status import StatusSummary
-from gefyra.configuration import default_configuration
+from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
 
 
@@ -108,14 +108,12 @@ class GefyraBaseTest:
         self.assert_gefyra_not_connected()
 
     def test_run_gefyra_up_with_invalid_kubeconfig_path(self):
-        config = default_configuration
-        config._kube_config_path = "/tmp/invalid"
+        config = ClientConfiguration(kube_config_file="/tmp/invalid")
         res = up(config)
         self.assertFalse(res)
 
     def test_run_gefyra_up_with_invalid_context(self):
-        config = default_configuration
-        config._kube_context = "invalid-context"
+        config = ClientConfiguration(kube_context="invalid-context")
         res = up(config)
         self.assertFalse(res)
 
