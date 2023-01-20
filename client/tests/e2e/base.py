@@ -164,8 +164,9 @@ class GefyraBaseTest:
         run_params["env_from"] = "noDeployment/hello-nginxdemo"
         self.assert_cargo_running()
         self.assert_gefyra_connected()
-        res = run(**run_params)
-        self.assertFalse(res)
+        with self.assertRaises(RuntimeError) as rte:
+            run(**run_params)
+        self.assertIn("Unknown workload type noDeployment", str(rte.exception))
 
     def test_run_gefyra_run_with_localhost_port_mapping(self):
         pass
