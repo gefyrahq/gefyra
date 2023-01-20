@@ -28,7 +28,7 @@ class GefyraBaseTest:
             "image": "pyserver",
             "name": "mypyserver",
             "namespace": "default",
-            "expose": "8000:8000",
+            "ports": {"8000": "8000"},
             "env_from": "deployment/hello-nginxdemo",
             "config": default_configuration,
         }
