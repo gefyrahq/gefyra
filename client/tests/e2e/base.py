@@ -91,6 +91,7 @@ class GefyraBaseTest:
     def assert_container_running(self, container: str, timeout=20, interval=1):
         counter = 0
         while counter < timeout:
+            counter += 1
             container = self.DOCKER_API.containers.get(container)
             if container.status == "running":
                 return True
