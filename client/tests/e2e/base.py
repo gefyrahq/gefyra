@@ -143,7 +143,7 @@ class GefyraBaseTest:
         ContextAPI.set_current_context("default")
         ContextAPI.remove_context("another-context")
 
-    def test_a_run_gefyra_up(self):
+    def test_b_run_gefyra_up(self):
         res = up(default_configuration)
         self.assertTrue(res)
         self.assert_operator_ready()
@@ -151,7 +151,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
 
-    def test_a_run_gefyra_up_again_changes_nothing(self):
+    def test_b_run_gefyra_up_again_changes_nothing(self):
         res = up(default_configuration)
         self.assertTrue(res)
         self.assert_operator_ready()
@@ -159,7 +159,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
 
-    def test_b_run_gefyra_run_with_faulty_env_from_flag(self):
+    def test_c_run_gefyra_run_with_faulty_env_from_flag(self):
         run_params = self.default_run_params
         run_params["env_from"] = "noDeployment/hello-nginxdemo"
         self.assert_cargo_running()
