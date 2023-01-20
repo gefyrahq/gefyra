@@ -1,5 +1,7 @@
 from time import sleep
 
+import docker
+from docker.context import ContextAPI
 from kubernetes.client import (
     CoreV1Api,
     RbacAuthorizationV1Api,
@@ -9,7 +11,7 @@ from kubernetes.client import (
 from kubernetes.config import load_kube_config
 
 from gefyra.__main__ import version
-from gefyra.api import status, up
+from gefyra.api import down, status, up
 from gefyra.api.status import StatusSummary
 from gefyra.configuration import default_configuration
 import gefyra.configuration as config_package
@@ -28,7 +30,11 @@ class GefyraBaseTest:
             self.params["minikube"] = "minikube"
 
         self._init_kube_api()
+        self._init_docker()
         return super().setUp()
+
+    def _init_docker(self):
+        self.DOCKER_API = docker.from_env()
 
     def _init_kube_api(self):
         load_kube_config(self.kubeconfig)
@@ -66,35 +72,62 @@ class GefyraBaseTest:
             sleep(interval)
         raise AssertionError(f"Stowaway not ready within {timeout} seconds.")
 
-    def assert_cargo_running(self):
-        pass
+    def assert_cargo_running(self, timeout=20, interval=1):
+        container = self.DOCKER_API.containers.get("gefyra-cargo")
+        assert container.status == "running"
 
-    def assert_container_running(self, container: str):
-        pass
+    def assert_container_running(self, container: str, timeout=20, interval=1):
+        container = self.DOCKER_API.containers.get(container)
+        assert container.status == "running"
 
     def assert_in_container_logs(self, container: str, message: str):
-        pass
+        container = self.DOCKER_API.containers.get(container)
+        logs = container.logs()
+        assert message in logs
+
+    def assert_gefyra_connected(self):
+        _status = status(default_configuration)
+        self.assertEqual(_status.summary, StatusSummary.UP)
+        self.assertEqual(_status.client.cargo, False)
+        self.assertEqual(_status.client.bridges, 0)
+        self.assertEqual(_status.client.containers, 0)
+        self.assertEqual(_status.client.cargo_endpoint, "")
+        self.assertEqual(_status.client.network, False)
+        self.assertEqual(_status.cluster.operator, False)
+        self.assertEqual(_status.cluster.stowaway, False)
+
+    def assert_gefyra_not_connected(self):
+        _status = status(default_configuration)
+        self.assertEqual(_status.summary, StatusSummary.DOWN)
 
     def test_run_gefyra_version(self):
         res = version(config_package, True)
         self.assertTrue(res)
 
-    def test_run_gefyra_status(self):
-        _status = status(default_configuration)
-        self.assertEqual(_status.summary, StatusSummary.DOWN)
-        # check status content
+    def test_run_gefyra_down_status(self):
+        self.assert_gefyra_not_connected()
 
     def test_run_gefyra_up_with_invalid_kubeconfig_path(self):
-        pass
-
-    def test_run_gefyra_up_with_invalid_environment_kubeconfig_path(self):
-        pass
+        config = default_configuration
+        config._kube_config_path = "/tmp/invalid"
+        res = up(config)
+        self.assertFalse(res)
 
     def test_run_gefyra_up_with_invalid_context(self):
-        pass
+        config = default_configuration
+        config._kube_context = "invalid-context"
+        res = up(config)
+        self.assertFalse(res)
 
     def test_run_gefyra_up_in_another_docker_context(self):
-        pass
+        ContextAPI.create_context("another-context")
+        ContextAPI.set_current_context("another-context")
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_operator_ready()
+        self.assert_stowaway_ready()
+        down()
+        ContextAPI.set_current_context("default")
 
     def test_run_gefyra_up(self):
         res = up(default_configuration)
