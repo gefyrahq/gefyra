@@ -30,6 +30,7 @@ class GefyraBaseTest:
             "namespace": "default",
             "expose": "8000:8000",
             "env_from": "deployment/hello-nginxdemo",
+            "config": default_configuration,
         }
 
     def setUp(self):
@@ -159,7 +160,7 @@ class GefyraBaseTest:
     def test_run_gefyra_run_with_faulty_env_from_flag(self):
         run_params = self.default_run_params
         run_params["env_from"] = "noDeployment/hello-nginxdemo"
-        res = run(default_configuration, **run_params)
+        res = run(**run_params)
         self.assertFalse(res)
 
     def test_run_gefyra_run_with_localhost_port_mapping(self):
