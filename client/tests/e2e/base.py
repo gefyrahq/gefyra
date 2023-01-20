@@ -11,7 +11,7 @@ from kubernetes.client import (
 from kubernetes.config import load_kube_config
 
 from gefyra.__main__ import version
-from gefyra.api import down, status, up
+from gefyra.api import down, run, status, up
 from gefyra.api.status import StatusSummary
 from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
@@ -21,6 +21,16 @@ class GefyraBaseTest:
     provider = None  # minikube or k3d
     params = {}
     kubeconfig = "~/.kube/config"
+
+    @property
+    def default_run_params(self):
+        return {
+            "image": "pyserver",
+            "name": "mypyserver",
+            "namespace": "default",
+            "expose": "8000:8000",
+            "env_from": "deployment/hello-nginxdemo",
+        }
 
     def setUp(self):
         if not self.provider:
@@ -117,7 +127,8 @@ class GefyraBaseTest:
 
     def test_run_gefyra_up_with_invalid_context(self):
         with self.assertRaises(AttributeError):
-            ClientConfiguration(kube_context="invalid-context")
+            config = ClientConfiguration(kube_context="invalid-context")
+            up(config=config)
 
     def test_run_gefyra_up_in_another_docker_context(self):
         ContextAPI.create_context("another-context")
@@ -138,16 +149,18 @@ class GefyraBaseTest:
         self.assert_gefyra_connected()
 
     def test_run_gefyra_up_again_changes_nothing(self):
-        pass
-
-    def test_run_gefyra_status_running(self):
-        pass
-
-    def test_run_gefyra_run_with_faulty_port_flag(self):
-        pass
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_operator_ready()
+        self.assert_stowaway_ready()
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
 
     def test_run_gefyra_run_with_faulty_env_from_flag(self):
-        pass
+        run_params = self.default_run_params
+        run_params["env_from"] = "noDeployment/hello-nginxdemo"
+        res = run(default_configuration, **run_params)
+        self.assertFalse(res)
 
     def test_run_gefyra_run_with_localhost_port_mapping(self):
         pass
