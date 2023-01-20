@@ -117,7 +117,9 @@ class GefyraBaseTest:
 
     def test_run_gefyra_up_with_invalid_context(self):
         with self.assertRaises(ConfigException):
-            ClientConfiguration(kube_context="invalid-context")
+            c = ClientConfiguration()
+            c.KUBE_CONTEXT = "invalid-context"
+            c.KUBE_CONTEXT
 
     def test_run_gefyra_up_in_another_docker_context(self):
         ContextAPI.create_context("another-context")
