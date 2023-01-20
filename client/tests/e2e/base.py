@@ -8,7 +8,7 @@ from kubernetes.client import (
     AppsV1Api,
     CustomObjectsApi,
 )
-from kubernetes.config import load_kube_config, ConfigException
+from kubernetes.config import load_kube_config
 
 from gefyra.__main__ import version
 from gefyra.api import down, status, up
@@ -116,10 +116,8 @@ class GefyraBaseTest:
             ClientConfiguration(kube_config_file="/tmp/invalid")
 
     def test_run_gefyra_up_with_invalid_context(self):
-        with self.assertRaises(ConfigException):
-            c = ClientConfiguration()
-            c.KUBE_CONTEXT = "invalid-context"
-            c.KUBE_CONTEXT
+        with self.assertRaises(AttributeError):
+            ClientConfiguration(kube_context="invalid-context")
 
     def test_run_gefyra_up_in_another_docker_context(self):
         ContextAPI.create_context("another-context")
