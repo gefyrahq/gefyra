@@ -335,6 +335,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         run_params = self.default_run_params
+        del run_params["env_from"]
         run(**run_params)
         res = bridge(**self.default_bridge_params)
         self.assertTrue(res)
