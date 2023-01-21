@@ -57,10 +57,15 @@ class GefyraBaseTest:
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
 
     def _stop_container(self, container):
-        docker_container = self.DOCKER_API.containers.get(container)
-        docker_container.stop()
-        docker_container.remove()
-        docker_container.wait()
+        # get docker container and stop it if running (if it exists) remove it and wait until done
+        try:
+            docker_container = self.DOCKER_API.containers.get(container)
+            if docker_container.status == "running":
+                docker_container.stop()
+            docker_container.remove()
+            docker_container.wait()
+        except docker.errors.NotFound:
+            pass
 
     def _deployment_ready(self, deployment):
         return (
@@ -212,6 +217,7 @@ class GefyraBaseTest:
         self.assertTrue(res)
         self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
         self.assert_container_state("attachedContainer", "exited")
+        self._stop_container("attachedContainer")
 
     def test_c_run_gefyra_run_with_no_given_namespace_and_no_fallback(self):
         self.assert_cargo_running()
@@ -229,7 +235,6 @@ class GefyraBaseTest:
         # add namespace 'fancy' to kubeconfig and use it
         config = ClientConfiguration()
         config.kube_config.default_namespace = "fancy"
-        config.kube_config.save()
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         params = self.default_run_params
