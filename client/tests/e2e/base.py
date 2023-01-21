@@ -27,18 +27,19 @@ class GefyraBaseTest:
 
     @property
     def default_run_params(self):
-        return deepcopy(
+        params = deepcopy(
             {
                 "image": "pyserver",
                 "name": "mypyserver",
                 "namespace": "default",
                 "ports": {"8000": "8000"},
                 "env_from": "deployment/hello-nginxdemo",
-                "config": default_configuration,
                 "detach": True,
                 "auto_remove": True,
             }
         )
+        params["config"] = default_configuration
+        return params
 
     def setUp(self):
         if not self.provider:
