@@ -33,6 +33,7 @@ class GefyraBaseTest:
             "env_from": "deployment/hello-nginxdemo",
             "config": default_configuration,
             "detach": True,
+            "auto_remove": True,
         }
 
     def setUp(self):
@@ -213,6 +214,8 @@ class GefyraBaseTest:
         params["image"] = "alpine"
         params["command"] = 'sh -c "echo Hello from Gefyra; sleep 10;"'
         params["name"] = "attachedContainer"
+        params["ports"] = {}
+        params["auto_remove"] = False
         res = run(**params)
         sleep(10)
         self.assertTrue(res)
