@@ -290,7 +290,7 @@ class GefyraBaseTest:
         with self.assertRaises(RuntimeError) as rte:
             bridge_params = self.default_bridge_params
             bridge_params["target"] = "deployment/hello-nginxdemo-not/hello-nginx"
-            bridge(**self.default_bridge_params)
+            bridge(**bridge_params)
         self.assertIn("not found", str(rte.exception))
         self._stop_container(self.default_run_params["name"])
 
