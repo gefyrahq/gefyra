@@ -336,10 +336,17 @@ class GefyraBaseTest:
         run(**run_params)
         res = bridge(**self.default_bridge_params)
         self.assertTrue(res)
-        self._stop_container(self.default_run_params["name"])
 
-    def test_c_run_gefyra_status_check_containers_and_bridge(self):
-        pass
+    def test_d_run_gefyra_status_check_containers_and_bridge(self):
+        _status = status(default_configuration)
+        self.assertEqual(_status.summary, StatusSummary.UP)
+        self.assertEqual(_status.client.cargo, True)
+        self.assertEqual(_status.client.network, True)
+        self.assertEqual(_status.cluster.operator, True)
+        self.assertEqual(_status.cluster.stowaway, True)
+        self.assertEqual(_status.client.bridges, 1)
+        self.assertEqual(_status.client.containers, 1)
+        self._stop_container(self.default_run_params["name"])
 
     def test_run_gefyra_unbridge_fails_with_wrong_kubeconfig(self):
         pass
