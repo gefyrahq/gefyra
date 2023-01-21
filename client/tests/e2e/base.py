@@ -198,8 +198,10 @@ class GefyraBaseTest:
         self.assert_gefyra_not_connected()
 
     def test_a_run_gefyra_up_with_invalid_kubeconfig_path(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RuntimeError) as rte:
             ClientConfiguration(kube_config_file="/tmp/invalid")
+        self.assertIn("KUBE_CONFIG_FILE", str(rte.exception))
+        self.assertIn("not found.", str(rte.exception))
 
     def test_a_run_gefyra_up_with_invalid_context(self):
         with self.assertRaises(ConfigException):
@@ -329,7 +331,7 @@ class GefyraBaseTest:
         self.assertIn("since it has a `command` defined", str(rte.exception))
         self._stop_container(self.default_run_params["name"])
 
-    def test_c_run_gefyra_bridge_with_deployment(self):
+    def test_d_run_gefyra_bridge_with_deployment(self):
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         run_params = self.default_run_params
@@ -337,7 +339,7 @@ class GefyraBaseTest:
         res = bridge(**self.default_bridge_params)
         self.assertTrue(res)
 
-    def test_d_run_gefyra_status_check_containers_and_bridge(self):
+    def test_e_run_gefyra_status_check_containers_and_bridge(self):
         _status = status(default_configuration)
         self.assertEqual(_status.summary, StatusSummary.UP)
         self.assertEqual(_status.client.cargo, True)
