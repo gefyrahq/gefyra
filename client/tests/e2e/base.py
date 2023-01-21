@@ -260,6 +260,7 @@ class GefyraBaseTest:
         self.assert_gefyra_connected()
         params = self.default_run_params
         del params["namespace"]
+        del params["env_from"]
         res = run(**params)
         self.assertTrue(res)
         self.assert_docker_container_dns(
