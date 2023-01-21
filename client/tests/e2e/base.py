@@ -107,8 +107,14 @@ class GefyraBaseTest:
             and deployment.status.available_replicas == 1
         )
 
-    def assert_container_state(self, container, state):
+    def assert_container_state(self, container, state, retries=3, interval=1):
         docker_container = self.DOCKER_API.containers.get(container)
+        counter = 0
+        while counter < retries:
+            counter += 1
+            if docker_container.status == state:
+                return True
+            sleep(interval)
         self.assertEqual(docker_container.status, state)
 
     def assert_docker_container_dns(self, container, dns):
@@ -162,6 +168,7 @@ class GefyraBaseTest:
             container = self.DOCKER_API.containers.get(container)
             if container.status == "running":
                 return True
+            sleep(interval)
         raise AssertionError(f"{container} not running within {timeout} seconds.")
 
     def assert_in_container_logs(self, container: str, message: str):

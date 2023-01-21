@@ -11,6 +11,8 @@ OPERATOR_LATEST = "my-reg.io/gefyra/operator:latest"
 CARRIER_LATEST = "my-reg.io/gefyra/carrier:latest"
 KUBE_CONFIG = "~/.kube/config"
 
+GEFYRA_UP_MODULE = "gefyra.api.up"
+
 
 def test_parse_registry_a():
     args = parser.parse_args(["up", "--registry", REGISTRY_URL])
@@ -173,20 +175,20 @@ def test_parse_endpoint():
 
 
 def test_parse_up_fct(monkeypatch):
-    monkeypatch.setattr("gefyra.api.up", lambda config: True)
+    monkeypatch.setattr(GEFYRA_UP_MODULE, lambda config: True)
     args = parser.parse_args(["up", "--host", "10.30.34.25", "--port", "31820"])
     get_client_configuration(args)
 
 
 def test_parse_up_endpoint_and_minikube(monkeypatch):
-    monkeypatch.setattr("gefyra.api.up", lambda config: True)
+    monkeypatch.setattr(GEFYRA_UP_MODULE, lambda config: True)
     args = parser.parse_args(["up", "--host", "10.30.34.25", "--minikube"])
     with pytest.raises(RuntimeError):
         get_client_configuration(args)
 
 
 def test_parse_up_minikube_not_started(monkeypatch):
-    monkeypatch.setattr("gefyra.api.up", lambda config: True)
+    monkeypatch.setattr(GEFYRA_UP_MODULE, lambda config: True)
     args = parser.parse_args(["up", "--minikube"])
     with pytest.raises(RuntimeError):
         get_client_configuration(args)
