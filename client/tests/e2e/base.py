@@ -56,6 +56,11 @@ class GefyraBaseTest:
         self.K8S_APP_API = AppsV1Api()
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
 
+    def _stop_container(self, container):
+        docker_container = self.DOCKER_API.containers.get(container)
+        docker_container.stop()
+        docker_container.remove()
+
     def _deployment_ready(self, deployment):
         return (
             deployment.status.ready_replicas
@@ -66,6 +71,10 @@ class GefyraBaseTest:
     def assert_container_state(self, container, state):
         docker_container = self.DOCKER_API.containers.get(container)
         assert docker_container.status == state
+
+    def assert_docker_container_dns(self, container, dns):
+        docker_container = self.DOCKER_API.containers.get(container)
+        assert docker_container.attrs["HostConfig"]["DnsSearch"] == dns
 
     def assert_http_service_available(self, domain, port, timeout=60, interval=1):
         counter = 0
@@ -172,6 +181,7 @@ class GefyraBaseTest:
 
     def test_b_run_gefyra_up_again_changes_nothing(self):
         self.test_b_run_gefyra_up()
+        self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_run_with_faulty_env_from_flag(self):
         run_params = self.default_run_params
@@ -188,6 +198,7 @@ class GefyraBaseTest:
         res = run(**self.default_run_params)
         self.assertTrue(res)
         self.assert_http_service_available("localhost", 8000)
+        self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_run_attached(self):
         self.assert_cargo_running()
@@ -195,32 +206,39 @@ class GefyraBaseTest:
         params = self.default_run_params
         params["detach"] = False
         params["image"] = "alpine"
-        params["command"] = 'sh -c "echo Hello from Gefyra;"'
+        params["command"] = 'sh -c "echo Hello from Gefyra;" && sleep 5;'
         params["name"] = "attachedContainer"
         res = run(**params)
         self.assertTrue(res)
         self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
         self.assert_container_state("attachedContainer", "exited")
 
-    def test_run_gefyra_run_with_no_given_namespace_and_no_fallback(self):
+    def test_c_run_gefyra_run_with_no_given_namespace_and_no_fallback(self):
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        params = self.default_run_params
+        del params["namespace"]
+        res = run(**params)
+        self.assertTrue(res)
+        self.assert_docker_container_dns(self.default_run_params["name"], "default")
+        self._stop_container(self.default_run_params["name"])
+
+    def test_c_run_gefyra_run_with_default_namespace_from_kubeconfig(self):
         pass
 
-    def test_run_gefyra_run_with_default_namespace_from_kubeconfig(self):
+    def test_c_run_gefyra_bridge_with_invalid_deployment(self):
         pass
 
-    def test_run_gefyra_bridge_with_invalid_deployment(self):
+    def test_c_run_gefyra_bridge_with_invalid_container(self):
         pass
 
-    def test_run_gefyra_bridge_with_invalid_container(self):
+    def test_c_run_gefyra_bridge_with_container_with_command(self):
         pass
 
-    def test_run_gefyra_bridge_with_container_with_command(self):
+    def test_c_run_gefyra_bridge_with_deployment(self):
         pass
 
-    def test_run_gefyra_bridge_with_deployment(self):
-        pass
-
-    def test_run_gefyra_status_check_containers_and_bridge(self):
+    def test_c_run_gefyra_status_check_containers_and_bridge(self):
         pass
 
     def test_run_gefyra_unbridge_fails_with_wrong_kubeconfig(self):
