@@ -74,7 +74,7 @@ class GefyraBaseTest:
 
     def assert_docker_container_dns(self, container, dns):
         docker_container = self.DOCKER_API.containers.get(container)
-        assert docker_container.attrs["HostConfig"]["DnsSearch"] == dns
+        self.assertEquals(docker_container.attrs["HostConfig"]["DnsSearch"], dns)
 
     def assert_http_service_available(self, domain, port, timeout=60, interval=1):
         counter = 0
@@ -171,7 +171,7 @@ class GefyraBaseTest:
         ContextAPI.set_current_context("default")
         ContextAPI.remove_context("another-context")
 
-    def test_b_run_gefyra_up(self):
+    def test_ab_run_gefyra_up(self):
         res = up(default_configuration)
         self.assertTrue(res)
         self.assert_operator_ready()
