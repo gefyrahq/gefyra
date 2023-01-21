@@ -67,6 +67,14 @@ class GefyraBaseTest:
             docker_container.wait()
         except docker.errors.NotFound:
             pass
+        except docker.errors.APIError as e:
+            if e.status_code == 409:
+                try:
+                    docker_container.wait()
+                except docker.errors.NotFound:
+                    pass
+            else:
+                raise e
 
     def _deployment_ready(self, deployment):
         return (
