@@ -1,3 +1,4 @@
+from copy import deepcopy
 import requests
 import subprocess
 from time import sleep
@@ -26,16 +27,18 @@ class GefyraBaseTest:
 
     @property
     def default_run_params(self):
-        return {
-            "image": "pyserver",
-            "name": "mypyserver",
-            "namespace": "default",
-            "ports": {"8000": "8000"},
-            "env_from": "deployment/hello-nginxdemo",
-            "config": default_configuration,
-            "detach": True,
-            "auto_remove": True,
-        }
+        return deepcopy(
+            {
+                "image": "pyserver",
+                "name": "mypyserver",
+                "namespace": "default",
+                "ports": {"8000": "8000"},
+                "env_from": "deployment/hello-nginxdemo",
+                "config": default_configuration,
+                "detach": True,
+                "auto_remove": True,
+            }
+        )
 
     def setUp(self):
         if not self.provider:
