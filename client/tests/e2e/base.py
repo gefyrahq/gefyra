@@ -14,7 +14,7 @@ from kubernetes.client import (
 from kubernetes.config import load_kube_config, ConfigException
 
 from gefyra.__main__ import version
-from gefyra.api import down, run, status, up
+from gefyra.api import bridge, down, run, status, up
 from gefyra.api.status import StatusSummary
 from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
@@ -36,6 +36,19 @@ class GefyraBaseTest:
                 "env_from": "deployment/hello-nginxdemo",
                 "detach": True,
                 "auto_remove": True,
+            }
+        )
+        params["config"] = default_configuration
+        return params
+
+    @property
+    def default_bridge_params(self):
+        params = deepcopy(
+            {
+                "name": "mypyserver",
+                "namespace": "default",
+                "target": "deployment/hello-nginxdemo/hello-nginx",
+                "ports": {"80": "8000"},
             }
         )
         params["config"] = default_configuration
@@ -270,7 +283,16 @@ class GefyraBaseTest:
         self.kubectl("config", "set-context", "--current", "--namespace=default")
 
     def test_c_run_gefyra_bridge_with_invalid_deployment(self):
-        pass
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        run_params = self.default_run_params
+        run(**run_params)
+        with self.assertRaises(RuntimeError) as rte:
+            bridge_params = self.default_bridge_params
+            bridge_params["target"] = "deployment/hello-nginxdemo-not/hello-nginx"
+            bridge(**self.default_bridge_params)
+        self.assertIn("not found", str(rte.exception))
+        self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_bridge_with_invalid_container(self):
         pass
