@@ -1,4 +1,5 @@
 import requests
+import subprocess
 from time import sleep
 
 import docker
@@ -57,8 +58,14 @@ class GefyraBaseTest:
         self.K8S_APP_API = AppsV1Api()
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
 
+    def kubectl(self, *args):
+        cmd = ["kubectl"]
+        cmd.extend(args)
+        return subprocess.run(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        )
+
     def _stop_container(self, container):
-        # get docker container and stop it if running (if it exists) remove it and wait until done
         try:
             docker_container = self.DOCKER_API.containers.get(container)
             if docker_container.status == "running":
@@ -244,20 +251,18 @@ class GefyraBaseTest:
         self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_run_with_default_namespace_from_kubeconfig(self):
-        # add namespace 'fancy' to kubeconfig and use it
-        # config = ClientConfiguration()
-        # config.kube_config.default_namespace = "fancy"
-        # self.assert_cargo_running()
-        # self.assert_gefyra_connected()
-        # params = self.default_run_params
-        # del params["namespace"]
-        # res = run(**params)
-        # self.assertTrue(res)
-        # self.assert_docker_container_dns(
-        #     self.default_run_params["name"], "fancy.svc.cluster.local"
-        # )
-        # self._stop_container(self.default_run_params["name"])
-        pass
+        self.kubectl("config", "set-context", "--current", "--namespace=fancy")
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        params = self.default_run_params
+        del params["namespace"]
+        res = run(**params)
+        self.assertTrue(res)
+        self.assert_docker_container_dns(
+            self.default_run_params["name"], "fancy.svc.cluster.local"
+        )
+        self._stop_container(self.default_run_params["name"])
+        self.kubectl("config", "set-context", "--current", "--namespace=default")
 
     def test_c_run_gefyra_bridge_with_invalid_deployment(self):
         pass
