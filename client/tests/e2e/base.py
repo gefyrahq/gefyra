@@ -1,3 +1,4 @@
+import requests
 from time import sleep
 
 import docker
@@ -31,6 +32,7 @@ class GefyraBaseTest:
             "ports": {"8000": "8000"},
             "env_from": "deployment/hello-nginxdemo",
             "config": default_configuration,
+            "detach": True,
         }
 
     def setUp(self):
@@ -60,6 +62,19 @@ class GefyraBaseTest:
             and deployment.status.ready_replicas == 1
             and deployment.status.available_replicas == 1
         )
+
+    def assert_http_service_available(self, domain, port, timeout=60, interval=1):
+        counter = 0
+        while counter < timeout:
+            counter += 1
+            try:
+                response = requests.get(f"http://{domain}:{port}")
+                if response.status_code == 200:
+                    return True
+            except requests.exceptions.ConnectionError:
+                pass
+            sleep(interval)
+        raise AssertionError(f"Service not available within {timeout} seconds.")
 
     def assert_operator_ready(self, timeout=60, interval=1):
         counter = 0
@@ -164,7 +179,11 @@ class GefyraBaseTest:
         self.assertIn("Unknown workload type noDeployment", str(rte.exception))
 
     def test_run_gefyra_run_with_localhost_port_mapping(self):
-        pass
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        res = run(**self.default_run_params)
+        self.assertTrue(res)
+        self.assert_http_service_available("localhost", 8000)
 
     def test_run_gefyra_run_attached(self):
         pass
