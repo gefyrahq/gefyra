@@ -295,7 +295,16 @@ class GefyraBaseTest:
         self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_bridge_with_invalid_container(self):
-        pass
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        run_params = self.default_run_params
+        run(**run_params)
+        with self.assertRaises(RuntimeError) as rte:
+            bridge_params = self.default_bridge_params
+            bridge_params["target"] = "deployment/hello-nginxdemo/hello-nginx-not"
+            bridge(**bridge_params)
+        self.assertIn("Could not find container", str(rte.exception))
+        self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_bridge_with_container_with_command(self):
         pass
