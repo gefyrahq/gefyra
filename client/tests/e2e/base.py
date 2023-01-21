@@ -60,6 +60,7 @@ class GefyraBaseTest:
         docker_container = self.DOCKER_API.containers.get(container)
         docker_container.stop()
         docker_container.remove()
+        docker_container.wait()
 
     def _deployment_ready(self, deployment):
         return (
@@ -128,7 +129,7 @@ class GefyraBaseTest:
     def assert_in_container_logs(self, container: str, message: str):
         container = self.DOCKER_API.containers.get(container)
         logs = container.logs()
-        if message in logs:
+        if message in logs.decode("utf-8"):
             return True
         raise AssertionError(f"{message} not found in {container} logs.")
 
@@ -145,7 +146,7 @@ class GefyraBaseTest:
         self.assertEqual(_status.summary, StatusSummary.DOWN)
 
     def test_a_run_gefyra_version(self):
-        res = version(config_package, True)
+        res = version(config_package, False)
         self.assertTrue(res)
 
     def test_a_run_gefyra_down_status(self):
@@ -225,7 +226,20 @@ class GefyraBaseTest:
         self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_run_with_default_namespace_from_kubeconfig(self):
-        pass
+        # add namespace 'fancy' to kubeconfig and use it
+        config = ClientConfiguration()
+        config.kube_config.default_namespace = "fancy"
+        config.kube_config.save()
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        params = self.default_run_params
+        del params["namespace"]
+        res = run(**params)
+        self.assertTrue(res)
+        self.assert_docker_container_dns(
+            self.default_run_params["name"], "fancy.svc.cluster.local"
+        )
+        self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_bridge_with_invalid_deployment(self):
         pass
