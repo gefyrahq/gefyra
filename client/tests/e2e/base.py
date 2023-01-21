@@ -323,7 +323,13 @@ class GefyraBaseTest:
         self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_bridge_with_deployment(self):
-        pass
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        run_params = self.default_run_params
+        run(**run_params)
+        res = bridge(**self.default_bridge_params)
+        self.assertTrue(res)
+        self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_status_check_containers_and_bridge(self):
         pass
