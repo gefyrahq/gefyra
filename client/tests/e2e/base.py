@@ -63,6 +63,10 @@ class GefyraBaseTest:
             and deployment.status.available_replicas == 1
         )
 
+    def assert_container_state(self, container, state):
+        docker_container = self.DOCKER_API.containers.get(container)
+        assert docker_container.status == state
+
     def assert_http_service_available(self, domain, port, timeout=60, interval=1):
         counter = 0
         while counter < timeout:
@@ -178,15 +182,25 @@ class GefyraBaseTest:
             run(**run_params)
         self.assertIn("Unknown workload type noDeployment", str(rte.exception))
 
-    def test_run_gefyra_run_with_localhost_port_mapping(self):
+    def test_c_run_gefyra_run_with_localhost_port_mapping(self):
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         res = run(**self.default_run_params)
         self.assertTrue(res)
         self.assert_http_service_available("localhost", 8000)
 
-    def test_run_gefyra_run_attached(self):
-        pass
+    def test_c_run_gefyra_run_attached(self):
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        params = self.default_run_params
+        params["detach"] = False
+        params["image"] = "alpine"
+        params["command"] = 'sh -c "echo Hello from Gefyra;"'
+        params["name"] = "attachedContainer"
+        res = run(**params)
+        self.assertTrue(res)
+        self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
+        self.assert_container_state("attachedContainer", "exited")
 
     def test_run_gefyra_run_with_no_given_namespace_and_no_fallback(self):
         pass
