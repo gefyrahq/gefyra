@@ -56,7 +56,7 @@ class GefyraBaseTest:
 
     def setUp(self):
         if not self.provider:
-            raise Exception("No provider set")
+            raise NotImplementedError("No provider set")
 
         if self.provider == "minikube":
             self.params["minikube"] = "minikube"
