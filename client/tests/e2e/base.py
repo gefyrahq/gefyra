@@ -74,7 +74,7 @@ class GefyraBaseTest:
 
     def assert_docker_container_dns(self, container, dns):
         docker_container = self.DOCKER_API.containers.get(container)
-        self.assertIn(dns, docker_container.attrs["HostConfig"]["Dns"])
+        self.assertIn(dns, docker_container.attrs["HostConfig"]["DnsSearch"])
 
     def assert_http_service_available(self, domain, port, timeout=60, interval=1):
         counter = 0
@@ -181,7 +181,6 @@ class GefyraBaseTest:
 
     def test_b_run_gefyra_up_again_changes_nothing(self):
         self.test_ab_run_gefyra_up()
-        self._stop_container(self.default_run_params["name"])
 
     def test_c_run_gefyra_run_with_faulty_env_from_flag(self):
         run_params = self.default_run_params
@@ -206,7 +205,7 @@ class GefyraBaseTest:
         params = self.default_run_params
         params["detach"] = False
         params["image"] = "alpine"
-        params["command"] = 'sh -c "echo Hello from Gefyra;" && sleep 10;'
+        params["command"] = 'sh -c "echo Hello from Gefyra; sleep 10;"'
         params["name"] = "attachedContainer"
         res = run(**params)
         self.assertTrue(res)
