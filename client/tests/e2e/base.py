@@ -214,6 +214,7 @@ class GefyraBaseTest:
         params["command"] = 'sh -c "echo Hello from Gefyra; sleep 10;"'
         params["name"] = "attachedContainer"
         res = run(**params)
+        sleep(10)
         self.assertTrue(res)
         self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
         self.assert_container_state("attachedContainer", "exited")
