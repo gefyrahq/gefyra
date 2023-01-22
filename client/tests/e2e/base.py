@@ -189,8 +189,9 @@ class GefyraBaseTest:
             return True
         raise AssertionError(f"{message} not found in {container} logs.")
 
-    def assert_gefyra_connected(self):
-        _status = status(default_configuration)
+    def assert_gefyra_connected(self, _status=None):
+        if not _status:
+            _status = status(default_configuration)
         self.assertEqual(_status.summary, StatusSummary.UP)
         self.assertEqual(_status.client.cargo, True)
         self.assertEqual(_status.client.network, True)
@@ -200,6 +201,12 @@ class GefyraBaseTest:
     def assert_gefyra_not_connected(self):
         _status = status(default_configuration)
         self.assertEqual(_status.summary, StatusSummary.DOWN)
+
+    def assert_gefyra_operational_no_bridge(self):
+        _status = status(default_configuration)
+        self.assert_gefyra_connected(_status)
+        self.assertEqual(_status.client.bridges, 0)
+        self.assertEqual(_status.client.containers, 1)
 
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)
@@ -364,14 +371,7 @@ class GefyraBaseTest:
     def test_f_run_gefyra_unbridge(self):
         res = unbridge_all(default_configuration, wait=True)
         self.assertTrue(res)
-        _status = status(default_configuration)
-        self.assertEqual(_status.summary, StatusSummary.UP)
-        self.assertEqual(_status.client.cargo, True)
-        self.assertEqual(_status.client.network, True)
-        self.assertEqual(_status.cluster.operator, True)
-        self.assertEqual(_status.cluster.stowaway, True)
-        self.assertEqual(_status.client.bridges, 0)
-        self.assertEqual(_status.client.containers, 1)
+        self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
 
     def test_g_run_gefyra_bridge_with_deployment_short_name(self):
@@ -392,14 +392,7 @@ class GefyraBaseTest:
             wait=True,
         )
         self.assertTrue(res)
-        _status = status(default_configuration)
-        self.assertEqual(_status.summary, StatusSummary.UP)
-        self.assertEqual(_status.client.cargo, True)
-        self.assertEqual(_status.client.network, True)
-        self.assertEqual(_status.cluster.operator, True)
-        self.assertEqual(_status.cluster.stowaway, True)
-        self.assertEqual(_status.client.bridges, 0)
-        self.assertEqual(_status.client.containers, 1)
+        self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
 
     def test_k_run_gefyra_bridge_with_deployment_short_name_deploy_without_container_name(
