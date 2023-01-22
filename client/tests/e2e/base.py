@@ -422,7 +422,7 @@ class GefyraBaseTest:
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
         pod_name = list(pod_container_dict.keys())[0]
-        bridge_params["target"] = f"pod/{pod_name}/hello-nginxdemo"
+        bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         res_bridge = bridge(**bridge_params)
         self.assertTrue(res_bridge)
         res_unbridge = unbridge_all(
