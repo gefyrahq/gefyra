@@ -180,6 +180,13 @@ def test_parse_up_fct(monkeypatch):
     get_client_configuration(args)
 
 
+def test_parse_up_fct_without_args(monkeypatch):
+    monkeypatch.setattr(GEFYRA_UP_MODULE, lambda config: True)
+    args = parser.parse_args(["up"])
+    config = get_client_configuration(args)
+    assert "31820" in config.CARGO_ENDPOINT
+
+
 def test_parse_up_endpoint_and_minikube(monkeypatch):
     monkeypatch.setattr(GEFYRA_UP_MODULE, lambda config: True)
     args = parser.parse_args(["up", "--host", "10.30.34.25", "--minikube"])
