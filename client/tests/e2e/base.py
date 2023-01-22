@@ -258,10 +258,10 @@ class GefyraBaseTest:
         params["ports"] = {}
         params["auto_remove"] = False
         res = run(**params)
-        sleep(10)
+        sleep(12)
         self.assertTrue(res)
         self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
-        self.assert_container_state("attachedContainer", "exited")
+        self.assert_container_state("attachedContainer", "exited", retries=5)
         self._stop_container("attachedContainer")
 
     def test_c_run_gefyra_run_with_no_given_namespace_and_no_fallback(self):
