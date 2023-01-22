@@ -14,7 +14,7 @@ from kubernetes.client import (
 from kubernetes.config import load_kube_config, ConfigException
 
 from gefyra.__main__ import version
-from gefyra.api import bridge, down, run, status, up
+from gefyra.api import bridge, down, run, status, up, unbridge_all
 from gefyra.api.status import StatusSummary
 from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
@@ -351,8 +351,17 @@ class GefyraBaseTest:
         self.assertEqual(_status.client.containers, 1)
         self._stop_container(self.default_run_params["name"])
 
-    def test_run_gefyra_unbridge_fails_with_wrong_kubeconfig(self):
-        pass
+    def test_run_gefyra_unbridge(self):
+        res = unbridge_all(default_configuration)
+        self.assertTrue(res)
+        _status = status(default_configuration)
+        self.assertEqual(_status.summary, StatusSummary.UP)
+        self.assertEqual(_status.client.cargo, True)
+        self.assertEqual(_status.client.network, True)
+        self.assertEqual(_status.cluster.operator, True)
+        self.assertEqual(_status.cluster.stowaway, True)
+        self.assertEqual(_status.client.bridges, 0)
+        self.assertEqual(_status.client.containers, 1)
 
     def test_run_gefyra_unbridge_without_a_flag_and_no_name(self):
         pass
@@ -363,9 +372,6 @@ class GefyraBaseTest:
     def test_run_gefyra_bridge_with_deployment_short_name_deploy_without_container_name(
         self,
     ):
-        pass
-
-    def test_run_gefyra_unbridge(self):
         pass
 
     def test_run_gefyra_bridge_with_pod(self):
