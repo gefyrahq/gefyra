@@ -457,13 +457,4 @@ class GefyraBaseTest:
         self.assertEqual(_status.client.containers, 0)
 
     def test_n_run_gefyra_down_again_without_errors(self):
-        res = down(default_configuration)
-        self.assertTrue(res)
-        _status = status(default_configuration)
-        self.assertEqual(_status.summary, StatusSummary.DOWN)
-        self.assertEqual(_status.client.cargo, False)
-        self.assertEqual(_status.client.network, False)
-        self.assertEqual(_status.cluster.operator, False)
-        self.assertEqual(_status.cluster.stowaway, False)
-        self.assertEqual(_status.client.bridges, 0)
-        self.assertEqual(_status.client.containers, 0)
+        self.test_n_run_gefyra_down()
