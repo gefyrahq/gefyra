@@ -349,7 +349,6 @@ class GefyraBaseTest:
         self.assertEqual(_status.cluster.stowaway, True)
         self.assertEqual(_status.client.bridges, 1)
         self.assertEqual(_status.client.containers, 1)
-        self._stop_container(self.default_run_params["name"])
 
     def test_f_run_gefyra_unbridge(self):
         res = unbridge_all(default_configuration, wait=True)
