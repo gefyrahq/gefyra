@@ -16,6 +16,7 @@ from kubernetes.config import load_kube_config, ConfigException
 from gefyra.__main__ import version
 from gefyra.api import bridge, down, run, status, up, unbridge_all, unbridge
 from gefyra.api.status import StatusSummary
+from gefyra.cluster.resources import get_pods_and_containers_for_workload
 from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
 
@@ -391,13 +392,45 @@ class GefyraBaseTest:
         self.assertEqual(_status.client.containers, 1)
         self._stop_container(self.default_run_params["name"])
 
-    def test_run_gefyra_bridge_with_deployment_short_name_deploy_without_container_name(
+    def test_k_run_gefyra_bridge_with_deployment_short_name_deploy_without_container_name(
         self,
     ):
-        pass
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        run_params = self.default_run_params
+        del run_params["env_from"]
+        run(**run_params)
+        bridge_params = self.default_bridge_params
+        bridge_params["target"] = "deployment/hello-nginxdemo"
+        res_bridge = bridge(**bridge_params)
+        self.assertTrue(res_bridge)
+        res_unbridge = unbridge_all(
+            config=default_configuration,
+            wait=True,
+        )
+        self.assertTrue(res_unbridge)
+        self._stop_container(self.default_run_params["name"])
 
-    def test_run_gefyra_bridge_with_pod(self):
-        pass
+    def test_l_run_gefyra_bridge_with_pod(self):
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        run_params = self.default_run_params
+        del run_params["env_from"]
+        run(**run_params)
+        bridge_params = self.default_bridge_params
+        pod_container_dict = get_pods_and_containers_for_workload(
+            "deployment", "hello-nginxdemo"
+        )
+        pod_name = list(pod_container_dict.keys())[0]
+        bridge_params["target"] = f"pod/{pod_name}/hello-nginxdemo"
+        res_bridge = bridge(**bridge_params)
+        self.assertTrue(res_bridge)
+        res_unbridge = unbridge_all(
+            config=default_configuration,
+            wait=True,
+        )
+        self.assertTrue(res_unbridge)
+        self._stop_container(self.default_run_params["name"])
 
     def test_run_gefyra_list_bridges(self):
         pass
