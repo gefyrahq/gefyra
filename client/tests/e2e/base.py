@@ -419,7 +419,7 @@ class GefyraBaseTest:
         run(**run_params)
         bridge_params = self.default_bridge_params
         pod_container_dict = get_pods_and_containers_for_workload(
-            "deployment", "hello-nginxdemo"
+            default_configuration, "hello-nginxdemo", "default", "deployment"
         )
         pod_name = list(pod_container_dict.keys())[0]
         bridge_params["target"] = f"pod/{pod_name}/hello-nginxdemo"
