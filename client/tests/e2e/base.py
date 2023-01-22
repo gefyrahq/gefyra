@@ -14,7 +14,17 @@ from kubernetes.client import (
 from kubernetes.config import load_kube_config, ConfigException
 
 from gefyra.__main__ import version
-from gefyra.api import bridge, down, run, status, up, unbridge_all, unbridge
+from gefyra.api import (
+    bridge,
+    down,
+    run,
+    status,
+    up,
+    unbridge_all,
+    unbridge,
+    list_containers,
+    list_interceptrequests,
+)
 from gefyra.api.status import StatusSummary
 from gefyra.cluster.resources import get_pods_and_containers_for_workload
 from gefyra.configuration import default_configuration, ClientConfiguration
@@ -425,21 +435,35 @@ class GefyraBaseTest:
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         res_bridge = bridge(**bridge_params)
         self.assertTrue(res_bridge)
-        res_unbridge = unbridge_all(
-            config=default_configuration,
-            wait=True,
-        )
-        self.assertTrue(res_unbridge)
-        self._stop_container(self.default_run_params["name"])
 
-    def test_run_gefyra_list_bridges(self):
-        pass
+    def test_m_run_gefyra_list_bridges(self):
+        res = list_interceptrequests(default_configuration)
+        self.assertEqual(len(res), 1)
 
-    def test_run_gefyra_list_containers(self):
-        pass
+    def test_m_run_gefyra_list_containers(self):
+        res = list_containers(default_configuration)
+        self.assertEqual(len(res), 1)
 
-    def test_run_gefyra_down(self):
-        pass
+    def test_n_run_gefyra_down(self):
+        res = down(default_configuration)
+        self.assertTrue(res)
+        _status = status(default_configuration)
+        self.assertEqual(_status.summary, StatusSummary.DOWN)
+        self.assertEqual(_status.client.cargo, False)
+        self.assertEqual(_status.client.network, False)
+        self.assertEqual(_status.cluster.operator, False)
+        self.assertEqual(_status.cluster.stowaway, False)
+        self.assertEqual(_status.client.bridges, 0)
+        self.assertEqual(_status.client.containers, 0)
 
-    def test_run_gefyra_down_again_without_errors(self):
-        pass
+    def test_n_run_gefyra_down_again_without_errors(self):
+        res = down(default_configuration)
+        self.assertTrue(res)
+        _status = status(default_configuration)
+        self.assertEqual(_status.summary, StatusSummary.DOWN)
+        self.assertEqual(_status.client.cargo, False)
+        self.assertEqual(_status.client.network, False)
+        self.assertEqual(_status.cluster.operator, False)
+        self.assertEqual(_status.cluster.stowaway, False)
+        self.assertEqual(_status.client.bridges, 0)
+        self.assertEqual(_status.client.containers, 0)
