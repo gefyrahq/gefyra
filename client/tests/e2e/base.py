@@ -31,7 +31,10 @@ from gefyra.api import (
     list_interceptrequests,
 )
 from gefyra.api.status import StatusSummary
-from gefyra.cluster.resources import get_pods_and_containers_for_workload
+from gefyra.cluster.resources import (
+    get_pods_and_containers_for_pod_name,
+    get_pods_and_containers_for_workload,
+)
 from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
 
@@ -549,3 +552,10 @@ class GefyraBaseTest:
 
     def test_n_run_gefyra_down_again_without_errors(self):
         self.test_n_run_gefyra_down()
+
+    def test_util_for_pod_not_found(self):
+        with self.assertRaises(RuntimeError) as rte:
+            get_pods_and_containers_for_pod_name(
+                config=default_configuration, pod_name="foo", namespace="default"
+            )
+        self.assertIn("Pod foo not found.", str(rte.exception))

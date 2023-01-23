@@ -252,7 +252,7 @@ def get_pods_and_containers_for_pod_name(
         pod = config.K8S_CORE_API.read_namespaced_pod(name=name, namespace=namespace)
     except ApiException as e:
         if e.status == 404:
-            raise RuntimeError("Pod not found.")
+            API_EXCEPTION_MSG = f"Pod {name} not found."
         raise RuntimeError(API_EXCEPTION_MSG.format(e))
     if not pod.spec:  # `.spec` is optional in python kubernetes client
         raise RuntimeError(f"Could not retrieve spec for pod - {name}.")
