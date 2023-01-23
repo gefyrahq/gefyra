@@ -1,10 +1,10 @@
+from gefyra.local.utils import IpPortMappingParser
 import pytest
 
 from gefyra.__main__ import run_parser, bridge_parser
 
 
-def test_ip_port_mapper(caplog):
-    caplog.set_level("DEBUG")
+def test_ip_port_mapper():
     args = run_parser.parse_args(
         [
             "--expose=localhost:8080:8080",
@@ -21,22 +21,13 @@ def test_ip_port_mapper(caplog):
     assert args.expose["8080"] == ("localhost", "8080")
     assert args.expose["7070"] == "7071"
 
-    with pytest.raises(SystemExit):
-        run_parser.parse_args(
-            [
-                "--expose=localhost:abc:8080",
-            ]
-        )
-    assert "Invalid port" in caplog.text
-    caplog.clear()
+    with pytest.raises(RuntimeError) as rte:
+        IpPortMappingParser.parse_split("expose=localhost:abc:8080".split(":"))
+    assert "Invalid port abc" in str(rte.value)
 
-    with pytest.raises(SystemExit):
-        run_parser.parse_args(
-            [
-                "--expose=localhost:8080:8080:too-many",
-            ]
-        )
-    assert "Invalid port" in caplog.text
+    with pytest.raises(ValueError) as ve:
+        IpPortMappingParser.parse_split("localhost:8080:8080:too-many".split(":"))
+    assert "Invalid value " in str(ve.value)
 
 
 def test_port_mapper(caplog):

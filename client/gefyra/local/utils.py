@@ -198,7 +198,8 @@ def set_kubeconfig_from_cargo(config: ClientConfiguration) -> ClientConfiguratio
 class PortMappingParser(argparse.Action):
     """Adapted from https://stackoverflow.com/questions/29986185/python-argparse-dict-arg"""
 
-    def parse_split(self, split):
+    @staticmethod
+    def parse_split(split):
         # port - port
         res = {}
         if len(split) == 2:
@@ -223,7 +224,8 @@ class PortMappingParser(argparse.Action):
 
 
 class IpPortMappingParser(PortMappingParser):
-    def parse_split(self, split):
+    @staticmethod
+    def parse_split(split):
         def v(p: str):
             if not p.isnumeric():
                 raise RuntimeError(
@@ -240,4 +242,4 @@ class IpPortMappingParser(PortMappingParser):
             res[v(split[2])] = (split[0], v(split[1]))
             return res
         else:
-            raise ValueError
+            raise ValueError("Invalid value for port mapping.")
