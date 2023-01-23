@@ -242,9 +242,37 @@ class GefyraBaseTest:
         res = probe_docker()
         self.assertTrue(res)
 
+    def test_docker_probe_output_on_fail(self):
+        config = ClientConfiguration()
+
+        def raise_exception(*args, **kwargs):
+            raise docker.errors.APIError("API error", response=None, explanation=None)
+
+        self.monkeypatch.setattr(
+            config.DOCKER.containers,
+            "list",
+            raise_exception,
+        )
+        res = probe_docker()
+        self.assertFalse(res)
+
     def test_kubernetes_probe(self):
         res = probe_kubernetes()
         self.assertTrue(res)
+
+    def test_kubernetes_probe_output_on_fail(self):
+        config = ClientConfiguration()
+
+        def raise_exception(*args, **kwargs):
+            raise ApiException(status=500, reason="Test Reason")
+
+        self.monkeypatch.setattr(
+            config.K8S_CORE_API,
+            "list_namespace",
+            raise_exception,
+        )
+        res = probe_kubernetes()
+        self.assertFalse(res)
 
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)
