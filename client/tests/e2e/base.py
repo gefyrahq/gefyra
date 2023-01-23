@@ -253,7 +253,7 @@ class GefyraBaseTest:
             "list",
             raise_exception,
         )
-        res = probe_docker()
+        res = probe_docker(config=config)
         self.assertFalse(res)
 
     def test_kubernetes_probe(self):
@@ -271,7 +271,7 @@ class GefyraBaseTest:
             "list_namespace",
             raise_exception,
         )
-        res = probe_kubernetes()
+        res = probe_kubernetes(config=config)
         self.assertFalse(res)
 
     def test_a_run_gefyra_version(self):
