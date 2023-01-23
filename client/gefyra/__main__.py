@@ -328,9 +328,8 @@ def print_status(status: GefyraStatus):
 
     class EnhancedJSONEncoder(json.JSONEncoder):
         def default(self, o):
-            if dataclasses.is_dataclass(o):
-                return dataclasses.asdict(o)
-            return super().default(o)
+            # we only accept dataclasses here
+            return dataclasses.asdict(o)
 
     print(json.dumps(status, cls=EnhancedJSONEncoder, indent=2))
 
