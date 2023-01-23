@@ -456,7 +456,7 @@ class GefyraBaseTest:
     def test_m_run_gefyra_list_output_bridges(self):
         get_bridges_and_print(default_configuration)
         captured = self.capsys.readouterr()
-        self.assertIn("mypyserver-to-default.deploy.hello-nginxdemo", captured.out)
+        self.assertIn("mypyserver-to-default.pod.hello-nginxdemo", captured.out)
 
     def test_m_run_gefyra_list_output_containers(self):
         get_containers_and_print(default_configuration)
