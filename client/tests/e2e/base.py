@@ -1,5 +1,6 @@
 from copy import deepcopy
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
+from gefyra.local.bridge import handle_delete_interceptrequest
 from gefyra.local.check import probe_docker, probe_kubernetes
 import requests
 import subprocess
@@ -471,10 +472,9 @@ class GefyraBaseTest:
 
     def test_h_run_gefyra_unbridge_with_name_not_exists(self):
         self.caplog.set_level("DEBUG")
-        res = unbridge(
+        res = handle_delete_interceptrequest(
             name="mypyserver-to-default.deploy.hello-nginxdemo-not",
             config=default_configuration,
-            wait=True,
         )
         self.assertFalse(res)
         self.assertIn("not found", self.caplog.text)
@@ -582,6 +582,6 @@ class GefyraBaseTest:
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
             get_pods_and_containers_for_pod_name(
-                config=default_configuration, pod_name="foo", namespace="default"
+                config=default_configuration, name="foo", namespace="default"
             )
         self.assertIn("Pod foo not found.", str(rte.exception))
