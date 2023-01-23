@@ -470,13 +470,14 @@ class GefyraBaseTest:
         self._stop_container(self.default_run_params["name"])
 
     def test_h_run_gefyra_unbridge_with_name_not_exists(self):
-        with self.assertRaises(RuntimeError) as rte:
-            unbridge(
-                name="mypyserver-to-default.deploy.hello-nginxdemo-not",
-                config=default_configuration,
-                wait=True,
-            )
-        self.assertIn("not found", str(rte.exception))
+        self.caplog.set_level("DEBUG")
+        res = unbridge(
+            name="mypyserver-to-default.deploy.hello-nginxdemo-not",
+            config=default_configuration,
+            wait=True,
+        )
+        self.assertFalse(res)
+        self.assertIn("not found", self.caplog.text)
 
     def test_k_run_gefyra_bridge_with_deployment_short_name_deploy_without_container_name(
         self,
@@ -535,6 +536,10 @@ class GefyraBaseTest:
     @pytest.fixture(autouse=True)
     def capsys(self, capsys):
         self.capsys = capsys
+
+    @pytest.fixture(autouse=True)
+    def caplog(self, caplog):
+        self.caplog = caplog
 
     @pytest.fixture(autouse=True)
     def monkeypatch(self, monkeypatch):
