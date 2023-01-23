@@ -469,6 +469,15 @@ class GefyraBaseTest:
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
 
+    def test_h_run_gefyra_unbridge_with_name_not_exists(self):
+        with self.assertRaises(RuntimeError) as rte:
+            unbridge(
+                name="mypyserver-to-default.deploy.hello-nginxdemo-not",
+                config=default_configuration,
+                wait=True,
+            )
+        self.assertIn("not found", str(rte.exception))
+
     def test_k_run_gefyra_bridge_with_deployment_short_name_deploy_without_container_name(
         self,
     ):
@@ -502,6 +511,18 @@ class GefyraBaseTest:
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         res_bridge = bridge(**bridge_params)
         self.assertTrue(res_bridge)
+
+    def test_l_run_gefyra_bridge_with_pod_again_fails(self):
+        bridge_params = self.default_bridge_params
+        pod_container_dict = get_pods_and_containers_for_workload(
+            default_configuration, "hello-nginxdemo", "default", "deployment"
+        )
+        pod_name = list(pod_container_dict.keys())[0]
+        bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
+        with self.assertRaises(RuntimeError) as rte:
+            bridge(**bridge_params)
+
+        self.assertIn("already bridged", str(rte.exception))
 
     def test_m_run_gefyra_list_bridges(self):
         res = list_interceptrequests(default_configuration)
