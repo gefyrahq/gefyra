@@ -245,14 +245,19 @@ class GefyraBaseTest:
     def test_docker_probe_output_on_fail(self):
         config = ClientConfiguration()
 
-        def raise_exception(*args, **kwargs):
-            raise docker.errors.APIError("API error", response=None, explanation=None)
+        class MockDockerClient:
+            @property
+            def containers():
+                raise docker.errors.APIError(
+                    "API error", response=None, explanation=None
+                )
 
         self.monkeypatch.setattr(
-            config.DOCKER.containers,
-            "list",
-            raise_exception,
+            config,
+            "DOCKER",
+            MockDockerClient,
         )
+
         res = probe_docker(config=config)
         self.assertFalse(res)
 
@@ -263,7 +268,7 @@ class GefyraBaseTest:
     def test_kubernetes_probe_output_on_fail(self):
         config = ClientConfiguration()
 
-        def raise_exception(*args, **kwargs):
+        def raise_exception():
             raise ApiException(status=500, reason="Test Reason")
 
         self.monkeypatch.setattr(
