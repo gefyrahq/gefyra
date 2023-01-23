@@ -507,6 +507,10 @@ class GefyraBaseTest:
     def capsys(self, capsys):
         self.capsys = capsys
 
+    @pytest.fixture(autouse=True)
+    def monkeypatch(self, monkeypatch):
+        self.monkeypatch = monkeypatch
+
     def test_m_run_gefyra_list_output_bridges(self):
         get_bridges_and_print(default_configuration)
         captured = self.capsys.readouterr()
