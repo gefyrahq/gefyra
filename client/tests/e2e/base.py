@@ -247,7 +247,7 @@ class GefyraBaseTest:
 
         class MockDockerClient:
             @property
-            def containers():
+            def containers(self):
                 raise docker.errors.APIError(
                     "API error", response=None, explanation=None
                 )
@@ -255,7 +255,7 @@ class GefyraBaseTest:
         self.monkeypatch.setattr(
             config,
             "DOCKER",
-            MockDockerClient,
+            MockDockerClient(),
         )
 
         res = probe_docker(config=config)
