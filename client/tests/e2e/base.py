@@ -1,4 +1,5 @@
 from copy import deepcopy
+from gefyra.local.check import probe_docker, probe_kubernetes
 import requests
 import subprocess
 from time import sleep
@@ -207,6 +208,14 @@ class GefyraBaseTest:
         self.assert_gefyra_connected(_status)
         self.assertEqual(_status.client.bridges, 0)
         self.assertEqual(_status.client.containers, 1)
+
+    def test_docker_probe(self):
+        res = probe_docker()
+        self.assertTrue(res)
+
+    def test_kubernetes_probe(self):
+        res = probe_kubernetes()
+        self.assertTrue(res)
 
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)
