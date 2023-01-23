@@ -1,3 +1,4 @@
+import os
 import pytest
 from gefyra.__main__ import parser, get_client_configuration
 from gefyra.configuration import ClientConfiguration, __VERSION__
@@ -12,6 +13,28 @@ CARRIER_LATEST = "my-reg.io/gefyra/carrier:latest"
 KUBE_CONFIG = "~/.kube/config"
 
 GEFYRA_UP_MODULE = "gefyra.api.up"
+
+GEFYRA_TEST_ENDPOINT = "123.123.123.123:1234"
+
+
+@pytest.fixture
+def kubeconfig_incl_gefyra(tmp_path):
+    target_output = os.path.join(tmp_path, "config")
+    with open(target_output, "w") as f:
+        f.write(
+            f"""
+---
+apiVersion: v1
+current-context: test_context
+contexts:
+- context:
+    cluster: cluster.local
+    user: system:kubernetes-admin
+  name: test_context
+  gefyra: {GEFYRA_TEST_ENDPOINT}
+        """
+        )
+    return target_output
 
 
 def test_parse_registry_a():
@@ -185,6 +208,15 @@ def test_parse_up_fct_without_args(monkeypatch):
     args = parser.parse_args(["up"])
     config = get_client_configuration(args)
     assert "31820" in config.CARGO_ENDPOINT
+
+
+def test_parse_up_fct_with_gefyra_connection_in_kubeconfig(
+    monkeypatch, kubeconfig_incl_gefyra
+):
+    monkeypatch.setattr(GEFYRA_UP_MODULE, lambda config: True)
+    args = parser.parse_args(["up", "--kubeconfig", kubeconfig_incl_gefyra])
+    config = get_client_configuration(args)
+    assert GEFYRA_TEST_ENDPOINT == config.CARGO_ENDPOINT
 
 
 def test_parse_up_endpoint_and_minikube(monkeypatch):
