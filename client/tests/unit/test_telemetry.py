@@ -74,10 +74,11 @@ def test_telemetry_off(monkeypatch):
 
 
 def test_telemetry_invalid(caplog):
+    INVALID_FLAG_STR = "Invalid flags"
     caplog.set_level(logging.INFO)
     _gefyra.telemetry_command(True, True)
-    assert "Invalid flags" in caplog.text
+    assert INVALID_FLAG_STR in caplog.text
     caplog.clear()
-    assert "Invalid flags" not in caplog.text
+    assert INVALID_FLAG_STR not in caplog.text
     _gefyra.telemetry_command(False, False)
-    assert "Invalid flags" in caplog.text
+    assert INVALID_FLAG_STR in caplog.text
