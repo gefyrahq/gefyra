@@ -9,12 +9,12 @@ import gefyra.__main__ as _gefyra
 
 class MockCliTelemetry:
     @staticmethod
-    def on(cls):
+    def on():
         return True
 
     @staticmethod
-    def off(cls):
-        pass
+    def off():
+        return True
 
 
 class TelemetryTest(unittest.TestCase):
@@ -64,12 +64,12 @@ class TelemetryTest(unittest.TestCase):
 
 
 def test_telemetry_on(monkeypatch):
-    monkeypatch.setattr(_gefyra, "CliTelemetry", MockCliTelemetry)
+    monkeypatch.setattr(_gefyra, "telemetry", MockCliTelemetry())
     _gefyra.telemetry_command(True, False)
 
 
 def test_telemetry_off(monkeypatch):
-    monkeypatch.setattr(_gefyra, "CliTelemetry", MockCliTelemetry)
+    monkeypatch.setattr(_gefyra, "telemetry", MockCliTelemetry())
     _gefyra.telemetry_command(False, True)
 
 
