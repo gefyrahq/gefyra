@@ -17,7 +17,7 @@ from kubernetes.client import (
 )
 from kubernetes.config import load_kube_config, ConfigException
 
-from gefyra.__main__ import version
+from gefyra.__main__ import version, print_status
 from gefyra.api import (
     bridge,
     down,
@@ -462,6 +462,14 @@ class GefyraBaseTest:
         get_containers_and_print(default_configuration)
         captured = self.capsys.readouterr()
         self.assertIn(self.default_run_params["name"], captured.out)
+
+    def test_m_run_gefyra_status_print(self):
+        _status = status(default_configuration)
+        print_status(_status)
+        captured = self.capsys.readouterr()
+        self.assertIn(StatusSummary.UP, captured.out)
+        self.assertIn('"containers": 1', captured.out)
+        self.assertIn('"bridges": 1', captured.out)
 
     def test_n_run_gefyra_down(self):
         res = down(default_configuration)
