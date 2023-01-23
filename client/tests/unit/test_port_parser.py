@@ -3,7 +3,8 @@ import pytest
 from gefyra.__main__ import run_parser, bridge_parser
 
 
-def test_ip_port_mapper():
+def test_ip_port_mapper(caplog):
+    caplog.set_level("DEBUG")
     args = run_parser.parse_args(
         [
             "--expose=localhost:8080:8080",
@@ -20,8 +21,26 @@ def test_ip_port_mapper():
     assert args.expose["8080"] == ("localhost", "8080")
     assert args.expose["7070"] == "7071"
 
+    with pytest.raises(SystemExit):
+        run_parser.parse_args(
+            [
+                "--expose=localhost:abc:8080",
+            ]
+        )
+    assert "Invalid port" in caplog.text
+    caplog.clear()
 
-def test_port_mapper():
+    with pytest.raises(SystemExit):
+        run_parser.parse_args(
+            [
+                "--expose=localhost:8080:8080:too-many",
+            ]
+        )
+    assert "Invalid port" in caplog.text
+
+
+def test_port_mapper(caplog):
+    caplog.set_level("DEBUG")
     args = bridge_parser.parse_args(
         ["--port=8081:8080", "--port=9091:9090", "-N=random"]
     )
@@ -32,3 +51,4 @@ def test_port_mapper():
 
     with pytest.raises(SystemExit):
         bridge_parser.parse_args(["--port=8081", "--port=9091:9090", "-N=random"])
+    assert "Invalid port" in caplog.text
