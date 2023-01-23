@@ -15,6 +15,7 @@ from kubernetes.client import (
     AppsV1Api,
     CustomObjectsApi,
 )
+from kubernetes.client import ApiException
 from kubernetes.config import load_kube_config, ConfigException
 
 from gefyra.__main__ import version, print_status
@@ -172,6 +173,31 @@ class GefyraBaseTest:
                 return True
             sleep(interval)
         raise AssertionError(f"Stowaway not ready within {timeout} seconds.")
+
+    def assert_namespace_ready(self, namespace, timeout=30, interval=1):
+        counter = 0
+        while counter < timeout:
+            counter += 1
+            namespace = self.K8S_CORE_API.read_namespace(name=namespace)
+            if namespace.status.phase == "Active":
+                return True
+            sleep(interval)
+        raise AssertionError(f"Namespace not ready within {timeout} seconds.")
+
+    def assert_gefyra_namespace_ready(self, timeout=30, interval=1):
+        self.assert_namespace_ready("gefyra", timeout, interval)
+
+    def assert_namespace_not_found(self, namespace, timeout=30, interval=1):
+        counter = 0
+        while counter < timeout:
+            counter += 1
+            try:
+                namespace = self.K8S_CORE_API.read_namespace(name=namespace)
+            except ApiException as e:
+                if e.status == 404:
+                    return True
+            sleep(interval)
+        raise AssertionError(f"Namespace still available within {timeout} seconds.")
 
     def assert_cargo_running(self, timeout=20, interval=1):
         self.assert_container_running("gefyra-cargo", timeout, interval)
@@ -482,6 +508,7 @@ class GefyraBaseTest:
         self.assertEqual(_status.cluster.stowaway, False)
         self.assertEqual(_status.client.bridges, 0)
         self.assertEqual(_status.client.containers, 0)
+        self.assert_namespace_not_found("gefyra")
 
     def test_n_run_gefyra_down_again_without_errors(self):
         self.test_n_run_gefyra_down()
