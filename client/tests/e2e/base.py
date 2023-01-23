@@ -1,8 +1,11 @@
 from copy import deepcopy
+from gefyra.api.list import get_bridges_and_print
 from gefyra.local.check import probe_docker, probe_kubernetes
 import requests
 import subprocess
 from time import sleep
+
+import pytest
 
 import docker
 from docker.context import ContextAPI
@@ -445,6 +448,20 @@ class GefyraBaseTest:
     def test_m_run_gefyra_list_containers(self):
         res = list_containers(default_configuration)
         self.assertEqual(len(res), 1)
+
+    @pytest.fixture(autouse=True)
+    def capsys(self, capsys):
+        self.capsys = capsys
+
+    def test_m_run_gefyra_list_output_bridges(self, capsys):
+        get_bridges_and_print(default_configuration)
+        captured = self.capsys.readouterr()
+        self.assertEqual(captured.out, "mypyserver-to-default.deploy.hello-nginxdemo\n")
+
+    def test_m_run_gefyra_list_output_containers(self, capsys):
+        get_bridges_and_print(default_configuration)
+        captured = self.capsys.readouterr()
+        self.assertEqual(captured.out, self.default_run_params["name"] + "\n")
 
     def test_n_run_gefyra_down(self):
         res = down(default_configuration)
