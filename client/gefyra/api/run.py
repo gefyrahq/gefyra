@@ -10,6 +10,26 @@ from .utils import stopwatch, get_workload_type
 logger = logging.getLogger(__name__)
 
 
+def pod_ready_and_healthy(
+    config: ClientConfiguration, pod_name: str, namespace: str, container_name: str
+):
+    pod = config.K8S_CORE_API.read_namespaced_pod_status(pod_name, namespace=namespace)
+
+    container_idx = next(
+        i
+        for i, container_status in enumerate(pod.status.container_statuses)
+        if container_status.name == container_name
+    )
+
+    return (
+        pod.status.phase == "Running"
+        and pod.status.container_statuses[container_idx].ready
+        and pod.status.container_statuses[container_idx].started
+        and pod.status.container_statuses[container_idx].state.running
+        and pod.status.container_statuses[container_idx].state.running.started_at
+    )
+
+
 def retrieve_pod_and_container(
     env_from: str, namespace: str, config: ClientConfiguration
 ) -> (str, str):
@@ -34,14 +54,20 @@ def retrieve_pod_and_container(
         pods = get_pods_and_containers_for_pod_name(
             config=config, name=workload_name, namespace=namespace
         )
-    pod_name, containers = pods.popitem()
 
-    if container_name and container_name not in containers:
-        raise RuntimeError(
-            f"{container_name} was not found for {workload_type}/{workload_name}"
-        )
+    while len(pods):
+        pod_name, containers = pods.popitem()
+        if container_name and container_name not in containers:
+            raise RuntimeError(
+                f"{container_name} was not found for {workload_type}/{workload_name}"
+            )
+        actual_container_name = container_name or containers[0]
+        if pod_ready_and_healthy(config, pod_name, namespace, actual_container_name):
+            return pod_name, actual_container_name
 
-    return pod_name, container_name or containers[0]
+    raise RuntimeError(
+        f"Could not find a ready pod for {workload_type}/{workload_name}"
+    )
 
 
 def print_logs(container):
@@ -109,7 +135,7 @@ def run(
             env_from_pod, env_from_container = retrieve_pod_and_container(
                 env_from, namespace=namespace, config=config
             )
-
+            logger.debug(f"Using ENV from {env_from_pod}/{env_from_container}")
             raw_env = get_env_from_pod_container(
                 config, env_from_pod, namespace, env_from_container
             )
