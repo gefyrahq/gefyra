@@ -135,7 +135,7 @@ def run(
             env_from_pod, env_from_container = retrieve_pod_and_container(
                 env_from, namespace=namespace, config=config
             )
-
+            logger.debug(f"Using ENV from {env_from_pod}/{env_from_container}")
             raw_env = get_env_from_pod_container(
                 config, env_from_pod, namespace, env_from_container
             )
