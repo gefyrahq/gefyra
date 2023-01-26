@@ -25,7 +25,8 @@ def pod_ready_and_healthy(
         pod.status.phase == "Running"
         and pod.status.container_statuses[container_idx].ready
         and pod.status.container_statuses[container_idx].started
-        and pod.status.container_statuses[container_idx].state.running.state.running
+        and pod.status.container_statuses[container_idx].state.running
+        and pod.status.container_statuses[container_idx].state.running.started_at
     )
 
 
