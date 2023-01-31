@@ -222,17 +222,12 @@ def get_pods_and_containers_for_workload(
 
     if not workload:
         raise RuntimeError(f"Could not find {workload_type} - {name}.")
-    v1_label_selector = workload.spec.selector.match_labels
 
-    label_selector = ",".join(
-        [f"{key}={value}" for key, value in v1_label_selector.items()]
-    )
-
-    if not label_selector:
-        raise RuntimeError(f"No label selector set for {workload_type} - {name}.")
+    # use workloads metadata uuid for owner references with field selector to get pods
+    field_selector = f"metadata.ownerReferences.uid={workload.metadata.uid}"
 
     pods = config.K8S_CORE_API.list_namespaced_pod(
-        namespace=namespace, label_selector=label_selector
+        namespace=namespace, field_selector=field_selector
     )
     for pod in pods.items:
         result[pod.metadata.name] = [
