@@ -12,8 +12,10 @@ def probe_docker(config: ClientConfiguration = default_configuration):
         config.DOCKER.images.pull("quay.io/gefyra/cargo:latest")
     except Exception:
         logger.error("Docker does not seem to be not working for Gefyra")
+        return False
     else:
         logger.info("Docker: Ok")
+        return True
 
 
 def probe_kubernetes(config: ClientConfiguration = default_configuration):
@@ -24,5 +26,7 @@ def probe_kubernetes(config: ClientConfiguration = default_configuration):
         logger.error(
             "Kubernetes is not connected to a cluster or does not seem to be working for Gefyra"
         )
+        return False
     else:
         logger.info("Kubernetes: Ok")
+        return True
