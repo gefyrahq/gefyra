@@ -32,7 +32,6 @@ async def check_stowaway_ready(stowaway_deployment: k8s.client.V1Deployment):
             and s.available_replicas == dep.spec.replicas  # noqa
             and s.observed_generation >= dep.metadata.generation  # noqa
         ):
-
             stowaway_pod = core_v1_api.list_namespaced_pod(
                 configuration.NAMESPACE, label_selector="app=stowaway"
             )

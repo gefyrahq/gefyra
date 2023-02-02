@@ -8,7 +8,6 @@ RSYNC_SERVICE_PORT = 10873
 def create_stowaway_nodeport_service(
     stowaway_deployment: k8s.client.V1Deployment,
 ) -> k8s.client.V1Service:
-
     spec = k8s.client.V1ServiceSpec(
         type="NodePort",
         selector=stowaway_deployment.spec.template.metadata.labels,
@@ -38,7 +37,6 @@ def create_stowaway_nodeport_service(
 def create_stowaway_proxy_service(
     stowaway_deployment: k8s.client.V1Deployment, port: int
 ) -> k8s.client.V1Service:
-
     spec = k8s.client.V1ServiceSpec(
         type="ClusterIP",
         selector=stowaway_deployment.spec.template.metadata.labels,
@@ -65,7 +63,6 @@ def create_stowaway_proxy_service(
 def create_stowaway_rsync_service(
     stowaway_deployment: k8s.client.V1Deployment,
 ) -> k8s.client.V1Service:
-
     spec = k8s.client.V1ServiceSpec(
         type="ClusterIP",
         selector=stowaway_deployment.spec.template.metadata.labels,
