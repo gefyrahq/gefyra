@@ -174,8 +174,7 @@ def run(
             logger.warning(e.explanation)
             return True
         else:
-            logger.error(e)
-            return False
+            raise RuntimeError(e.explanation)
 
     logger.info(
         f"Container image '{', '.join(container.image.tags)}' started with name '{container.name}' in "

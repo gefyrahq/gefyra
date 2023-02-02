@@ -198,7 +198,7 @@ def deploy_app_container(
         logger.debug(f"Gateway patch applied to '{container.name}'")
 
     else:
-        logger.error(
+        raise RuntimeError(
             f"Gateway patch could not be applied to '{container.name}': {output}"
         )
     return container
