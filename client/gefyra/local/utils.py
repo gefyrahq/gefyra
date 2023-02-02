@@ -119,7 +119,6 @@ def handle_docker_create_container(
 def handle_docker_run_container(
     config: ClientConfiguration, image: str, **kwargs
 ) -> Container:
-
     # if detach=True is in kwargs, this will return a container; otherwise the container logs (see
     # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run)
     # TODO: handle exception(s):

@@ -112,7 +112,6 @@ def create_operator_deployment(
     config: ClientConfiguration,
     gefyra_network_subnet: str,
 ) -> V1Deployment:
-
     template = V1PodTemplateSpec(
         metadata=V1ObjectMeta(labels={"app": "gefyra-operator"}),
         spec=V1PodSpec(

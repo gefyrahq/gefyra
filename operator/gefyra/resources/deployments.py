@@ -15,7 +15,6 @@ def create_stowaway_serviceaccount() -> k8s.client.V1ServiceAccount:
 
 
 def create_stowaway_deployment() -> k8s.client.V1Deployment:
-
     container = k8s.client.V1Container(
         name="stowaway",
         image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",

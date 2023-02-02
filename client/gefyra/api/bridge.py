@@ -209,7 +209,10 @@ def bridge(
     logger.info("Following bridges have been established:")
     for ki in kube_ireqs:
         for port in ports:
-            pod_name, ns, = (
+            (
+                pod_name,
+                ns,
+            ) = (
                 ki["targetPod"],
                 ki["targetNamespace"],
             )

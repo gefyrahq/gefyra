@@ -131,7 +131,6 @@ def run(
     env_dict = {}
     try:
         if env_from:
-
             env_from_pod, env_from_container = retrieve_pod_and_container(
                 env_from, namespace=namespace, config=config
             )

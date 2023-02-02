@@ -52,7 +52,6 @@ class StatusSummary(str, Enum):
 
 @dataclass
 class GefyraStatus:
-
     summary: StatusSummary
     cluster: GefyraClusterStatus
     client: GefyraClientStatus
