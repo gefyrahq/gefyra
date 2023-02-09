@@ -11,14 +11,25 @@ def set_client_version(part: str):
         capture_output=True,
         text=True,
     ).stdout.rstrip()
-    subprocess.run(
-        [
-            "sed",
-            "-i",
-            f's/__VERSION__ = "[^"]*"/__VERSION__ = "{version}"/g',
-            "gefyra/configuration.py",
-        ]
-    )
+    if sys.platform == "darwin":
+        subprocess.run(
+            [
+                "sed",
+                "-i",
+                "",
+                f's/__VERSION__ = "[^"]*"/__VERSION__ = "{version}"/g',
+                "gefyra/configuration.py",
+            ]
+        )
+    else:
+        subprocess.run(
+            [
+                "sed",
+                "-i",
+                f's/__VERSION__ = "[^"]*"/__VERSION__ = "{version}"/g',
+                "gefyra/configuration.py",
+            ]
+        )
 
 
 def set_operator_version(part: str):
