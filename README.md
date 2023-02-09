@@ -13,7 +13,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/gefyrahq/gefyra">
-    <img src="https://github.com/Schille/gefyra/raw/main/docs/static/img/logo.png" alt="Gefyra Logo"/>
+    <img src="https://github.com/gefyrahq/gefyra/raw/main/docs/static/img/logo.png" alt="Gefyra Logo"/>
   </a>
 
   <h3 align="center">Gefyra</h3>
