@@ -412,6 +412,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         run_params = self.default_run_params
+        self.caplog.set_level("DEBUG")
         run(**run_params)
         with self.assertRaises(RuntimeError) as rte:
             bridge_params = self.default_bridge_params
