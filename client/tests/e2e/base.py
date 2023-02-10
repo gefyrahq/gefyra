@@ -35,6 +35,7 @@ from gefyra.api.status import StatusSummary
 from gefyra.cluster.resources import (
     get_pods_and_containers_for_pod_name,
     get_pods_and_containers_for_workload,
+    owner_reference_consistent,
 )
 from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
@@ -282,6 +283,23 @@ class GefyraBaseTest:
         )
         res = probe_kubernetes(config=config)
         self.assertFalse(res)
+
+    def _get_pod_startswith(self, pod_name, namespace):
+        pods = self.K8S_CORE_API.list_namespaced_pod(namespace=namespace)
+        for pod in pods.items:
+            if pod_name in pod.metadata.name:
+                return pod
+        return None
+
+    def test_owner_reference_check(self):
+        config = ClientConfiguration()
+        wrong_pod = self._get_pod_startswith("gefyra-stowaway", "gefyra")
+        deployment = self.K8S_APP_API.read_namespaced_deployment(
+            name="hello-nginxdemo", namespace="default"
+        )
+        right_pod = self._get_pod_startswith("hello-nginxdemo", "default")
+        self.assertFalse(owner_reference_consistent(wrong_pod, deployment, config))
+        self.assertTrue(owner_reference_consistent(right_pod, deployment, config))
 
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)
