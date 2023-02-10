@@ -25,9 +25,9 @@ def get_env_from_pod_container(
     from kubernetes.client import ApiException
     from kubernetes.stream import stream
 
-    retries = 3
+    retries = 10
     counter = 0
-    interval = 3
+    interval = 1
     while counter < retries:
         try:
             resp = stream(
