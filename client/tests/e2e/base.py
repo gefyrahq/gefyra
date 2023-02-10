@@ -291,16 +291,6 @@ class GefyraBaseTest:
                 return pod
         return None
 
-    def test_owner_reference_check(self):
-        config = ClientConfiguration()
-        wrong_pod = self._get_pod_startswith("gefyra-stowaway", "gefyra")
-        deployment = self.K8S_APP_API.read_namespaced_deployment(
-            name="hello-nginxdemo", namespace="default"
-        )
-        right_pod = self._get_pod_startswith("hello-nginxdemo", "default")
-        self.assertFalse(owner_reference_consistent(wrong_pod, deployment, config))
-        self.assertTrue(owner_reference_consistent(right_pod, deployment, config))
-
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)
         self.assertTrue(res)
@@ -581,6 +571,19 @@ class GefyraBaseTest:
         self.assertIn(StatusSummary.UP, captured.out)
         self.assertIn('"containers": 1', captured.out)
         self.assertIn('"bridges": 1', captured.out)
+
+    def test_m_ownership_reference_check(self):
+        wrong_pod = self._get_pod_startswith("gefyra-stowaway", "gefyra")
+        deployment = self.K8S_APP_API.read_namespaced_deployment(
+            name="hello-nginxdemo", namespace="default"
+        )
+        right_pod = self._get_pod_startswith("hello-nginxdemo", "default")
+        self.assertFalse(
+            owner_reference_consistent(wrong_pod, deployment, default_configuration)
+        )
+        self.assertTrue(
+            owner_reference_consistent(right_pod, deployment, default_configuration)
+        )
 
     def test_n_run_gefyra_down(self):
         res = down(default_configuration)
