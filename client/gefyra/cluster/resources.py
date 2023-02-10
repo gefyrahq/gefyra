@@ -239,9 +239,6 @@ def get_pods_and_containers_for_workload(
             raise RuntimeError(NOT_FOUND_MSG)
         raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
-    if not workload:
-        raise RuntimeError(f"Could not find {workload_type} - {name}.")
-
     # use workloads metadata uuid for owner references with field selector to get pods
     v1_label_selector = workload.spec.selector.match_labels
 
