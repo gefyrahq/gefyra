@@ -145,7 +145,7 @@ def run(
                 if len(k) > 1
             }
     except ApiException as e:
-        logger.error(f"Cannot copy environment from Pod: {e.reason}")
+        logger.error(f"Cannot copy environment from Pod: {e.reason} ({e.status}).")
         return False
     if env:
         env_overrides = {
