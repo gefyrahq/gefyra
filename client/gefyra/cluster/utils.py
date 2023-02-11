@@ -43,7 +43,8 @@ def get_env_from_pod_container(
             )
             return resp
         except ApiException as e:
-            if e.status == 500:
+            # e.status is 0 for some reason
+            if "500 Internal Server Error" in e.reason:
                 sleep(interval)
                 counter += 1
                 logger.debug(
