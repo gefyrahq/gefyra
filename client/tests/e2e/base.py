@@ -35,6 +35,7 @@ from gefyra.api.status import StatusSummary
 from gefyra.cluster.resources import (
     get_pods_and_containers_for_pod_name,
     get_pods_and_containers_for_workload,
+    owner_reference_consistent,
 )
 from gefyra.configuration import default_configuration, ClientConfiguration
 import gefyra.configuration as config_package
@@ -283,6 +284,13 @@ class GefyraBaseTest:
         res = probe_kubernetes(config=config)
         self.assertFalse(res)
 
+    def _get_pod_startswith(self, pod_name, namespace):
+        pods = self.K8S_CORE_API.list_namespaced_pod(namespace=namespace)
+        for pod in pods.items:
+            if pod_name in pod.metadata.name:
+                return pod
+        return None
+
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)
         self.assertTrue(res)
@@ -412,6 +420,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         run_params = self.default_run_params
+        self.caplog.set_level("DEBUG")
         run(**run_params)
         with self.assertRaises(RuntimeError) as rte:
             bridge_params = self.default_bridge_params
@@ -562,6 +571,19 @@ class GefyraBaseTest:
         self.assertIn(StatusSummary.UP, captured.out)
         self.assertIn('"containers": 1', captured.out)
         self.assertIn('"bridges": 1', captured.out)
+
+    def test_m_ownership_reference_check(self):
+        wrong_pod = self._get_pod_startswith("gefyra-stowaway", "gefyra")
+        deployment = self.K8S_APP_API.read_namespaced_deployment(
+            name="hello-nginxdemo", namespace="default"
+        )
+        right_pod = self._get_pod_startswith("hello-nginxdemo", "default")
+        self.assertFalse(
+            owner_reference_consistent(wrong_pod, deployment, default_configuration)
+        )
+        self.assertTrue(
+            owner_reference_consistent(right_pod, deployment, default_configuration)
+        )
 
     def test_n_run_gefyra_down(self):
         res = down(default_configuration)

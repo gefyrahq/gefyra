@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict
+from typing import List, Dict, Union
 
 from kubernetes.client import (
     V1ServiceAccount,
@@ -16,6 +16,7 @@ from kubernetes.client import (
     V1EnvVar,
     V1DeploymentSpec,
     ApiException,
+    V1StatefulSet,
     V1Pod,
 )
 
@@ -198,6 +199,24 @@ def check_pod_valid_for_bridge(
     _check_pod_for_command(pod, container_name)
 
 
+def owner_reference_consistent(
+    pod: V1Pod,
+    workload: Union[V1Deployment, V1StatefulSet],
+    config: ClientConfiguration,
+) -> bool:
+    if workload.kind == "StatefulSet":
+        return pod.metadata.owner_references[0].uid == workload.metadata.uid
+    elif workload.kind == "Deployment":
+        replicaset_set = config.K8S_APP_API.read_namespaced_replica_set(
+            name=pod.metadata.owner_references[0].name,
+            namespace=pod.metadata.namespace,
+        )
+        return replicaset_set.metadata.owner_references[0].uid == workload.metadata.uid
+    raise RuntimeError(
+        f"Unknown workload type for owner reference check: {workload.kind}/{workload.metadata.name}."
+    )
+
+
 def get_pods_and_containers_for_workload(
     config: ClientConfiguration, name: str, namespace: str, workload_type: str
 ) -> Dict[str, List[str]]:
@@ -220,8 +239,7 @@ def get_pods_and_containers_for_workload(
             raise RuntimeError(NOT_FOUND_MSG)
         raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
-    if not workload:
-        raise RuntimeError(f"Could not find {workload_type} - {name}.")
+    # use workloads metadata uuid for owner references with field selector to get pods
     v1_label_selector = workload.spec.selector.match_labels
 
     label_selector = ",".join(
@@ -235,9 +253,10 @@ def get_pods_and_containers_for_workload(
         namespace=namespace, label_selector=label_selector
     )
     for pod in pods.items:
-        result[pod.metadata.name] = [
-            container.name for container in pod.spec.containers
-        ]
+        if owner_reference_consistent(pod, workload, config):
+            result[pod.metadata.name] = [
+                container.name for container in pod.spec.containers
+            ]
 
     return result
 
