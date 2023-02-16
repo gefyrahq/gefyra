@@ -234,7 +234,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k3d: [v1.22.15-k3s1, v1.23.13-k3s1, v1.24.7-k3s1, v1.25.3-k3s1]
+        k3d: [v1.23.16-k3s1, v1.24.10-k3s1, v1.25.6-k3s1, v1.26.1-k3s1]
     needs:
       - build_operator
       - build_test_image
