@@ -22,7 +22,18 @@ jobs:
         to: ${{secrets.RELEASE_MAIL_RECIPIENTS}}
         cc: ${{secrets.RELEASE_MAIL_CC}}
         from: Gefyra Github
-        body: "Gefyra Version ${{ github.ref }} is out. Here's the changelog: https://github.com/gefyrahq/gefyra/releases"
+        body: "Gefyra Version ${{ github.ref }} is out. 🚀 Here's the changelog: https://github.com/gefyrahq/gefyra/releases/tag/${{ github.ref }}"
         reply_to: ${{secrets.REPLY_TO}}
         ignore_cert: true
         convert_markdown: true
+
+  post_discord_announcement:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: Ilshidur/action-discord@0.3.2
+      name: Send Discord Release Announcement
+      # add random emoji to the message
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      with:
+        args: "Gefyra Version ${{ github.ref }} is out! 🚀 Here's the changelog: https://github.com/gefyrahq/gefyra/releases/tag/${{ github.ref }}"
