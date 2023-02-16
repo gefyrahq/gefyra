@@ -2,7 +2,7 @@
 name = "Gefyra Operator"
 version = "1.0.2"
 description = "Gefyra Operator runs all cluster-side components of Gefyra's Kubernetes-based development system"
-authors = ["Michael Schilonka <michael@blueshoe.de>"]
+authors = ["Michael Schilonka <michael@blueshoe.io>"]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -10,11 +10,12 @@ kopf = "^1.36.0"
 kubernetes = "^25.3.0"
 python-decouple = "^3.7"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "^7.2"
 black = "^23.1.0"
 flake8 = "^6.0.0"
 flake8-black = "^0.3.6"
+pytest-kubernetes = "^0.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
