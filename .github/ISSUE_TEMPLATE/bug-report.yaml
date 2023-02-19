@@ -19,7 +19,7 @@ body:
       required: true
 
   - type: textarea
-    id: expected
+    id: check
     attributes:
       label: Please provide the output of `gefyra check`.
     validations:
