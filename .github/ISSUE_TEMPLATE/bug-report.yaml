@@ -19,6 +19,14 @@ body:
       required: true
 
   - type: textarea
+    id: expected
+    attributes:
+      label: Please provide the output of `gefyra check`.
+    validations:
+      required: true
+
+
+  - type: textarea
     id: repro
     attributes:
       label: How can we reproduce it (as minimally and precisely as possible)?
