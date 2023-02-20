@@ -7,6 +7,7 @@
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
 [![Coverage Information][coveralls-shield]][coveralls-url]
+![Discord](https://img.shields.io/discord/1075721959108784198?style=for-the-badge)
 
 
 <!-- PROJECT LOGO -->
