@@ -100,7 +100,12 @@ class ClientConfiguration(object):
         if cargo_endpoint_host:
             self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{cargo_endpoint_port}"
         else:
-            if sys.platform in ["darwin", "win32"]:
+            try:
+                docker_os = self.DOCKER.info()["OperatingSystem"]
+            except Exception:
+                docker_os = ""
+
+            if "Docker Desktop" in docker_os:
                 # docker for mac/win publishes ports on a special internal ip
                 try:
                     _ip_output = self.DOCKER.containers.run(
