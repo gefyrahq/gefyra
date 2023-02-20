@@ -100,12 +100,9 @@ class ClientConfiguration(object):
         if cargo_endpoint_host:
             self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{cargo_endpoint_port}"
         else:
-            try:
-                docker_os = self.DOCKER.info()["OperatingSystem"]
-            except Exception:
-                docker_os = ""
-
-            if "Docker Desktop" in docker_os:
+            docker_os = self._get_docker_info_by_name("OperatingSystem")
+            docker_server_name = self._get_docker_info_by_name("Name")
+            if "docker desktop" in docker_os or "colima" in docker_server_name:
                 # docker for mac/win publishes ports on a special internal ip
                 try:
                     _ip_output = self.DOCKER.containers.run(
@@ -141,6 +138,13 @@ class ClientConfiguration(object):
             self.KUBE_CONTEXT = kube_context
 
         self.WIREGUARD_MTU = wireguard_mtu or "1340"
+
+    def _get_docker_info_by_name(self, name):
+        """Returns lower case docker information value for a given name."""
+        try:
+            return self.DOCKER.info()[name].lower()
+        except Exception:
+            return ""
 
     @property
     def KUBE_CONTEXT(self):
