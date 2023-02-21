@@ -102,8 +102,8 @@ class ClientConfiguration(object):
         else:
             docker_os = self._get_docker_info_by_name("OperatingSystem")
             docker_server_name = self._get_docker_info_by_name("Name")
+            # virtualized envs don't expose network interface to host
             if "docker desktop" in docker_os or "colima" in docker_server_name:
-                # docker for mac/win publishes ports on a special internal ip
                 try:
                     _ip_output = self.DOCKER.containers.run(
                         "alpine", "getent hosts host.docker.internal", remove=True
