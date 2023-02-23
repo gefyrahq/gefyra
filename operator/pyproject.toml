@@ -16,7 +16,22 @@ black = "^23.1.0"
 flake8 = "^6.0.0"
 flake8-black = "^0.3.6"
 pytest-kubernetes = "^0.2.0"
+coverage = "^7.1.0"
+pytest-asyncio = "^0.20.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest]
+log_cli = true
+log_cli_level = "INFO"
+norecursedirs = "*.egg .eggs dist build docs .tox .git __pycache__"
+addopts = """
+	--strict-markers
+	--doctest-modules
+	--tb=short
+	--ignore-glob=main.py
+    --ignore-glob=./gefyra/**
+"""
+testpaths = "tests"
