@@ -41,7 +41,7 @@ jobs:
         run: |
           ls -la
           chmod u+x ./gefyra
-          ./gefyra version
+          ./gefyra --debug version
 
   windows_build:
     uses: ./.github/workflows/dist-build-windows.yaml
@@ -75,7 +75,7 @@ jobs:
           name: gefyra-${{ env.APP_VERSION }}-windows-x86_64
       - name: Sanity run Gefyra
         run: |
-          ./gefyra version
+          ./gefyra --debug version
 
   linux_build:
     uses: ./.github/workflows/dist-build-linux.yaml
@@ -105,4 +105,4 @@ jobs:
       - name: Sanity run Gefyra
         run: |
           chmod u+x ./gefyra
-          ./gefyra version
+          ./gefyra --debug version
