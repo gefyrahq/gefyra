@@ -33,15 +33,14 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: gefyra-${{ env.APP_VERSION }}-darwin-universal
-      - name: Setup Docker
-        run: |
-          brew install docker
-          docker --version
+      - name: Set up Docker
+        uses: crazy-max/ghaction-setup-docker@v1
       - name: Sanity run Gefyra
         run: |
           ls -la
           chmod u+x ./gefyra
-          ./gefyra version
+          docker info
+          ./gefyra --debug version
 
   windows_build:
     uses: ./.github/workflows/dist-build-windows.yaml
@@ -75,7 +74,8 @@ jobs:
           name: gefyra-${{ env.APP_VERSION }}-windows-x86_64
       - name: Sanity run Gefyra
         run: |
-          ./gefyra version
+          docker info
+          ./gefyra --debug version
 
   linux_build:
     uses: ./.github/workflows/dist-build-linux.yaml
@@ -105,4 +105,5 @@ jobs:
       - name: Sanity run Gefyra
         run: |
           chmod u+x ./gefyra
-          ./gefyra version
+          docker info
+          ./gefyra --debug version

@@ -102,8 +102,14 @@ class ClientConfiguration(object):
         else:
             docker_os = self._get_docker_info_by_name("OperatingSystem")
             docker_server_name = self._get_docker_info_by_name("Name")
+            logger.debug(f"Docker OS: {docker_os}")
+            logger.debug(f"Docker Server Name: {docker_server_name}")
             # virtualized envs don't expose network interface to host
-            if "docker desktop" in docker_os or "colima" in docker_server_name:
+            if (
+                "docker desktop" in docker_os
+                or "windows" in docker_os
+                or "colima" in docker_server_name
+            ):
                 try:
                     _ip_output = self.DOCKER.containers.run(
                         "alpine", "getent hosts host.docker.internal", remove=True
