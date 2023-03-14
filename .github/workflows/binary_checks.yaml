@@ -33,10 +33,8 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           name: gefyra-${{ env.APP_VERSION }}-darwin-universal
-      - name: Setup Docker
-        run: |
-          brew install docker
-          docker --version
+      - name: Set up Docker
+        uses: crazy-max/ghaction-setup-docker@v1
       - name: Sanity run Gefyra
         run: |
           ls -la
