@@ -16,8 +16,6 @@ jobs:
     needs: mac_build
     runs-on: macos-11
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
       - name: Set Gefyra tracking config 
         shell: bash
         run: |
@@ -41,6 +39,7 @@ jobs:
         run: |
           ls -la
           chmod u+x ./gefyra
+          docker info
           ./gefyra --debug version
 
   windows_build:
@@ -51,8 +50,6 @@ jobs:
     needs: windows_build
     runs-on: windows-2019
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -75,6 +72,7 @@ jobs:
           name: gefyra-${{ env.APP_VERSION }}-windows-x86_64
       - name: Sanity run Gefyra
         run: |
+          docker info
           ./gefyra --debug version
 
   linux_build:
@@ -85,8 +83,6 @@ jobs:
     needs: linux_build
     runs-on: ubuntu-20.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
       - name: Set Gefyra tracking config 
         shell: bash
         run: |
