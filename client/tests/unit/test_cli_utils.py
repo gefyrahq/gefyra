@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import yaml
 
-from gefyra.local.utils import get_connection_from_kubeconfig
+from gefyra.local.utils import get_connection_from_kubeconfig, get_processed_paths
 from gefyra.api.utils import get_workload_type
 
 
@@ -61,3 +61,15 @@ def test_workload_type_util():
         get_workload_type("fake")
 
     assert "Unknown workload type fake" in str(rte.value)
+
+
+def test_path_cleaning_for_window():
+    # It's a bit weird since the test is executed on a Linux machine.
+    # That's why we have to use the os.getcwd() function.
+    volumes = [
+        "C:\\Users\\user\\Documents\\gefyra\\:/app",
+    ]
+    res = get_processed_paths(os.getcwd(), volumes)
+    assert res == [
+        os.getcwd() + "/C:\\Users\\user\\Documents\\gefyra\\:/app",
+    ]

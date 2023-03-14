@@ -42,7 +42,7 @@ def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str
         return None
     results = []
     for volume in volumes:
-        source, target = volume.split(":")
+        source, target = volume.rsplit(":", 1)
         if not os.path.isabs(source):
             source = os.path.realpath(os.path.join(base_path, source))
         results.append(f"{source}:{target}")
