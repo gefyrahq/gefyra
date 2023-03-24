@@ -16,8 +16,8 @@ class OperatorConfiguration:
         )
         self.STOWAWAY_PGID = config("GEFYRA_STOWAWAY_PGID", default="1000")
         self.STOWAWAY_PUID = config("GEFYRA_STOWAWAY_PUID", default="1000")
-        self.STOWAWAY_STARTUP_TIMEOUT = config(
-            "GEFYRA_STOWAWAY_STARTUP_TIMEOUT", cast=int, default=180
+        self.CONNECTION_PROVIDER_STARTUP_TIMEOUT = config(
+            "CONNECTION_PROVIDER_STARTUP_TIMEOUT", cast=int, default=180
         )
         self.STOWAWAY_PEER_DNS = config("GEFYRA_STOWAWAY_PUID", default="auto")
         self.STOWAWAY_PEER_CONFIG_PATH = config(

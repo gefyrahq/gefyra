@@ -14,48 +14,6 @@ logger = logging.getLogger("gefyra.stowaway")
 STOWAWAY_POD = None
 
 
-async def check_stowaway_ready(stowaway_deployment: k8s.client.V1Deployment):
-    global STOWAWAY_POD
-    app = k8s.client.AppsV1Api()
-    core_v1_api = k8s.client.CoreV1Api()
-
-    i = 0
-    dep = app.read_namespaced_deployment(
-        name=stowaway_deployment.metadata.name, namespace=configuration.NAMESPACE
-    )
-    # a primitive timeout of configuration.STOWAWAY_STARTUP_TIMEOUT in seconds
-    while i <= configuration.STOWAWAY_STARTUP_TIMEOUT:
-        s = dep.status
-        if (
-            s.updated_replicas == dep.spec.replicas
-            and s.replicas == dep.spec.replicas  # noqa
-            and s.available_replicas == dep.spec.replicas  # noqa
-            and s.observed_generation >= dep.metadata.generation  # noqa
-        ):
-            stowaway_pod = core_v1_api.list_namespaced_pod(
-                configuration.NAMESPACE, label_selector="app=stowaway"
-            )
-            if len(stowaway_pod.items) != 1:
-                logger.warning(
-                    f"Stowaway not yet ready, Pods: {len(stowaway_pod.items)} which is != 1"
-                )
-                await sleep(1)
-                continue
-            STOWAWAY_POD = stowaway_pod.items[0].metadata.name
-            logger.info(f"Stowaway ready: {STOWAWAY_POD}")
-            return True
-        else:
-            logger.info("Waiting for Stowaway to become ready")
-            await sleep(1)
-        i += 1
-        dep = app.read_namespaced_deployment(
-            name=stowaway_deployment.metadata.name, namespace=configuration.NAMESPACE
-        )
-    # reached this in an error case a) timeout (build took too long) or b) build could not be successfully executed
-    logger.error("Stowaway error: Stowaway did not become ready")
-    return False
-
-
 async def get_wireguard_connection_details(aw_stowaway_ready: Awaitable):
     stowaway_ready = await aw_stowaway_ready
     if not stowaway_ready:

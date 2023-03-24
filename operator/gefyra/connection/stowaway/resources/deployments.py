@@ -4,17 +4,10 @@ from kubernetes.client import V1Probe, V1ExecAction
 from gefyra.configuration import configuration
 
 
-def create_stowaway_serviceaccount() -> k8s.client.V1ServiceAccount:
-    return k8s.client.V1ServiceAccount(
-        metadata=k8s.client.V1ObjectMeta(
-            # this name is referenced by Stowaway
-            name="gefyra-stowaway",
-            namespace=configuration.NAMESPACE,
-        )
-    )
 
 
-def create_stowaway_deployment() -> k8s.client.V1Deployment:
+
+def create_stowaway_deployment(labels: dict[str, str]) -> k8s.client.V1Deployment:
     container = k8s.client.V1Container(
         name="stowaway",
         image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",
@@ -60,7 +53,7 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
     )
 
     template = k8s.client.V1PodTemplateSpec(
-        metadata=k8s.client.V1ObjectMeta(labels={"app": "stowaway"}),
+        metadata=k8s.client.V1ObjectMeta(labels=labels),
         spec=k8s.client.V1PodSpec(
             service_account_name="gefyra-stowaway",
             containers=[container],
@@ -84,14 +77,14 @@ def create_stowaway_deployment() -> k8s.client.V1Deployment:
     spec = k8s.client.V1DeploymentSpec(
         replicas=1,
         template=template,
-        selector={"matchLabels": {"app": "stowaway"}},
+        selector={"matchLabels": labels},
     )
 
     deployment = k8s.client.V1Deployment(
         api_version="apps/v1",
         kind="Deployment",
         metadata=k8s.client.V1ObjectMeta(
-            name="gefyra-stowaway", namespace=configuration.NAMESPACE
+            name="gefyra-stowaway", namespace=configuration.NAMESPACE, labels=labels
         ),
         spec=spec,
     )

@@ -15,6 +15,10 @@ from gefyra.configuration import OperatorConfiguration
 logger = logging.getLogger("gefyra.utils")
 
 
+def get_label_selector(labels: dict[str, str]) -> str:
+    return ",".join(["{0}={1}".format(*label) for label in list(labels.items())])
+
+
 class WSFileManager:
     """
     WS wrapper to manage read and write bytes in K8s WSClient

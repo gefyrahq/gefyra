@@ -4,7 +4,7 @@ import kopf
 import kubernetes as k8s
 
 from gefyra.configuration import configuration
-from gefyra.resources.services import create_stowaway_proxy_service
+from gefyra.connection.stowaway.resources import create_stowaway_proxy_service
 from gefyra.utils import (
     notify_stowaway_pod,
     exec_command_pod,
