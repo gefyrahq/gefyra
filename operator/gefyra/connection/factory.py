@@ -36,9 +36,7 @@ class GefyraConnectionFactory:
         logger,
         **kwargs
     ) -> AbstractGefyraConnectionProvider:
-        return self.__create(
-            provider_type, configuration, logger, **kwargs
-        )
+        return self.__create(provider_type, configuration, logger, **kwargs)
 
 
 connection_provider_factory = GefyraConnectionFactory()

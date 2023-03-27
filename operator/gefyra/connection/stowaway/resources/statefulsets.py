@@ -4,10 +4,7 @@ from kubernetes.client import V1Probe, V1ExecAction
 from gefyra.configuration import configuration
 
 
-
-
-
-def create_stowaway_deployment(labels: dict[str, str]) -> k8s.client.V1Deployment:
+def create_stowaway_statefulset(labels: dict[str, str]) -> k8s.client.V1StatefulSet:
     container = k8s.client.V1Container(
         name="stowaway",
         image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",
@@ -49,6 +46,7 @@ def create_stowaway_deployment(labels: dict[str, str]) -> k8s.client.V1Deploymen
                 name="proxyroutes", mount_path="/stowaway/proxyroutes"
             ),
             k8s.client.V1VolumeMount(name="host-libs", mount_path="/lib/modules"),
+            k8s.client.V1VolumeMount(name="stowaway-config", mount_path="/config"),
         ],
     )
 
@@ -74,19 +72,29 @@ def create_stowaway_deployment(labels: dict[str, str]) -> k8s.client.V1Deploymen
         ),
     )
 
-    spec = k8s.client.V1DeploymentSpec(
+    spec = k8s.client.V1StatefulSetSpec(
         replicas=1,
+        service_name="gefyra-stowaway",
         template=template,
         selector={"matchLabels": labels},
+        volume_claim_templates=[
+            k8s.client.V1PersistentVolumeClaim(
+                metadata=k8s.client.V1ObjectMeta(name="stowaway-config"),
+                spec=k8s.client.V1PersistentVolumeClaimSpec(
+                    access_modes=["ReadWriteOnce"],
+                    resources=k8s.client.V1ResourceRequirements(
+                        requests={"storage": "50Mi"}
+                    ),
+                ),
+            )
+        ],
     )
 
-    deployment = k8s.client.V1Deployment(
-        api_version="apps/v1",
-        kind="Deployment",
+    sts = k8s.client.V1StatefulSet(
         metadata=k8s.client.V1ObjectMeta(
             name="gefyra-stowaway", namespace=configuration.NAMESPACE, labels=labels
         ),
         spec=spec,
     )
 
-    return deployment
+    return sts

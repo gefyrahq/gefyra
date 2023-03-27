@@ -6,14 +6,21 @@ class AbstractGefyraConnectionProvider(ABC):
     provider_type = ""
 
     @abstractmethod
-    async def install(self, config: dict = {}) -> bool:
+    async def installed(self, config: dict = {}) -> bool:
+        """
+        Check if this Gefyra connection provider is properly installed to the cluster
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def install(self, config: dict = {}):
         """
         Install this Gefyra connection provider to the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    async def uninstall(self, config: dict = {}) -> bool:
+    async def uninstall(self, config: dict = {}):
         """
         Uninstall this Gefyra connection provider from the cluster
         """

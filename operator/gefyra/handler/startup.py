@@ -47,7 +47,6 @@ async def check_gefyra_components(logger, **kwargs) -> None:
     """
     from gefyra.configuration import configuration
 
-
     logger.info(
         f"Ensuring Gefyra components with the following configuration: {configuration}"
     )
@@ -56,28 +55,35 @@ async def check_gefyra_components(logger, **kwargs) -> None:
 
 
 @kopf.on.startup()
-async def start_connection_providers(logger, **kwargs) -> None:
+async def start_connection_providers(logger, retry, **kwargs) -> None:
     """
     Starts all connection providers that are configured in the current version
     """
     from gefyra.configuration import configuration
 
+    not_ready_providers = []
     for gefyra_connector in ProviderType:
         provider = connection_provider_factory.get(
             gefyra_connector,
             configuration,
             logger,
         )
-        await provider.install()
-        
-        @kopf.subhandler(id=f"wait_connection-provider_{gefyra_connector.name}")
-        async def start_connection_provider(retries, **kwargs):
-            if retries > configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT / 2:
-                raise kopf.PermanentError(f"Connection provider {gefyra_connector.name} could not be started")
-            if provider.ready():
-                logger.info(f"Connection provider {gefyra_connector.name} is ready")
-            else:
-                raise kopf.TemporaryError(f"Connection provider {gefyra_connector.name} is not ready yet", delay=2)
+        if not await provider.installed():
+            await provider.install()
+            logger.info(f"Installing connection provider {gefyra_connector.name}")
+        if await provider.installed() and not await provider.ready():
+            not_ready_providers.append(gefyra_connector)
+
+    if not_ready_providers:
+        if retry > configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT:
+            raise kopf.PermanentError(
+                f"Connection provider(s) {not_ready_providers} could not be started"
+            )
+        else:
+            raise kopf.TemporaryError(
+                f"Connection provider(s) {gefyra_connector.name} is not ready yet (retry {retry}/{configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT})))",
+                delay=1,
+            )
 
     def _write_startup_task():
         try:
@@ -86,7 +92,10 @@ async def start_connection_providers(logger, **kwargs) -> None:
                 namespace=configuration.NAMESPACE,
             )
         except k8s.client.exceptions.ApiException as e:
-            logger.error("Could not create startup event: " + str(e))
+            if e.status == 409:
+                pass
+            else:
+                logger.error("Could not create startup event: " + str(e))
 
     _write_startup_task()
     logger.info("Gefyra components installed/patched")
