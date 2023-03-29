@@ -37,37 +37,31 @@ jobs:
         cp `find build/ -name "gefyra"` ../gefyra
         cp README.md ../README.md
         cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
-    - name: Codesign executable
-      if: ${{ github.event.release && github.event.action == 'published' }}
-      env:
-        MACOS_DEVELOPER_HASH: ${{ secrets.MACOS_DEVELOPER_HASH }}
-        MACOS_APP_HASH: ${{ secrets.MACOS_APP_HASH }}
-        MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-        MACOS_KEYCHAIN_PASS: ${{ secrets.MACOS_KEYCHAIN_PASS }}
-        MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+    - name: Codesign app bundle
+      # Extract the secrets we defined earlier as environment variables
+      env: 
+        MACOS_CERTIFICATE: ${{ secrets.PROD_MACOS_CERTIFICATE }}
+        MACOS_CERTIFICATE_PWD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
+        MACOS_CERTIFICATE_NAME: ${{ secrets.PROD_MACOS_CERTIFICATE_NAME }}
+        MACOS_CI_KEYCHAIN_PWD: ${{ secrets.PROD_MACOS_CI_KEYCHAIN_PWD }}
       run: |
+        # Turn our base64-encoded certificate back to a regular .p12 file
+        
         echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
-        security create-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
+
+        # We need to create a new keychain, otherwise using the certificate will prompt
+        # with a UI dialog asking for the certificate password, which we can't
+        # use in a headless CI environment
+        
+        security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain 
         security default-keychain -s build.keychain
-        security unlock-keychain -p $MACOS_KEYCHAIN_PASS build.keychain
-        security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
-        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_KEYCHAIN_PASS build.keychain
+        security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" build.keychain
+        security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
+
+        # We finally codesign our app bundle, specifying the Hardened runtime option
         
-        echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-        <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-        <plist version=\"1.0\">
-        <dict>
-              <key>com.apple.security.cs.allow-jit</key>
-              <true/>
-              <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-              <true/>
-              <key>com.apple.security.cs.disable-library-validation</key>
-              <true/>
-        </dict>
-        </plist>" > entitlements.plist
-        
-        echo "Now running codesign"
-        /usr/bin/codesign --deep --force --options=runtime --entitlements ./entitlements.plist --sign $MACOS_APP_HASH --timestamp ./gefyra
+        /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ./gefyra -v
     - name: Upload Artifact
       uses: actions/upload-artifact@v3
       with:
