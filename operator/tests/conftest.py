@@ -1,11 +1,13 @@
 import logging
 import os
+from pathlib import Path
+import subprocess
 from time import sleep
 import pytest
 from pytest_kubernetes.providers import AClusterManager, select_provider_manager
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def k3d():
     k8s: AClusterManager = select_provider_manager("k3d")("gefyra")
     k8s.create()
@@ -33,3 +35,16 @@ def operator(k3d):
         operator.__exit__(None, None, None)
     except:
         pass
+
+@pytest.fixture(scope="session")
+def stowaway_image(request):
+    name = "stowaway:pytest"
+    subprocess.run(
+        f"docker build -t {name} -f {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
+        f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}",
+        shell=True,
+    )
+    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    return name
+
+    

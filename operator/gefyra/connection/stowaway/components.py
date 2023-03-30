@@ -3,6 +3,7 @@ import kubernetes as k8s
 from gefyra.configuration import OperatorConfiguration
 from gefyra.connection.stowaway.resources import (
     create_stowaway_proxyroute_configmap,
+    create_stowaway_configmap,
     create_stowaway_statefulset,
     create_stowaway_serviceaccount,
     create_stowaway_nodeport_service,
@@ -36,7 +37,7 @@ def check_serviceaccount(logger, configuration: OperatorConfiguration):
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            logger.warn("Gefyra Stowaway Serviceaccount does not exist")
+            logger.warning("Gefyra Stowaway Serviceaccount does not exist")
             return False
         else:
             raise e
@@ -56,7 +57,7 @@ def handle_proxyroute_configmap(
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             # the Stowaway proxy route configmap exist
-            logger.warn(
+            logger.warning(
                 "Stowaway proxy route configmap already available, now patching it with current configuration"
             )
             core_v1_api.replace_namespaced_config_map(
@@ -81,7 +82,50 @@ def check_proxyroute_configmap(
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            logger.warn("Stowaway proxy route configmap does not exist")
+            logger.warning("Stowaway proxy route configmap does not exist")
+            return False
+        else:
+            raise e
+
+
+def handle_config_configmap(
+    logger, configuration: OperatorConfiguration
+) -> k8s.client.V1ConfigMap:
+    configmap = create_stowaway_configmap()
+
+    try:
+        core_v1_api.create_namespaced_config_map(
+            body=configmap, namespace=configuration.NAMESPACE
+        )
+        logger.info("Stowaway config configmap created")
+    except k8s.client.exceptions.ApiException as e:
+        if e.status == 409:
+            logger.warning(
+                "Stowaway config configmap already available, now patching it with current configuration"
+            )
+            core_v1_api.replace_namespaced_config_map(
+                name=configmap.metadata.name,
+                body=configmap,
+                namespace=configuration.NAMESPACE,
+            )
+            logger.info("Stowaway config configmap patched")
+        else:
+            raise e
+    return configmap
+
+
+def check_config_configmap(
+    logger, configuration: OperatorConfiguration
+) -> k8s.client.V1ConfigMap:
+    configmap = create_stowaway_configmap()
+    try:
+        core_v1_api.read_namespaced_config_map(
+            configmap.metadata.name, configmap.metadata.namespace
+        )
+        return True
+    except k8s.client.exceptions.ApiException as e:
+        if e.status == 404:
+            logger.warning("Stowaway config configmap does not exist")
             return False
         else:
             raise e
@@ -90,42 +134,42 @@ def check_proxyroute_configmap(
 def handle_stowaway_statefulset(
     logger, configuration: OperatorConfiguration, labels: dict[str, str]
 ) -> k8s.client.V1StatefulSet:
-    deployment_stowaway = create_stowaway_statefulset(labels)
+    stowaway_sts = create_stowaway_statefulset(labels)
 
     try:
         app.create_namespaced_stateful_set(
-            body=deployment_stowaway, namespace=configuration.NAMESPACE
+            body=stowaway_sts, namespace=configuration.NAMESPACE
         )
         logger.info("Stowaway deployment created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             # the Stowaway deployment already exist
-            logger.warn(
+            logger.warning(
                 "Stowaway deployment already available, now patching it with current configuration"
             )
             app.patch_namespaced_stateful_set(
-                name=deployment_stowaway.metadata.name,
-                body=deployment_stowaway,
+                name=stowaway_sts.metadata.name,
+                body=stowaway_sts,
                 namespace=configuration.NAMESPACE,
             )
             logger.info("Stowaway deployment patched")
         else:
             raise e
-    return deployment_stowaway
+    return stowaway_sts
 
 
 def check_stowaway_statefulset(
     logger, configuration: OperatorConfiguration, labels: dict[str, str]
 ) -> bool:
-    deployment_stowaway = create_stowaway_statefulset(labels)
+    stowaway_sts = create_stowaway_statefulset(labels)
     try:
         app.read_namespaced_stateful_set(
-            deployment_stowaway.metadata.name, deployment_stowaway.metadata.namespace
+            stowaway_sts.metadata.name, stowaway_sts.metadata.namespace
         )
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            logger.warn("Stowaway deployment does not exist")
+            logger.warning("Stowaway deployment does not exist")
             return False
         else:
             raise e
@@ -134,9 +178,9 @@ def check_stowaway_statefulset(
 def handle_stowaway_nodeport_service(
     logger,
     configuration: OperatorConfiguration,
-    deployment_stowaway: k8s.client.V1StatefulSet,
+    stowaway_sts: k8s.client.V1StatefulSet,
 ):
-    nodeport_service_stowaway = create_stowaway_nodeport_service(deployment_stowaway)
+    nodeport_service_stowaway = create_stowaway_nodeport_service(stowaway_sts)
     try:
         core_v1_api.create_namespaced_service(
             body=nodeport_service_stowaway, namespace=configuration.NAMESPACE
@@ -146,7 +190,7 @@ def handle_stowaway_nodeport_service(
         if e.status in [409, 422]:
             # the Stowaway service already exist
             # status == 422 is nodeport already allocated
-            logger.warn(
+            logger.warning(
                 "Stowaway nodeport service already available, now patching it with current configuration"
             )
             core_v1_api.patch_namespaced_service(
@@ -162,9 +206,9 @@ def handle_stowaway_nodeport_service(
 def check_stowaway_nodeport_service(
     logger,
     configuration: OperatorConfiguration,
-    deployment_stowaway: k8s.client.V1StatefulSet,
+    stowaway_sts: k8s.client.V1StatefulSet,
 ):
-    nodeport_service_stowaway = create_stowaway_nodeport_service(deployment_stowaway)
+    nodeport_service_stowaway = create_stowaway_nodeport_service(stowaway_sts)
     try:
         core_v1_api.read_namespaced_service(
             nodeport_service_stowaway.metadata.name,
@@ -173,7 +217,7 @@ def check_stowaway_nodeport_service(
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            logger.warn("Stowaway nodeport service does not exist")
+            logger.warning("Stowaway nodeport service does not exist")
             return False
         else:
             raise e
@@ -182,9 +226,9 @@ def check_stowaway_nodeport_service(
 def handle_stowaway_rsync_service(
     logger,
     configuration: OperatorConfiguration,
-    deployment_stowaway: k8s.client.V1StatefulSet,
+    stowaway_sts: k8s.client.V1StatefulSet,
 ):
-    rsync_service_stowaway = create_stowaway_rsync_service(deployment_stowaway)
+    rsync_service_stowaway = create_stowaway_rsync_service(stowaway_sts)
     try:
         core_v1_api.create_namespaced_service(
             body=rsync_service_stowaway, namespace=configuration.NAMESPACE
@@ -194,7 +238,7 @@ def handle_stowaway_rsync_service(
         if e.status in [409, 422]:
             # the Stowaway service already exist
             # status == 422 is rsync already allocated
-            logger.warn(
+            logger.warning(
                 "Stowaway rsync service already available, now patching it with current configuration"
             )
             core_v1_api.patch_namespaced_service(
@@ -210,9 +254,9 @@ def handle_stowaway_rsync_service(
 def check_stowaway_rsync_service(
     logger,
     configuration: OperatorConfiguration,
-    deployment_stowaway: k8s.client.V1StatefulSet,
+    stowaway_sts: k8s.client.V1StatefulSet,
 ):
-    rsync_service_stowaway = create_stowaway_rsync_service(deployment_stowaway)
+    rsync_service_stowaway = create_stowaway_rsync_service(stowaway_sts)
     try:
         core_v1_api.read_namespaced_service(
             rsync_service_stowaway.metadata.name,
@@ -221,7 +265,7 @@ def check_stowaway_rsync_service(
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            logger.warn("Stowaway rsync service does not exist")
+            logger.warning("Stowaway rsync service does not exist")
             return False
         else:
             raise e

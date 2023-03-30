@@ -27,7 +27,7 @@ events_v1_api = k8s.client.EventsV1Api()
 PROXY_RELOAD_COMMAND = [
     "/bin/bash",
     "generate-proxyroutes.sh",
-    "/stowaway/proxyroutes/",
+    "/config/proxyroutes/",
 ]
 RSYNC_MKDIR_COMMAND = ["mkdir", "-p"]
 RSYNC_RM_COMMAND = ["rm", "-rf"]

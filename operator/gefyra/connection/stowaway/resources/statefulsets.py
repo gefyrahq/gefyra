@@ -17,25 +17,17 @@ def create_stowaway_statefulset(labels: dict[str, str]) -> k8s.client.V1Stateful
         ),
         readiness_probe=V1Probe(
             _exec=V1ExecAction(
-                command=["cat", "/config/peer1/peer1.conf"],
+                command=["test", "-n", '"$(wg)"'],
             ),
             period_seconds=1,
             initial_delay_seconds=1,
         ),
-        env=[
-            k8s.client.V1EnvVar(name="PEERS", value="1"),
-            k8s.client.V1EnvVar(
-                name="SERVERPORT", value=str(configuration.WIREGUARD_EXT_PORT)
-            ),
-            k8s.client.V1EnvVar(name="PUID", value=configuration.STOWAWAY_PUID),
-            k8s.client.V1EnvVar(name="PGID", value=configuration.STOWAWAY_PGID),
-            k8s.client.V1EnvVar(name="PEERDNS", value=configuration.STOWAWAY_PEER_DNS),
-            k8s.client.V1EnvVar(
-                name="INTERNAL_SUBNET", value=configuration.STOWAWAY_INTERNAL_SUBNET
-            ),
-            k8s.client.V1EnvVar(
-                name="SERVER_ALLOWEDIPS_PEER_1", value=configuration.GEFYRA_PEER_SUBNET
-            ),
+        env_from=[
+            k8s.client.V1EnvFromSource(
+                config_map_ref=k8s.client.V1ConfigMapEnvSource(
+                    name=configuration.STOWAWAY_CONFIGMAPNAME
+                )
+            )
         ],
         security_context=k8s.client.V1SecurityContext(
             privileged=True,

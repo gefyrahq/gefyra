@@ -1,4 +1,4 @@
-from .configmaps import create_stowaway_proxyroute_configmap
+from .configmaps import create_stowaway_proxyroute_configmap, create_stowaway_configmap
 from .statefulsets import create_stowaway_statefulset
 from .services import (
     create_stowaway_nodeport_service,
