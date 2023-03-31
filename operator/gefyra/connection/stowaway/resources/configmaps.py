@@ -14,6 +14,7 @@ def create_stowaway_proxyroute_configmap() -> k8s.client.V1ConfigMap:
         metadata=k8s.client.V1ObjectMeta(
             name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME,
             namespace=configuration.NAMESPACE,
+            labels={"gefyra.dev/app": "stowaway"},
         ),
     )
     return configmap
@@ -35,6 +36,7 @@ def create_stowaway_configmap() -> k8s.client.V1ConfigMap:
         metadata=k8s.client.V1ObjectMeta(
             name=configuration.STOWAWAY_CONFIGMAPNAME,
             namespace=configuration.NAMESPACE,
+            labels={"gefyra.dev/app": "stowaway"},
         ),
     )
     return configmap

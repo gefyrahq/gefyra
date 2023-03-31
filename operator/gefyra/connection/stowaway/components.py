@@ -269,3 +269,43 @@ def check_stowaway_rsync_service(
             return False
         else:
             raise e
+
+
+def remove_stowaway_services(logger, configuration: OperatorConfiguration):
+    logger.info("Removing Stowaway services")
+    try:
+        svc_list = core_v1_api.list_namespaced_service(
+            namespace=configuration.NAMESPACE, label_selector="gefyra.dev/app=stowaway"
+        )
+        for svc in svc_list.items:
+            core_v1_api.delete_namespaced_service(
+                name=svc.metadata.name, namespace=configuration.NAMESPACE
+            )
+    except k8s.client.exceptions.ApiException as e:
+        logger.error("Error removing Stowaway services: " + str(e))
+
+
+def remove_stowaway_statefulset(logger, stowaway_sts: k8s.client.V1StatefulSet):
+    logger.info("Removing Stowaway StatefulSet")
+    try:
+        app.delete_namespaced_stateful_set(
+            name=stowaway_sts.metadata.name,
+            namespace=stowaway_sts.metadata.namespace,
+        )
+    except k8s.client.exceptions.ApiException as e:
+        logger.error("Error Stowaway StatefulSet: " + str(e))
+
+
+def remove_stowaway_configmaps(logger, configuration: OperatorConfiguration):
+    logger.info("Removing Stowaway configmaps")
+    try:
+        configmaps = core_v1_api.list_namespaced_config_map(
+            namespace=configuration.NAMESPACE, label_selector="gefyra.dev/app=stowaway"
+        )
+        for cm in configmaps.items:
+            core_v1_api.delete_namespaced_config_map(
+                name=cm.metadata.name,
+                namespace=cm.metadata.namespace,
+            )
+    except k8s.client.exceptions.ApiException as e:
+        logger.error("Error removing Stowaway configmap: " + str(e))

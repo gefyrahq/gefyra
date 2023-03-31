@@ -36,6 +36,7 @@ def operator(k3d):
     except:
         pass
 
+
 @pytest.fixture(scope="session")
 def stowaway_image(request):
     name = "stowaway:pytest"
@@ -46,5 +47,3 @@ def stowaway_image(request):
     )
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
-
-    

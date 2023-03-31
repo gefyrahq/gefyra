@@ -8,5 +8,6 @@ def create_stowaway_serviceaccount() -> k8s.client.V1ServiceAccount:
             # this name is referenced by Stowaway
             name="gefyra-stowaway",
             namespace=configuration.NAMESPACE,
+            labels={"gefyra.dev/app": "stowaway"},
         )
     )

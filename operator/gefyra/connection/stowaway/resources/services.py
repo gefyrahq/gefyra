@@ -28,6 +28,7 @@ def create_stowaway_nodeport_service(
         metadata=k8s.client.V1ObjectMeta(
             name="gefyra-stowaway-wireguard",
             namespace=stowaway_deployment.metadata.namespace,
+            labels={"gefyra.dev/app": "stowaway"},
         ),
         spec=spec,
     )
@@ -57,6 +58,7 @@ def create_stowaway_proxy_service(
         metadata=k8s.client.V1ObjectMeta(
             name=f"gefyra-stowaway-proxy-{port}",
             namespace=stowaway_deployment.metadata.namespace,
+            labels={"gefyra.dev/app": "stowaway"},
         ),
         spec=spec,
     )
@@ -86,6 +88,7 @@ def create_stowaway_rsync_service(
         metadata=k8s.client.V1ObjectMeta(
             name="gefyra-stowaway-rsync",
             namespace=stowaway_deployment.metadata.namespace,
+            labels={"gefyra.dev/app": "stowaway"},
         ),
         spec=spec,
     )

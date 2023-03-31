@@ -22,6 +22,9 @@ from .components import (
     handle_stowaway_rsync_service,
     create_stowaway_statefulset,
     create_stowaway_configmap,
+    remove_stowaway_configmaps,
+    remove_stowaway_services,
+    remove_stowaway_statefulset,
 )
 
 app = k8s.client.AppsV1Api()
@@ -79,15 +82,16 @@ class Stowaway(AbstractGefyraConnectionProvider):
         )
 
     async def uninstall(self, config: dict = {}):
-        raise NotImplementedError
+        remove_stowaway_services(self.logger, self.configuration)
+        remove_stowaway_statefulset(
+            self.logger, create_stowaway_statefulset(STOWAWAY_LABELS)
+        )
+        remove_stowaway_configmaps(self.logger, self.configuration)
 
     async def ready(self) -> bool:
         pod = self._get_stowaway_pod()
         # check if stowaway pod is ready
-        if (
-            pod
-            and pod.status.container_statuses is not None
-        ):
+        if pod and pod.status.container_statuses is not None:
             if pod.status.container_statuses[0].ready:
                 return True
             else:
@@ -97,41 +101,45 @@ class Stowaway(AbstractGefyraConnectionProvider):
 
     async def add_peer(self, peer_id: str):
         self.logger.info(f"Adding peer {peer_id} to stowaway")
+        try:
+            self._edit_peer_configmap(add=peer_id)
+            await self._restart_stowaway()
+            return True
+        except k8s.client.exceptions.ApiException as e:
+            self.logger.error(f"Error adding peer {peer_id} to stowaway: {e}")
+            return False
+
+    async def remove_peer(self, peer_id: str):
+        self.logger.info(f"Removing peer {peer_id} from stowaway")
+        try:
+            self._edit_peer_configmap(remove=peer_id)
+            pod = self._get_stowaway_pod()
+            exec_command_pod(
+                core_v1_api,
+                pod.metadata.name,
+                pod.metadata.namespace,
+                "stowaway",
+                ["rm", "-rf", f"/config/peer_{peer_id}"],
+            )
+            await self._restart_stowaway()
+            return True
+        except k8s.client.exceptions.ApiException as e:
+            self.logger.error(f"Error removing peer {peer_id} from stowaway: {e}")
+            return False
+
+    async def peer_exists(self, peer_id: str) -> bool:
         _config = create_stowaway_configmap()
         try:
             configmap = core_v1_api.read_namespaced_config_map(
                 _config.metadata.name, _config.metadata.namespace
             )
-            core_v1_api.patch_namespaced_config_map(
-                name=configmap.metadata.name,
-                namespace=configmap.metadata.namespace,
-                body={"data":{"PEERS": ",".join([peer_id] + configmap.data["PEERS"].split(","))}},
-            )
-            pod = self._get_stowaway_pod()
-            core_v1_api.delete_namespaced_pod(
-                pod.metadata.name,
-                pod.metadata.namespace,
-                grace_period_seconds=0,
-            )
-            # busy wait
-            _i = 0
-            while not await self.ready() and _i < self.configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT:
-                await sleep(1)
-                _i += 1
-
-            return True
-        except k8s.client.exceptions.ApiException as e:
-            self.logger.error(f"Error adding peer {peer_id} to stowaway: {e}")
-            if e.status == 404:
-                return False
+            if peer_id in configmap.data["PEERS"].split(","):
+                return True
             else:
-                raise e
-
-    async def remove_peer(self, peer_id: str):
-        raise NotImplementedError
-
-    async def peer_exists(self, peer_id: str) -> bool:
-        raise NotImplementedError
+                return False
+        except k8s.client.exceptions.ApiException as e:
+            self.logger.error(f"Error looking up peer {peer_id}: {e}")
+            return False
 
     async def add_destination(
         self, peer_id: str, destination_ip: str, destination_port: int
@@ -142,7 +150,23 @@ class Stowaway(AbstractGefyraConnectionProvider):
         self, peer_id: str, destination_ip: str, destination_port: int
     ):
         raise NotImplementedError
-    
+
+    async def _restart_stowaway(self) -> None:
+        pod = self._get_stowaway_pod()
+        core_v1_api.delete_namespaced_pod(
+            pod.metadata.name,
+            pod.metadata.namespace,
+            grace_period_seconds=0,
+        )
+        # busy wait
+        _i = 0
+        while (
+            not await self.ready()
+            and _i < self.configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT
+        ):
+            await sleep(1)
+            _i += 1
+
     def _get_stowaway_pod(self) -> Optional[k8s.client.V1Pod]:
         stowaway_pod = core_v1_api.list_namespaced_pod(
             self.configuration.NAMESPACE,
@@ -152,7 +176,23 @@ class Stowaway(AbstractGefyraConnectionProvider):
             return stowaway_pod.items[0]
         else:
             return None
-    
+
+    def _edit_peer_configmap(self, add: str = None, remove: str = None) -> None:
+        _config = create_stowaway_configmap()
+        configmap = core_v1_api.read_namespaced_config_map(
+            _config.metadata.name, _config.metadata.namespace
+        )
+        peers = configmap.data["PEERS"].split(",")
+        if add and add not in peers:
+            peers = [add] + peers
+        if remove and remove in peers:
+            peers.remove(remove)
+        core_v1_api.patch_namespaced_config_map(
+            name=configmap.metadata.name,
+            namespace=configmap.metadata.namespace,
+            body={"data": {"PEERS": ",".join(peers)}},
+        )
+
 
 class StowawayBuilder:
     def __init__(self):
