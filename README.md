@@ -67,7 +67,7 @@
 <!-- QUICK START -->
 ## Quick Start
 Short manual on where and how to start. You can find detailed information
-[here](https://gefyra.dev/try-it-out/).
+[here (installation)](https://gefyra.dev/installation/) and [here (usage)](https://gefyra.dev/getting-started/).
 
 ### Installation
 We offer platform specific installations:
