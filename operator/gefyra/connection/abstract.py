@@ -34,7 +34,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def add_peer(self, peer_id: str):
+    async def add_peer(self, peer_id: str, parameters: dict = {}):
         """
         Add a new peer to the connection provider
         """
@@ -44,6 +44,13 @@ class AbstractGefyraConnectionProvider(ABC):
     async def remove_peer(self, peer_id: str):
         """
         Remove a peer from the connection provider
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_peer_config(self, peer_id: str) -> dict[str, str]:
+        """
+        Returns a dict of configuration values for the peer to be stored in the Peer CRD
         """
         raise NotImplementedError
 

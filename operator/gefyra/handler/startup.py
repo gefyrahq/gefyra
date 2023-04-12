@@ -33,7 +33,7 @@ def handle_crds(logger) -> None:
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             logger.warn(
-                "Gefyra CRD InterceptRequest already available but might be outdated"
+                "Gefyra CRD GefyraClients already available but might be outdated"
             )
         else:
             raise e

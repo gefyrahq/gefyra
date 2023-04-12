@@ -1,10 +1,12 @@
 import kubernetes as k8s
 from kubernetes.client import V1Probe, V1ExecAction
 
-from gefyra.configuration import configuration
+from gefyra.configuration import OperatorConfiguration
 
 
-def create_stowaway_statefulset(labels: dict[str, str]) -> k8s.client.V1StatefulSet:
+def create_stowaway_statefulset(
+    labels: dict[str, str], configuration: OperatorConfiguration
+) -> k8s.client.V1StatefulSet:
     container = k8s.client.V1Container(
         name="stowaway",
         image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",

@@ -116,30 +116,6 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
             raise e
 
 
-def read_wireguard_config(raw: str) -> dict:
-    """
-    :param raw: the wireguard config string; similar to TOML but does not comply with
-    :return: a parsed dict of the configuration
-    """
-    data = defaultdict(dict)
-    _prefix = "none"
-    for line in raw.split("\n"):
-        try:
-            if line.strip() == "":
-                continue
-            elif "[Interface]" in line:
-                _prefix = "Interface"
-                continue
-            elif "[Peer]" in line:
-                _prefix = "Peer"
-                continue
-            key, value = line.split("=", 1)
-            data[f"{_prefix}.{key.strip()}"] = value.strip()
-        except Exception as e:
-            logger.exception(e)
-    return data
-
-
 def notify_stowaway_pod(
     core_v1_api: k8s.client.CoreV1Api,
     pod_name: str,

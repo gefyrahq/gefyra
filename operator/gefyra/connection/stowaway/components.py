@@ -134,7 +134,7 @@ def check_config_configmap(
 def handle_stowaway_statefulset(
     logger, configuration: OperatorConfiguration, labels: dict[str, str]
 ) -> k8s.client.V1StatefulSet:
-    stowaway_sts = create_stowaway_statefulset(labels)
+    stowaway_sts = create_stowaway_statefulset(labels, configuration)
 
     try:
         app.create_namespaced_stateful_set(
@@ -161,7 +161,7 @@ def handle_stowaway_statefulset(
 def check_stowaway_statefulset(
     logger, configuration: OperatorConfiguration, labels: dict[str, str]
 ) -> bool:
-    stowaway_sts = create_stowaway_statefulset(labels)
+    stowaway_sts = create_stowaway_statefulset(labels, configuration)
     try:
         app.read_namespaced_stateful_set(
             stowaway_sts.metadata.name, stowaway_sts.metadata.namespace

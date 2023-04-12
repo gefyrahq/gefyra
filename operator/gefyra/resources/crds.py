@@ -70,8 +70,13 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
         properties={
             # the Gefyra connection provider for this client
             "provider": k8s.client.V1JSONSchemaProps(type="string", enum=["stowaway"]),
+            "providerParameter": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
             # the native configuration of this connection provider for this client
-            "providerConfig": k8s.client.V1JSONSchemaProps(type="string"),
+            "providerConfig": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
             # the name of the ServiceAccount to use for this client
             "serviceAccountName": k8s.client.V1JSONSchemaProps(type="string"),
             # the ServiceAccount token to use for this client
@@ -95,9 +100,9 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
     def_spec = k8s.client.V1CustomResourceDefinitionSpec(
         group="gefyra.dev",
         names=k8s.client.V1CustomResourceDefinitionNames(
-            kind="GefyraClient",
+            kind="gefyraclient",
             plural="gefyraclients",
-            short_names=["gclients"],
+            short_names=["gclients", "gclient"],
         ),
         scope="Namespaced",
         versions=[

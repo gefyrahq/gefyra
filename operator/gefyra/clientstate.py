@@ -19,14 +19,16 @@ class GefyraClient(StateMachine):
 
     requested = State("Client requested", initial=True, value="REQUESTED")
     creating = State("Client creating", value="CREATING")
+    waiting = State("Client waiting", value="WAITING")
     active = State("Client active", value="ACTIVE")
     error = State("Client error", value="ERROR")
     terminating = State("Client terminating", value="TERMINATING")
 
     create = requested.to(creating) | error.to(creating)
-    activate = creating.to(active) | error.to(active) | active.to.itself()
-    impair = error.from_(requested, creating, active, error)
-    terminate = terminating.from_(requested, creating, active, error, terminating)
+    wait = creating.to(waiting) | error.to(waiting)
+    activate = waiting.to(active) | error.to(active) | active.to.itself()
+    impair = error.from_(requested, creating, waiting, active, error)
+    terminate = terminating.from_(requested, creating, waiting, active, error, terminating)
 
     def __init__(
         self,
@@ -83,7 +85,7 @@ class GefyraClient(StateMachine):
             pass
 
     @property
-    def sunset(self) -> Optional[datetime]:
+    def sunset(self) -> Optional[datetime.datetime]:
         if sunset := self.model.get("sunset"):
             return datetime.fromisoformat(sunset.strip("Z"))
         else:
@@ -113,7 +115,7 @@ class GefyraClient(StateMachine):
         else:
             return None
 
-    def get_latest_transition(self) -> Optional[datetime]:
+    def get_latest_transition(self) -> Optional[datetime.datetime]:
         """
         > Get the latest transition time for a cluster
         :return: The latest transition times
@@ -122,6 +124,7 @@ class GefyraClient(StateMachine):
             filter(
                 lambda k: k is not None,
                 [
+                    self.completed_transition(GefyraClient.waiting.value),
                     self.completed_transition(GefyraClient.creating.value),
                     self.completed_transition(GefyraClient.active.value),
                     self.completed_transition(GefyraClient.error.value),
@@ -138,7 +141,7 @@ class GefyraClient(StateMachine):
         else:
             return None
 
-    def get_latest_state(self) -> Optional[Tuple[str, datetime]]:
+    def get_latest_state(self) -> Optional[Tuple[str, datetime.datetime]]:
         """
         It returns the latest state of the cluster, and the timestamp of when it was in that state
         :return: A tuple of the latest state and the timestamp of the latest state.
@@ -147,6 +150,9 @@ class GefyraClient(StateMachine):
             filter(
                 lambda k: k[1] is not None,
                 {
+                    GefyraClient.waiting.value: self.completed_transition(
+                        GefyraClient.waiting.value
+                    ),
                     GefyraClient.creating.value: self.completed_transition(
                         GefyraClient.creating.value
                     ),
@@ -204,7 +210,7 @@ class GefyraClient(StateMachine):
             reporting_instance="gefyra-operator",
             reporting_controller="gefyra-operator",
             regarding=k8s.client.V1ObjectReference(
-                kind="beiboot",
+                kind="GefyraClient",
                 name=self.name,
                 namespace=self.configuration.NAMESPACE,
                 uid=self.model.metadata["uid"],
@@ -214,24 +220,6 @@ class GefyraClient(StateMachine):
             namespace=self.configuration.NAMESPACE, body=event
         )
 
-    async def _write_tunnel_data(self):
-        tunnel = {}
-        # ghostunnel
-        tls_data = await ghostunnel.extract_client_tls(self.namespace)
-        nodeports = await ghostunnel.get_tunnel_nodeports(
-            self.namespace, self.parameters
-        )
-        # base64 encode tls data
-        tls_data = dict(
-            (k, base64.b64encode(v.encode("utf-8")).decode())
-            for k, v in tls_data.items()
-        )
-        tunnel["ghostunnel"] = {"ports": nodeports, "mtls": tls_data}
-        # service account tokens
-        sa_token = await get_serviceaccount_data(self.name, self.namespace)
-        tunnel["serviceaccount"] = sa_token
-        self._patch_object({"tunnel": tunnel})
-
     def _write_state(self):
         self.custom_api.patch_namespaced_custom_object(
             namespace=self.configuration.NAMESPACE,
@@ -240,8 +228,8 @@ class GefyraClient(StateMachine):
                 "state": self.current_state.value,
                 "stateTransitions": {self.current_state.value: self._get_now()},
             },
-            group="getdeck.dev",
-            plural="beiboots",
+            group="gefyra.dev",
+            plural="gclients",
             version="v1",
         )
 
@@ -250,7 +238,7 @@ class GefyraClient(StateMachine):
             namespace=self.configuration.NAMESPACE,
             name=self.name,
             body=data,
-            group="getdeck.dev",
-            plural="beiboots",
+            group="gefyra.dev",
+            plural="gclients",
             version="v1",
         )

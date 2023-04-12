@@ -1,9 +1,12 @@
 from asyncio import sleep
+from collections import defaultdict
 import datetime
+from os import path
+import os
 from typing import Optional
 import kubernetes as k8s
 
-from gefyra.utils import exec_command_pod, get_label_selector
+from gefyra.utils import exec_command_pod, get_label_selector, stream_copy_from_pod
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 from gefyra.configuration import OperatorConfiguration
 
@@ -33,7 +36,7 @@ core_v1_api = k8s.client.CoreV1Api()
 STOWAWAY_LABELS = {
     "gefyra.dev/app": "stowaway",
     "gefyra.dev/role": "connection",
-    "gefyra.dev/provider": "wg",
+    "gefyra.dev/provider": "stowaway",
 }
 
 
@@ -71,12 +74,12 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 check_stowaway_nodeport_service(
                     self.logger,
                     self.configuration,
-                    create_stowaway_statefulset(STOWAWAY_LABELS),
+                    create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
                 ),
                 check_stowaway_rsync_service(
                     self.logger,
                     self.configuration,
-                    create_stowaway_statefulset(STOWAWAY_LABELS),
+                    create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
                 ),
             ]
         )
@@ -84,7 +87,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
     async def uninstall(self, config: dict = {}):
         remove_stowaway_services(self.logger, self.configuration)
         remove_stowaway_statefulset(
-            self.logger, create_stowaway_statefulset(STOWAWAY_LABELS)
+            self.logger,
+            create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
         )
         remove_stowaway_configmaps(self.logger, self.configuration)
 
@@ -99,11 +103,14 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             return False
 
-    async def add_peer(self, peer_id: str):
-        self.logger.info(f"Adding peer {peer_id} to stowaway")
+    async def add_peer(self, peer_id: str, parameters: dict = {}):
+        self.logger.info(
+            f"Adding peer {peer_id} to stowaway with parameters: {parameters}"
+        )
         try:
-            self._edit_peer_configmap(add=peer_id)
+            self._edit_peer_configmap(add=peer_id, subnet=parameters.get("subnet"))
             await self._restart_stowaway()
+            await sleep(1)
             return True
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(f"Error adding peer {peer_id} to stowaway: {e}")
@@ -122,6 +129,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 ["rm", "-rf", f"/config/peer_{peer_id}"],
             )
             await self._restart_stowaway()
+            await sleep(1)
             return True
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(f"Error removing peer {peer_id} from stowaway: {e}")
@@ -140,6 +148,12 @@ class Stowaway(AbstractGefyraConnectionProvider):
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(f"Error looking up peer {peer_id}: {e}")
             return False
+
+    async def get_peer_config(self, peer_id: str) -> dict[str, str]:
+        if await self.peer_exists(peer_id):
+            return await self._get_wireguard_connection_details(peer_id)
+        else:
+            raise RuntimeError(f"Peer {peer_id} does not exist")
 
     async def add_destination(
         self, peer_id: str, destination_ip: str, destination_port: int
@@ -177,7 +191,12 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             return None
 
-    def _edit_peer_configmap(self, add: str = None, remove: str = None) -> None:
+    def _edit_peer_configmap(
+        self,
+        add: Optional[str] = None,
+        remove: Optional[str] = None,
+        subnet: Optional[str] = None,
+    ) -> None:
         _config = create_stowaway_configmap()
         configmap = core_v1_api.read_namespaced_config_map(
             _config.metadata.name, _config.metadata.namespace
@@ -185,13 +204,75 @@ class Stowaway(AbstractGefyraConnectionProvider):
         peers = configmap.data["PEERS"].split(",")
         if add and add not in peers:
             peers = [add] + peers
+            data = {"PEERS": ",".join(peers)}
+            if subnet:
+                data[f"SERVER_ALLOWEDIPS_PEER_{add}"] = subnet
+            core_v1_api.patch_namespaced_config_map(
+                name=configmap.metadata.name,
+                namespace=configmap.metadata.namespace,
+                body={"data": data},
+            )
         if remove and remove in peers:
             peers.remove(remove)
-        core_v1_api.patch_namespaced_config_map(
-            name=configmap.metadata.name,
-            namespace=configmap.metadata.namespace,
-            body={"data": {"PEERS": ",".join(peers)}},
+            del configmap.data[f"SERVER_ALLOWEDIPS_PEER_{remove}"]
+            configmap.data["PEERS"] = ",".join(peers)
+            core_v1_api.replace_namespaced_config_map(
+                name=configmap.metadata.name,
+                namespace=configmap.metadata.namespace,
+                body=configmap,
+            )
+
+    async def _get_wireguard_connection_details(self, peer_id: str) -> dict[str, str]:
+        pod = self._get_stowaway_pod()
+        peer_config_file = path.join(
+            self.configuration.STOWAWAY_PEER_CONFIG_PATH,
+            f"peer_{peer_id}",
+            f"peer_{peer_id}.conf",
         )
+        self.logger.info(
+            f"Copy peer {peer_id} connection details from Pod "
+            f"{pod.metadata.name}:{peer_config_file}"
+        )
+        tmpfile_location = f"/tmp/peer_{peer_id}.conf"
+        stream_copy_from_pod(
+            pod.metadata.name,
+            self.configuration.NAMESPACE,
+            peer_config_file,
+            tmpfile_location,
+        )
+
+        # Wireguard config is unfortunately no valid TOML
+        with open(tmpfile_location, "r") as f:
+            peer_connection_details_raw = f.read()
+        os.remove(tmpfile_location)
+
+        peer_connection_details = self._read_wireguard_config(
+            peer_connection_details_raw
+        )
+        return peer_connection_details
+
+    def _read_wireguard_config(self, raw: str) -> dict[str, str]:
+        """
+        :param raw: the wireguard config string; similar to TOML but does not comply with
+        :return: a parsed dict of the configuration
+        """
+        data = defaultdict(dict)
+        _prefix = "none"
+        for line in raw.split("\n"):
+            try:
+                if line.strip() == "":
+                    continue
+                elif "[Interface]" in line:
+                    _prefix = "Interface"
+                    continue
+                elif "[Peer]" in line:
+                    _prefix = "Peer"
+                    continue
+                key, value = line.split("=", 1)
+                data[f"{_prefix}.{key.strip()}"] = value.strip()
+            except Exception as e:
+                self.logger.exception(e)
+        return dict(data)
 
 
 class StowawayBuilder:

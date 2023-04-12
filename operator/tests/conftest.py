@@ -18,7 +18,7 @@ def k3d():
     k8s.delete()
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def operator(k3d):
     from kopf.testing import KopfRunner
 
@@ -28,6 +28,16 @@ def operator(k3d):
     kopf_logger.setLevel(logging.INFO)
     gefyra_logger = logging.getLogger("gefyra")
     gefyra_logger.setLevel(logging.INFO)
+    
+    not_found = True
+    _i = 0
+    while not_found and _i < 60:
+        sleep(1)
+        events = k3d.kubectl(["get", "events", "-n", "gefyra"])
+        _i += 1
+        for event in events["items"]:
+            if event["reason"] == "Gefyra-Ready":
+                not_found = False
 
     yield k3d
 
