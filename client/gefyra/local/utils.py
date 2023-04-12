@@ -2,12 +2,14 @@ import argparse
 import os
 from datetime import datetime
 from typing import List, Optional
+import uuid
 
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration, logger
 from gefyra.local.cargoimage.cargo_dockerfile import get_dockerfile
 from gefyra.local import (
+    BRIDGE_ID_LABEL,
     CREATED_BY_LABEL,
     ACTIVE_KUBECONFIG_LABEL,
     ACTIVE_KUBECONFIG_CONTEXT_LABEL,
@@ -129,6 +131,7 @@ def handle_docker_run_container(
         image,
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
+            BRIDGE_ID_LABEL: uuid.uuid4().hex,
         },
         **kwargs,
     )
