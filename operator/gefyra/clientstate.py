@@ -1,5 +1,5 @@
-import datetime
-from typing import Optional, Tuple
+from datetime import datetime
+from typing import Any, Optional, Tuple
 import uuid
 import kopf
 import kubernetes as k8s
@@ -9,49 +9,102 @@ from statemachine import State, StateMachine
 from gefyra.configuration import OperatorConfiguration
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 from gefyra.connection.factory import ProviderType, connection_provider_factory
+from gefyra.resources.events import _get_now
+from gefyra.resources.serviceaccounts import (
+    get_serviceaccount_data,
+    handle_create_gefyraclient_serviceaccount,
+)
+
+
+class GefyraClientObject:
+    def __init__(self, data: dict):
+        self._state = None
+        self.data = data
+        self.name = data["metadata"]["name"]
+        self.namespace = data["metadata"]["namespace"]
+
+        self.custom_api = k8s.client.CustomObjectsApi()
+
+    def __repr__(self):
+        return f"GefyraClientObject: {self.name} (state={self.state})"
+
+    @property
+    def state(self):
+        if self._state is None:
+            self._state = self.data["state"]
+        return self._state
+
+    @state.setter
+    def state(self, value):
+        self._state = value
+        self._write_state(value)
+
+    def _write_state(self, state: State):
+        self.custom_api.patch_namespaced_custom_object(
+            namespace=self.namespace,
+            name=self.name,
+            body={
+                "state": str(state),
+                "stateTransitions": {str(state): _get_now()},
+            },
+            plural="gefyraclients",
+            group="gefyra.dev",
+            version="v1",
+        )
 
 
 class GefyraClient(StateMachine):
     """
     A Gefyra client is implemented as a state machine
-    The body of the GefyraClient is available as self.model
     """
 
     requested = State("Client requested", initial=True, value="REQUESTED")
     creating = State("Client creating", value="CREATING")
     waiting = State("Client waiting", value="WAITING")
+    enabling = State("Client waiting", value="ENABLING")
     active = State("Client active", value="ACTIVE")
     error = State("Client error", value="ERROR")
     terminating = State("Client terminating", value="TERMINATING")
 
-    create = requested.to(creating) | error.to(creating)
-    wait = creating.to(waiting) | error.to(waiting)
-    activate = waiting.to(active) | error.to(active) | active.to.itself()
+    create = requested.to(creating, on="on_create") | error.to(creating) | creating.to.itself(on="create_service_account")
+    wait = creating.to(waiting) | waiting.to.itself() | error.to(waiting)
+    enable = waiting.to(enabling) | error.to(enabling)
+    activate = enabling.to(active) | error.to(active) | active.to.itself()
     impair = error.from_(requested, creating, waiting, active, error)
-    terminate = terminating.from_(requested, creating, waiting, active, error, terminating)
+    terminate = terminating.from_(
+        requested, creating, waiting, active, error, terminating
+    )
 
     def __init__(
         self,
+        model: GefyraClientObject,
         configuration: OperatorConfiguration,
-        model=None,
-        logger=None,
+        logger: Any,
     ):
-        super(GefyraClient, self).__init__()
+        super().__init__()
         self.model = model
-        self.current_state_value = model.get("state")
-        self.logger = logger
+        self.data = model.data
         self.configuration = configuration
+        self.logger = logger
         self.custom_api = k8s.client.CustomObjectsApi()
-        self.core_api = k8s.client.CoreV1Api()
         self.events_api = k8s.client.EventsV1Api()
+        self._connection_provider = None
 
     @property
-    def name(self) -> str:
+    def client_name(self) -> str:
         """
         It returns the name of the GefyraClient
         :return: The name of the GefyraClient.
         """
-        return self.model["metadata"]["name"]
+        return self.model.name
+
+    @property
+    def namespace(self) -> str:
+        """
+        It returns the namespace of the GefyraClient
+        :return: The name of the GefyraClient.
+        """
+        return self.data["metadata"]["namespace"]
 
     @property
     def connection_provider(self) -> AbstractGefyraConnectionProvider:
@@ -60,33 +113,21 @@ class GefyraClient(StateMachine):
         :return: The provider is being returned.
         """
         provider = connection_provider_factory.get(
-            ProviderType(self.model.get("provider")),
+            ProviderType(self.data.get("provider")),
             self.configuration,
-            self.name,
-            self.namespace,
+            self.client_name,
+            self.configuration.NAMESPACE,
             self.logger,
         )
         if provider is None:
             raise kopf.PermanentError(
-                f"Cannot create Gefyra connection provider {self.model.get('provider')}: not supported."
+                f"Cannot create Gefyra connection provider {self.data.get('provider')}: not supported."
             )
         return provider
 
     @property
-    async def kubeconfig(self) -> Optional[str]:
-        """
-        If the client already has a kubeconfig, use it, otherwise create a kubeconfig
-        :return: The kubeconfig is being returned.
-        """
-        if kubeconfig := self.model.get("kubeconfig"):
-            return kubeconfig
-        else:
-            # TODO create kubeconfig
-            pass
-
-    @property
-    def sunset(self) -> Optional[datetime.datetime]:
-        if sunset := self.model.get("sunset"):
+    def sunset(self) -> Optional[datetime]:
+        if sunset := self.data.get("sunset"):
             return datetime.fromisoformat(sunset.strip("Z"))
         else:
             return None
@@ -96,36 +137,45 @@ class GefyraClient(StateMachine):
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this client because the sunset time is in the past
             self.logger.warning(
-                f"Client '{self.name}' should be terminated due to reached sunset date"
+                f"Client '{self.client_name}' should be terminated due to reached sunset date"
             )
             return True
         else:
             return False
+        
+    def on_create(self):
+        self.logger.info(f"Client '{self.client_name}' is being created")
 
-    def completed_transition(self, state_value: str) -> Optional[str]:
+    def create_service_account(self):
         """
-        Read the stateTransitions attribute, return the value of the stateTransitions timestamp for the given
-        state_value, otherwise return None
-        :param state_value: The value of the state value
-        :type state_value: str
-        :return: The value of the stateTransitions key in the model dictionary.
+        This method is called when the GefyraClient is creating
+        :return: None
         """
-        if transitions := self.model.get("stateTransitions"):
-            return transitions.get(state_value, None)
-        else:
-            return None
+        self.logger.info(f"Creating service account for GefyraClient '{self.client_name}'")
+        sa_name = f"gefyra-client-{self.client_name}"
+        handle_create_gefyraclient_serviceaccount(
+            self.logger, sa_name, self.configuration.NAMESPACE
+        )
+        token_data = get_serviceaccount_data(
+            sa_name, self.configuration.NAMESPACE
+        )
+        self._patch_object(
+            {"serviceAccountName": sa_name, "serviceAccountToken": token_data}
+        )
+        self.send("wait")
 
-    def get_latest_transition(self) -> Optional[datetime.datetime]:
+    def get_latest_transition(self) -> Optional[datetime]:
         """
-        > Get the latest transition time for a cluster
+        > Get the latest transition time for a GefyraClient
         :return: The latest transition times
         """
         timestamps = list(
             filter(
                 lambda k: k is not None,
                 [
-                    self.completed_transition(GefyraClient.waiting.value),
                     self.completed_transition(GefyraClient.creating.value),
+                    self.completed_transition(GefyraClient.waiting.value),
+                    self.completed_transition(GefyraClient.enabling.value),
                     self.completed_transition(GefyraClient.active.value),
                     self.completed_transition(GefyraClient.error.value),
                 ],
@@ -141,20 +191,23 @@ class GefyraClient(StateMachine):
         else:
             return None
 
-    def get_latest_state(self) -> Optional[Tuple[str, datetime.datetime]]:
+    def get_latest_state(self) -> Optional[Tuple[str, datetime]]:
         """
-        It returns the latest state of the cluster, and the timestamp of when it was in that state
+        It returns the latest state of the GefyraClient, and the timestamp of when it was in that state
         :return: A tuple of the latest state and the timestamp of the latest state.
         """
         states = list(
             filter(
                 lambda k: k[1] is not None,
                 {
+                    GefyraClient.creating.value: self.completed_transition(
+                        GefyraClient.creating.value
+                    ),
                     GefyraClient.waiting.value: self.completed_transition(
                         GefyraClient.waiting.value
                     ),
-                    GefyraClient.creating.value: self.completed_transition(
-                        GefyraClient.creating.value
+                    GefyraClient.enabling.value: self.completed_transition(
+                        GefyraClient.enabling.value
                     ),
                     GefyraClient.active.value: self.completed_transition(
                         GefyraClient.active.value
@@ -180,11 +233,18 @@ class GefyraClient(StateMachine):
         else:
             return None
 
-    def on_enter_requested(self) -> None:
-        pass
-
-    def _get_now(self) -> str:
-        return datetime.utcnow().isoformat(timespec="microseconds") + "Z"
+    def completed_transition(self, target: State) -> Optional[str]:
+        """
+        Read the stateTransitions attribute, return the value of the stateTransitions timestamp for the given
+        target, otherwise return None
+        :param target: The value of the state value
+        :type target: State
+        :return: The value of the stateTransitions key in the model dictionary.
+        """
+        if transitions := self.data.get("stateTransitions"):
+            return transitions.get(target, None)
+        else:
+            return None
 
     def post_event(self, reason: str, message: str, _type: str = "Normal") -> None:
         """
@@ -196,10 +256,10 @@ class GefyraClient(StateMachine):
         :param _type: The type of event, defaults to Normal
         :type _type: str (optional)
         """
-        now = self._get_now()
+        now = _get_now()
         event = k8s.client.EventsV1Event(
             metadata=k8s.client.V1ObjectMeta(
-                name=f"{self.name}-{uuid.uuid4()}",
+                name=f"{self.client_name}-{uuid.uuid4()}",
                 namespace=self.configuration.NAMESPACE,
             ),
             reason=reason.capitalize(),
@@ -211,34 +271,21 @@ class GefyraClient(StateMachine):
             reporting_controller="gefyra-operator",
             regarding=k8s.client.V1ObjectReference(
                 kind="GefyraClient",
-                name=self.name,
+                name=self.client_name,
                 namespace=self.configuration.NAMESPACE,
-                uid=self.model.metadata["uid"],
+                uid=self.data["metadata"]["uid"],
             ),
         )
         self.events_api.create_namespaced_event(
             namespace=self.configuration.NAMESPACE, body=event
         )
 
-    def _write_state(self):
-        self.custom_api.patch_namespaced_custom_object(
-            namespace=self.configuration.NAMESPACE,
-            name=self.name,
-            body={
-                "state": self.current_state.value,
-                "stateTransitions": {self.current_state.value: self._get_now()},
-            },
-            group="gefyra.dev",
-            plural="gclients",
-            version="v1",
-        )
-
     def _patch_object(self, data: dict):
         self.custom_api.patch_namespaced_custom_object(
             namespace=self.configuration.NAMESPACE,
-            name=self.name,
+            name=self.client_name,
             body=data,
             group="gefyra.dev",
-            plural="gclients",
+            plural="gefyraclients",
             version="v1",
         )

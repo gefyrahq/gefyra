@@ -67,6 +67,7 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
 def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
     schema_props = k8s.client.V1JSONSchemaProps(
         type="object",
+        required=["provider"],
         properties={
             # the Gefyra connection provider for this client
             "provider": k8s.client.V1JSONSchemaProps(type="string", enum=["stowaway"]),
@@ -80,9 +81,14 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
             # the name of the ServiceAccount to use for this client
             "serviceAccountName": k8s.client.V1JSONSchemaProps(type="string"),
             # the ServiceAccount token to use for this client
-            "serviceAccountToken": k8s.client.V1JSONSchemaProps(type="string"),
-            # a generated kubeconfig using the ServiceAccount token for this client
-            "kubeconfig": k8s.client.V1JSONSchemaProps(type="string"),
+            "serviceAccountData": k8s.client.V1JSONSchemaProps(
+                type="object",
+                properties={
+                    "token": k8s.client.V1JSONSchemaProps(type="string"),
+                    "ca.crt": k8s.client.V1JSONSchemaProps(type="string"),
+                    "namespace": k8s.client.V1JSONSchemaProps(type="string"),
+                },
+            ),
             # datetime when this client is to be removed from the cluster
             "sunset": k8s.client.V1JSONSchemaProps(type="string"),
             # datetime when this client was last contacted

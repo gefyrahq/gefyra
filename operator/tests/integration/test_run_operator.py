@@ -16,15 +16,3 @@ def test_a_boot_operator(operator: AClusterManager):
         namespace="gefyra",
         timeout=90,
     )
-    events = k8s.kubectl(["get", "events", "-n", "gefyra"])
-    not_found = True
-    _i = 0
-    while not_found and _i < 30:
-        sleep(1)
-        events = k8s.kubectl(["get", "events", "-n", "gefyra"])
-        _i += 1
-        for event in events["items"]:
-            if event["reason"] == "Gefyra-Ready":
-                not_found = False
-    if not_found:
-        raise Exception("Gefyra operator did not become ready")

@@ -2,7 +2,7 @@ import logging
 import os
 from time import sleep
 import pytest
-import kubernetes
+
 from pytest_kubernetes.providers import AClusterManager
 
 
@@ -20,6 +20,7 @@ class TestStowaway:
 
     @pytest.mark.asyncio
     async def test_a_install(self, k3d: AClusterManager, stowaway_image):
+        import kubernetes
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -49,6 +50,7 @@ class TestStowaway:
 
     @pytest.mark.asyncio
     async def test_b_add_peer(self, k3d: AClusterManager):
+        import kubernetes
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -71,6 +73,7 @@ class TestStowaway:
 
     @pytest.mark.asyncio
     async def test_c_add_another_peer(self, k3d: AClusterManager):
+        import kubernetes
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -96,6 +99,7 @@ class TestStowaway:
 
     @pytest.mark.asyncio
     async def test_d_get_peer_config(self, k3d: AClusterManager):
+        import kubernetes
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -126,6 +130,7 @@ class TestStowaway:
 
     @pytest.mark.asyncio
     async def test_e_remove_peer(self, k3d: AClusterManager):
+        import kubernetes
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -165,6 +170,7 @@ class TestStowaway:
 
     @pytest.mark.asyncio
     async def test_z_remove_stowaway(self, k3d: AClusterManager):
+        import kubernetes
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 

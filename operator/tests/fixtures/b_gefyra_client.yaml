@@ -1,0 +1,6 @@
+apiVersion: gefyra.dev/v1
+kind: gefyraclient
+metadata:
+  name: client-b
+  namespace: gefyra
+provider: stowaway
