@@ -108,6 +108,39 @@ up_parser.add_argument(
     help="The context name from kubeconfig",
 )
 
+reflect_parser = action.add_parser("reflect")
+reflect_parser.add_argument(
+    "-w", "--workload", help="Workload to reflect locally", required=True
+)
+reflect_parser.add_argument(
+    "-e", "--expose", help="Exposes ports from k8s container spec to host", required=False, default=True
+)
+reflect_parser.add_argument(
+    "-v",
+    "--volume",
+    action="append",
+    help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
+    required=False,
+)
+
+reflect_parser.add_argument(
+    "-c",
+    "--command",
+    help="The command for this container to in Gefyra",
+    nargs="+",
+    required=False,
+)
+reflect_parser.add_argument(
+    "-n",
+    "--namespace",
+    help="The namespace for this container to run in",
+)
+reflect_parser.add_argument(
+    "--env",
+    action="append",
+    help="Set or override environment variables in the form ENV=value, allowed multiple times",
+    required=False,
+)
 
 run_parser = action.add_parser("run")
 run_parser.add_argument(
@@ -345,7 +378,7 @@ def cli_up(configuration):
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status, reflect
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -377,6 +410,14 @@ def main():
                 volumes=args.volume,
                 config=configuration,
                 detach=args.detach,
+            )
+        elif args.action == "reflect":
+            reflect(
+                workload=args.workload,
+                expose_ports=args.expose,
+                volumes=args.volume,
+                command=args.command,
+                namespace=args.namespace,
             )
         elif args.action == "bridge":
             bridge(
