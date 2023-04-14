@@ -1,3 +1,4 @@
+from gefyra.api import bridge
 from gefyra.api.run import retrieve_pod_and_container, run
 from gefyra.cluster.utils import get_container_command, get_container_image, get_container_ports, get_v1pod
 from gefyra.configuration import default_configuration
@@ -6,7 +7,7 @@ def reflect(
         workload: str, # deploy/my-deployment
         namespace: str = "default",
         config=default_configuration,
-        bridge: bool = False,
+        do_bridge: bool = False,
         env: list = None,
         command: str = "",
         volumes: dict = None,
@@ -48,8 +49,14 @@ def reflect(
         ports=ports
     )
 
-    if bridge:
+    if do_bridge:
         # TODO bridge
-        pass
+        bridge(
+            name=name,
+            namespace=namespace,
+            config=config,
+            target=workload,
+            ports=ports
+        )
 
 

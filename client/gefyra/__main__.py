@@ -113,7 +113,7 @@ reflect_parser.add_argument(
     "-w", "--workload", help="Workload to reflect locally", required=True
 )
 reflect_parser.add_argument(
-    "-e", "--expose", help="Exposes ports from k8s container spec to host", required=False, default=True
+    "-e", "--expose", help="Exposes ports from k8s container spec to host", required=False, default=True, action="store_false"
 )
 reflect_parser.add_argument(
     "-v",
@@ -121,6 +121,10 @@ reflect_parser.add_argument(
     action="append",
     help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
     required=False,
+)
+
+reflect_parser.add_argument(
+    "-b", "--bridge", help="Bridge workload and make local container accessible to k8s workloads", required=False, default=False, action="store_true",
 )
 
 reflect_parser.add_argument(
@@ -134,6 +138,7 @@ reflect_parser.add_argument(
     "-n",
     "--namespace",
     help="The namespace for this container to run in",
+    default="default",
 )
 reflect_parser.add_argument(
     "--env",
@@ -418,6 +423,7 @@ def main():
                 volumes=args.volume,
                 command=args.command,
                 namespace=args.namespace,
+                do_bridge=args.bridge,
             )
         elif args.action == "bridge":
             bridge(
