@@ -35,7 +35,7 @@ def reflect(
             ports[host_port] = port.container_port
 
     
-    run(
+    res = run(
         name=name,
         image=image,
         command=command,
@@ -51,12 +51,11 @@ def reflect(
 
     if do_bridge:
         # TODO bridge
-        bridge(
+        res = bridge(
             name=name,
             namespace=namespace,
             config=config,
             target=workload,
             ports=ports
         )
-
-
+    return res

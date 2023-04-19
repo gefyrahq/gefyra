@@ -23,6 +23,7 @@ from gefyra.__main__ import version, print_status
 from gefyra.api import (
     bridge,
     down,
+    reflect,
     run,
     status,
     up,
@@ -584,6 +585,17 @@ class GefyraBaseTest:
         self.assertTrue(
             owner_reference_consistent(right_pod, deployment, default_configuration)
         )
+
+    def test_gefyra_n_reflect(self):
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        params = {
+            "workload": "pod/hello-nginxdemo",
+            "do_bridge": True,
+            "auto_remove": True
+        }
+        res_bridge = reflect(**params)
+        self.assertTrue(res_bridge)
 
     def test_n_run_gefyra_down(self):
         res = down(default_configuration)
