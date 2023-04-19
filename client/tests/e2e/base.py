@@ -590,7 +590,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         params = {
-            "workload": "pod/hello-nginxdemo",
+            "workload": "deploy/hello-nginxdemo",
             "do_bridge": True,
             "auto_remove": True
         }
