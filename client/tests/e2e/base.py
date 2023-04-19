@@ -586,17 +586,6 @@ class GefyraBaseTest:
             owner_reference_consistent(right_pod, deployment, default_configuration)
         )
 
-    def test_gefyra_n_reflect(self):
-        self.assert_cargo_running()
-        self.assert_gefyra_connected()
-        params = {
-            "workload": "deploy/hello-nginxdemo",
-            "do_bridge": True,
-            "auto_remove": True
-        }
-        res_bridge = reflect(**params)
-        self.assertTrue(res_bridge)
-
     def test_n_run_gefyra_down(self):
         res = down(default_configuration)
         self.assertTrue(res)
@@ -612,6 +601,19 @@ class GefyraBaseTest:
 
     def test_n_run_gefyra_down_again_without_errors(self):
         self.test_n_run_gefyra_down()
+
+    def test_gefyra_o_reflect(self):
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        params = {
+            "workload": "deploy/hello-nginxdemo",
+            "do_bridge": True,
+            "auto_remove": True
+        }
+        res_bridge = reflect(**params)
+        self.assertTrue(res_bridge)
 
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
