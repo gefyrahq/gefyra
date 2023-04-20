@@ -62,9 +62,7 @@ def get_container_image(pod, container_name: str):
         if container.name == container_name:
             if container.image:
                 return container.image
-    raise RuntimeError(
-        f"Container {container_name} image could not be determined."
-    )
+    raise RuntimeError(f"Container {container_name} image could not be determined.")
 
 
 def get_container_command(pod, container_name: str):
@@ -90,9 +88,12 @@ def get_container_ports(pod, container_name: str):
 
 
 def get_v1pod(
-    config: ClientConfiguration, pod_name: str, namespace: str,
+    config: ClientConfiguration,
+    pod_name: str,
+    namespace: str,
 ):
     from kubernetes.client import ApiException
+
     try:
         pod = config.K8S_CORE_API.read_namespaced_pod(pod_name, namespace)
     except ApiException as e:
@@ -103,4 +104,3 @@ def get_v1pod(
         else:
             raise e
     return pod
-    

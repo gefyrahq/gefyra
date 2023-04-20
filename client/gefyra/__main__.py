@@ -113,7 +113,12 @@ reflect_parser.add_argument(
     "-w", "--workload", help="Workload to reflect locally", required=True
 )
 reflect_parser.add_argument(
-    "-e", "--expose", help="Exposes ports from k8s container spec to host", required=False, default=True, action="store_false"
+    "-e",
+    "--expose",
+    help="Exposes ports from k8s container spec to host",
+    required=False,
+    default=True,
+    action="store_false",
 )
 reflect_parser.add_argument(
     "-v",
@@ -124,7 +129,12 @@ reflect_parser.add_argument(
 )
 
 reflect_parser.add_argument(
-    "-b", "--bridge", help="Bridge workload and make local container accessible to k8s workloads", required=False, default=False, action="store_true",
+    "-b",
+    "--bridge",
+    help="Bridge workload and make local container accessible to k8s workloads",
+    required=False,
+    default=False,
+    action="store_true",
 )
 
 reflect_parser.add_argument(
@@ -380,27 +390,39 @@ def cli_up(configuration):
         raise RuntimeError("Failed to start Gefyra")
 
 
+def setup_logger(args, configuration_package):
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.addHandler(configuration_package.console)
+
+
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status, reflect
+        from gefyra.api import (
+            bridge,
+            down,
+            run,
+            unbridge,
+            unbridge_all,
+            status,
+            reflect,
+        )
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
-        if args.debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
-        logger.addHandler(configuration_package.console)
+
+        setup_logger(args, configuration_package)
+
+        configuration = get_client_configuration(args)
 
         if args.action == "version":
             check = not args.no_check
             version(configuration_package, check)
             exit(0)
-
-        configuration = get_client_configuration(args)
-
-        if args.action == "up":
+        elif args.action == "up":
             cli_up(configuration=configuration)
         elif args.action == "run":
             run(

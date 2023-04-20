@@ -610,7 +610,7 @@ class GefyraBaseTest:
         params = {
             "workload": "deploy/hello-nginxdemo",
             "do_bridge": True,
-            "auto_remove": True
+            "auto_remove": True,
         }
         res_bridge = reflect(**params)
         self.assertTrue(res_bridge)

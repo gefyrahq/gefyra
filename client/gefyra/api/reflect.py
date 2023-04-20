@@ -1,21 +1,26 @@
 from gefyra.api import bridge
 from gefyra.api.run import retrieve_pod_and_container, run
-from gefyra.cluster.utils import get_container_command, get_container_image, get_container_ports, get_v1pod
+from gefyra.cluster.utils import (
+    get_container_command,
+    get_container_image,
+    get_container_ports,
+    get_v1pod,
+)
 from gefyra.configuration import default_configuration
 
-def reflect(
-        workload: str, # deploy/my-deployment
-        namespace: str = "default",
-        config=default_configuration,
-        do_bridge: bool = False,
-        env: list = None,
-        command: str = "",
-        volumes: dict = None,
-        auto_remove: bool = False,
-        expose_ports: bool = True
-        # TODO adapt port mapping in case it's occupied
-    ):
 
+def reflect(
+    workload: str,  # deploy/my-deployment
+    namespace: str = "default",
+    config=default_configuration,
+    do_bridge: bool = False,
+    env: list = None,
+    command: str = "",
+    volumes: dict = None,
+    auto_remove: bool = False,
+    expose_ports: bool = True
+    # TODO adapt port mapping in case it's occupied
+):
     name = f"gefyra-reflect-{namespace}-{workload.replace('/', '-')}"
     pod_name, container_name = retrieve_pod_and_container(workload, namespace, config)
     ports = {}
@@ -34,7 +39,6 @@ def reflect(
                 host_port = port.container_port
             ports[host_port] = port.container_port
 
-    
     res = run(
         name=name,
         image=image,
@@ -46,16 +50,12 @@ def reflect(
         env_from=workload,
         env=env,
         detach=True,
-        ports=ports
+        ports=ports,
     )
 
     if do_bridge:
         # TODO bridge
         res = bridge(
-            name=name,
-            namespace=namespace,
-            config=config,
-            target=workload,
-            ports=ports
+            name=name, namespace=namespace, config=config, target=workload, ports=ports
         )
     return res
