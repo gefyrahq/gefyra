@@ -135,8 +135,8 @@ class GefyraBaseTest:
         raise AssertionError(f"Pod {pod_name} is not ready.")
 
     def _pod_ready(self, pod):
-        return all(pod.conditions, lambda c: c.status == "True") and all(
-            pod.container_statuses, lambda s: s.ready
+        return all([c.status == "True" for c in pod.conditions]) and all(
+            [c.ready for c in pod.status.container_statuses]
         )
 
     def _deployment_ready(self, deployment):
