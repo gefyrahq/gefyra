@@ -602,7 +602,7 @@ class GefyraBaseTest:
     def test_n_run_gefyra_down_again_without_errors(self):
         self.test_n_run_gefyra_down()
 
-    def test_gefyra_o_reflect(self):
+    def test_o_reflect(self):
         res = up(default_configuration)
         self.assertTrue(res)
         self.assert_cargo_running()
