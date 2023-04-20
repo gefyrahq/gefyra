@@ -1,6 +1,11 @@
 from copy import deepcopy
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
-from gefyra.cluster.utils import get_container_command, get_container_image, get_container_ports, get_v1pod
+from gefyra.cluster.utils import (
+    get_container_command,
+    get_container_image,
+    get_container_ports,
+    get_v1pod,
+)
 from gefyra.local.bridge import handle_delete_interceptrequest
 from gefyra.local.check import probe_docker, probe_kubernetes
 import requests
@@ -315,7 +320,7 @@ class GefyraBaseTest:
             if pod_name in pod.metadata.name:
                 return pod
         return None
-    
+
     def test_get_container_command_error(self):
         config = ClientConfiguration()
         namespace = "default"
@@ -326,8 +331,8 @@ class GefyraBaseTest:
         pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
         with self.assertRaises(RuntimeError) as rte:
             get_container_command(pod=pod, container_name="UnknownContainer")
-        self.assertIn("UnknownContainer not found in pod ", str(rte.exception))
-    
+        self.assertIn("Container UnknownContainer not found", str(rte.exception))
+
     def test_get_container_image_error(self):
         config = ClientConfiguration()
         namespace = "default"
@@ -338,8 +343,8 @@ class GefyraBaseTest:
         pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
         with self.assertRaises(RuntimeError) as rte:
             get_container_image(pod=pod, container_name="UnknownContainer")
-        self.assertIn("UnknownContainer not found in pod ", str(rte.exception))
-    
+        self.assertIn("Container UnknownContainer not found", str(rte.exception))
+
     def test_get_container_ports_error(self):
         config = ClientConfiguration()
         namespace = "default"
@@ -350,7 +355,7 @@ class GefyraBaseTest:
         pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
         with self.assertRaises(RuntimeError) as rte:
             get_container_ports(pod=pod, container_name="UnknownContainer")
-        self.assertIn("UnknownContainer not found in pod ", str(rte.exception))
+        self.assertIn("Container UnknownContainer not found", str(rte.exception))
 
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)

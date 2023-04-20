@@ -57,34 +57,32 @@ def get_env_from_pod_container(
     )
 
 
-def get_container_image(pod, container_name: str):
+def get_container(pod, container_name: str):
     for container in pod.spec.containers:
         if container.name == container_name:
-            if container.image:
-                return container.image
+            return container
+    raise RuntimeError(f"Container {container_name} not found.")
+
+
+def get_container_image(pod, container_name: str):
+    container = get_container(pod, container_name=container_name)
+    if container.image:
+        return container.image
     raise RuntimeError(f"Container {container_name} image could not be determined.")
 
 
 def get_container_command(pod, container_name: str):
-    for container in pod.spec.containers:
-        if container.name == container_name:
-            if container.command:
-                return " ".join(container.command)
-            return ""
-    raise RuntimeError(
-        f"Container {container_name} not found in pod {pod.metadata.name}."
-    )
+    container = get_container(pod, container_name=container_name)
+    if container.command:
+        return " ".join(container.command)
+    return ""
 
 
 def get_container_ports(pod, container_name: str):
-    for container in pod.spec.containers:
-        if container.name == container_name:
-            if container.ports:
-                return container.ports
-            return []
-    raise RuntimeError(
-        f"Container {container_name} not found in pod {pod.metadata.name}."
-    )
+    container = get_container(pod, container_name=container_name)
+    if container.ports:
+        return container.ports
+    return []
 
 
 def get_v1pod(
