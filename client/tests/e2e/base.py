@@ -121,21 +121,22 @@ class GefyraBaseTest:
                     pass
             else:
                 raise e
-    
+
     def assert_pod_ready(self, pod_name: str, namespace: str, retries=3, interval=1):
         counter = 0
         while counter < retries:
             counter += 1
-            pod = self.K8S_CORE_API.read_namespaced_pod(namespace=namespace, name=pod_name)
+            pod = self.K8S_CORE_API.read_namespaced_pod(
+                namespace=namespace, name=pod_name
+            )
             if self._pod_ready(pod):
                 return True
             sleep(interval)
         raise AssertionError(f"Pod {pod_name} is not ready.")
-            
+
     def _pod_ready(self, pod):
-        return (
-            all(pod.conditions, lambda c: c.status == "True")
-            and all(pod.container_statuses, lambda s: s.ready)
+        return all(pod.conditions, lambda c: c.status == "True") and all(
+            pod.container_statuses, lambda s: s.ready
         )
 
     def _deployment_ready(self, deployment):
@@ -171,8 +172,10 @@ class GefyraBaseTest:
                 pass
             sleep(interval)
         raise AssertionError(f"Service not available within {timeout} seconds.")
-    
-    def assert_deployment_ready(self, namespace: str, name: str, timeout=60, interval=1):
+
+    def assert_deployment_ready(
+        self, namespace: str, name: str, timeout=60, interval=1
+    ):
         counter = 0
         while counter < timeout:
             counter += 1
@@ -185,10 +188,20 @@ class GefyraBaseTest:
         raise AssertionError(f"Deployment {name} not ready within {timeout} seconds.")
 
     def assert_operator_ready(self, timeout=60, interval=1):
-        return self.assert_deployment_ready(name="gefyra-operator", namespace="gefyra", timeout=timeout, interval=interval)
+        return self.assert_deployment_ready(
+            name="gefyra-operator",
+            namespace="gefyra",
+            timeout=timeout,
+            interval=interval,
+        )
 
     def assert_stowaway_ready(self, timeout=60, interval=1):
-        return self.assert_deployment_ready(name="gefyra-stowaway", namespace="gefyra", timeout=timeout, interval=interval)
+        return self.assert_deployment_ready(
+            name="gefyra-stowaway",
+            namespace="gefyra",
+            timeout=timeout,
+            interval=interval,
+        )
 
     def assert_namespace_ready(self, namespace, timeout=30, interval=1):
         counter = 0
