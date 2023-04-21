@@ -200,7 +200,9 @@ def deploy_app_container(
     else:
         container = config.DOCKER.containers.get(container.id)
         if container.status != "running":
-            raise RuntimeError(f"Container {name} is not running. Check whether your command is valid for the chosen image.")
+            raise RuntimeError(
+                f"Container {name} is not running. Check whether your command is valid for the chosen image."
+            )
         raise RuntimeError(
             f"Gateway patch could not be applied to '{container.name}': {output}"
         )
