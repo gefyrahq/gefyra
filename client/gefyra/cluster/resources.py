@@ -207,10 +207,13 @@ def owner_reference_consistent(
     if workload.kind == "StatefulSet":
         return pod.metadata.owner_references[0].uid == workload.metadata.uid
     elif workload.kind == "Deployment":
-        replicaset_set = config.K8S_APP_API.read_namespaced_replica_set(
-            name=pod.metadata.owner_references[0].name,
-            namespace=pod.metadata.namespace,
-        )
+        try:
+            replicaset_set = config.K8S_APP_API.read_namespaced_replica_set(
+                name=pod.metadata.owner_references[0].name,
+                namespace=pod.metadata.namespace,
+            )
+        except ApiException:
+            return False
         return replicaset_set.metadata.owner_references[0].uid == workload.metadata.uid
     raise RuntimeError(
         f"Unknown workload type for owner reference check: {workload.kind}/{workload.metadata.name}."
@@ -257,7 +260,7 @@ def get_pods_and_containers_for_workload(
             result[pod.metadata.name] = [
                 container.name for container in pod.spec.containers
             ]
-
+    print(result)
     return result
 
 
