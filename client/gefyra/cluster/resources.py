@@ -212,8 +212,9 @@ def owner_reference_consistent(
                 name=pod.metadata.owner_references[0].name,
                 namespace=pod.metadata.namespace,
             )
-        except ApiException:
-            return False
+        except ApiException as e:
+            if e.status == 404:
+                return False
         return replicaset_set.metadata.owner_references[0].uid == workload.metadata.uid
     raise RuntimeError(
         f"Unknown workload type for owner reference check: {workload.kind}/{workload.metadata.name}."
@@ -260,7 +261,6 @@ def get_pods_and_containers_for_workload(
             result[pod.metadata.name] = [
                 container.name for container in pod.spec.containers
             ]
-    print(result)
     return result
 
 
