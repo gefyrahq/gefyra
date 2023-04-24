@@ -206,6 +206,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             peers = [add] + peers
             data = {"PEERS": ",".join(peers)}
             if subnet:
+                # TODO check if subnet is valid and not already in use
                 data[f"SERVER_ALLOWEDIPS_PEER_{add}"] = subnet
             core_v1_api.patch_namespaced_config_map(
                 name=configmap.metadata.name,

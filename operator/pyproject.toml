@@ -3,6 +3,9 @@ name = "Gefyra Operator"
 version = "1.0.4"
 description = "Gefyra Operator runs all cluster-side components of Gefyra's Kubernetes-based development system"
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
+packages = [
+    { include = "gefyra" },
+]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<3.12"
@@ -29,10 +32,11 @@ log_cli = true
 log_cli_level = "INFO"
 norecursedirs = "*.egg .eggs dist build docs .tox .git __pycache__"
 addopts = """
+    -x
+	-s
 	--strict-markers
 	--doctest-modules
 	--tb=short
-	--ignore-glob=main.py
-    --ignore-glob=./gefyra/**
 """
 testpaths = "tests"
+pythonpath = "operator"

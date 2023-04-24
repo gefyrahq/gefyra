@@ -1,10 +1,10 @@
 import logging
 import os
+import sys
 from time import sleep
 import pytest
 
 from pytest_kubernetes.providers import AClusterManager
-
 
 from gefyra.configuration import OperatorConfiguration
 
@@ -21,6 +21,7 @@ class TestStowaway:
     @pytest.mark.asyncio
     async def test_a_install(self, k3d: AClusterManager, stowaway_image):
         import kubernetes
+
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -38,7 +39,6 @@ class TestStowaway:
         await stowaway.install()
         assert await stowaway.installed() is True
         assert await stowaway.ready() is False
-        sleep(5)
         k3d.wait(
             "pod/gefyra-stowaway-0",
             "condition=ready",
@@ -51,6 +51,7 @@ class TestStowaway:
     @pytest.mark.asyncio
     async def test_b_add_peer(self, k3d: AClusterManager):
         import kubernetes
+
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -74,6 +75,7 @@ class TestStowaway:
     @pytest.mark.asyncio
     async def test_c_add_another_peer(self, k3d: AClusterManager):
         import kubernetes
+
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -87,7 +89,12 @@ class TestStowaway:
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test2,test1,0"
         assert cm["data"]["SERVER_ALLOWEDIPS_PEER_test2"] == "192.168.101.0/24"
-        sleep(1)
+        k3d.wait(
+            "pod/gefyra-stowaway-0",
+            "condition=ready",
+            namespace="gefyra",
+            timeout=120,
+        )
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,
@@ -100,6 +107,7 @@ class TestStowaway:
     @pytest.mark.asyncio
     async def test_d_get_peer_config(self, k3d: AClusterManager):
         import kubernetes
+
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -131,6 +139,7 @@ class TestStowaway:
     @pytest.mark.asyncio
     async def test_e_remove_peer(self, k3d: AClusterManager):
         import kubernetes
+
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 
@@ -143,7 +152,12 @@ class TestStowaway:
 
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test2,0"
-        sleep(1)
+        k3d.wait(
+            "pod/gefyra-stowaway-0",
+            "condition=ready",
+            namespace="gefyra",
+            timeout=120,
+        )
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,
@@ -153,6 +167,12 @@ class TestStowaway:
         assert await stowaway.peer_exists("test2") is True
         assert await stowaway.peer_exists("test1") is False
         assert await stowaway.peer_exists("test3") is False
+        k3d.wait(
+            "pod/gefyra-stowaway-0",
+            "condition=ready",
+            namespace="gefyra",
+            timeout=120,
+        )
         output = k3d.kubectl(
             [
                 "exec",
@@ -171,6 +191,7 @@ class TestStowaway:
     @pytest.mark.asyncio
     async def test_z_remove_stowaway(self, k3d: AClusterManager):
         import kubernetes
+
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
         from gefyra.connection.factory import ProviderType, connection_provider_factory
 

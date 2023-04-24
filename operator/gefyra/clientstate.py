@@ -61,15 +61,26 @@ class GefyraClient(StateMachine):
     requested = State("Client requested", initial=True, value="REQUESTED")
     creating = State("Client creating", value="CREATING")
     waiting = State("Client waiting", value="WAITING")
-    enabling = State("Client waiting", value="ENABLING")
+    enabling = State("Client enabling", value="ENABLING")
     active = State("Client active", value="ACTIVE")
+    disabling = State("Client disabling", value="DISABLING")
     error = State("Client error", value="ERROR")
     terminating = State("Client terminating", value="TERMINATING")
 
-    create = requested.to(creating, on="on_create") | error.to(creating) | creating.to.itself(on="create_service_account")
-    wait = creating.to(waiting) | waiting.to.itself() | error.to(waiting)
+    create = (
+        requested.to(creating, on="on_create")
+        | error.to(creating)
+        | creating.to.itself(on="create_service_account")
+    )
+    wait = (
+        creating.to(waiting)
+        | waiting.to.itself()
+        | error.to(waiting)
+        | disabling.to(waiting, on="on_disable")
+    )
     enable = waiting.to(enabling) | error.to(enabling)
-    activate = enabling.to(active) | error.to(active) | active.to.itself()
+    activate = enabling.to(active, on="on_enable") | error.to(active) | active.to.itself()
+    disable = active.to(disabling) | error.to(disabling)
     impair = error.from_(requested, creating, waiting, active, error)
     terminate = terminating.from_(
         requested, creating, waiting, active, error, terminating
@@ -115,8 +126,6 @@ class GefyraClient(StateMachine):
         provider = connection_provider_factory.get(
             ProviderType(self.data.get("provider")),
             self.configuration,
-            self.client_name,
-            self.configuration.NAMESPACE,
             self.logger,
         )
         if provider is None:
@@ -142,7 +151,7 @@ class GefyraClient(StateMachine):
             return True
         else:
             return False
-        
+
     def on_create(self):
         self.logger.info(f"Client '{self.client_name}' is being created")
 
@@ -151,18 +160,44 @@ class GefyraClient(StateMachine):
         This method is called when the GefyraClient is creating
         :return: None
         """
-        self.logger.info(f"Creating service account for GefyraClient '{self.client_name}'")
+        self.logger.info(
+            f"Creating service account for GefyraClient '{self.client_name}'"
+        )
         sa_name = f"gefyra-client-{self.client_name}"
         handle_create_gefyraclient_serviceaccount(
             self.logger, sa_name, self.configuration.NAMESPACE
         )
-        token_data = get_serviceaccount_data(
-            sa_name, self.configuration.NAMESPACE
-        )
+        token_data = get_serviceaccount_data(sa_name, self.configuration.NAMESPACE)
         self._patch_object(
             {"serviceAccountName": sa_name, "serviceAccountToken": token_data}
         )
-        self.send("wait")
+        self.wait()
+
+    async def on_enable(self):
+        self.logger.info(f"Client '{self.client_name}' is being enabled")
+        # TODO use 'cond' instead
+        if await self.connection_provider.peer_exists(self.client_name):
+            raise kopf.PermanentError(
+                f"Client '{self.client_name}' already exists, cannot activate it again."
+            )
+        self.logger.info(self.data)
+        await self.connection_provider.add_peer(
+            self.client_name, self.data["providerParameter"]
+        )
+        conn_data = await self.connection_provider.get_peer_config(self.client_name)
+        self._patch_object({"providerConfig": conn_data})
+        self.activate()
+
+    async def on_disable(self):
+        self.logger.info(f"Client '{self.client_name}' is being disabled")
+        if await self.connection_provider.peer_exists(self.client_name):
+            self.logger.warning(
+                f"Client '{self.client_name}' does not exist, noting to disable."
+            )
+            return
+        await self.connection_provider.remove_peer(self.client_name)
+        self._patch_object({"providerConfig": {}, "providerParameter": {}})
+        self.wait()
 
     def get_latest_transition(self) -> Optional[datetime]:
         """
