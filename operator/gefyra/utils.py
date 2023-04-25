@@ -5,9 +5,15 @@ from collections import defaultdict
 from datetime import datetime
 from tempfile import TemporaryFile
 from time import sleep
-from typing import List
+from typing import Any, List
 
 import kubernetes as k8s
+from statemachine import State
+from statemachine.transition_list import TransitionList
+from statemachine.transition import Transition
+from statemachine.callbacks import Callbacks, ConditionWrapper
+from statemachine.exceptions import InvalidDefinition
+from statemachine.events import Events
 from websocket import ABNF
 
 from gefyra.configuration import OperatorConfiguration
@@ -236,3 +242,46 @@ def check_probe_compatibility(probe: k8s.client.V1Probe) -> bool:
         return True
     else:
         return True
+
+
+class AsyncCallback(Callbacks):
+    def call(self, *args, **kwargs):
+        print("wheeee")
+        return [
+            callback(*args, **kwargs)
+            for callback in self.items
+            if callback.cond.all(*args, **kwargs)
+        ]
+
+
+class AsyncTransition(Transition):
+    def __init__(
+        self,
+        source,
+        target,
+        event=None,
+        internal=False,
+        validators=None,
+        cond=None,
+        unless=None,
+        on=None,
+        before=None,
+        after=None,
+    ):
+        self.source = source
+        self.target = target
+        self.internal = internal
+
+        if internal and source is not target:
+            raise InvalidDefinition("Internal transitions should be self-transitions.")
+
+        self._events = Events().add(event)
+        self.validators = AsyncCallback().add(validators)
+        self.before = AsyncCallback().add(before)
+        self.on = AsyncCallback().add(on)
+        self.after = AsyncCallback().add(after)
+        self.cond = (
+            AsyncCallback(factory=ConditionWrapper)
+            .add(cond)
+            .add(unless, expected_value=False)
+        )

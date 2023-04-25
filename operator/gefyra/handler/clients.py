@@ -2,6 +2,7 @@ import kopf
 
 from gefyra.clientstate import GefyraClientObject, GefyraClient
 from gefyra.configuration import configuration
+from statemachine.exceptions import TransitionNotAllowed
 
 
 @kopf.on.create("gefyraclients.gefyra.dev")
@@ -18,13 +19,34 @@ async def client_created(body, logger, **kwargs):
     if client.waiting.is_active:
         pass
 
-
+# 'providerParameter' activates the client, once set to a provider specific value the
+# Gefyra Operator will make the connection available
 @kopf.on.field("gefyraclients.gefyra.dev", field="providerParameter")
-async def client_connection_changed(body, logger, **kwargs):
+async def client_connection_changed(new, body, logger, **kwargs):
     obj = GefyraClientObject(body)
     client = GefyraClient(obj, configuration, logger)
-    if client.waiting.is_active:
-        # trigger the state transition
-        await client.enable()
-    if client.enabling.is_active:
-        await client.activate()
+    # check if parameters for this connection provider have been added or removed
+    if bool(new):
+        if client.waiting.is_active:
+            # only trigger the state transition
+            client.enable()
+        if client.enabling.is_active:
+            try:
+                # this is called in case of retry
+                client.activate()
+            except TransitionNotAllowed:
+                client.impair()
+    else:
+        if client.active.is_active:
+            # only trigger the state transition
+            client.disable()
+        if client.disabling.is_active:
+            # this is called in case of retry
+            client.wait()
+
+
+@kopf.on.delete("gefyraclients.gefyra.dev")
+async def client_deleted(body, logger, **kwargs):
+    obj = GefyraClientObject(body)
+    client = GefyraClient(obj, configuration, logger)
+    client.terminate()

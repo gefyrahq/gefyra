@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 class TestStowaway:
     configuration = OperatorConfiguration()
 
-    @pytest.mark.asyncio
-    async def test_a_install(self, k3d: AClusterManager, stowaway_image):
+    def test_a_install(self, k3d: AClusterManager, stowaway_image):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -36,20 +35,19 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        await stowaway.install()
-        assert await stowaway.installed() is True
-        assert await stowaway.ready() is False
+        stowaway.install()
+        assert stowaway.installed() is True
+        assert stowaway.ready() is False
         k3d.wait(
             "pod/gefyra-stowaway-0",
             "condition=ready",
             namespace="gefyra",
             timeout=120,
         )
-        assert await stowaway.installed() is True
-        assert await stowaway.ready() is True
+        assert stowaway.installed() is True
+        assert stowaway.ready() is True
 
-    @pytest.mark.asyncio
-    async def test_b_add_peer(self, k3d: AClusterManager):
+    def test_b_add_peer(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -60,7 +58,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        assert await stowaway.add_peer("test1", {"subnet": "192.168.100.0/24"}) is True
+        stowaway.add_peer("test1", {"subnet": "192.168.100.0/24"})
 
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test1,0"
@@ -70,10 +68,9 @@ class TestStowaway:
             as_dict=False,
         )
         assert "peer_test1" in output
-        assert await stowaway.peer_exists("test1") is True
+        assert stowaway.peer_exists("test1") is True
 
-    @pytest.mark.asyncio
-    async def test_c_add_another_peer(self, k3d: AClusterManager):
+    def test_c_add_another_peer(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -84,7 +81,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        assert await stowaway.add_peer("test2", {"subnet": "192.168.101.0/24"}) is True
+        stowaway.add_peer("test2", {"subnet": "192.168.101.0/24"})
 
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test2,test1,0"
@@ -101,11 +98,10 @@ class TestStowaway:
         )
         assert "peer_test1" in output
         assert "peer_test2" in output
-        assert await stowaway.peer_exists("test1") is True
-        assert await stowaway.peer_exists("test2") is True
+        assert stowaway.peer_exists("test1") is True
+        assert stowaway.peer_exists("test2") is True
 
-    @pytest.mark.asyncio
-    async def test_d_get_peer_config(self, k3d: AClusterManager):
+    def test_d_get_peer_config(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -117,7 +113,7 @@ class TestStowaway:
             logger,
         )
 
-        peer1_config = await stowaway.get_peer_config("test1")
+        peer1_config = stowaway.get_peer_config("test1")
         # {'Interface.Address': '192.168.99.4', 'Interface.PrivateKey': 'MFQ3v+y612uZSsLXjW1smlJIFeDWWFcZCCtmW4mC624=',
         #  'Interface.ListenPort': '51820', 'Interface.DNS': '192.168.99.1',
         #  'Peer.PublicKey': 'sy8jXi7S7rUGpqLnqgKnmHFXylqQdvCPCfhBAgSVGEM=',
@@ -126,7 +122,7 @@ class TestStowaway:
         assert "Peer.PublicKey" in peer1_config
         assert "Peer.Endpoint" in peer1_config
 
-        peer2_config = await stowaway.get_peer_config("test2")
+        peer2_config = stowaway.get_peer_config("test2")
         assert "Interface.PrivateKey" in peer2_config
         assert "Peer.PublicKey" in peer2_config
         assert "Peer.Endpoint" in peer2_config
@@ -136,8 +132,7 @@ class TestStowaway:
             peer1_config["Interface.PrivateKey"] != peer2_config["Interface.PrivateKey"]
         )
 
-    @pytest.mark.asyncio
-    async def test_e_remove_peer(self, k3d: AClusterManager):
+    def test_e_remove_peer(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -148,7 +143,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        assert await stowaway.remove_peer("test1") is True
+        assert stowaway.remove_peer("test1") is True
 
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test2,0"
@@ -158,15 +153,16 @@ class TestStowaway:
             namespace="gefyra",
             timeout=120,
         )
+        sleep(2)
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,
         )
         assert "peer_test1" not in output
         assert "peer_test2" in output
-        assert await stowaway.peer_exists("test2") is True
-        assert await stowaway.peer_exists("test1") is False
-        assert await stowaway.peer_exists("test3") is False
+        assert stowaway.peer_exists("test2") is True
+        assert stowaway.peer_exists("test1") is False
+        assert stowaway.peer_exists("test3") is False
         k3d.wait(
             "pod/gefyra-stowaway-0",
             "condition=ready",
@@ -188,8 +184,7 @@ class TestStowaway:
         assert "192.168.100.0/24" not in output
         assert "192.168.101.0/24" in output
 
-    @pytest.mark.asyncio
-    async def test_z_remove_stowaway(self, k3d: AClusterManager):
+    def test_z_remove_stowaway(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -200,7 +195,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        await stowaway.uninstall()
+        stowaway.uninstall()
         output = k3d.kubectl(
             ["get", "sts", "-n", "gefyra"],
             as_dict=False,

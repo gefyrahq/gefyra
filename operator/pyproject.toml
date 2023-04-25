@@ -32,8 +32,7 @@ log_cli = true
 log_cli_level = "INFO"
 norecursedirs = "*.egg .eggs dist build docs .tox .git __pycache__"
 addopts = """
-    -x
-	-s
+	-x
 	--strict-markers
 	--doctest-modules
 	--tb=short

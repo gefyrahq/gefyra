@@ -1,4 +1,5 @@
 from datetime import datetime
+import tarfile
 from typing import Any, Optional, Tuple
 import uuid
 import kopf
@@ -76,10 +77,14 @@ class GefyraClient(StateMachine):
         creating.to(waiting)
         | waiting.to.itself()
         | error.to(waiting)
-        | disabling.to(waiting, on="on_disable")
+        | disabling.to(waiting, before="disable_connection")
     )
-    enable = waiting.to(enabling) | error.to(enabling)
-    activate = enabling.to(active, on="on_enable") | error.to(active) | active.to.itself()
+    enable = waiting.to(enabling, cond="can_add_client") | error.to(enabling)
+    activate = (
+        enabling.to(active, on="enable_connection")
+        | error.to(active)
+        | active.to.itself()
+    )
     disable = active.to(disabling) | error.to(disabling)
     impair = error.from_(requested, creating, waiting, active, error)
     terminate = terminating.from_(
@@ -173,31 +178,55 @@ class GefyraClient(StateMachine):
         )
         self.wait()
 
-    async def on_enable(self):
+    def on_enable(self):
         self.logger.info(f"Client '{self.client_name}' is being enabled")
-        # TODO use 'cond' instead
-        if await self.connection_provider.peer_exists(self.client_name):
-            raise kopf.PermanentError(
-                f"Client '{self.client_name}' already exists, cannot activate it again."
-            )
-        self.logger.info(self.data)
-        await self.connection_provider.add_peer(
-            self.client_name, self.data["providerParameter"]
-        )
-        conn_data = await self.connection_provider.get_peer_config(self.client_name)
-        self._patch_object({"providerConfig": conn_data})
         self.activate()
 
-    async def on_disable(self):
+    def on_disable(self):
         self.logger.info(f"Client '{self.client_name}' is being disabled")
-        if await self.connection_provider.peer_exists(self.client_name):
-            self.logger.warning(
-                f"Client '{self.client_name}' does not exist, noting to disable."
-            )
-            return
-        await self.connection_provider.remove_peer(self.client_name)
-        self._patch_object({"providerConfig": {}, "providerParameter": {}})
         self.wait()
+
+    def on_terminate(self):
+        self.logger.info(f"Client '{self.client_name}' is being terminated")
+        if self.connection_provider.peer_exists(self.client_name):
+            self.logger.warning(f"Removing '{self.client_name}' from connection provider")
+            self.connection_provider.remove_peer(self.client_name)
+
+    def can_add_client(self):
+        if self.connection_provider.peer_exists(self.client_name):
+            self.logger.error(
+                f"Client '{self.client_name}' already exists, cannot enable connection."
+            )
+            return False
+        else:
+            self.connection_provider.add_peer(
+                self.client_name, self.data["providerParameter"]
+            )
+            return True
+
+    def enable_connection(self):
+        try:
+            conn_data = self.connection_provider.get_peer_config(self.client_name)
+        except tarfile.ReadError:
+            raise kopf.TemporaryError(
+                "Cannot read connection data from provider.", delay=1
+            )
+        self._patch_object({"providerConfig": conn_data})
+
+    def disable_connection(self):
+        try:
+            if not self.connection_provider.peer_exists(self.client_name):
+                self.logger.warning(
+                    f"Client '{self.client_name}' does not exist, noting to disable."
+                )
+                return
+            self.connection_provider.remove_peer(self.client_name)
+        except k8s.client.rest.ApiException as e:
+            if e.status == 500:
+                raise kopf.TemporaryError(
+                    f"Cannot disable connection: {e.reason}", delay=1
+                )
+        self._patch_object({"providerConfig": None})
 
     def get_latest_transition(self) -> Optional[datetime]:
         """

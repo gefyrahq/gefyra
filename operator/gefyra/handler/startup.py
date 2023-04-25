@@ -68,10 +68,10 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
             configuration,
             logger,
         )
-        if not await provider.installed():
-            await provider.install()
+        if not provider.installed():
+            provider.install()
             logger.info(f"Installing connection provider {gefyra_connector.name}")
-        if await provider.installed() and not await provider.ready():
+        if provider.installed() and not provider.ready():
             not_ready_providers.append(gefyra_connector)
 
     if not_ready_providers:

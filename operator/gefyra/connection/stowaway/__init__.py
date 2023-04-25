@@ -1,4 +1,4 @@
-from asyncio import sleep
+from time import sleep
 from collections import defaultdict
 import datetime
 from os import path
@@ -51,7 +51,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         self.configuration = configuration
         self.logger = logger
 
-    async def install(self, config: dict = ...):
+    def install(self, config: dict = ...):
         handle_serviceaccount(self.logger, self.configuration)
         handle_proxyroute_configmap(self.logger, self.configuration)
         handle_config_configmap(self.logger, self.configuration)
@@ -62,7 +62,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         handle_stowaway_nodeport_service(self.logger, self.configuration, sts_stowaway)
         handle_stowaway_rsync_service(self.logger, self.configuration, sts_stowaway)
 
-    async def installed(self, config: dict = ...) -> bool:
+    def installed(self, config: dict = ...) -> bool:
         return all(
             [
                 check_serviceaccount(self.logger, self.configuration),
@@ -84,7 +84,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             ]
         )
 
-    async def uninstall(self, config: dict = {}):
+    def uninstall(self, config: dict = {}):
         remove_stowaway_services(self.logger, self.configuration)
         remove_stowaway_statefulset(
             self.logger,
@@ -92,7 +92,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         )
         remove_stowaway_configmaps(self.logger, self.configuration)
 
-    async def ready(self) -> bool:
+    def ready(self) -> bool:
         pod = self._get_stowaway_pod()
         # check if stowaway pod is ready
         if pod and pod.status.container_statuses is not None:
@@ -103,20 +103,18 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             return False
 
-    async def add_peer(self, peer_id: str, parameters: dict = {}):
+    def add_peer(self, peer_id: str, parameters: dict = {}):
         self.logger.info(
             f"Adding peer {peer_id} to stowaway with parameters: {parameters}"
         )
         try:
             self._edit_peer_configmap(add=peer_id, subnet=parameters.get("subnet"))
-            await self._restart_stowaway()
-            await sleep(1)
-            return True
+            self._restart_stowaway()
+            sleep(1)
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(f"Error adding peer {peer_id} to stowaway: {e}")
-            return False
 
-    async def remove_peer(self, peer_id: str):
+    def remove_peer(self, peer_id: str):
         self.logger.info(f"Removing peer {peer_id} from stowaway")
         try:
             self._edit_peer_configmap(remove=peer_id)
@@ -128,14 +126,14 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 "stowaway",
                 ["rm", "-rf", f"/config/peer_{peer_id}"],
             )
-            await self._restart_stowaway()
-            await sleep(1)
+            self._restart_stowaway()
+            sleep(1)
             return True
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(f"Error removing peer {peer_id} from stowaway: {e}")
             return False
 
-    async def peer_exists(self, peer_id: str) -> bool:
+    def peer_exists(self, peer_id: str) -> bool:
         _config = create_stowaway_configmap()
         try:
             configmap = core_v1_api.read_namespaced_config_map(
@@ -149,23 +147,21 @@ class Stowaway(AbstractGefyraConnectionProvider):
             self.logger.error(f"Error looking up peer {peer_id}: {e}")
             return False
 
-    async def get_peer_config(self, peer_id: str) -> dict[str, str]:
-        if await self.peer_exists(peer_id):
-            return await self._get_wireguard_connection_details(peer_id)
+    def get_peer_config(self, peer_id: str) -> dict[str, str]:
+        if self.peer_exists(peer_id):
+            return self._get_wireguard_connection_details(peer_id)
         else:
             raise RuntimeError(f"Peer {peer_id} does not exist")
 
-    async def add_destination(
+    def add_destination(self, peer_id: str, destination_ip: str, destination_port: int):
+        raise NotImplementedError
+
+    def remove_destination(
         self, peer_id: str, destination_ip: str, destination_port: int
     ):
         raise NotImplementedError
 
-    async def remove_destination(
-        self, peer_id: str, destination_ip: str, destination_port: int
-    ):
-        raise NotImplementedError
-
-    async def _restart_stowaway(self) -> None:
+    def _restart_stowaway(self) -> None:
         pod = self._get_stowaway_pod()
         core_v1_api.delete_namespaced_pod(
             pod.metadata.name,
@@ -175,10 +171,10 @@ class Stowaway(AbstractGefyraConnectionProvider):
         # busy wait
         _i = 0
         while (
-            not await self.ready()
+            not self.ready()
             and _i < self.configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT
         ):
-            await sleep(1)
+            sleep(1)
             _i += 1
 
     def _get_stowaway_pod(self) -> Optional[k8s.client.V1Pod]:
@@ -215,7 +211,10 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
         if remove and remove in peers:
             peers.remove(remove)
-            del configmap.data[f"SERVER_ALLOWEDIPS_PEER_{remove}"]
+            try:
+                del configmap.data[f"SERVER_ALLOWEDIPS_PEER_{remove}"]
+            except KeyError:
+                pass
             configmap.data["PEERS"] = ",".join(peers)
             core_v1_api.replace_namespaced_config_map(
                 name=configmap.metadata.name,
@@ -223,7 +222,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 body=configmap,
             )
 
-    async def _get_wireguard_connection_details(self, peer_id: str) -> dict[str, str]:
+    def _get_wireguard_connection_details(self, peer_id: str) -> dict[str, str]:
         pod = self._get_stowaway_pod()
         peer_config_file = path.join(
             self.configuration.STOWAWAY_PEER_CONFIG_PATH,
