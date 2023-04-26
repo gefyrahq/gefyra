@@ -81,15 +81,16 @@ def test_env_dict_creation():
         "APP=test-app",
         "TEST=tautology=tautology=tautology",
         "123NUM=blubb",
-        "VERSION=1.2.3"
+        "VERSION=1.2.3",
     ]
 
     res = generate_env_dict_from_strings(env_vars=env_vars)
-    TestCase().assertDictEqual({
-        "APP": "test-app",
-        "TEST": "tautology=tautology=tautology",
-        "123NUM": "blubb",
-        "VERSION": "1.2.3",
+    TestCase().assertDictEqual(
+        {
+            "APP": "test-app",
+            "TEST": "tautology=tautology=tautology",
+            "123NUM": "blubb",
+            "VERSION": "1.2.3",
         },
-        res
+        res,
     )

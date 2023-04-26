@@ -23,12 +23,10 @@ def get_workload_type(workload_type_str: str):
         return "deployment"
     elif workload_type_str in STATEFULSET:
         return "statefulset"
-    
+
 
 def generate_env_dict_from_strings(env_vars: Iterable[str]) -> dict:
-    return {
-        k[0]: k[1] for k in [arg.split("=", 1) for arg in env_vars] if len(k) > 1
-    }
+    return {k[0]: k[1] for k in [arg.split("=", 1) for arg in env_vars] if len(k) > 1}
 
 
 def stopwatch(func):
