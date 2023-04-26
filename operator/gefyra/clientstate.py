@@ -189,7 +189,9 @@ class GefyraClient(StateMachine):
     def on_terminate(self):
         self.logger.info(f"Client '{self.client_name}' is being terminated")
         if self.connection_provider.peer_exists(self.client_name):
-            self.logger.warning(f"Removing '{self.client_name}' from connection provider")
+            self.logger.warning(
+                f"Removing '{self.client_name}' from connection provider"
+            )
             self.connection_provider.remove_peer(self.client_name)
 
     def can_add_client(self):

@@ -15,6 +15,7 @@ async def client_created(body, logger, **kwargs):
     if client.waiting.is_active:
         pass
 
+
 # 'providerParameter' activates the client, once set to a provider specific value the
 # Gefyra Operator will make the connection available
 @kopf.on.field("gefyraclients.gefyra.dev", field="providerParameter")
@@ -28,7 +29,7 @@ async def client_connection_changed(new, body, logger, **kwargs):
             if client.waiting.is_active:
                 client.enable()
             if client.enabling.is_active:
-                client.activate() 
+                client.activate()
         except TransitionNotAllowed as e:
             logger.error(f"TransitionNotAllowed: {e}")
             client.impair()

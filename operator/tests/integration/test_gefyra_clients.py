@@ -153,6 +153,7 @@ def test_e_client_reactivate(operator: AClusterManager):
     assert client_a.get("stateTransitions") is not None
     assert client_a["providerConfig"] is not None
 
+
 def test_f_delete_client(operator: AClusterManager):
     k3d = operator
     k3d.kubectl(
@@ -163,12 +164,10 @@ def test_f_delete_client(operator: AClusterManager):
             "gefyraclient",
             "client-a",
         ],
-        as_dict=False
+        as_dict=False,
     )
     with pytest.raises(RuntimeError):
-        k3d.kubectl(
-            ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
-        )
+        k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"])
 
 
 def test_z_error_client_exists(operator: AClusterManager):
@@ -249,7 +248,15 @@ def test_z_error_client_exists(operator: AClusterManager):
             "gefyraclient",
             "client-a",
         ],
-        as_dict=False
+        as_dict=False,
     )
-    config = k3d.kubectl(["-n", "gefyra", "get", "configmap", OperatorConfiguration().STOWAWAY_CONFIGMAPNAME])
-    assert "client-a" not in config["data"]["PEERS"].split(",") 
+    config = k3d.kubectl(
+        [
+            "-n",
+            "gefyra",
+            "get",
+            "configmap",
+            OperatorConfiguration().STOWAWAY_CONFIGMAPNAME,
+        ]
+    )
+    assert "client-a" not in config["data"]["PEERS"].split(",")

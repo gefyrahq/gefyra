@@ -41,14 +41,18 @@ class TestClientStates:
             try:
                 client.create()
             except kopf.TemporaryError:
-                client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
-                assert client_a["state"] == "REQUESTED" or client_a["state"] == "CREATING"
+                client_a = k3d.kubectl(
+                    ["-n", "gefyra", "get", "gefyraclient", "client-a"]
+                )
+                assert (
+                    client_a["state"] == "REQUESTED" or client_a["state"] == "CREATING"
+                )
                 sleep(1)
                 _i += 1
                 continue
             else:
                 break
-        
+
         client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
         assert client_a["state"] == "WAITING"
         assert client_a.get("stateTransitions") is not None
