@@ -1,11 +1,12 @@
 import os
+from unittest import TestCase
 import pytest
 from unittest.mock import patch
 
 import yaml
 
 from gefyra.local.utils import get_connection_from_kubeconfig, get_processed_paths
-from gefyra.api.utils import get_workload_type
+from gefyra.api.utils import generate_env_dict_from_strings, get_workload_type
 
 
 @patch("kubernetes.config.kube_config.KUBE_CONFIG_DEFAULT_LOCATION", "/tmp/kube.yaml")
@@ -73,3 +74,22 @@ def test_path_cleaning_for_window():
     assert res == [
         os.getcwd() + "/C:\\Users\\user\\Documents\\gefyra\\:/app",
     ]
+
+
+def test_env_dict_creation():
+    env_vars = [
+        "APP=test-app",
+        "TEST=tautology=tautology=tautology",
+        "123NUM=blubb",
+        "VERSION=1.2.3"
+    ]
+
+    res = generate_env_dict_from_strings(env_vars=env_vars)
+    TestCase().assertDictEqual({
+        "APP": "test-app",
+        "TEST": "tautology=tautology=tautology",
+        "123NUM": "blubb",
+        "VERSION": "1.2.3",
+        },
+        res
+    )
