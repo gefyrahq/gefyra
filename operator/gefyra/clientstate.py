@@ -71,7 +71,7 @@ class GefyraClient(StateMachine):
     create = (
         requested.to(creating, on="on_create")
         | error.to(creating)
-        | creating.to.itself(on="create_service_account")
+        | creating.to.itself()
     )
     wait = (
         creating.to(waiting)
@@ -159,6 +159,7 @@ class GefyraClient(StateMachine):
 
     def on_create(self):
         self.logger.info(f"Client '{self.client_name}' is being created")
+        self.create_service_account()
 
     def create_service_account(self):
         """
@@ -180,7 +181,6 @@ class GefyraClient(StateMachine):
 
     def on_enable(self):
         self.logger.info(f"Client '{self.client_name}' is being enabled")
-        self.activate()
 
     def on_disable(self):
         self.logger.info(f"Client '{self.client_name}' is being disabled")

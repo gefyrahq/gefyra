@@ -1,6 +1,7 @@
 import json
 import logging
 from time import sleep
+import kopf
 import pytest
 
 from pytest_kubernetes.providers import AClusterManager
@@ -35,36 +36,48 @@ class TestClientStates:
         obj = GefyraClientObject(client_a)
         client = GefyraClient(obj, OperatorConfiguration(), logger)
         assert client.requested.is_active is True
-        client.create()
-        client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
-        assert client_a["state"] == "CREATING"
-        assert client_a.get("stateTransitions") is not None
-
-    def test_d_client_exit_creating(self, gefyra_crd: AClusterManager):
-        from gefyra.clientstate import GefyraClient, GefyraClientObject
-        from gefyra.configuration import OperatorConfiguration
-        import kopf
-
-        k3d = gefyra_crd
-        client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
-        obj = GefyraClientObject(client_a)
-        client = GefyraClient(obj, OperatorConfiguration(), logger)
-        assert client.creating.is_active is True
-
-        exception_raised = False
         _i = 0
         while _i < 10:
             try:
                 client.create()
             except kopf.TemporaryError:
+                client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
+                assert client_a["state"] == "REQUESTED" or client_a["state"] == "CREATING"
                 sleep(1)
                 _i += 1
                 continue
             else:
                 break
+        
         client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
         assert client_a["state"] == "WAITING"
         assert client_a.get("stateTransitions") is not None
+
+    # def test_d_client_exit_creating(self, gefyra_crd: AClusterManager):
+    #     from gefyra.clientstate import GefyraClient, GefyraClientObject
+    #     from gefyra.configuration import OperatorConfiguration
+    #     import kopf
+
+    #     k3d = gefyra_crd
+    #     client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
+    #     obj = GefyraClientObject(client_a)
+    #     client = GefyraClient(obj, OperatorConfiguration(), logger)
+    #     assert client.waiting.is_active is True
+
+    #     exception_raised = False
+    #     _i = 0
+    #     while _i < 10:
+    #         try:
+    #             client.create()
+    #         except kopf.TemporaryError:
+    #             sleep(1)
+    #             _i += 1
+    #             continue
+    #         else:
+    #             break
+    #     client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
+    #     assert client_a["state"] == "WAITING"
+    #     assert client_a.get("stateTransitions") is not None
 
     # @pytest.mark.asyncio
     # async def test_f_client_activating(self, gefyra_crd: AClusterManager):
