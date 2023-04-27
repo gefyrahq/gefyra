@@ -21,13 +21,13 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8.1,<4.0.0"
 kubernetes = ">=24.2,<27.0"
 docker = "^6.0.0"
 cli-tracker = ">=0.2.7,<0.4.0"
 tabulate = ">=0.8.10,<0.10.0"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8-bugbear = "^23.3.12"
 black = "^23.1.0"
 flake8 = "^5.0.4"
@@ -35,6 +35,7 @@ flake8-black = "^0.3.6"
 pytest = "^7.2.2"
 coverage = {extras = ["toml"], version = "^6.5.0"}
 coveralls = "^3.3.1"
+pytest-kubernetes = "^0.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

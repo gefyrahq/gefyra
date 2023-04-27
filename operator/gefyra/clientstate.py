@@ -175,7 +175,7 @@ class GefyraClient(StateMachine):
         )
         token_data = get_serviceaccount_data(sa_name, self.configuration.NAMESPACE)
         self._patch_object(
-            {"serviceAccountName": sa_name, "serviceAccountToken": token_data}
+            {"serviceAccountName": sa_name, "serviceAccountData": token_data}
         )
         self.wait()
 

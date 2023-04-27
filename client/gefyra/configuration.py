@@ -243,6 +243,9 @@ class ClientConfiguration(object):
 
     def __str__(self):
         return str(self.to_dict())
+    
+    def get_kubernetes_api_url(self) -> str:
+        return self.K8S_CORE_API.api_client.configuration.host
 
 
 default_configuration = ClientConfiguration()
