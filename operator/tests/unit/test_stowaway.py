@@ -1,8 +1,6 @@
 import logging
 import os
-import sys
 from time import sleep
-import pytest
 
 from pytest_kubernetes.providers import AClusterManager
 
@@ -92,6 +90,7 @@ class TestStowaway:
             namespace="gefyra",
             timeout=120,
         )
+        sleep(2)
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,
