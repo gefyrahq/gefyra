@@ -37,3 +37,8 @@ addopts = """
 """
 testpaths = "tests"
 pythonpath = "operator"
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]
