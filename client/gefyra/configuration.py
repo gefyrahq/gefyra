@@ -105,6 +105,7 @@ class ClientConfiguration(object):
             logger.debug(f"Docker OS: {docker_os}")
             logger.debug(f"Docker Server Name: {docker_server_name}")
             # virtualized envs don't expose network interface to host
+            print(docker_os)
             if (
                 "docker desktop" in docker_os
                 or "windows" in docker_os
