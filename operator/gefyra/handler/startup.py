@@ -6,7 +6,10 @@ from gefyra.resources.crds import (
     create_interceptrequest_definition,
 )
 from gefyra.resources.events import create_operator_ready_event
-from gefyra.connection.factory import ProviderType, connection_provider_factory
+from gefyra.connection.factory import (
+    ConnectionProviderType,
+    connection_provider_factory,
+)
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -62,7 +65,7 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
     from gefyra.configuration import configuration
 
     not_ready_providers = []
-    for gefyra_connector in ProviderType:
+    for gefyra_connector in ConnectionProviderType:
         provider = connection_provider_factory.get(
             gefyra_connector,
             configuration,

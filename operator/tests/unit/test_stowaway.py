@@ -20,7 +20,10 @@ class TestStowaway:
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
-        from gefyra.connection.factory import ProviderType, connection_provider_factory
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
 
         os.environ["GEFYRA_STOWAWAY_IMAGE"] = stowaway_image.split(":")[0]
         os.environ["GEFYRA_STOWAWAY_TAG"] = stowaway_image.split(":")[1]
@@ -29,7 +32,7 @@ class TestStowaway:
         k3d.load_image(stowaway_image)
 
         stowaway = connection_provider_factory.get(
-            ProviderType.STOWAWAY,
+            ConnectionProviderType.STOWAWAY,
             self.configuration,
             logger,
         )
@@ -49,10 +52,13 @@ class TestStowaway:
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
-        from gefyra.connection.factory import ProviderType, connection_provider_factory
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
 
         stowaway = connection_provider_factory.get(
-            ProviderType.STOWAWAY,
+            ConnectionProviderType.STOWAWAY,
             self.configuration,
             logger,
         )
@@ -72,10 +78,13 @@ class TestStowaway:
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
-        from gefyra.connection.factory import ProviderType, connection_provider_factory
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
 
         stowaway = connection_provider_factory.get(
-            ProviderType.STOWAWAY,
+            ConnectionProviderType.STOWAWAY,
             self.configuration,
             logger,
         )
@@ -104,10 +113,13 @@ class TestStowaway:
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
-        from gefyra.connection.factory import ProviderType, connection_provider_factory
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
 
         stowaway = connection_provider_factory.get(
-            ProviderType.STOWAWAY,
+            ConnectionProviderType.STOWAWAY,
             self.configuration,
             logger,
         )
@@ -135,10 +147,13 @@ class TestStowaway:
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
-        from gefyra.connection.factory import ProviderType, connection_provider_factory
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
 
         stowaway = connection_provider_factory.get(
-            ProviderType.STOWAWAY,
+            ConnectionProviderType.STOWAWAY,
             self.configuration,
             logger,
         )
@@ -187,10 +202,13 @@ class TestStowaway:
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
-        from gefyra.connection.factory import ProviderType, connection_provider_factory
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
 
         stowaway = connection_provider_factory.get(
-            ProviderType.STOWAWAY,
+            ConnectionProviderType.STOWAWAY,
             self.configuration,
             logger,
         )

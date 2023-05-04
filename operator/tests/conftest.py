@@ -93,6 +93,18 @@ def operator_image(request):
     return name
 
 
+@pytest.fixture(scope="session")
+def carrier_image(request):
+    name = "carrier:pytest"
+    subprocess.run(
+        f"docker build -t {name} -f {(Path(__file__).parent / Path('../../carrier/Dockerfile')).resolve()}"
+        f" {(Path(__file__).parent / Path('../../carrier/')).resolve()}",
+        shell=True,
+    )
+    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    return name
+
+
 @pytest.fixture(scope="module")
 def gefyra_crd(k3d):
     import kubernetes
@@ -104,3 +116,23 @@ def gefyra_crd(k3d):
     handle_crds(logger)
 
     yield k3d
+
+
+@pytest.fixture(scope="session")
+def demo_backend_image():
+    name = "quay.io/gefyra/gefyra-demo-backend"
+    subprocess.run(
+        f"docker pull {name}",
+        shell=True,
+    )
+    yield name
+
+
+@pytest.fixture(scope="session")
+def demo_frontend_image():
+    name = "quay.io/gefyra/gefyra-demo-frontend"
+    subprocess.run(
+        f"docker pull {name}",
+        shell=True,
+    )
+    yield name

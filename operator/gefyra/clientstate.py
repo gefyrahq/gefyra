@@ -2,14 +2,18 @@ from datetime import datetime
 import tarfile
 from typing import Any, Optional, Tuple
 import uuid
+
 import kopf
 import kubernetes as k8s
 from statemachine import State, StateMachine
 
-
+from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
-from gefyra.connection.factory import ProviderType, connection_provider_factory
+from gefyra.connection.factory import (
+    ConnectionProviderType,
+    connection_provider_factory,
+)
 from gefyra.resources.events import _get_now
 from gefyra.resources.serviceaccounts import (
     get_serviceaccount_data,
@@ -17,47 +21,17 @@ from gefyra.resources.serviceaccounts import (
 )
 
 
-class GefyraClientObject:
-    def __init__(self, data: dict):
-        self._state = None
-        self.data = data
-        self.name = data["metadata"]["name"]
-        self.namespace = data["metadata"]["namespace"]
-
-        self.custom_api = k8s.client.CustomObjectsApi()
-
-    def __repr__(self):
-        return f"GefyraClientObject: {self.name} (state={self.state})"
-
-    @property
-    def state(self):
-        if self._state is None:
-            self._state = self.data["state"]
-        return self._state
-
-    @state.setter
-    def state(self, value):
-        self._state = value
-        self._write_state(value)
-
-    def _write_state(self, state: State):
-        self.custom_api.patch_namespaced_custom_object(
-            namespace=self.namespace,
-            name=self.name,
-            body={
-                "state": str(state),
-                "stateTransitions": {str(state): _get_now()},
-            },
-            plural="gefyraclients",
-            group="gefyra.dev",
-            version="v1",
-        )
+class GefyraClientObject(GefyraStateObject):
+    plural = "gefyraclients"
 
 
-class GefyraClient(StateMachine):
+class GefyraClient(StateMachine, StateControllerMixin):
     """
     A Gefyra client is implemented as a state machine
     """
+
+    kind = "GefyraClient"
+    plural = "gefyraclients"
 
     requested = State("Client requested", initial=True, value="REQUESTED")
     creating = State("Client creating", value="CREATING")
@@ -93,7 +67,7 @@ class GefyraClient(StateMachine):
 
     def __init__(
         self,
-        model: GefyraClientObject,
+        model: GefyraClientObject(),
         configuration: OperatorConfiguration,
         logger: Any,
     ):
@@ -125,11 +99,11 @@ class GefyraClient(StateMachine):
     @property
     def connection_provider(self) -> AbstractGefyraConnectionProvider:
         """
-        It creates a Gefyra connection provider object based on the provider type
-        :return: The provider is being returned.
+        It creates a Gefyra connection provider object based on the connection provider type
+        :return: The connection provider is being returned.
         """
         provider = connection_provider_factory.get(
-            ProviderType(self.data.get("provider")),
+            ConnectionProviderType(self.data.get("provider")),
             self.configuration,
             self.logger,
         )
@@ -151,14 +125,14 @@ class GefyraClient(StateMachine):
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this client because the sunset time is in the past
             self.logger.warning(
-                f"Client '{self.client_name}' should be terminated due to reached sunset date"
+                f"Client '{self.object_name}' should be terminated due to reached sunset date"
             )
             return True
         else:
             return False
 
     def on_create(self):
-        self.logger.info(f"Client '{self.client_name}' is being created")
+        self.logger.info(f"Client '{self.object_name}' is being created")
         self.create_service_account()
 
     def create_service_account(self):
@@ -167,9 +141,9 @@ class GefyraClient(StateMachine):
         :return: None
         """
         self.logger.info(
-            f"Creating service account for GefyraClient '{self.client_name}'"
+            f"Creating service account for GefyraClient '{self.object_name}'"
         )
-        sa_name = f"gefyra-client-{self.client_name}"
+        sa_name = f"gefyra-client-{self.object_name}"
         handle_create_gefyraclient_serviceaccount(
             self.logger, sa_name, self.configuration.NAMESPACE
         )
@@ -180,35 +154,35 @@ class GefyraClient(StateMachine):
         self.wait()
 
     def on_enable(self):
-        self.logger.info(f"Client '{self.client_name}' is being enabled")
+        self.logger.info(f"Client '{self.object_name}' is being enabled")
 
     def on_disable(self):
-        self.logger.info(f"Client '{self.client_name}' is being disabled")
+        self.logger.info(f"Client '{self.object_name}' is being disabled")
         self.wait()
 
     def on_terminate(self):
-        self.logger.info(f"Client '{self.client_name}' is being terminated")
-        if self.connection_provider.peer_exists(self.client_name):
+        self.logger.info(f"Client '{self.object_name}' is being terminated")
+        if self.connection_provider.peer_exists(self.object_name):
             self.logger.warning(
-                f"Removing '{self.client_name}' from connection provider"
+                f"Removing '{self.object_name}' from connection provider"
             )
-            self.connection_provider.remove_peer(self.client_name)
+            self.connection_provider.remove_peer(self.object_name)
 
     def can_add_client(self):
-        if self.connection_provider.peer_exists(self.client_name):
+        if self.connection_provider.peer_exists(self.object_name):
             self.logger.error(
-                f"Client '{self.client_name}' already exists, cannot enable connection."
+                f"Client '{self.object_name}' already exists, cannot enable connection."
             )
             return False
         else:
             self.connection_provider.add_peer(
-                self.client_name, self.data["providerParameter"]
+                self.object_name, self.data["providerParameter"]
             )
             return True
 
     def enable_connection(self):
         try:
-            conn_data = self.connection_provider.get_peer_config(self.client_name)
+            conn_data = self.connection_provider.get_peer_config(self.object_name)
         except tarfile.ReadError:
             raise kopf.TemporaryError(
                 "Cannot read connection data from provider.", delay=1
@@ -217,12 +191,12 @@ class GefyraClient(StateMachine):
 
     def disable_connection(self):
         try:
-            if not self.connection_provider.peer_exists(self.client_name):
+            if not self.connection_provider.peer_exists(self.object_name):
                 self.logger.warning(
-                    f"Client '{self.client_name}' does not exist, noting to disable."
+                    f"Client '{self.object_name}' does not exist, noting to disable."
                 )
                 return
-            self.connection_provider.remove_peer(self.client_name)
+            self.connection_provider.remove_peer(self.object_name)
         except k8s.client.rest.ApiException as e:
             if e.status == 500:
                 raise kopf.TemporaryError(
@@ -298,60 +272,3 @@ class GefyraClient(StateMachine):
             return latest_state, latest_timestamp  # type: ignore
         else:
             return None
-
-    def completed_transition(self, target: State) -> Optional[str]:
-        """
-        Read the stateTransitions attribute, return the value of the stateTransitions timestamp for the given
-        target, otherwise return None
-        :param target: The value of the state value
-        :type target: State
-        :return: The value of the stateTransitions key in the model dictionary.
-        """
-        if transitions := self.data.get("stateTransitions"):
-            return transitions.get(target, None)
-        else:
-            return None
-
-    def post_event(self, reason: str, message: str, _type: str = "Normal") -> None:
-        """
-        It creates an event object and posts it to the Kubernetes API
-        :param reason: The reason for the event
-        :type reason: str
-        :param message: The message to be displayed in the event
-        :type message: str
-        :param _type: The type of event, defaults to Normal
-        :type _type: str (optional)
-        """
-        now = _get_now()
-        event = k8s.client.EventsV1Event(
-            metadata=k8s.client.V1ObjectMeta(
-                name=f"{self.client_name}-{uuid.uuid4()}",
-                namespace=self.configuration.NAMESPACE,
-            ),
-            reason=reason.capitalize(),
-            note=message[:1024],  # maximum message length
-            event_time=now,
-            action="GefyraClient-State",
-            type=_type,
-            reporting_instance="gefyra-operator",
-            reporting_controller="gefyra-operator",
-            regarding=k8s.client.V1ObjectReference(
-                kind="GefyraClient",
-                name=self.client_name,
-                namespace=self.configuration.NAMESPACE,
-                uid=self.data["metadata"]["uid"],
-            ),
-        )
-        self.events_api.create_namespaced_event(
-            namespace=self.configuration.NAMESPACE, body=event
-        )
-
-    def _patch_object(self, data: dict):
-        self.custom_api.patch_namespaced_custom_object(
-            namespace=self.configuration.NAMESPACE,
-            name=self.client_name,
-            body=data,
-            group="gefyra.dev",
-            plural="gefyraclients",
-            version="v1",
-        )

@@ -16,6 +16,7 @@ class StowawayParameter:
 
 @dataclass
 class GefyraClientConfig:
+    client_id: str
     kubernetes_server: str
     provider: str
     token: str

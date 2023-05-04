@@ -6,7 +6,7 @@ from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 from gefyra.connection.stowaway import StowawayBuilder
 
 
-class ProviderType(Enum):
+class ConnectionProviderType(Enum):
     STOWAWAY = "stowaway"
 
 
@@ -14,12 +14,12 @@ class GefyraConnectionFactory:
     def __init__(self):
         self._builders = {}
 
-    def register_builder(self, provider_type: ProviderType, builder):
+    def register_builder(self, provider_type: ConnectionProviderType, builder):
         self._builders[provider_type.value] = builder
 
     def __create(
         self,
-        provider_type: ProviderType,
+        provider_type: ConnectionProviderType,
         configuration: OperatorConfiguration,
         logger,
         **kwargs
@@ -31,7 +31,7 @@ class GefyraConnectionFactory:
 
     def get(
         self,
-        provider_type: ProviderType,
+        provider_type: ConnectionProviderType,
         configuration: OperatorConfiguration,
         logger,
         **kwargs
@@ -40,4 +40,6 @@ class GefyraConnectionFactory:
 
 
 connection_provider_factory = GefyraConnectionFactory()
-connection_provider_factory.register_builder(ProviderType.STOWAWAY, StowawayBuilder())
+connection_provider_factory.register_builder(
+    ConnectionProviderType.STOWAWAY, StowawayBuilder()
+)

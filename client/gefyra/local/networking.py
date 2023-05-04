@@ -49,16 +49,16 @@ def handle_create_network(config: ClientConfiguration) -> Network:
         pass
 
     # this is a workaround to select a free subnet (instead of finding it with python code)
-    temp_network = config.DOCKER.networks.create(config.NETWORK_NAME, driver="bridge")
-    subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
-    temp_network.remove()  # remove the temp network again
+    #temp_network = config.DOCKER.networks.create(config.NETWORK_NAME, driver="bridge")
+    #subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
+    #temp_network.remove()  # remove the temp network again
 
-    ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
-    ipam_config = IPAMConfig(pool_configs=[ipam_pool])
+    #ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
+    #ipam_config = IPAMConfig(pool_configs=[ipam_pool])
     network = config.DOCKER.networks.create(
         config.NETWORK_NAME,
         driver="bridge",
-        ipam=ipam_config,
+    #    ipam=ipam_config,
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
         },

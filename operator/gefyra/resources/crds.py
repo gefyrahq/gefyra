@@ -3,40 +3,59 @@ import kubernetes as k8s
 from gefyra.configuration import configuration
 
 
-def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinition:
+def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
     schema_props = k8s.client.V1JSONSchemaProps(
         type="object",
         properties={
-            "established": k8s.client.V1JSONSchemaProps(type="boolean", default=False),
-            "destinationIP": k8s.client.V1JSONSchemaProps(type="string"),
+            # the Gefyra bridge provider for this request
+            "provider": k8s.client.V1JSONSchemaProps(type="string", enum=["carrier"]),
+            # provider specific parameters for this bridge
+            # a carrier example: {"type": "stream"} to proxy all traffic on TCP level to the destination (much like a nitro-speed global bridge)
+            # another carrier example: {"type": "http", "url": "/api"} to proxy all traffic on HTTP level to the destination
+            # sync_down_directories
+            "providerParameter": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
+            # the targets for this bridge / traffic sources
+            "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
             "targetPod": k8s.client.V1JSONSchemaProps(
                 type="string"
             ),  # target a specific Pod for intercept
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
-            "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
+            # the traffic destinations for this bridge
+            "client": k8s.client.V1JSONSchemaProps(type="string"),
+            # the IP address of the local container running at that client
+            "destinationIP": k8s.client.V1JSONSchemaProps(type="string"),
+            # map the ports of the bridge to the target container, for example: [80:8080] will forward port 80 of the source container to port
+            # 8080 of the local container
             "portMappings": k8s.client.V1JSONSchemaProps(
                 type="array",
                 default=[],
                 items=k8s.client.V1JSONSchemaProps(type="string"),
             ),
-            "syncDownDirectories": k8s.client.V1JSONSchemaProps(
-                type="array",
-                default=[],
-                items=k8s.client.V1JSONSchemaProps(type="string"),
-            ),
-            "carrierOriginalConfig": k8s.client.V1JSONSchemaProps(
+            # "syncDownDirectories": k8s.client.V1JSONSchemaProps(
+            #     type="array",
+            #     default=[],
+            #     items=k8s.client.V1JSONSchemaProps(type="string"),
+            # ),
+            # datetime when this bridge is to be removed from the cluster
+            "sunset": k8s.client.V1JSONSchemaProps(type="string"),
+            "state": k8s.client.V1JSONSchemaProps(type="string", default="REQUESTED"),
+            "stateTransitions": k8s.client.V1JSONSchemaProps(
                 type="object", x_kubernetes_preserve_unknown_fields=True
-            ),  # object to store information for reset of target Pod
-            "handleProbes": k8s.client.V1JSONSchemaProps(type="boolean", default=False),
+            ),
+            "status": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
         },
     )
 
     def_spec = k8s.client.V1CustomResourceDefinitionSpec(
         group="gefyra.dev",
         names=k8s.client.V1CustomResourceDefinitionNames(
-            kind="InterceptRequest",
-            plural="interceptrequests",
-            short_names=["ireq"],
+            kind="gefyrabridge",
+            plural="gefyrabridges",
+            short_names=["gbridge", "gbridges"],
         ),
         scope="Namespaced",
         versions=[
@@ -56,7 +75,7 @@ def create_interceptrequest_definition() -> k8s.client.V1CustomResourceDefinitio
         kind="CustomResourceDefinition",
         spec=def_spec,
         metadata=k8s.client.V1ObjectMeta(
-            name="interceptrequests.gefyra.dev",
+            name="gefyrabridges.gefyra.dev",
             namespace=configuration.NAMESPACE,
             finalizers=[],
         ),
