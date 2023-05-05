@@ -3,7 +3,7 @@ import kubernetes as k8s
 
 from gefyra.resources.crds import (
     create_gefyraclient_definition,
-    create_interceptrequest_definition,
+    create_gefyrabridge_definition,
 )
 from gefyra.resources.events import create_operator_ready_event
 from gefyra.connection.factory import (
@@ -18,25 +18,25 @@ events = k8s.client.EventsV1Api()
 
 
 def handle_crds(logger) -> None:
-    ireqs = create_interceptrequest_definition()
+    ireqs = create_gefyrabridge_definition()
     try:
         extension_api.create_custom_resource_definition(body=ireqs)
-        logger.info("Gefyra CRD InterceptRequest created")
+        logger.info("Gefyra CRD gefyrabridge created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             logger.warn(
-                "Gefyra CRD InterceptRequest already available but might be outdated. Please remove it manually if you encounter issues."
+                "Gefyra CRD gefyrabridge already available but might be outdated. Please remove it manually if you encounter issues."
             )
         else:
             raise e
     gclients = create_gefyraclient_definition()
     try:
         extension_api.create_custom_resource_definition(body=gclients)
-        logger.info("Gefyra CRD GefyraClients created")
+        logger.info("Gefyra CRD gefyraclient created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             logger.warn(
-                "Gefyra CRD GefyraClients already available but might be outdated. Please remove it manually if you encounter issues."
+                "Gefyra CRD gefyraclient already available but might be outdated. Please remove it manually if you encounter issues."
             )
         else:
             raise e

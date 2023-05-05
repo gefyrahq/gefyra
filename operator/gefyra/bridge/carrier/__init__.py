@@ -1,3 +1,4 @@
+import json
 from typing import List, Tuple
 from gefyra.utils import exec_command_pod
 import kubernetes as k8s
@@ -12,6 +13,7 @@ custom_object_api = k8s.client.CustomObjectsApi()
 CARRIER_CONFIGURE_COMMAND_BASE = ["/bin/busybox", "sh", "setroute.sh"]
 CARRIER_CONFIGURE_PROBE_COMMAND_BASE = ["/bin/busybox", "sh", "setprobe.sh"]
 CARRIER_RSYNC_COMMAND_BASE = ["/bin/busybox", "sh", "syncdirs.sh"]
+CARRIER_ORIGINAL_CONFIGMAP = "gefyra-carrier-restore-configmap"
 
 
 class Carrier(AbstractGefyraBridgeProvider):
@@ -45,8 +47,7 @@ class Carrier(AbstractGefyraBridgeProvider):
             return False
 
     def ready(self) -> bool:
-        installed = self.installed()
-        if installed:
+        if self.installed():
             pod = core_v1_api.read_namespaced_pod(
                 name=self.pod, namespace=self.namespace
             )
@@ -61,7 +62,7 @@ class Carrier(AbstractGefyraBridgeProvider):
             return False
 
     def uninstall(self) -> bool:
-        raise NotImplementedError
+        self._patch_pod_with_original_config()
 
     def add_destination(self, destination: str, parameters: dict = {}):
         ip = destination.split(":")[0]
@@ -113,7 +114,7 @@ class Carrier(AbstractGefyraBridgeProvider):
                         f"The container {self.container} in Pod {self.pod} is already running Carrier"
                     )
                     return True, pod
-                # self._store_pod_original_config(container, ireq_object)
+                self._store_pod_original_config(container)
                 container.image = f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
                 break
         else:
@@ -138,6 +139,31 @@ class Carrier(AbstractGefyraBridgeProvider):
         if container.liveness_probe:
             probes.append(container.liveness_probe)
         return probes
+    
+
+    def _patch_pod_with_original_config(self):
+        pod = core_v1_api.read_namespaced_pod(name=self.pod, namespace=self.namespace)
+        configmap = core_v1_api.read_namespaced_config_map(
+            name=CARRIER_ORIGINAL_CONFIGMAP,
+            namespace=self.configuration.NAMESPACE,
+        )
+        data = json.loads(configmap.data.get(f"{self.namespace}-{self.pod}"))
+
+        for container in pod.spec.containers:
+            if container.name == self.container:
+                for k, v in data.get("originalConfig").items():
+                    setattr(container, k, v)
+                break
+        else:
+            raise RuntimeError(
+                f"Could not found container {self.container} in Pod {self.pod}: cannot patch with original state"
+            )
+            
+        self.logger.info(
+            f"Now patching Pod {self.pod}; container {self.container} with original state"
+        )
+        core_v1_api.patch_namespaced_pod(name=self.pod, namespace=self.namespace, body=pod)
+
 
     def _check_probe_compatibility(self, probe: k8s.client.V1Probe) -> bool:
         """
@@ -159,7 +185,7 @@ class Carrier(AbstractGefyraBridgeProvider):
             return True
 
     def _store_pod_original_config(
-        self, container: k8s.client.V1Container, ireq_object: object
+        self, container: k8s.client.V1Container
     ) -> None:
         """
         Store the original configuration of that Container in order to restore it once the intercept request is ended
@@ -168,20 +194,28 @@ class Carrier(AbstractGefyraBridgeProvider):
         :return: None
         """
         config = {
-            "originalConfig": {
-                "image": container.image,
-                "command": container.command,
-                "args": container.args,
-            }
+            f"{self.namespace}-{self.pod}": json.dumps({
+                    "originalConfig": {
+                        "image": container.image,
+                        "command": container.command,
+                        "args": container.args,
+                    }
+            })
         }
-        custom_object_api.patch_namespaced_custom_object(
-            name=ireq_object.metadata.name,
-            namespace=ireq_object.metadata.namespace,
-            body=config,
-            group="gefyra.dev",
-            plural="gefyrabridges",
-            version="v1",
-        )
+        try:
+            core_v1_api.patch_namespaced_config_map(
+                name=CARRIER_ORIGINAL_CONFIGMAP,
+                namespace=self.configuration.NAMESPACE,
+                body=config,
+            )
+        except k8s.client.exceptions.ApiException as e:
+            if e.status == 404:
+                core_v1_api.create_namespaced_config_map(
+                    namespace=self.configuration.NAMESPACE,
+                    body=k8s.client.V1ConfigMap(metadata=k8s.client.V1ObjectMeta(name=CARRIER_ORIGINAL_CONFIGMAP), data=config),
+                )
+            else:
+                raise e
 
     def _configure_carrier(
         self,

@@ -1,7 +1,6 @@
 from datetime import datetime
 import tarfile
 from typing import Any, Optional, Tuple
-import uuid
 
 import kopf
 import kubernetes as k8s
@@ -67,7 +66,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     def __init__(
         self,
-        model: GefyraClientObject(),
+        model: GefyraClientObject,
         configuration: OperatorConfiguration,
         logger: Any,
     ):

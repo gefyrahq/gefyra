@@ -100,3 +100,26 @@ class TestCarrier:
             timeout=60,
         )
         assert carrier.ready() is True
+
+    
+    def test_d_uninstall(self, k3d: AClusterManager, operator_config, carrier_image):
+        from gefyra.bridge.factory import (
+            BridgeProviderType,
+            bridge_provider_factory,
+        )
+
+        carrier = bridge_provider_factory.get(
+            BridgeProviderType.CARRIER,
+            operator_config,
+            "demo",
+            "backend",
+            "backend",
+            logger,
+        )
+        carrier.uninstall()
+        k3d.wait(
+            "pod/backend",
+            "jsonpath=.status.containerStatuses[0].image=quay.io/gefyra/gefyra-demo-backend:latest",
+            namespace="demo",
+            timeout=60,
+        )
