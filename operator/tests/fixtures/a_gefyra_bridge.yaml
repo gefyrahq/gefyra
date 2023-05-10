@@ -1,0 +1,9 @@
+apiVersion: gefyra.dev/v1
+kind: gefyrabridge
+metadata:
+  name: bridge-a
+  namespace: gefyra
+provider: carrier
+targetNamespace: demo
+targetPod: backend
+targetContainer: backend

@@ -1,6 +1,8 @@
+from enum import Enum
 import logging
 import os
 from time import sleep
+import pytest
 
 from pytest_kubernetes.providers import AClusterManager
 
@@ -197,6 +199,78 @@ class TestStowaway:
         )
         assert "192.168.100.0/24" not in output
         assert "192.168.101.0/24" in output
+
+    def test_f_add_route(self, k3d: AClusterManager):
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
+
+        stowaway = connection_provider_factory.get(
+            ConnectionProviderType.STOWAWAY,
+            self.configuration,
+            logger,
+        )
+        stowaway.add_destination("test2", "192.168.100.10", 8080)
+        proxy_configmap = k3d.kubectl(
+            ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
+        )
+        assert len(proxy_configmap["data"].keys()) == 1
+        svc = k3d.kubectl(["-n", "gefyra", "get", "svc", "-l", "gefyra.dev/role=proxy"])
+        assert len(svc["items"]) == 1
+
+        stowaway.add_destination("test2", "192.168.100.11", 8080)
+        stowaway.add_destination("test2", "192.168.100.12", 8080)
+        stowaway.add_destination("test2", "192.168.100.13", 8080)
+        proxy_configmap = k3d.kubectl(
+            ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
+        )
+        assert len(proxy_configmap["data"].keys()) == 4
+        assert len(set(proxy_configmap["data"].values())) == 4
+
+        svc = k3d.kubectl(["-n", "gefyra", "get", "svc", "-l", "gefyra.dev/role=proxy"])
+        assert len(svc["items"]) == 4
+
+    def test_g_delete_route(self, k3d: AClusterManager):
+        from gefyra.connection.factory import (
+            ConnectionProviderType,
+            connection_provider_factory,
+        )
+
+        stowaway = connection_provider_factory.get(
+            ConnectionProviderType.STOWAWAY,
+            self.configuration,
+            logger,
+        )
+        stowaway.remove_destination("test2", "192.168.100.10", 8080)
+
+        proxy_configmap = k3d.kubectl(
+            ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
+        )
+        assert len(proxy_configmap["data"].keys()) == 3
+        assert "192.168.100.10:8080" not in [
+            v.split(",")[0] for v in proxy_configmap["data"].values()
+        ]
+        svc = k3d.kubectl(["-n", "gefyra", "get", "svc", "-l", "gefyra.dev/role=proxy"])
+        assert len(svc["items"]) == 3
+
+    def test_y_provider_notexists(self, k3d: AClusterManager):
+        import kubernetes
+
+        kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
+        from gefyra.connection.factory import (
+            connection_provider_factory,
+        )
+
+        class ConnectionProviderType(Enum):
+            DOESNOTEXITS = "doesnotexists"
+
+        with pytest.raises(ValueError):
+            connection_provider_factory.get(
+                ConnectionProviderType.DOESNOTEXITS,
+                self.configuration,
+                logger,
+            )
 
     def test_z_remove_stowaway(self, k3d: AClusterManager):
         import kubernetes

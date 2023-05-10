@@ -31,6 +31,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     kind = "GefyraClient"
     plural = "gefyraclients"
+    connection_provider_field = "provider"
 
     requested = State("Client requested", initial=True, value="REQUESTED")
     creating = State("Client creating", value="CREATING")
@@ -94,23 +95,6 @@ class GefyraClient(StateMachine, StateControllerMixin):
         :return: The name of the GefyraClient.
         """
         return self.data["metadata"]["namespace"]
-
-    @property
-    def connection_provider(self) -> AbstractGefyraConnectionProvider:
-        """
-        It creates a Gefyra connection provider object based on the connection provider type
-        :return: The connection provider is being returned.
-        """
-        provider = connection_provider_factory.get(
-            ConnectionProviderType(self.data.get("provider")),
-            self.configuration,
-            self.logger,
-        )
-        if provider is None:
-            raise kopf.PermanentError(
-                f"Cannot create Gefyra connection provider {self.data.get('provider')}: not supported."
-            )
-        return provider
 
     @property
     def sunset(self) -> Optional[datetime]:

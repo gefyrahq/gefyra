@@ -1,3 +1,4 @@
+from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
 import kubernetes as k8s
 
 from gefyra.configuration import OperatorConfiguration
@@ -309,3 +310,33 @@ def remove_stowaway_configmaps(logger, configuration: OperatorConfiguration):
             )
     except k8s.client.exceptions.ApiException as e:
         logger.error("Error removing Stowaway configmap: " + str(e))
+
+
+def handle_stowaway_proxy_service(
+    logger,
+    configuration: OperatorConfiguration,
+    deployment_stowaway: k8s.client.V1Deployment,
+    port: int,
+) -> k8s.client.V1Service:
+    proxy_service_stowaway = create_stowaway_proxy_service(deployment_stowaway, port)
+    try:
+        core_v1_api.create_namespaced_service(
+            body=proxy_service_stowaway, namespace=configuration.NAMESPACE
+        )
+        logger.info(f"Stowaway proxy service for port {port} created")
+    except k8s.client.exceptions.ApiException as e:
+        if e.status in [409, 422]:
+            # the Stowaway service already exist
+            # status == 422 is nodeport already allocated
+            logger.warn(
+                f"Stowaway proxy service for port {port} already available, now patching it with current configuration"
+            )
+            core_v1_api.patch_namespaced_service(
+                name=proxy_service_stowaway.metadata.name,
+                body=proxy_service_stowaway,
+                namespace=configuration.NAMESPACE,
+            )
+            logger.info(f"Stowaway proxy service for port {port} patched")
+        else:
+            raise e
+    return proxy_service_stowaway

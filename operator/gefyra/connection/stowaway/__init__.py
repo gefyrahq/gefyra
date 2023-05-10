@@ -1,8 +1,16 @@
+from ast import Tuple
+import random
+import string
 from time import sleep
 from collections import defaultdict
 from os import path
 import os
 from typing import Optional
+from gefyra.connection.stowaway.resources.configmaps import (
+    create_stowaway_proxyroute_configmap,
+)
+from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
+from gefyra.resources.events import _get_now
 import kubernetes as k8s
 
 from gefyra.utils import exec_command_pod, get_label_selector, stream_copy_from_pod
@@ -19,6 +27,7 @@ from .components import (
     handle_config_configmap,
     handle_serviceaccount,
     handle_proxyroute_configmap,
+    handle_stowaway_proxy_service,
     handle_stowaway_statefulset,
     handle_stowaway_nodeport_service,
     handle_stowaway_rsync_service,
@@ -37,6 +46,12 @@ STOWAWAY_LABELS = {
     "gefyra.dev/role": "connection",
     "gefyra.dev/provider": "stowaway",
 }
+
+PROXY_RELOAD_COMMAND = [
+    "/bin/bash",
+    "generate-proxyroutes.sh",
+    "/config/proxyroutes/",
+]
 
 
 class Stowaway(AbstractGefyraConnectionProvider):
@@ -114,6 +129,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             self.logger.error(f"Error adding peer {peer_id} to stowaway: {e}")
 
     def remove_peer(self, peer_id: str):
+        # TODO remove existing proxy routes
         self.logger.info(f"Removing peer {peer_id} from stowaway")
         try:
             self._edit_peer_configmap(remove=peer_id)
@@ -153,12 +169,56 @@ class Stowaway(AbstractGefyraConnectionProvider):
             raise RuntimeError(f"Peer {peer_id} does not exist")
 
     def add_destination(self, peer_id: str, destination_ip: str, destination_port: int):
-        raise NotImplementedError
+        # create service with random port that is not taken
+        stowaway_port = self._edit_proxyroutes_configmap(
+            peer_id=peer_id, add=f"{destination_ip}:{destination_port}"
+        )
+        # create a stowaway proxy k8s service (target of reverse proxy in bridge operations)
+        handle_stowaway_proxy_service(
+            self.logger,
+            self.configuration,
+            create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
+            stowaway_port,
+        )
+        stowaway_pod = self._get_stowaway_pod()
+        self._notify_stowaway_pod(stowaway_pod.metadata.name)
+        exec_command_pod(
+            core_v1_api,
+            stowaway_pod.metadata.name,
+            self.configuration.NAMESPACE,
+            "stowaway",
+            PROXY_RELOAD_COMMAND,
+        )
 
     def remove_destination(
         self, peer_id: str, destination_ip: str, destination_port: int
     ):
-        raise NotImplementedError
+        # update configmap and return the port that was removed
+        stowaway_port = self._edit_proxyroutes_configmap(
+            peer_id=peer_id, remove=f"{destination_ip}:{destination_port}"
+        )
+        proxy_svc = create_stowaway_proxy_service(
+            create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
+            stowaway_port,
+        )
+        try:
+            core_v1_api.delete_namespaced_service(
+                name=proxy_svc.metadata.name, namespace=proxy_svc.metadata.namespace
+            )
+        except k8s.client.exceptions.ApiException as e:
+            if e.status != 404:
+                self.logger.error(
+                    f"Error removing proxy service {proxy_svc.metadata.name}: {e}"
+                )
+        stowaway_pod = self._get_stowaway_pod()
+        self._notify_stowaway_pod(stowaway_pod.metadata.name)
+        exec_command_pod(
+            core_v1_api,
+            stowaway_pod.metadata.name,
+            self.configuration.NAMESPACE,
+            "stowaway",
+            PROXY_RELOAD_COMMAND,
+        )
 
     def _restart_stowaway(self) -> None:
         pod = self._get_stowaway_pod()
@@ -185,6 +245,24 @@ class Stowaway(AbstractGefyraConnectionProvider):
             return stowaway_pod.items[0]
         else:
             return None
+
+    def _notify_stowaway_pod(self, pod_name: str):
+        self.logger.info(f"Notify stowaway")
+        try:
+            core_v1_api.patch_namespaced_pod(
+                name=pod_name,
+                body={
+                    "metadata": {
+                        "annotations": {
+                            "operator": f"update-notification-" f"{_get_now()}"
+                        }
+                    }
+                },
+                namespace=self.configuration.NAMESPACE,
+            )
+        except k8s.client.exceptions.ApiException as e:
+            self.logger.exception(e)
+        sleep(1)
 
     def _edit_peer_configmap(
         self,
@@ -220,6 +298,64 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 namespace=configmap.metadata.namespace,
                 body=configmap,
             )
+
+    def _get_free_proxyroute_port(self) -> int:
+        _config = create_stowaway_proxyroute_configmap()
+        configmap = core_v1_api.read_namespaced_config_map(
+            _config.metadata.name, _config.metadata.namespace
+        )
+        routes = configmap.data
+        # the values ar stored as "to_ip:to_port,proxy_port"
+        if routes:
+            taken_ports = [int(v.split(",")[1]) for v in routes.values()]
+        else:
+            taken_ports = []
+        for port in range(10000, 60000):
+            if port not in taken_ports:
+                return port
+        else:
+            raise RuntimeError("No free port found for proxy route")
+
+    def _edit_proxyroutes_configmap(
+        self,
+        peer_id: str,
+        add: Optional[str] = None,
+        remove: Optional[str] = None,
+    ) -> int:
+        _config = create_stowaway_proxyroute_configmap()
+        configmap = core_v1_api.read_namespaced_config_map(
+            _config.metadata.name, _config.metadata.namespace
+        )
+        routes = configmap.data
+        if routes is None:
+            routes = {}
+        if add:
+            stowaway_port = self._get_free_proxyroute_port()
+            routes[
+                f"{peer_id}-{''.join(random.choices(string.ascii_lowercase, k=10))}"
+            ] = f"{add},{stowaway_port}"
+            core_v1_api.patch_namespaced_config_map(
+                name=configmap.metadata.name,
+                namespace=configmap.metadata.namespace,
+                body={"data": routes},
+            )
+            return int(stowaway_port)
+        if remove:
+            to_be_deleted = None
+            stowaway_port = None
+            for k, v in routes.items():
+                if v.split(",")[0] == remove:
+                    to_be_deleted = k
+                    stowaway_port = v.split(",")[1]
+            if to_be_deleted:
+                del routes[to_be_deleted]
+                configmap.data = routes
+                core_v1_api.replace_namespaced_config_map(
+                    name=configmap.metadata.name,
+                    namespace=configmap.metadata.namespace,
+                    body=configmap,
+                )
+            return int(stowaway_port)
 
     def _get_wireguard_connection_details(self, peer_id: str) -> dict[str, str]:
         pod = self._get_stowaway_pod()

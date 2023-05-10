@@ -26,6 +26,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     kind = "GefyraBridge"
     plural = "gefyrabridges"
+    connection_provider_field = "connectionProvider"
 
     requested = State("Bridge requested", initial=True, value="REQUESTED")
     installing = State("Bridge installing", value="INSTALLING")
@@ -33,20 +34,25 @@ class GefyraBridge(StateMachine, StateControllerMixin):
     creating = State("Bridge creating", value="CREATING")
     active = State("Bridge active", value="ACTIVE")
     removing = State("Bridge removing", value="REMOVING")
+    restoring = State("Bridge restoring Pod", value="RESTORING")
     error = State("Bridge error", value="ERROR")
     terminating = State("Bridge terminating", value="TERMINATING")
 
-    install = requested.to(installing) | error.to(installing)
-    wait = (
-        installing.to(installed)
+    install = (
+        requested.to(installing, on="_install_provider")
+        | error.to(installing)
+        | installing.to.itself(on="_wait_for_provider")
+    )
+    set_installed = (
+        requested.to(installed)
+        | installing.to(installed)
         | error.to(installed)
-        | installing.to.itself()
-        | removing.to(installed)
-        | requested.to(installed)
+        | installed.to.itself()
     )
     activate = installed.to(creating) | error.to(creating) | creating.to.itself()
     establish = creating.to(active) | error.to(active)
     remove = active.to(removing) | error.to(removing) | removing.to.itself()
+    restore = installed.to(restoring) | error.to(restoring) | restoring.to.itself()
     impair = error.from_(
         requested, installing, installed, creating, removing, active, error
     )
@@ -78,12 +84,11 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         provider = bridge_provider_factory.get(
             BridgeProviderType(self.data.get("provider")),
             self.configuration,
+            self.data.get("targetNamespace"),
+            self.data.get("targetPod"),
+            self.data.get("targetContainer"),
             self.logger,
         )
-        if provider is None:
-            raise kopf.PermanentError(
-                f"Cannot create Gefyra bridge provider {self.data.get('provider')}: not supported."
-            )
         return provider
 
     @property
@@ -103,6 +108,23 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             return True
         else:
             return False
+
+    def _install_provider(self):
+        """
+        It installs the bridge provider
+        :return: Nothing
+        """
+        self.bridge_provider.install()
+
+    def _wait_for_provider(self):
+        if not self.bridge_provider.ready():
+            raise kopf.TemporaryError(
+                f"Waiting for Gefyra bridge provider {self.bridge_provider.__class__.__name__} to become ready",
+                delay=1,
+            )
+
+    def is_installed(self):
+        return self.bridge_provider.installed() and self.bridge_provider.ready()
 
     def on_create(self):
         self.logger.info(f"Bridge '{self.object_name}' is being created")

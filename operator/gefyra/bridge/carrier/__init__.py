@@ -139,7 +139,6 @@ class Carrier(AbstractGefyraBridgeProvider):
         if container.liveness_probe:
             probes.append(container.liveness_probe)
         return probes
-    
 
     def _patch_pod_with_original_config(self):
         pod = core_v1_api.read_namespaced_pod(name=self.pod, namespace=self.namespace)
@@ -158,12 +157,13 @@ class Carrier(AbstractGefyraBridgeProvider):
             raise RuntimeError(
                 f"Could not found container {self.container} in Pod {self.pod}: cannot patch with original state"
             )
-            
+
         self.logger.info(
             f"Now patching Pod {self.pod}; container {self.container} with original state"
         )
-        core_v1_api.patch_namespaced_pod(name=self.pod, namespace=self.namespace, body=pod)
-
+        core_v1_api.patch_namespaced_pod(
+            name=self.pod, namespace=self.namespace, body=pod
+        )
 
     def _check_probe_compatibility(self, probe: k8s.client.V1Probe) -> bool:
         """
@@ -184,9 +184,7 @@ class Carrier(AbstractGefyraBridgeProvider):
         else:
             return True
 
-    def _store_pod_original_config(
-        self, container: k8s.client.V1Container
-    ) -> None:
+    def _store_pod_original_config(self, container: k8s.client.V1Container) -> None:
         """
         Store the original configuration of that Container in order to restore it once the intercept request is ended
         :param container: V1Container of the Pod in question
@@ -194,13 +192,15 @@ class Carrier(AbstractGefyraBridgeProvider):
         :return: None
         """
         config = {
-            f"{self.namespace}-{self.pod}": json.dumps({
+            f"{self.namespace}-{self.pod}": json.dumps(
+                {
                     "originalConfig": {
                         "image": container.image,
                         "command": container.command,
                         "args": container.args,
                     }
-            })
+                }
+            )
         }
         try:
             core_v1_api.patch_namespaced_config_map(
@@ -212,7 +212,12 @@ class Carrier(AbstractGefyraBridgeProvider):
             if e.status == 404:
                 core_v1_api.create_namespaced_config_map(
                     namespace=self.configuration.NAMESPACE,
-                    body=k8s.client.V1ConfigMap(metadata=k8s.client.V1ObjectMeta(name=CARRIER_ORIGINAL_CONFIGMAP), data=config),
+                    body=k8s.client.V1ConfigMap(
+                        metadata=k8s.client.V1ObjectMeta(
+                            name=CARRIER_ORIGINAL_CONFIGMAP
+                        ),
+                        data=config,
+                    ),
                 )
             else:
                 raise e
@@ -235,16 +240,6 @@ class Carrier(AbstractGefyraBridgeProvider):
             exec_command_pod(
                 core_v1_api, self.pod, self.namespace, self.container, command
             )
-            # if sync_down_directories:
-            #     logger.info(f"Setting directories in Carrier {pod_name} to be down synced")
-            #     rsync_cmd = (
-            #         CARRIER_RSYNC_COMMAND_BASE
-            #         + [f"{pod_name}/{container_name}"]
-            #         + sync_down_directories
-            #     )
-            #     exec_command_pod(
-            #         api_instance, pod_name, namespace, container_name, rsync_cmd
-            #     )
         except Exception as e:
             self.logger.error(e)
             return

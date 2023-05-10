@@ -16,6 +16,10 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
             "providerParameter": k8s.client.V1JSONSchemaProps(
                 type="object", x_kubernetes_preserve_unknown_fields=True
             ),
+            # the Gefyra connection provider to establish the routed connection to a client
+            "connectionProvider": k8s.client.V1JSONSchemaProps(
+                type="string", enum=["stowaway"]
+            ),
             # the targets for this bridge / traffic sources
             "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
             "targetPod": k8s.client.V1JSONSchemaProps(

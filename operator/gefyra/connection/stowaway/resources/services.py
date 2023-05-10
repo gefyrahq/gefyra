@@ -58,7 +58,7 @@ def create_stowaway_proxy_service(
         metadata=k8s.client.V1ObjectMeta(
             name=f"gefyra-stowaway-proxy-{port}",
             namespace=stowaway_deployment.metadata.namespace,
-            labels={"gefyra.dev/app": "stowaway"},
+            labels={"gefyra.dev/app": "stowaway", "gefyra.dev/role": "proxy"},
         ),
         spec=spec,
     )

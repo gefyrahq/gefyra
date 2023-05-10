@@ -101,7 +101,6 @@ class TestCarrier:
         )
         assert carrier.ready() is True
 
-    
     def test_d_uninstall(self, k3d: AClusterManager, operator_config, carrier_image):
         from gefyra.bridge.factory import (
             BridgeProviderType,

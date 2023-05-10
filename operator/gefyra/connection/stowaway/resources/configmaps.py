@@ -1,20 +1,18 @@
 import kubernetes as k8s
 from gefyra.configuration import configuration
 
-PROXY_ROUTES = dict()
-PORT_RANGE = [i for i in range(10000, 10020)]
+PORT_RANGE = [i for i in range(10000, 20000)]
 
 
 def create_stowaway_proxyroute_configmap() -> k8s.client.V1ConfigMap:
-    global PROXY_ROUTES
     configmap = k8s.client.V1ConfigMap(
         api_version="v1",
         kind="ConfigMap",
-        data=PROXY_ROUTES,
+        data={},
         metadata=k8s.client.V1ObjectMeta(
             name=configuration.STOWAWAY_PROXYROUTE_CONFIGMAPNAME,
             namespace=configuration.NAMESPACE,
-            labels={"gefyra.dev/app": "stowaway"},
+            labels={"gefyra.dev/app": "stowaway", "gefyra.dev/role": "proxyroute"},
         ),
     )
     return configmap
@@ -36,7 +34,7 @@ def create_stowaway_configmap() -> k8s.client.V1ConfigMap:
         metadata=k8s.client.V1ObjectMeta(
             name=configuration.STOWAWAY_CONFIGMAPNAME,
             namespace=configuration.NAMESPACE,
-            labels={"gefyra.dev/app": "stowaway"},
+            labels={"gefyra.dev/app": "stowaway", "gefyra.dev/role": "connection"},
         ),
     )
     return configmap

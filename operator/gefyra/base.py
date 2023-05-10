@@ -1,7 +1,14 @@
 from typing import Optional
 import uuid
+from gefyra.connection.abstract import AbstractGefyraConnectionProvider
+import kopf
 import kubernetes as k8s
 from statemachine import State
+
+from gefyra.connection.factory import (
+    ConnectionProviderType,
+    connection_provider_factory,
+)
 
 from gefyra.resources.events import _get_now
 
@@ -62,6 +69,19 @@ class StateControllerMixin:
         """
         return self.data["metadata"]["namespace"]
 
+    @property
+    def connection_provider(self) -> AbstractGefyraConnectionProvider:
+        """
+        It creates a Gefyra connection provider object based on the connection provider type
+        :return: The connection provider is being returned.
+        """
+        provider = connection_provider_factory.get(
+            ConnectionProviderType(self.data.get(self.connection_provider_field)),
+            self.configuration,
+            self.logger,
+        )
+        return provider
+
     def completed_transition(self, target: State) -> Optional[str]:
         """
         Read the stateTransitions attribute, return the value of the stateTransitions timestamp for the given
@@ -112,7 +132,7 @@ class StateControllerMixin:
     def _patch_object(self, data: dict):
         self.custom_api.patch_namespaced_custom_object(
             namespace=self.configuration.NAMESPACE,
-            name=self.bridge_name,
+            name=self.object_name,
             body=data,
             group="gefyra.dev",
             plural=self.plural,
