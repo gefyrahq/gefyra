@@ -50,7 +50,7 @@ STOWAWAY_LABELS = {
 PROXY_RELOAD_COMMAND = [
     "/bin/bash",
     "generate-proxyroutes.sh",
-    "/config/proxyroutes/",
+    "/stowaway/proxyroutes/",
 ]
 
 
@@ -168,17 +168,24 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             raise RuntimeError(f"Peer {peer_id} does not exist")
 
-    def add_destination(self, peer_id: str, destination_ip: str, destination_port: int):
+    def add_destination(
+        self,
+        peer_id: str,
+        destination_ip: str,
+        destination_port: int,
+        parameters: dict = {},
+    ):
         # create service with random port that is not taken
         stowaway_port = self._edit_proxyroutes_configmap(
             peer_id=peer_id, add=f"{destination_ip}:{destination_port}"
         )
         # create a stowaway proxy k8s service (target of reverse proxy in bridge operations)
-        handle_stowaway_proxy_service(
+        svc = handle_stowaway_proxy_service(
             self.logger,
             self.configuration,
             create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
             stowaway_port,
+            peer_id,
         )
         stowaway_pod = self._get_stowaway_pod()
         self._notify_stowaway_pod(stowaway_pod.metadata.name)
@@ -189,6 +196,27 @@ class Stowaway(AbstractGefyraConnectionProvider):
             "stowaway",
             PROXY_RELOAD_COMMAND,
         )
+        return f"{svc.metadata.name}.{self.configuration.NAMESPACE}.svc.cluster.local:{stowaway_port}"
+
+    def get_destination(
+        self, peer_id: str, destination_ip: str, destination_port: int
+    ) -> str:
+        svcs = core_v1_api.list_namespaced_service(
+            namespace=self.configuration.NAMESPACE,
+            label_selector=get_label_selector(
+                {
+                    "gefyra.dev/app": "stowaway",
+                    "gefyra.dev/role": "proxy",
+                    "gefyra.dev/client-id": peer_id,
+                }
+            ),
+        )
+        if len(svcs.items) == 0:
+            raise RuntimeError(
+                f"Error looking up destination {destination_ip}:{destination_port} for client {peer_id}: no proxy service found"
+            )
+        _, stowaway_port = svcs.items[0].metadata.name.rsplit("-", 1)
+        return f"{svcs.items[0].metadata.name}.{self.configuration.NAMESPACE}.svc.cluster.local:{stowaway_port}"
 
     def remove_destination(
         self, peer_id: str, destination_ip: str, destination_port: int
@@ -200,6 +228,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         proxy_svc = create_stowaway_proxy_service(
             create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
             stowaway_port,
+            client_id=peer_id,
         )
         try:
             core_v1_api.delete_namespaced_service(
@@ -219,6 +248,27 @@ class Stowaway(AbstractGefyraConnectionProvider):
             "stowaway",
             PROXY_RELOAD_COMMAND,
         )
+
+    def destination_exists(
+        self, peer_id: str, destination_ip: str, destination_port: int
+    ) -> bool:
+        _config = create_stowaway_proxyroute_configmap()
+        try:
+            configmap = core_v1_api.read_namespaced_config_map(
+                _config.metadata.name, _config.metadata.namespace
+            )
+            if configmap.data is None:
+                return False
+            for k, v in configmap.data.items():
+                if f"{destination_ip}:{destination_port}" in v:
+                    return True
+            else:
+                return False
+        except k8s.client.exceptions.ApiException as e:
+            self.logger.error(
+                f"Error looking up destination {destination_ip}:{destination_port} for peer {peer_id}: {e}"
+            )
+            return False
 
     def _restart_stowaway(self) -> None:
         pod = self._get_stowaway_pod()

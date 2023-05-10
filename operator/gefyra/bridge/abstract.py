@@ -29,34 +29,42 @@ class AbstractGefyraBridgeProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def uninstall(self) -> bool:
+    def uninstall(self):
         """
         Uninstall this Gefyra bridge provider from the Kubernetes Pod
         """
         raise NotImplementedError
 
     @abstractmethod
-    def add_destination(self, destination: str, parameters: dict = {}):
+    def add_proxy_route(
+        self,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+        parameters: dict = {},
+    ):
         """
-        Add a new destination to the bridge provider
-
-        :param destination: the destination to be added in the form of IP:PORT
+        Add a new proxy_route to the bridge provider
         """
         raise NotImplementedError
 
     @abstractmethod
-    def remove_destination(self, destination: str):
+    def remove_proxy_route(
+        self, container_port: int, destination_host: str, destination_port: int
+    ):
         """
         Remove a bridge from the bridge provider
 
-        :param destination: the destination to be removed in the form of IP:PORT
+        :param proxy_route: the proxy_route to be removed in the form of IP:PORT
         """
         raise NotImplementedError
 
     @abstractmethod
-    def destination_exists(self, destination: str) -> bool:
+    def proxy_route_exists(
+        self, container_port: int, destination_host: str, destination_port: int
+    ) -> bool:
         """
-        Returns True if the bridge exists, otherwise False
+        Returns True if a proxy route exists for this port, otherwise False
         """
         raise NotImplementedError
 

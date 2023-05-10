@@ -62,9 +62,15 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def add_destination(self, peer_id: str, destination_ip: str, destination_port: int):
+    def add_destination(
+        self,
+        peer_id: str,
+        destination_ip: str,
+        destination_port: int,
+        parameters: dict = {},
+    ) -> str:
         """
-        Add a destintation route to this connection provider proxy
+        Add a destintation route to this connection provider proxy, returns the service URL
         """
         raise NotImplementedError
 
@@ -74,5 +80,23 @@ class AbstractGefyraConnectionProvider(ABC):
     ):
         """
         Remove a destintation route from this connection provider proxy
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def destination_exists(
+        self, peer_id: str, destination_ip: str, destination_port: int
+    ) -> bool:
+        """
+        Returns True if the destination exists, otherwise False
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_destination(
+        self, peer_id: str, destination_ip: str, destination_port: int
+    ) -> str:
+        """
+        Returns the service URL for the destination
         """
         raise NotImplementedError

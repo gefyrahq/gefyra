@@ -24,7 +24,7 @@ def handle_crds(logger) -> None:
         logger.info("Gefyra CRD gefyrabridge created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
-            logger.warn(
+            logger.warning(
                 "Gefyra CRD gefyrabridge already available but might be outdated. Please remove it manually if you encounter issues."
             )
         else:
@@ -35,7 +35,7 @@ def handle_crds(logger) -> None:
         logger.info("Gefyra CRD gefyraclient created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
-            logger.warn(
+            logger.warning(
                 "Gefyra CRD gefyraclient already available but might be outdated. Please remove it manually if you encounter issues."
             )
         else:

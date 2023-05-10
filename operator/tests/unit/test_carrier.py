@@ -91,7 +91,6 @@ class TestCarrier:
             "backend",
             logger,
         )
-        print(k3d.kubectl(["get", "pod", "backend", "-n", "demo"]))
         k3d.wait(
             "pod/backend",
             "jsonpath=.status.containerStatuses[0].image=docker.io/library/"
@@ -101,7 +100,46 @@ class TestCarrier:
         )
         assert carrier.ready() is True
 
-    def test_d_uninstall(self, k3d: AClusterManager, operator_config, carrier_image):
+    def test_d_addproxyroute(self, k3d: AClusterManager, operator_config):
+        from gefyra.bridge.factory import (
+            BridgeProviderType,
+            bridge_provider_factory,
+        )
+
+        carrier = bridge_provider_factory.get(
+            BridgeProviderType.CARRIER,
+            operator_config,
+            "demo",
+            "backend",
+            "backend",
+            logger,
+        )
+        carrier.add_proxy_route(80, "host", 8080)
+        output = k3d.kubectl(
+            ["-n", "demo", "exec", "backend", "--", "cat", "/etc/nginx/nginx.conf"],
+            as_dict=False,
+        )
+        assert "upstream stowaway-80 {server host:8080;}" in output
+        assert carrier.proxy_route_exists(80, "host", 8080) is True
+        assert carrier.proxy_route_exists(8080, "host-1", 8081) is False
+
+    def test_e_removeproxyroute(self, k3d: AClusterManager, operator_config):
+        from gefyra.bridge.factory import (
+            BridgeProviderType,
+            bridge_provider_factory,
+        )
+
+        carrier = bridge_provider_factory.get(
+            BridgeProviderType.CARRIER,
+            operator_config,
+            "demo",
+            "backend",
+            "backend",
+            logger,
+        )
+        carrier.remove_proxy_route(80, "host", 8080)
+
+    def test_z_uninstall(self, k3d: AClusterManager, operator_config, carrier_image):
         from gefyra.bridge.factory import (
             BridgeProviderType,
             bridge_provider_factory,

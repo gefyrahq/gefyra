@@ -4,6 +4,11 @@ metadata:
   name: bridge-a
   namespace: gefyra
 provider: carrier
+connectionProvider: stowaway
+client: client-a
 targetNamespace: demo
 targetPod: backend
 targetContainer: backend
+portMappings:
+  - "8080:80"
+destinationIP: "192.168.101.10"

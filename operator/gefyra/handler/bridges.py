@@ -15,3 +15,17 @@ async def client_created(body, logger, **kwargs):
         bridge.install()
     if bridge.installed.is_active:
         bridge.activate()
+
+
+@kopf.on.delete("gefyrabridges.gefyra.dev")
+async def client_created(body, logger, **kwargs):
+    obj = GefyraBridgeObject(body)
+    bridge = GefyraBridge(obj, configuration, logger)
+    if (
+        bridge.active.is_active
+        or bridge.creating.is_active
+        or bridge.removing.is_active
+    ):
+        bridge.remove()
+    if bridge.installed.is_active:
+        bridge.restore()

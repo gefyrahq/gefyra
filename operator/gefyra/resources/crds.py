@@ -2,13 +2,18 @@ import kubernetes as k8s
 
 from gefyra.configuration import configuration
 
+CONNECTION_PROVIDERS = ["stowaway"]
+BRIDGE_PROVIDERS = ["carrier"]
+
 
 def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
     schema_props = k8s.client.V1JSONSchemaProps(
         type="object",
         properties={
             # the Gefyra bridge provider for this request
-            "provider": k8s.client.V1JSONSchemaProps(type="string", enum=["carrier"]),
+            "provider": k8s.client.V1JSONSchemaProps(
+                type="string", enum=BRIDGE_PROVIDERS
+            ),
             # provider specific parameters for this bridge
             # a carrier example: {"type": "stream"} to proxy all traffic on TCP level to the destination (much like a nitro-speed global bridge)
             # another carrier example: {"type": "http", "url": "/api"} to proxy all traffic on HTTP level to the destination
@@ -18,7 +23,7 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
             ),
             # the Gefyra connection provider to establish the routed connection to a client
             "connectionProvider": k8s.client.V1JSONSchemaProps(
-                type="string", enum=["stowaway"]
+                type="string", enum=CONNECTION_PROVIDERS
             ),
             # the targets for this bridge / traffic sources
             "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
@@ -93,7 +98,9 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
         required=["provider"],
         properties={
             # the Gefyra connection provider for this client
-            "provider": k8s.client.V1JSONSchemaProps(type="string", enum=["stowaway"]),
+            "provider": k8s.client.V1JSONSchemaProps(
+                type="string", enum=CONNECTION_PROVIDERS
+            ),
             "providerParameter": k8s.client.V1JSONSchemaProps(
                 type="object", x_kubernetes_preserve_unknown_fields=True
             ),

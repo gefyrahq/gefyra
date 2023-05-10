@@ -61,19 +61,40 @@ class Carrier(AbstractGefyraBridgeProvider):
         else:
             return False
 
-    def uninstall(self) -> bool:
+    def uninstall(self):
         self._patch_pod_with_original_config()
 
-    def add_destination(self, destination: str, parameters: dict = {}):
-        ip = destination.split(":")[0]
-        port = destination.split(":")[1]
-        self._configure_carrier(ip, int(port))
+    def add_proxy_route(
+        self,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+        parameters: dict = {},
+    ):
+        self._configure_carrier(container_port, destination_host, destination_port)
 
-    def remove_destination(self, destination: str):
+    def remove_proxy_route(
+        self, container_port: int, destination_host: str, destination_port: int
+    ):
         pass
 
-    def destination_exists(self, destination: str) -> bool:
-        raise NotImplementedError
+    def proxy_route_exists(
+        self, container_port: int, destination_host: str, destination_port: int
+    ) -> bool:
+        output = exec_command_pod(
+            core_v1_api,
+            self.pod,
+            self.namespace,
+            self.container,
+            ["cat", "/etc/nginx/nginx.conf"],
+        )
+        if (
+            f"upstream stowaway-{container_port} {{server {destination_host}:{destination_port};}} server {{listen {container_port}; proxy_pass stowaway-{container_port};}}"
+            in output
+        ):
+            return True
+        else:
+            return False
 
     def validate(self, brige_request: dict):
         raise NotImplementedError
@@ -225,7 +246,7 @@ class Carrier(AbstractGefyraBridgeProvider):
     def _configure_carrier(
         self,
         container_port: int,
-        destination_ip: str,
+        destination_host: str,
         destination_port: int,
     ):
         if not self.ready():
@@ -235,7 +256,7 @@ class Carrier(AbstractGefyraBridgeProvider):
         try:
             command = CARRIER_CONFIGURE_COMMAND_BASE + [
                 f"{container_port}",
-                f"{destination_ip}:{destination_port}",
+                f"{destination_host}:{destination_port}",
             ]
             exec_command_pod(
                 core_v1_api, self.pod, self.namespace, self.container, command

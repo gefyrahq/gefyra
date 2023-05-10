@@ -211,17 +211,37 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        stowaway.add_destination("test2", "192.168.100.10", 8080)
+        proxy_host = stowaway.add_destination("test2", "192.168.100.10", 8080)
+        assert (
+            proxy_host == "gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000"
+        )
         proxy_configmap = k3d.kubectl(
             ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
         )
         assert len(proxy_configmap["data"].keys()) == 1
+        assert stowaway.destination_exists("test2", "192.168.100.10", 8080) is True
+        assert stowaway.destination_exists("test2", "192.168.100.11", 8080) is False
+
+        assert (
+            stowaway.get_destination("test2", "192.168.100.10", 8080)
+            == "gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000"
+        )
+
         svc = k3d.kubectl(["-n", "gefyra", "get", "svc", "-l", "gefyra.dev/role=proxy"])
         assert len(svc["items"]) == 1
 
-        stowaway.add_destination("test2", "192.168.100.11", 8080)
-        stowaway.add_destination("test2", "192.168.100.12", 8080)
-        stowaway.add_destination("test2", "192.168.100.13", 8080)
+        assert (
+            stowaway.add_destination("test2", "192.168.100.11", 8080)
+            == "gefyra-stowaway-proxy-10001.gefyra.svc.cluster.local:10001"
+        )
+        assert (
+            stowaway.add_destination("test2", "192.168.100.12", 8080)
+            == "gefyra-stowaway-proxy-10002.gefyra.svc.cluster.local:10002"
+        )
+        assert (
+            stowaway.add_destination("test2", "192.168.100.13", 8080)
+            == "gefyra-stowaway-proxy-10003.gefyra.svc.cluster.local:10003"
+        )
         proxy_configmap = k3d.kubectl(
             ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
         )

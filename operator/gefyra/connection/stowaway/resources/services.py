@@ -37,7 +37,7 @@ def create_stowaway_nodeport_service(
 
 
 def create_stowaway_proxy_service(
-    stowaway_deployment: k8s.client.V1Deployment, port: int
+    stowaway_deployment: k8s.client.V1Deployment, port: int, client_id: str = "unknown"
 ) -> k8s.client.V1Service:
     spec = k8s.client.V1ServiceSpec(
         type="ClusterIP",
@@ -58,7 +58,12 @@ def create_stowaway_proxy_service(
         metadata=k8s.client.V1ObjectMeta(
             name=f"gefyra-stowaway-proxy-{port}",
             namespace=stowaway_deployment.metadata.namespace,
-            labels={"gefyra.dev/app": "stowaway", "gefyra.dev/role": "proxy"},
+            labels={
+                "gefyra.dev/app": "stowaway",
+                "gefyra.dev/role": "proxy",
+                "gefyra.dev/proxy-port": str(port),
+                "gefyra.dev/client-id": client_id,
+            },
         ),
         spec=spec,
     )

@@ -9,7 +9,7 @@ spec:
   containers:
     - name: backend
       image: quay.io/gefyra/gefyra-demo-backend
-      imagePullPolicy: Never
+      imagePullPolicy: IfNotPresent
       ports:
         - name: web
           containerPort: 5002
@@ -26,7 +26,7 @@ spec:
   containers:
     - name: frontend
       image: quay.io/gefyra/gefyra-demo-frontend
-      imagePullPolicy: Never
+      imagePullPolicy: IfNotPresent
       ports:
         - name: web
           containerPort: 5003
