@@ -668,12 +668,13 @@ class GefyraBaseTest:
         self.test_n_run_gefyra_down()
 
     def test_o_reflect_occupied_port(self):
-        busy_container = self.DOCKER_API.containers.run(
+        self.DOCKER_API.containers.run(
             "alpine",
             auto_remove=True,
             ports={"80/tcp": [80]},
             detach=True,
             command=["sleep", "20"],
+            name="busybox",
         )
         res = up(default_configuration)
         self.assertTrue(res)
@@ -689,7 +690,7 @@ class GefyraBaseTest:
             reflect(**params)
 
         self.assertIn("occupied", str(rte.exception))
-        busy_container.stop()
+        self._stop_container("busybox")
 
     def test_p_reflect(self):
         res = up(default_configuration)
