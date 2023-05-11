@@ -1,3 +1,5 @@
+import logging
+
 from gefyra.api import bridge
 from gefyra.api.run import retrieve_pod_and_container, run
 from gefyra.cluster.utils import (
@@ -7,6 +9,10 @@ from gefyra.cluster.utils import (
     get_v1pod,
 )
 from gefyra.configuration import default_configuration
+
+from client.gefyra.api.utils import is_port_free
+
+logger = logging.getLogger(__name__)
 
 
 def reflect(
@@ -38,6 +44,18 @@ def reflect(
             if not port.host_port:
                 host_port = port.container_port
             ports[host_port] = port.container_port
+    
+    host_ports = ports.keys()
+    ports_not_free = []
+
+    for port in host_ports:
+        if not is_port_free(port):
+            ports_not_free.append(port)
+    if len(ports_not_free):
+        raise RuntimeError(
+            f"Following ports are needed for the container to run, but are occupied on your host system: {', '.join(ports_not_free)}. \
+            Please provide a port mapping to overwrite these ports."
+        )
 
     res = run(
         name=name,

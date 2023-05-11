@@ -667,7 +667,31 @@ class GefyraBaseTest:
     def test_n_run_gefyra_down_again_without_errors(self):
         self.test_n_run_gefyra_down()
 
-    def test_o_reflect(self):
+    def test_o_reflect_occupied_port(self):
+        busy_container = self.DOCKER_API.containers.run(
+            "alpine",
+            auto_remove=True,
+            ports={"80/tcp": [80]},
+            detach=True,
+            command=["sleep", "20"],
+        )
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        self.assert_deployment_ready(name="hello-nginxdemo", namespace="default")
+        params = {
+            "workload": "deploy/hello-nginxdemo",
+            "do_bridge": True,
+            "auto_remove": True,
+        }
+        with self.assertRaises(RuntimeError) as rte:
+            reflect(**params)
+        
+        self.assertIn("occupied", str(rte.exception))
+        busy_container.stop()
+
+    def test_p_reflect(self):
         res = up(default_configuration)
         self.assertTrue(res)
         self.assert_cargo_running()
