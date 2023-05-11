@@ -671,7 +671,7 @@ class GefyraBaseTest:
         container = self.DOCKER_API.containers.run(
             "alpine",
             auto_remove=True,
-            ports={"80/tcp": [80]},
+            ports={"8000/tcp": [8000]},
             detach=True,
             command=["sleep", "20"],
             name="busybox",
@@ -698,9 +698,9 @@ class GefyraBaseTest:
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
-        self.assert_deployment_ready(name="hello-nginxdemo", namespace="default")
+        self.assert_deployment_ready(name="hello-nginxdemo-8000", namespace="default")
         params = {
-            "workload": "deploy/hello-nginxdemo",
+            "workload": "deploy/hello-nginxdemo-8000",
             "do_bridge": True,
             "auto_remove": True,
         }
