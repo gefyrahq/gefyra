@@ -681,9 +681,9 @@ class GefyraBaseTest:
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
-        self.assert_deployment_ready(name="hello-nginxdemo", namespace="default")
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
         params = {
-            "workload": "deploy/hello-nginxdemo",
+            "workload": "deploy/bye-nginxdemo-8000",
             "do_bridge": True,
             "auto_remove": True,
         }
@@ -698,9 +698,9 @@ class GefyraBaseTest:
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
-        self.assert_deployment_ready(name="hello-nginxdemo-8000", namespace="default")
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
         params = {
-            "workload": "deploy/hello-nginxdemo-8000",
+            "workload": "deploy/bye-nginxdemo-8000",
             "do_bridge": True,
             "auto_remove": True,
         }

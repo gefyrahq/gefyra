@@ -36,19 +36,19 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hello-nginxdemo-8000
+  name: bye-nginxdemo-8000
 spec:
   selector:
     matchLabels:
-      app: hello-nginx-8000
+      app: bye-nginx-8000
   replicas: 1
   template:
     metadata:
       labels:
-        app: hello-nginx-8000
+        app: bye-nginx-8000
     spec:
       containers:
-      - name: hello-nginx-8000
+      - name: bye-nginx-8000
         image: nginxdemos/hello
         ports:
         - containerPort: 8000
