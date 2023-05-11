@@ -7,10 +7,9 @@ from gefyra.cluster.utils import (
     get_container_image,
     get_container_ports,
     get_v1pod,
+    is_port_free
 )
 from gefyra.configuration import default_configuration
-
-from client.gefyra.api.utils import is_port_free
 
 logger = logging.getLogger(__name__)
 
