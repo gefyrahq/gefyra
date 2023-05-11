@@ -49,7 +49,7 @@ def reflect(
 
     for port in host_ports:
         if not is_port_free(port):
-            ports_not_free.append(port)
+            ports_not_free.append(str(port))
     if len(ports_not_free):
         raise RuntimeError(
             f"Following ports are needed for the container to run, but are occupied  \
