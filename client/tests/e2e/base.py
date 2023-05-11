@@ -687,7 +687,7 @@ class GefyraBaseTest:
         }
         with self.assertRaises(RuntimeError) as rte:
             reflect(**params)
-        
+
         self.assertIn("occupied", str(rte.exception))
         busy_container.stop()
 
