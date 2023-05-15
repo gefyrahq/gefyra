@@ -23,16 +23,21 @@ def reflect(
     command: str = "",
     volumes: dict = None,
     auto_remove: bool = False,
-    expose_ports: bool = True
-    # TODO adapt port mapping in case it's occupied
+    expose_ports: bool = True,
+    image: str = None,
+    ports: dict = {},
 ):
+    if expose_ports and ports:
+        raise RuntimeError(
+            "You cannot specify ports and expose_ports at the same time."
+        )
+
     name = f"gefyra-reflect-{namespace}-{workload.replace('/', '-')}"
     pod_name, container_name = retrieve_pod_and_container(workload, namespace, config)
-    ports = {}
 
     pod = get_v1pod(config=config, pod_name=pod_name, namespace=namespace)
-
-    image = get_container_image(pod, container_name)
+    if not image:
+        image = get_container_image(pod, container_name)
     if not command:
         command = get_container_command(pod, container_name)
 
@@ -54,7 +59,7 @@ def reflect(
         raise RuntimeError(
             f"Following ports are needed for the container to run, but are occupied  \
             on your host system: {', '.join(ports_not_free)}. \
-            Please provide a port mapping to overwrite these ports."
+            Please provide a port mapping via --port to overwrite these ports."
         )
 
     res = run(

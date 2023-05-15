@@ -121,13 +121,22 @@ reflect_parser.add_argument(
     action="store_false",
 )
 reflect_parser.add_argument(
+    "-i", "--image", help="The docker image to run in Gefyra", required=True
+)
+reflect_parser.add_argument(
     "-v",
     "--volume",
     action="append",
     help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
     required=False,
 )
-
+reflect_parser.add_argument(
+    "-p",
+    "--port",
+    help="Add port mapping in form of <container_port>:<host_port>",
+    required=False,
+    action=PortMappingParser,
+)
 reflect_parser.add_argument(
     "-b",
     "--bridge",
@@ -446,6 +455,8 @@ def main():
                 command=args.command,
                 namespace=args.namespace,
                 do_bridge=args.bridge,
+                ports=args.port,
+                image=args.image,
             )
         elif args.action == "bridge":
             bridge(
