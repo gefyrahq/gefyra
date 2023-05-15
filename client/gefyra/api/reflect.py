@@ -25,12 +25,14 @@ def reflect(
     auto_remove: bool = False,
     expose_ports: bool = True,
     image: str = None,
-    ports: dict = {},
+    ports: dict = None,
 ):
     if expose_ports and ports:
         raise RuntimeError(
             "You cannot specify ports and expose_ports at the same time."
         )
+    if not ports:
+        ports = {}
 
     name = f"gefyra-reflect-{namespace}-{workload.replace('/', '-')}"
     pod_name, container_name = retrieve_pod_and_container(workload, namespace, config)
