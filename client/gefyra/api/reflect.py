@@ -49,9 +49,9 @@ def reflect(
             host_port = ""
             if not port.host_port:
                 host_port = port.container_port
-            ports[host_port] = port.container_port
+            ports[port.container_port] = host_port
 
-    host_ports = ports.keys()
+    host_ports = ports.values()
     ports_not_free = []
 
     for port in host_ports:
