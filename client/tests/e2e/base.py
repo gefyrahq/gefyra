@@ -706,6 +706,9 @@ class GefyraBaseTest:
         }
         res_reflect = reflect(**params)
         self.assertTrue(res_reflect)
+        self._stop_container(
+            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
+        )
         res = down(default_configuration)
         self.assertTrue(res)
 
@@ -724,6 +727,9 @@ class GefyraBaseTest:
         res_reflect = reflect(**params)
         self.assertTrue(res_reflect)
         self.assert_http_service_available("localhost", 4000)
+        self._stop_container(
+            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
+        )
         res = down(default_configuration)
         self.assertTrue(res)
 
@@ -747,7 +753,10 @@ class GefyraBaseTest:
                 self.DOCKER_API.containers.list(),
             )
         )[0]
-        self.assertEqual(container.image, image)
+        self.assertEqual(container.image.tags[0], image)
+        self._stop_container(
+            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
+        )
         res = down(default_configuration)
         self.assertTrue(res)
 
