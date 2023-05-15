@@ -719,6 +719,7 @@ class GefyraBaseTest:
             "workload": "deploy/bye-nginxdemo-8000",
             "auto_remove": True,
             "ports": {4000: 8000},
+            "expose_ports": False,
         }
         res_reflect = reflect(**params)
         self.assertTrue(res_reflect)
@@ -732,7 +733,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
-        image = "pyserver"
+        image = "pyserver:latest"
         params = {
             "workload": "deploy/bye-nginxdemo-8000",
             "auto_remove": True,
