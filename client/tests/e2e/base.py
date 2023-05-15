@@ -709,6 +709,47 @@ class GefyraBaseTest:
         res = down(default_configuration)
         self.assertTrue(res)
 
+    def test_p_reflect_port_overwrite(self):
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
+        params = {
+            "workload": "deploy/bye-nginxdemo-8000",
+            "auto_remove": True,
+            "ports": {4000: 8000},
+        }
+        res_reflect = reflect(**params)
+        self.assertTrue(res_reflect)
+        self.assert_http_service_available("localhost", 4000)
+        res = down(default_configuration)
+        self.assertTrue(res)
+
+    def test_p_reflect_image_overwrite(self):
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
+        image = "pyserver"
+        params = {
+            "workload": "deploy/bye-nginxdemo-8000",
+            "auto_remove": True,
+            "image": image,
+        }
+        res_reflect = reflect(**params)
+        self.assertTrue(res_reflect)
+        container = list(
+            filter(
+                lambda container: container.name.startswith("gefyra-reflect-"),
+                self.DOCKER_API.containers.list(),
+            )
+        )[0]
+        self.assertEqual(container.image, image)
+        res = down(default_configuration)
+        self.assertTrue(res)
+
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
             get_pods_and_containers_for_pod_name(
