@@ -79,7 +79,6 @@ def reflect(
     )
 
     if do_bridge:
-        # TODO bridge
         res = bridge(
             name=name, namespace=namespace, config=config, target=workload, ports=ports
         )

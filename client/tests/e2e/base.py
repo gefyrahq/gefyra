@@ -721,7 +721,7 @@ class GefyraBaseTest:
         params = {
             "workload": "deploy/bye-nginxdemo-8000",
             "auto_remove": True,
-            "ports": {4000: 8000},
+            "ports": {4000: 80},
             "expose_ports": False,
         }
         res_reflect = reflect(**params)
