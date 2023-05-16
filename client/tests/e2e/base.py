@@ -54,6 +54,17 @@ class GefyraBaseTest:
     kubeconfig = "~/.kube/config"
 
     @property
+    def default_reflect_params(self):
+        params = deepcopy(
+            {
+                "workload": "deploy/bye-nginxdemo-8000",
+                "do_bridge": True,
+                "auto_remove": True,
+            }
+        )
+        return params
+
+    @property
     def default_run_params(self):
         params = deepcopy(
             {
@@ -699,12 +710,7 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
-        params = {
-            "workload": "deploy/bye-nginxdemo-8000",
-            "do_bridge": True,
-            "auto_remove": True,
-        }
-        res_reflect = reflect(**params)
+        res_reflect = reflect(**self.default_reflect_params)
         self.assertTrue(res_reflect)
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
@@ -718,12 +724,13 @@ class GefyraBaseTest:
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
-        params = {
-            "workload": "deploy/bye-nginxdemo-8000",
-            "auto_remove": True,
-            "ports": {80: 4000},
-            "expose_ports": False,
-        }
+        params = self.default_reflect_params
+        params.update(
+            {
+                "ports": {80: 4000},
+                "expose_ports": False,
+            }
+        )
         res_reflect = reflect(**params)
         self.assertTrue(res_reflect)
         self.assert_http_service_available("localhost", 4000)
@@ -740,11 +747,12 @@ class GefyraBaseTest:
         self.assert_gefyra_connected()
         self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
         image = "pyserver:latest"
-        params = {
-            "workload": "deploy/bye-nginxdemo-8000",
-            "auto_remove": True,
-            "image": image,
-        }
+        params = self.default_reflect_params
+        params.update(
+            {
+                "image": image,
+            }
+        )
         res_reflect = reflect(**params)
         self.assertTrue(res_reflect)
         container = list(

@@ -21,6 +21,8 @@ parser = argparse.ArgumentParser(
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
 
+port_mapping_help_text = "Add port mapping in form of <container_port>:<host_port>"
+namespace_help_text = "The namespace for this container to run in"
 
 up_parser = action.add_parser("up")
 up_parser.add_argument(
@@ -133,7 +135,7 @@ reflect_parser.add_argument(
 reflect_parser.add_argument(
     "-p",
     "--port",
-    help="Add port mapping in form of <container_port>:<host_port>",
+    help=port_mapping_help_text,
     required=False,
     action=PortMappingParser,
 )
@@ -156,7 +158,7 @@ reflect_parser.add_argument(
 reflect_parser.add_argument(
     "-n",
     "--namespace",
-    help="The namespace for this container to run in",
+    help=namespace_help_text,
     default="default",
 )
 reflect_parser.add_argument(
@@ -183,7 +185,7 @@ run_parser.add_argument(
 run_parser.add_argument(
     "-n",
     "--namespace",
-    help="The namespace for this container to run in",
+    help=namespace_help_text,
 )
 run_parser.add_argument(
     "--env",
@@ -206,7 +208,7 @@ run_parser.add_argument(
 run_parser.add_argument(
     "-p",
     "--expose",
-    help="Add port mapping in form of <container_port>:<host_port>",
+    help=port_mapping_help_text,
     required=False,
     action=IpPortMappingParser,
 )
@@ -233,14 +235,14 @@ bridge_parser.add_argument(
 bridge_parser.add_argument(
     "-p",
     "--port",
-    help="Add port mapping in form of <container_port>:<host_port>",
+    help=port_mapping_help_text,
     required=True,
     action=PortMappingParser,
 )
 bridge_parser.add_argument(
     "-n",
     "--namespace",
-    help="The namespace for this container to run in",
+    help=namespace_help_text,
     default="default",
 )
 bridge_parser.add_argument(
