@@ -1,16 +1,16 @@
 import json
 import logging
 from time import sleep
-import pytest 
+import pytest
 
 from pytest_kubernetes.providers import AClusterManager
 from .utils import GefyraDockerClient
 
 logger = logging.getLogger(__name__)
 
+
 @pytest.fixture(scope="session")
 def gclient_a():
-    
     c = GefyraDockerClient("gclient-a")
     yield c
     try:
@@ -19,7 +19,7 @@ def gclient_a():
         pass
 
 
-def test_a_connect_client_a(operator: AClusterManager, gclient_a: GefyraDockerClient):	
+def test_a_connect_client_a(operator: AClusterManager, gclient_a: GefyraDockerClient):
     k3d = operator
     k3d.apply("tests/fixtures/a_gefyra_client.yaml")
 
@@ -53,7 +53,6 @@ def test_a_connect_client_a(operator: AClusterManager, gclient_a: GefyraDockerCl
     assert client_a["providerConfig"] is not None
     logger.info(client_a["providerConfig"])
     gclient_a.connect(client_a["providerConfig"])
-    sleep(240)
+    sleep(5)
     gclient_a.probe()
-    gclient_a.disconnect()
-
+    gclient_a.delete()

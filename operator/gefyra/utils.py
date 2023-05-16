@@ -1,22 +1,15 @@
 import logging
 import select
 import tarfile
-from collections import defaultdict
-from datetime import datetime
 from tempfile import TemporaryFile
 from time import sleep
-from typing import Any, List
+from typing import List
 
 import kubernetes as k8s
-from statemachine import State
-from statemachine.transition_list import TransitionList
-from statemachine.transition import Transition
-from statemachine.callbacks import Callbacks, ConditionWrapper
-from statemachine.exceptions import InvalidDefinition
-from statemachine.events import Events
+
+
 from websocket import ABNF
 
-from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger("gefyra.utils")
 
@@ -122,37 +115,6 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
             raise e
 
 
-def notify_stowaway_pod(
-    core_v1_api: k8s.client.CoreV1Api,
-    pod_name: str,
-    configuration: OperatorConfiguration,
-) -> None:
-    """
-    Notify the Stowaway Pod; causes it to instantly reload mounted configmaps
-    :param core_v1_api:
-    :param pod_name:
-    :param configuration:
-    :return:
-    """
-    logger.info(f"Notify {pod_name}")
-    try:
-        core_v1_api.patch_namespaced_pod(
-            name=pod_name,
-            body={
-                "metadata": {
-                    "annotations": {
-                        "operator": f"update-notification-"
-                        f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    }
-                }
-            },
-            namespace=configuration.NAMESPACE,
-        )
-    except k8s.client.exceptions.ApiException as e:
-        logger.exception(e)
-    sleep(1)
-
-
 def exec_command_pod(
     api_instance: k8s.client.CoreV1Api,
     pod_name: str,
@@ -181,16 +143,3 @@ def exec_command_pod(
         tty=False,
     )
     return resp
-
-
-def get_deployment_of_pod(
-    api_instance: k8s.client.AppsV1Api, pod_name: str, namespace: str
-) -> k8s.client.V1Deployment:
-    """
-    Return a Deployment of a Pod by its name
-    :param api_instance: instance of k8s.client.AppsV1Api
-    :param pod_name: name of the Pod
-    :return: k8s.client.V1Deployment of the Pod
-    """
-    deployment_name = pod_name.rsplit("-", 2)[0]
-    return api_instance.read_namespaced_deployment(deployment_name, namespace=namespace)

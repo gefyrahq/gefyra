@@ -1,5 +1,5 @@
 from datetime import datetime
-import docker 
+import docker
 
 # flake8: noqa
 import io
@@ -13,7 +13,7 @@ def get_dockerfile():
         run_patch = "RUN patch /usr/bin/wg-quick /wgquick.patch"
     return io.BytesIO(
         f""" 
-FROM "quay.io/gefyra/cargo:latest"
+FROM "cargo:pytest"
 {run_patch}
 
 ARG ADDRESS
@@ -23,8 +23,9 @@ ARG DNS
 ARG PUBLIC_KEY
 ARG ENDPOINT
 ARG ALLOWED_IPS
+ARG PRESHAREDKEY
 
-RUN echo '[Interface] \\n\
+RUN echo -e '[Interface] \\n\
 Address = '"$ADDRESS"' \\n\
 PrivateKey = '"$PRIVATE_KEY"' \\n\
 DNS = '"$DNS"' \\n\
@@ -35,6 +36,7 @@ PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACC
 [Peer] \\n\
 PublicKey = '"$PUBLIC_KEY"' \\n\
 Endpoint = '"$ENDPOINT"' \\n\
+PresharedKey = '"$PRESHAREDKEY"' \\n\
 PersistentKeepalive = 21 \\n\
 AllowedIPs = '"$ALLOWED_IPS" > /config/wg0.conf
 
@@ -45,8 +47,7 @@ RUN cat /config/wg0.conf
     )
 
 
-
-class GefyraDockerClient():
+class GefyraDockerClient:
     def __init__(self, name: str) -> None:
         self.name = name
         self.docker = docker.from_env()
@@ -76,7 +77,7 @@ class GefyraDockerClient():
                 )[20:24]
             )
         self.endpoint = f"{_ip}:31820"
-    
+
     def _get_docker_info_by_name(self, name):
         try:
             return self.docker.info()[name].lower()
@@ -91,6 +92,7 @@ class GefyraDockerClient():
         public_key = self.configs["Peer.PublicKey"]
         # docker to work with ipv4 only
         allowed_ips = self.configs["Peer.AllowedIPs"].split(",")[0]
+        presharedkey = self.configs["Peer.PresharedKey"]
 
         build_args = {
             "ADDRESS": wireguard_ip,
@@ -99,11 +101,12 @@ class GefyraDockerClient():
             "PUBLIC_KEY": public_key,
             "ENDPOINT": self.endpoint,
             "ALLOWED_IPS": allowed_ips,
+            "PRESHAREDKEY": presharedkey,
         }
 
         tag = f"gefyra-client-cargo:{datetime.now().strftime('%Y%m%d%H%M%S')}"
         # check for Cargo updates
-        self.docker.images.pull("quay.io/gefyra/cargo:latest")
+        # self.docker.images.pull("quay.io/gefyra/cargo:latest")
         # build this instance
         _Dockerfile = get_dockerfile()
         image, _ = self.docker.images.build(
@@ -120,12 +123,11 @@ class GefyraDockerClient():
             cap_add=["NET_ADMIN"],
             privileged=True,
             volumes=["/var/run/docker.sock:/var/run/docker.sock"],
-            pid_mode="host",
         )
         self.container.start()
 
     def probe(self):
-        cargo = self.docker.containers.get(self.name)
+        cargo = self.container
         for _ in range(0, 10):
             _r = cargo.exec_run(f"timeout 1 ping -c 1 192.168.99.1")
             if _r.exit_code != 0:
@@ -135,8 +137,6 @@ class GefyraDockerClient():
         else:
             raise RuntimeError("Failed to connect to wireguard client")
 
-
     def delete(self):
         if self.container:
             self.container.stop()
-            self.container.remove()

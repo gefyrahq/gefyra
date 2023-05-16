@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
 
 
 class AbstractGefyraConnectionProvider(ABC):
@@ -67,7 +66,7 @@ class AbstractGefyraConnectionProvider(ABC):
         peer_id: str,
         destination_ip: str,
         destination_port: int,
-        parameters: dict = {},
+        parameters: dict = dict(),
     ) -> str:
         """
         Add a destintation route to this connection provider proxy, returns the service URL

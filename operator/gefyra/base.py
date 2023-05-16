@@ -1,7 +1,6 @@
 from typing import Optional
 import uuid
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
-import kopf
 import kubernetes as k8s
 from statemachine import State
 

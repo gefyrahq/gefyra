@@ -37,7 +37,9 @@ async def client_connection_changed(new, body, logger, **kwargs):
         except k8s.client.exceptions.ApiException as e:
             logger.error(f"ApiException: {e}")
             if e.status == 500:
-                raise kopf.TemporaryError(f"Could not activate connection: {e}", delay=1)
+                raise kopf.TemporaryError(
+                    f"Could not activate connection: {e}", delay=1
+                )
     else:
         # deactivate this connection
         if client.active.is_active or client.error.is_active:

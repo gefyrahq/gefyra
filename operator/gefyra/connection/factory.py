@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import List, Optional
 
 from gefyra.configuration import OperatorConfiguration
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider

@@ -166,9 +166,9 @@ class GefyraClient(StateMachine, StateControllerMixin):
     def enable_connection(self):
         try:
             conn_data = self.connection_provider.get_peer_config(self.object_name)
-        except tarfile.ReadError:
+        except (tarfile.ReadError, KeyError) as e:
             raise kopf.TemporaryError(
-                "Cannot read connection data from provider.", delay=1
+                "Cannot read connection data from provider: {e}", delay=1
             )
         self._patch_object({"providerConfig": conn_data})
 

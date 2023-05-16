@@ -1,7 +1,5 @@
 from datetime import datetime
-import tarfile
 from typing import Any, Optional, Tuple
-import uuid
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.bridge.factory import BridgeProviderType, bridge_provider_factory
 
@@ -12,7 +10,6 @@ from statemachine import State, StateMachine
 
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
-from gefyra.resources.events import _get_now
 
 
 class GefyraBridgeObject(GefyraStateObject):

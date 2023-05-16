@@ -18,7 +18,7 @@ async def client_created(body, logger, **kwargs):
 
 
 @kopf.on.delete("gefyrabridges.gefyra.dev")
-async def client_created(body, logger, **kwargs):
+async def client_deleting(body, logger, **kwargs):
     obj = GefyraBridgeObject(body)
     bridge = GefyraBridge(obj, configuration, logger)
     if (

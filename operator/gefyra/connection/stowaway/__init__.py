@@ -353,7 +353,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 namespace=configmap.metadata.namespace,
                 body=configmap,
             )
-    
+
     def _translate_peer_name(self, peer_id: str) -> str:
         return re.sub(f"[^{string.printable[:62]}]", "000", peer_id)
 
