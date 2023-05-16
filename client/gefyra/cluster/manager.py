@@ -45,7 +45,7 @@ def handle_create_namespace(config: ClientConfiguration, retries=5, wait=5):
                 # namespace does already exist
                 namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
                 if namespace.status.phase == "Terminating":
-                    pass
+                    continue
                 else:
                     break
             else:
