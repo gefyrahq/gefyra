@@ -25,6 +25,35 @@ from .utils import decode_secret
 logger = logging.getLogger(__name__)
 
 
+def handle_create_namespace(config: ClientConfiguration, retries=5, wait=5):
+    counter = 0
+    while counter < retries:
+        try:
+            config.K8S_CORE_API.create_namespace(
+                body=V1Namespace(
+                    metadata=V1ObjectMeta(
+                        name=config.NAMESPACE,
+                        labels={
+                            "pod-security.kubernetes.io/enforce": "privileged",
+                        },
+                    )
+                )
+            )
+            break
+        except ApiException as e:
+            if e.status == 409:
+                # namespace does already exist
+                namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
+                if namespace.status.phase == "Terminating":
+                    pass
+                else:
+                    break
+            else:
+                raise e
+        counter += 1
+        time.sleep(wait)
+
+
 def handle_serviceaccount(
     config: ClientConfiguration, serviceaccount: V1ServiceAccount
 ):
@@ -100,23 +129,7 @@ def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) ->
     :return: Cargo connection details
     """
     tic = time.perf_counter()
-    try:
-        config.K8S_CORE_API.create_namespace(
-            body=V1Namespace(
-                metadata=V1ObjectMeta(
-                    name=config.NAMESPACE,
-                    labels={
-                        "pod-security.kubernetes.io/enforce": "privileged",
-                    },
-                )
-            )
-        )
-    except ApiException as e:
-        if e.status == 409:
-            # namespace does already exist
-            pass
-        else:
-            raise e
+    handle_create_namespace(config=config)
 
     serviceaccount = create_operator_serviceaccount(config.NAMESPACE)
     clusterrole = create_operator_clusterrole()
