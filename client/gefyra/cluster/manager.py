@@ -25,7 +25,7 @@ from .utils import decode_secret
 logger = logging.getLogger(__name__)
 
 
-def handle_create_namespace(config: ClientConfiguration, retries=5, wait=5):
+def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
     counter = 0
     while counter < retries:
         try:
@@ -43,11 +43,15 @@ def handle_create_namespace(config: ClientConfiguration, retries=5, wait=5):
         except ApiException as e:
             if e.status == 409:
                 # namespace does already exist
-                namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
+                try:
+                    namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
+                except ApiException:
+                    break
                 if namespace.status.phase == "Active":
                     break
             else:
                 raise e
+        logger.warning(f"Could not create namespace {config.NAMESPACE}. Retrying.")
         counter += 1
         time.sleep(wait)
 
