@@ -24,7 +24,7 @@ def reload_kubernetes():
 def k3d():
     k8s: AClusterManager = select_provider_manager("k3d")("gefyra")
     # ClusterOptions() forces pytest-kubernetes to always write a new kubeconfig file to disk
-    k8s.create(ClusterOptions())
+    k8s.create(ClusterOptions(), options=["--agents", "1", "-p", "8080:80@agent:0", "-p", "31820:31820/UDP@agent:0"])
     k8s.kubectl(["create", "ns", "gefyra"])
     k8s.wait("ns/gefyra", "jsonpath='{.status.phase}'=Active")
     os.environ["KUBECONFIG"] = str(k8s.kubeconfig)
@@ -34,9 +34,12 @@ def k3d():
 
 
 @pytest.fixture(scope="module")
-def operator(k3d):
+def operator(k3d, stowaway_image):
     from kopf.testing import KopfRunner
-
+    os.environ["GEFYRA_STOWAWAY_IMAGE"] = stowaway_image.split(":")[0]
+    os.environ["GEFYRA_STOWAWAY_TAG"] = stowaway_image.split(":")[1]
+    os.environ["GEFYRA_STOWAWAY_IMAGE_PULLPOLICY"] = "Never"
+    k3d.load_image(stowaway_image)
     operator = KopfRunner(["run", "-A", "main.py"])
     operator.__enter__()
     kopf_logger = logging.getLogger("kopf")
@@ -47,7 +50,7 @@ def operator(k3d):
     not_found = True
     _i = 0
     try:
-        while not_found and _i < 120:
+        while not_found and _i < 140:
             sleep(1)
             events = k3d.kubectl(["get", "events", "-n", "gefyra"])
             _i += 1
@@ -136,3 +139,7 @@ def demo_frontend_image():
         shell=True,
     )
     yield name
+
+
+
+

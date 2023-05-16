@@ -1,4 +1,5 @@
 import kopf
+import kubernetes as k8s
 
 from gefyra.clientstate import GefyraClientObject, GefyraClient
 from gefyra.configuration import configuration
@@ -33,6 +34,10 @@ async def client_connection_changed(new, body, logger, **kwargs):
         except TransitionNotAllowed as e:
             logger.error(f"TransitionNotAllowed: {e}")
             client.impair()
+        except k8s.client.exceptions.ApiException as e:
+            logger.error(f"ApiException: {e}")
+            if e.status == 500:
+                raise kopf.TemporaryError(f"Could not activate connection: {e}", delay=1)
     else:
         # deactivate this connection
         if client.active.is_active or client.error.is_active:

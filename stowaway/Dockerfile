@@ -34,7 +34,7 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
     make && \
     make install
 
-FROM ghcr.io/linuxserver/baseimage-ubuntu:bionic
+FROM ghcr.io/linuxserver/baseimage-ubuntu:jammy
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/
 
@@ -51,18 +51,23 @@ RUN \
  echo "**** install dependencies ****" && \
  apt-get update && \
  apt-get install -y --no-install-recommends \
-	bc \
-	curl \
-	gnupg \
-	ifupdown \
-	iproute2 \
-	iptables \
-	iputils-ping \
-	jq \
-	net-tools \
-	openresolv \
-	pkg-config \
-	qrencode && \
+    bc \
+    build-essential \
+    dkms \
+    git \
+    gnupg \
+    ifupdown \
+    iproute2 \
+    iptables \
+    iputils-ping \
+    libc6 \
+    libelf-dev \
+    net-tools \
+    openresolv \
+    perl \
+    pkg-config \
+    qrencode && \
+ update-alternatives --set iptables /usr/sbin/iptables-legacy && \
  echo "**** install CoreDNS ****" && \
  COREDNS_VERSION=$(curl -sX GET "https://api.github.com/repos/coredns/coredns/releases/latest" \
 	| awk '/tag_name/{print $4;exit}' FS='[""]' | awk '{print substr($1,2); }') && \
@@ -78,9 +83,8 @@ RUN \
 	/var/lib/apt/lists/* \
 	/var/tmp/*
 
-ENV NGINX_VERSION   1.20.2
-ENV NJS_VERSION     0.7.0
-ENV PKG_RELEASE     1~bionic
+ENV NGINX_VERSION   1.24.0
+ENV PKG_RELEASE     1~jammy
 
 ARG UID=912
 ARG GID=912
@@ -90,18 +94,22 @@ RUN set -x \
     && addgroup --system --gid $GID nginx || true \
     && adduser --system --disabled-login --ingroup nginx --no-create-home --home /nonexistent --gecos "nginx user" --shell /bin/false --uid $UID nginx || true \
     && apt-get update \
-    && apt-get install --no-install-recommends --no-install-suggests -y gnupg1 ca-certificates rsync \
+    && apt-get install --no-install-recommends --no-install-suggests -y gnupg1 ca-certificates \
     && \
     NGINX_GPGKEY=573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62; \
+    NGINX_GPGKEY_PATH=/usr/share/keyrings/nginx-archive-keyring.gpg; \
+    export GNUPGHOME="$(mktemp -d)"; \
     found=''; \
     for server in \
-        hkp://keyserver.ubuntu.com \
+        hkp://keyserver.ubuntu.com:80 \
         pgp.mit.edu \
     ; do \
         echo "Fetching GPG key $NGINX_GPGKEY from $server"; \
-        apt-key adv --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$NGINX_GPGKEY" && found=yes && break; \
+        gpg1 --keyserver "$server" --keyserver-options timeout=10 --recv-keys "$NGINX_GPGKEY" && found=yes && break; \
     done; \
     test -z "$found" && echo >&2 "error: failed to fetch GPG key $NGINX_GPGKEY" && exit 1; \
+    gpg1 --export "$NGINX_GPGKEY" > "$NGINX_GPGKEY_PATH" ; \
+    rm -rf "$GNUPGHOME"; \
     apt-get remove --purge --auto-remove -y gnupg1 && rm -rf /var/lib/apt/lists/* \
     && dpkgArch="$(dpkg --print-architecture)" \
     && nginxPackages=" \
@@ -109,18 +117,17 @@ RUN set -x \
         nginx-module-xslt=${NGINX_VERSION}-${PKG_RELEASE} \
         nginx-module-geoip=${NGINX_VERSION}-${PKG_RELEASE} \
         nginx-module-image-filter=${NGINX_VERSION}-${PKG_RELEASE} \
-        nginx-module-njs=${NGINX_VERSION}+${NJS_VERSION}-${PKG_RELEASE} \
     " \
     && case "$dpkgArch" in \
         amd64|arm64) \
-            # arches officially built by upstream
-            echo "deb https://nginx.org/packages/ubuntu/ bionic nginx" >> /etc/apt/sources.list.d/nginx.list \
+# arches officialy built by upstream
+            echo "deb [signed-by=$NGINX_GPGKEY_PATH] https://nginx.org/packages/ubuntu/ jammy nginx" >> /etc/apt/sources.list.d/nginx.list \
             && apt-get update \
             ;; \
         *) \
 # we're on an architecture upstream doesn't officially build for
 # let's build binaries from the published source packages
-            echo "deb-src https://nginx.org/packages/ubuntu/ bionic nginx" >> /etc/apt/sources.list.d/nginx.list \
+            echo "deb-src [signed-by=$NGINX_GPGKEY_PATH] https://nginx.org/packages/ubuntu/ jammy nginx" >> /etc/apt/sources.list.d/nginx.list \
             \
 # new directory for storing sources and .deb files
             && tempDir="$(mktemp -d)" \
@@ -174,7 +181,6 @@ RUN set -x \
     && ln -sf /dev/stderr /var/log/nginx/error.log \
 # create a docker-entrypoint.d directory
     && mkdir /docker-entrypoint.d
-
 
 # implement changes required to run NGINX as an unprivileged user
 RUN sed -i 's,listen       80;,listen       8080;,' /etc/nginx/conf.d/default.conf \

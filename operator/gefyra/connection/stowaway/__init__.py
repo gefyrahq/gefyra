@@ -1,5 +1,6 @@
 from ast import Tuple
 import random
+import re
 import string
 from time import sleep
 from collections import defaultdict
@@ -139,7 +140,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 pod.metadata.name,
                 pod.metadata.namespace,
                 "stowaway",
-                ["rm", "-rf", f"/config/peer_{peer_id}"],
+                ["rm", "-rf", f"/config/peer_{self._translate_peer_name(peer_id)}"],
             )
             self._restart_stowaway()
             sleep(1)
@@ -154,7 +155,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             configmap = core_v1_api.read_namespaced_config_map(
                 _config.metadata.name, _config.metadata.namespace
             )
-            if peer_id in configmap.data["PEERS"].split(","):
+            if self._translate_peer_name(peer_id) in configmap.data["PEERS"].split(","):
                 return True
             else:
                 return False
@@ -324,6 +325,10 @@ class Stowaway(AbstractGefyraConnectionProvider):
         configmap = core_v1_api.read_namespaced_config_map(
             _config.metadata.name, _config.metadata.namespace
         )
+        if add:
+            add = self._translate_peer_name(add)
+        if remove:
+            remove = self._translate_peer_name(remove)
         peers = configmap.data["PEERS"].split(",")
         if add and add not in peers:
             peers = [add] + peers
@@ -348,6 +353,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 namespace=configmap.metadata.namespace,
                 body=configmap,
             )
+    
+    def _translate_peer_name(self, peer_id: str) -> str:
+        return re.sub(f"[^{string.printable[:62]}]", "000", peer_id)
 
     def _get_free_proxyroute_port(self) -> int:
         _config = create_stowaway_proxyroute_configmap()
@@ -411,14 +419,14 @@ class Stowaway(AbstractGefyraConnectionProvider):
         pod = self._get_stowaway_pod()
         peer_config_file = path.join(
             self.configuration.STOWAWAY_PEER_CONFIG_PATH,
-            f"peer_{peer_id}",
-            f"peer_{peer_id}.conf",
+            f"peer_{self._translate_peer_name(peer_id)}",
+            f"peer_{self._translate_peer_name(peer_id)}.conf",
         )
         self.logger.info(
             f"Copy peer {peer_id} connection details from Pod "
             f"{pod.metadata.name}:{peer_config_file}"
         )
-        tmpfile_location = f"/tmp/peer_{peer_id}.conf"
+        tmpfile_location = f"/tmp/peer_{self._translate_peer_name(peer_id)}.conf"
         stream_copy_from_pod(
             pod.metadata.name,
             self.configuration.NAMESPACE,
