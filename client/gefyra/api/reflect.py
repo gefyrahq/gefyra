@@ -14,6 +14,19 @@ from gefyra.configuration import default_configuration
 logger = logging.getLogger(__name__)
 
 
+def _check_ports(host_ports):
+    ports_not_free = []
+    for port in host_ports:
+        if not is_port_free(port):
+            ports_not_free.append(str(port))
+    if len(ports_not_free):
+        raise RuntimeError(
+            f"Following ports are needed for the container to run, but are occupied  \
+            on your host system: {', '.join(ports_not_free)}. \
+            Please provide a port mapping via --port to overwrite these ports."
+        )
+
+
 def reflect(
     workload: str,  # deploy/my-deployment
     namespace: str = "default",
@@ -52,17 +65,8 @@ def reflect(
             ports[port.container_port] = host_port
 
     host_ports = ports.values()
-    ports_not_free = []
 
-    for port in host_ports:
-        if not is_port_free(port):
-            ports_not_free.append(str(port))
-    if len(ports_not_free):
-        raise RuntimeError(
-            f"Following ports are needed for the container to run, but are occupied  \
-            on your host system: {', '.join(ports_not_free)}. \
-            Please provide a port mapping via --port to overwrite these ports."
-        )
+    _check_ports(host_ports)
 
     res = run(
         name=name,
