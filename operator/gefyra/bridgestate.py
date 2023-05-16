@@ -109,7 +109,8 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this bridge because the sunset time is in the past
             self.logger.warning(
-                f"Bridge '{self.object_name}' should be terminated due to reached sunset date"
+                f"Bridge '{self.object_name}' should be terminated "
+                "due to reached sunset date"
             )
             return True
         else:
@@ -126,7 +127,8 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         if not self.bridge_provider.ready():
             # TODO add timeout
             raise kopf.TemporaryError(
-                f"Waiting for Gefyra bridge provider {self.bridge_provider.__class__.__name__} to become ready",
+                "Waiting for Gefyra bridge provider "
+                f"{self.bridge_provider.__class__.__name__} to become ready",
                 delay=1,
             )
         else:
@@ -216,8 +218,10 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     def get_latest_state(self) -> Optional[Tuple[str, datetime]]:
         """
-        It returns the latest state of the GefyraBridge, and the timestamp of when it was in that state
-        :return: A tuple of the latest state and the timestamp of the latest state.
+        It returns the latest state of the GefyraBridge, and the timestamp
+        of when it was in that state
+        :return: A tuple of the latest state and the timestamp of the
+         latest state.
         """
         states = list(
             filter(
@@ -240,7 +244,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             for state, timestamp in states:
                 if latest_state is None:
                     latest_state = state
-                    latest_timestamp = datetime.fromisoformat(timestamp.strip("Z"))  # type: ignore
+                    latest_timestamp = datetime.fromisoformat(timestamp.strip("Z"))
                 else:
                     _timestamp = datetime.fromisoformat(timestamp.strip("Z"))
                     if latest_timestamp < _timestamp:

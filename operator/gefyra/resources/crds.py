@@ -15,13 +15,16 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
                 type="string", enum=BRIDGE_PROVIDERS
             ),
             # provider specific parameters for this bridge
-            # a carrier example: {"type": "stream"} to proxy all traffic on TCP level to the destination (much like a nitro-speed global bridge)
-            # another carrier example: {"type": "http", "url": "/api"} to proxy all traffic on HTTP level to the destination
+            # a carrier example: {"type": "stream"} to proxy all traffic on TCP level
+            # to the destination (much like a nitro-speed global bridge)
+            # another carrier example: {"type": "http", "url": "/api"} to proxy all
+            # traffic on HTTP level to the destination
             # sync_down_directories
             "providerParameter": k8s.client.V1JSONSchemaProps(
                 type="object", x_kubernetes_preserve_unknown_fields=True
             ),
-            # the Gefyra connection provider to establish the routed connection to a client
+            # the Gefyra connection provider to establish the routed
+            # connection to a client
             "connectionProvider": k8s.client.V1JSONSchemaProps(
                 type="string", enum=CONNECTION_PROVIDERS
             ),
@@ -35,7 +38,8 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
             "client": k8s.client.V1JSONSchemaProps(type="string"),
             # the IP address of the local container running at that client
             "destinationIP": k8s.client.V1JSONSchemaProps(type="string"),
-            # map the ports of the bridge to the target container, for example: [80:8080] will forward port 80 of the source container to port
+            # map the ports of the bridge to the target container, for
+            # example: [80:8080] will forward port 80 of the source container to port
             # 8080 of the local container
             "portMappings": k8s.client.V1JSONSchemaProps(
                 type="array",

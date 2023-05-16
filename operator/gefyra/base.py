@@ -71,7 +71,8 @@ class StateControllerMixin:
     @property
     def connection_provider(self) -> AbstractGefyraConnectionProvider:
         """
-        It creates a Gefyra connection provider object based on the connection provider type
+        It creates a Gefyra connection provider object based on the connection
+        provider type
         :return: The connection provider is being returned.
         """
         provider = connection_provider_factory.get(
@@ -83,8 +84,8 @@ class StateControllerMixin:
 
     def completed_transition(self, target: State) -> Optional[str]:
         """
-        Read the stateTransitions attribute, return the value of the stateTransitions timestamp for the given
-        target, otherwise return None
+        Read the stateTransitions attribute, return the value of the
+        stateTransitions timestamp for the given target, otherwise return None
         :param target: The value of the state value
         :type target: State
         :return: The value of the stateTransitions key in the model dictionary.

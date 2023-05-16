@@ -25,7 +25,8 @@ def handle_crds(logger) -> None:
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             logger.warning(
-                "Gefyra CRD gefyrabridge already available but might be outdated. Please remove it manually if you encounter issues."
+                "Gefyra CRD gefyrabridge already available but might be outdated. "
+                "Please remove it manually if you encounter issues."
             )
         else:
             raise e
@@ -36,7 +37,8 @@ def handle_crds(logger) -> None:
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             logger.warning(
-                "Gefyra CRD gefyraclient already available but might be outdated. Please remove it manually if you encounter issues."
+                "Gefyra CRD gefyraclient already available but might "
+                "be outdated. Please remove it manually if you encounter issues."
             )
         else:
             raise e
@@ -45,7 +47,8 @@ def handle_crds(logger) -> None:
 @kopf.on.startup()
 async def check_gefyra_components(logger, **kwargs) -> None:
     """
-    Checks all required components of Gefyra in the current version. This handler installs components if they are
+    Checks all required components of Gefyra in the current version.
+    This handler installs components if they are
     not already available with the matching configuration.
     """
     from gefyra.configuration import configuration
@@ -84,7 +87,9 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
             )
         else:
             raise kopf.TemporaryError(
-                f"Connection provider(s) {gefyra_connector.name} is not ready yet (retry {retry}/{configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT})))",
+                f"Connection provider(s) {gefyra_connector.name} is not ready yet "
+                f"(retry {retry}/"
+                f"{configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT})))",
                 delay=1,
             )
 

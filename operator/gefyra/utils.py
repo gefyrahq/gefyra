@@ -2,7 +2,6 @@ import logging
 import select
 import tarfile
 from tempfile import TemporaryFile
-from time import sleep
 from typing import List
 
 import kubernetes as k8s

@@ -8,12 +8,6 @@ from statemachine import State, StateMachine
 
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
-from gefyra.connection.abstract import AbstractGefyraConnectionProvider
-from gefyra.connection.factory import (
-    ConnectionProviderType,
-    connection_provider_factory,
-)
-from gefyra.resources.events import _get_now
 from gefyra.resources.serviceaccounts import (
     get_serviceaccount_data,
     handle_create_gefyraclient_serviceaccount,
@@ -108,7 +102,8 @@ class GefyraClient(StateMachine, StateControllerMixin):
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this client because the sunset time is in the past
             self.logger.warning(
-                f"Client '{self.object_name}' should be terminated due to reached sunset date"
+                f"Client '{self.object_name}' should be terminated "
+                "due to reached sunset date"
             )
             return True
         else:
@@ -168,7 +163,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
             conn_data = self.connection_provider.get_peer_config(self.object_name)
         except (tarfile.ReadError, KeyError) as e:
             raise kopf.TemporaryError(
-                "Cannot read connection data from provider: {e}", delay=1
+                f"Cannot read connection data from provider: {e}", delay=1
             )
         self._patch_object({"providerConfig": conn_data})
 
@@ -216,8 +211,10 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     def get_latest_state(self) -> Optional[Tuple[str, datetime]]:
         """
-        It returns the latest state of the GefyraClient, and the timestamp of when it was in that state
-        :return: A tuple of the latest state and the timestamp of the latest state.
+        It returns the latest state of the GefyraClient, and the timestamp of
+        when it was in that state
+        :return: A tuple of the latest state and the timestamp of the latest
+        state.
         """
         states = list(
             filter(
@@ -246,7 +243,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
             for state, timestamp in states:
                 if latest_state is None:
                     latest_state = state
-                    latest_timestamp = datetime.fromisoformat(timestamp.strip("Z"))  # type: ignore
+                    latest_timestamp = datetime.fromisoformat(timestamp.strip("Z"))
                 else:
                     _timestamp = datetime.fromisoformat(timestamp.strip("Z"))
                     if latest_timestamp < _timestamp:

@@ -1,5 +1,3 @@
-import inspect
-import asyncio
 import logging
 
 import kubernetes as k8s

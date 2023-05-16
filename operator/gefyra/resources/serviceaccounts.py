@@ -9,7 +9,8 @@ def handle_create_gefyraclient_serviceaccount(
     logger, name: str, namespace: str
 ) -> None:
     """
-    It creates a service account, a role, and a role binding to allow the service account to work with GefyraClients
+    It creates a service account, a role, and a role binding to allow
+    the service account to work with GefyraClients
     :param logger: a logger object
     :param name: The name of the service account to create
     :type name: str
