@@ -28,19 +28,31 @@ logger = logging.getLogger(__name__)
 def handle_serviceaccount(
     config: ClientConfiguration, serviceaccount: V1ServiceAccount
 ):
-    try:
-        config.K8S_CORE_API.create_namespaced_service_account(
-            body=serviceaccount, namespace=config.NAMESPACE
-        )
-    except ApiException as e:
-        if e.status == 409:
-            pass
-        elif e.status == 403:
-            raise RuntimeError(
-                f"You're not allowed to create a serviceaccount in namespace {config.NAMESPACE}."
+    retries = 5
+    wait = 5
+    counter = 0
+    while counter < retries:
+        try:
+            config.K8S_CORE_API.create_namespaced_service_account(
+                body=serviceaccount, namespace=config.NAMESPACE
             )
-        else:
-            raise e
+            break
+        except ApiException as e:
+            if e.status == 409:
+                pass
+            elif e.status == 403:
+                # this sometimes happens when to cluster in terminating the gefyra namespace
+                # due to a previous `gefyra down`. As long as it is terminating this error occurs.
+                if counter > retries:
+                    raise RuntimeError(
+                        f"You're not allowed to create a serviceaccount in namespace {config.NAMESPACE}."
+                    )
+                else:
+                    counter += 1
+                    time.sleep(wait)
+                    continue
+            else:
+                raise e
 
 
 def handle_clusterrole(config: ClientConfiguration, clusterrole: V1ClusterRole):
