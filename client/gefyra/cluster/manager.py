@@ -39,7 +39,7 @@ def handle_serviceaccount(
             break
         except ApiException as e:
             if e.status == 409:
-                pass
+                break
             elif e.status == 403:
                 # this sometimes happens when to cluster in terminating the gefyra namespace
                 # due to a previous `gefyra down`. As long as it is terminating this error occurs.
