@@ -73,9 +73,12 @@ def get_container_image(pod, container_name: str):
 
 def get_container_command(pod, container_name: str):
     container = get_container(pod, container_name=container_name)
+    res = []
     if container.command:
-        return " ".join(container.command)
-    return ""
+        res.extend(container.command)
+    if container.args:
+        res.extend(container.args)
+    return " ".join(res)
 
 
 def get_container_ports(pod, container_name: str):
