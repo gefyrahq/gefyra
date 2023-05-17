@@ -11,4 +11,4 @@ targetPod: backend
 targetContainer: backend
 portMappings:
   - "8080:80"
-destinationIP: "192.168.101.10"
+destinationIP: "192.168.101.1"

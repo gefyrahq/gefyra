@@ -1,4 +1,7 @@
 from datetime import datetime
+from pathlib import Path
+import subprocess
+from time import sleep
 import docker
 
 # flake8: noqa
@@ -106,7 +109,7 @@ class GefyraDockerClient:
 
         tag = f"gefyra-client-cargo:{datetime.now().strftime('%Y%m%d%H%M%S')}"
         # check for Cargo updates
-        # self.docker.images.pull("quay.io/gefyra/cargo:latest")
+
         # build this instance
         _Dockerfile = get_dockerfile()
         image, _ = self.docker.images.build(
@@ -125,6 +128,17 @@ class GefyraDockerClient:
             volumes=["/var/run/docker.sock:/var/run/docker.sock"],
         )
         self.container.start()
+        _i = 10
+        while _i > 0:
+            try:
+                r = self.container.exec_run("wg")
+                if "transfer:" in r.output.decode("utf-8"):
+                    break
+            except Exception:
+                pass
+            _i -= 1
+            sleep(1)
+            continue
 
     def probe(self):
         cargo = self.container
@@ -140,3 +154,4 @@ class GefyraDockerClient:
     def delete(self):
         if self.container:
             self.container.stop()
+            self.container = None

@@ -44,12 +44,14 @@ def k3d():
 
 
 @pytest.fixture(scope="module")
-def operator(k3d, stowaway_image):
+def operator(k3d, stowaway_image, carrier_image):
     from kopf.testing import KopfRunner
 
     os.environ["GEFYRA_STOWAWAY_IMAGE"] = stowaway_image.split(":")[0]
     os.environ["GEFYRA_STOWAWAY_TAG"] = stowaway_image.split(":")[1]
     os.environ["GEFYRA_STOWAWAY_IMAGE_PULLPOLICY"] = "Never"
+    os.environ["GEFYRA_CARRIER_IMAGE"] = carrier_image.split(":")[0]
+    os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier_image.split(":")[1]
     k3d.load_image(stowaway_image)
     operator = KopfRunner(["run", "-A", "main.py"])
     operator.__enter__()
