@@ -225,6 +225,25 @@ down_parser = action.add_parser("down")
 check_parser = action.add_parser("check")
 status_parser = action.add_parser("status")
 version_parser = action.add_parser("version")
+client_parser = action.add_parser("client")
+
+client_subparsers = client_parser.add_subparsers(
+    title="client commands", dest="verb", required=True
+)
+client_create_parser = client_subparsers.add_parser(
+    "create", help="Create a new client"
+)
+client_create_parser.add_argument(
+    "--client-id", help="The client id (optional)", required=False, dest="client_id"
+)
+client_get_parser = client_subparsers.add_parser("get", help="Get a client")
+client_get_parser.add_argument(
+    "--client-id", help="The client id", required=True, dest="client_id"
+)
+client_delete_parser = client_subparsers.add_parser("delete", help="Delete a client")
+client_delete_parser.add_argument(
+    "--client-id", help="The client id", required=True, dest="client_id"
+)
 
 version_parser.add_argument(
     "-n",
@@ -345,7 +364,7 @@ def cli_up(configuration):
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status, client
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -415,6 +434,8 @@ def main():
             probe_kubernetes(config=configuration)
         elif args.action == "telemetry":
             telemetry_command(on=args.on, off=args.off)
+        elif args.action == "client":
+            client(args, config=configuration)
         else:
             parser.print_help()
     except KeyboardInterrupt:
