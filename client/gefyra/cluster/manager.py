@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
     counter = 0
+    created = False
     while counter < retries:
         try:
             config.K8S_CORE_API.create_namespace(
@@ -39,6 +40,7 @@ def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
                     )
                 )
             )
+            created = True
             break
         except ApiException as e:
             if e.status == 409:
@@ -54,6 +56,10 @@ def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
         logger.warning(f"Could not create namespace {config.NAMESPACE}. Retrying.")
         counter += 1
         time.sleep(wait)
+    if not created:
+        raise RuntimeError(
+            f"Could not create namespace. Retried {retries} times. API returned HTTP 409."
+        )
 
 
 def handle_serviceaccount(
