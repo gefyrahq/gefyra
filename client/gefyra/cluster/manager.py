@@ -25,6 +25,54 @@ from .utils import decode_secret
 logger = logging.getLogger(__name__)
 
 
+def _handle_duplicate_namespace(config: ClientConfiguration):
+    active = False
+    try:
+        namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
+    except ApiException as e:
+        if e.status == 404:
+            logger.warning(f"NS {config.NAMESPACE} after 409. Retrying.")
+        else:
+            raise e
+    if namespace.status.phase == "Active":
+        active = True
+    return active
+
+
+def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
+    counter = 0
+    created = False
+    while counter < retries:
+        try:
+            config.K8S_CORE_API.create_namespace(
+                body=V1Namespace(
+                    metadata=V1ObjectMeta(
+                        name=config.NAMESPACE,
+                        labels={
+                            "pod-security.kubernetes.io/enforce": "privileged",
+                        },
+                    )
+                )
+            )
+            created = True
+            break
+        except ApiException as e:
+            if e.status == 409:
+                active = _handle_duplicate_namespace(config)
+                if active:
+                    created = True
+                    break
+            else:
+                raise e
+        logger.warning(f"Could not create namespace {config.NAMESPACE}. Retrying.")
+        counter += 1
+        time.sleep(wait)
+    if not created:
+        raise RuntimeError(
+            f"Could not create namespace. Retried {retries} times. API returned HTTP 409."
+        )
+
+
 def handle_serviceaccount(
     config: ClientConfiguration, serviceaccount: V1ServiceAccount
 ):
@@ -100,23 +148,7 @@ def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) ->
     :return: Cargo connection details
     """
     tic = time.perf_counter()
-    try:
-        config.K8S_CORE_API.create_namespace(
-            body=V1Namespace(
-                metadata=V1ObjectMeta(
-                    name=config.NAMESPACE,
-                    labels={
-                        "pod-security.kubernetes.io/enforce": "privileged",
-                    },
-                )
-            )
-        )
-    except ApiException as e:
-        if e.status == 409:
-            # namespace does already exist
-            pass
-        else:
-            raise e
+    handle_create_namespace(config=config)
 
     serviceaccount = create_operator_serviceaccount(config.NAMESPACE)
     clusterrole = create_operator_clusterrole()

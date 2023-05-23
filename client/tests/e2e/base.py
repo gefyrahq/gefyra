@@ -1,5 +1,11 @@
 from copy import deepcopy
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
+from gefyra.cluster.utils import (
+    get_container_command,
+    get_container_image,
+    get_container_ports,
+    get_v1pod,
+)
 from gefyra.local.bridge import handle_delete_interceptrequest
 from gefyra.local.check import probe_docker, probe_kubernetes
 import requests
@@ -23,6 +29,7 @@ from gefyra.__main__ import version, print_status
 from gefyra.api import (
     bridge,
     down,
+    reflect,
     run,
     status,
     up,
@@ -45,6 +52,17 @@ class GefyraBaseTest:
     provider = None  # minikube or k3d
     params = {}
     kubeconfig = "~/.kube/config"
+
+    @property
+    def default_reflect_params(self):
+        params = deepcopy(
+            {
+                "workload": "deploy/bye-nginxdemo-8000",
+                "do_bridge": True,
+                "auto_remove": True,
+            }
+        )
+        return params
 
     @property
     def default_run_params(self):
@@ -121,6 +139,23 @@ class GefyraBaseTest:
             else:
                 raise e
 
+    def assert_pod_ready(self, pod_name: str, namespace: str, retries=3, interval=1):
+        counter = 0
+        while counter < retries:
+            counter += 1
+            pod = self.K8S_CORE_API.read_namespaced_pod(
+                namespace=namespace, name=pod_name
+            )
+            if self._pod_ready(pod):
+                return True
+            sleep(interval)
+        raise AssertionError(f"Pod {pod_name} is not ready.")
+
+    def _pod_ready(self, pod):
+        return all([c.status == "True" for c in pod.conditions]) and all(
+            [c.ready for c in pod.status.container_statuses]
+        )
+
     def _deployment_ready(self, deployment):
         return (
             deployment.status.ready_replicas
@@ -155,29 +190,35 @@ class GefyraBaseTest:
             sleep(interval)
         raise AssertionError(f"Service not available within {timeout} seconds.")
 
-    def assert_operator_ready(self, timeout=60, interval=1):
+    def assert_deployment_ready(
+        self, namespace: str, name: str, timeout=60, interval=1
+    ):
         counter = 0
         while counter < timeout:
             counter += 1
             operator_deployment = self.K8S_APP_API.read_namespaced_deployment(
-                name="gefyra-operator", namespace="gefyra"
+                name=name, namespace=namespace
             )
             if self._deployment_ready(operator_deployment):
                 return True
             sleep(interval)
-        raise AssertionError(f"Operator not ready within {timeout} seconds.")
+        raise AssertionError(f"Deployment {name} not ready within {timeout} seconds.")
+
+    def assert_operator_ready(self, timeout=60, interval=1):
+        return self.assert_deployment_ready(
+            name="gefyra-operator",
+            namespace="gefyra",
+            timeout=timeout,
+            interval=interval,
+        )
 
     def assert_stowaway_ready(self, timeout=60, interval=1):
-        counter = 0
-        while counter < timeout:
-            counter += 1
-            stowaway_deployment = self.K8S_APP_API.read_namespaced_deployment(
-                name="gefyra-stowaway", namespace="gefyra"
-            )
-            if self._deployment_ready(stowaway_deployment):
-                return True
-            sleep(interval)
-        raise AssertionError(f"Stowaway not ready within {timeout} seconds.")
+        return self.assert_deployment_ready(
+            name="gefyra-stowaway",
+            namespace="gefyra",
+            timeout=timeout,
+            interval=interval,
+        )
 
     def assert_namespace_ready(self, namespace, timeout=30, interval=1):
         counter = 0
@@ -290,6 +331,42 @@ class GefyraBaseTest:
             if pod_name in pod.metadata.name:
                 return pod
         return None
+
+    def test_get_container_command_error(self):
+        config = ClientConfiguration()
+        namespace = "default"
+        pod_container_dict = get_pods_and_containers_for_workload(
+            config, "hello-nginxdemo", namespace, "deployment"
+        )
+        pod_name = list(pod_container_dict.keys())[0]
+        pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
+        with self.assertRaises(RuntimeError) as rte:
+            get_container_command(pod=pod, container_name="UnknownContainer")
+        self.assertIn("Container UnknownContainer not found", str(rte.exception))
+
+    def test_get_container_image_error(self):
+        config = ClientConfiguration()
+        namespace = "default"
+        pod_container_dict = get_pods_and_containers_for_workload(
+            config, "hello-nginxdemo", namespace, "deployment"
+        )
+        pod_name = list(pod_container_dict.keys())[0]
+        pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
+        with self.assertRaises(RuntimeError) as rte:
+            get_container_image(pod=pod, container_name="UnknownContainer")
+        self.assertIn("Container UnknownContainer not found", str(rte.exception))
+
+    def test_get_container_ports_error(self):
+        config = ClientConfiguration()
+        namespace = "default"
+        pod_container_dict = get_pods_and_containers_for_workload(
+            config, "hello-nginxdemo", namespace, "deployment"
+        )
+        pod_name = list(pod_container_dict.keys())[0]
+        pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
+        with self.assertRaises(RuntimeError) as rte:
+            get_container_ports(pod=pod, container_name="UnknownContainer")
+        self.assertIn("Container UnknownContainer not found", str(rte.exception))
 
     def test_a_run_gefyra_version(self):
         res = version(config_package, False)
@@ -600,6 +677,96 @@ class GefyraBaseTest:
 
     def test_n_run_gefyra_down_again_without_errors(self):
         self.test_n_run_gefyra_down()
+
+    def test_o_reflect_occupied_port(self):
+        container_name = "busybox"
+        self.DOCKER_API.containers.run(
+            "alpine",
+            auto_remove=True,
+            ports={"8000/tcp": [8000]},
+            detach=True,
+            command=["sleep", "20"],
+            name=container_name,
+        )
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
+        params = {
+            "workload": "deploy/bye-nginxdemo-8000",
+            "do_bridge": True,
+            "auto_remove": True,
+        }
+        with self.assertRaises(RuntimeError) as rte:
+            reflect(**params)
+
+        self.assertIn("occupied", str(rte.exception))
+        self._stop_container(container=container_name)
+
+    def test_p_reflect(self):
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
+        res_reflect = reflect(**self.default_reflect_params)
+        self.assertTrue(res_reflect)
+        self._stop_container(
+            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
+        )
+        res = down(default_configuration)
+        self.assertTrue(res)
+
+    def test_p_reflect_port_overwrite(self):
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
+        params = self.default_reflect_params
+        params.update(
+            {
+                "ports": {80: 4000},
+                "expose_ports": False,
+            }
+        )
+        res_reflect = reflect(**params)
+        self.assertTrue(res_reflect)
+        self.assert_http_service_available("localhost", 4000)
+        self._stop_container(
+            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
+        )
+        res = down(default_configuration)
+        self.assertTrue(res)
+
+    def test_p_reflect_image_overwrite(self):
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
+        image = "pyserver:latest"
+        params = self.default_reflect_params
+        params.update(
+            {
+                "image": image,
+            }
+        )
+        res_reflect = reflect(**params)
+        self.assertTrue(res_reflect)
+        container = list(
+            filter(
+                lambda container: container.name.startswith("gefyra-reflect-"),
+                self.DOCKER_API.containers.list(),
+            )
+        )[0]
+        self.assertEqual(container.image.tags[0], image)
+        self._stop_container(
+            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
+        )
+        res = down(default_configuration)
+        self.assertTrue(res)
 
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
