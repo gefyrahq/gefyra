@@ -48,7 +48,11 @@ def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
                 try:
                     namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
                 except ApiException as e:
-                    raise e
+                    if e.status == 404:
+                        logger.warning(f"NS {config.NAMESPACE} after 409. Retrying.")
+                        continue
+                    else:
+                        raise e
                 if namespace.status.phase == "Active":
                     created = True
                     break
