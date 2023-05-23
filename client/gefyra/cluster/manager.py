@@ -25,6 +25,20 @@ from .utils import decode_secret
 logger = logging.getLogger(__name__)
 
 
+def _handle_duplicate_namespace(config: ClientConfiguration):
+    active = False
+    try:
+        namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
+    except ApiException as e:
+        if e.status == 404:
+            logger.warning(f"NS {config.NAMESPACE} after 409. Retrying.")
+        else:
+            raise e
+    if namespace.status.phase == "Active":
+        active = True
+    return active
+
+
 def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
     counter = 0
     created = False
@@ -44,17 +58,8 @@ def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
             break
         except ApiException as e:
             if e.status == 409:
-                # namespace does already exist
-                try:
-                    namespace = config.K8S_CORE_API.read_namespace(config.NAMESPACE)
-                except ApiException as e:
-                    if e.status == 404:
-                        logger.warning(f"NS {config.NAMESPACE} after 409. Retrying.")
-                        continue
-                    else:
-                        raise e
-                if namespace.status.phase == "Active":
-                    created = True
+                active = _handle_duplicate_namespace(config)
+                if active:
                     break
             else:
                 raise e
