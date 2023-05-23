@@ -60,6 +60,7 @@ def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
             if e.status == 409:
                 active = _handle_duplicate_namespace(config)
                 if active:
+                    created = True
                     break
             else:
                 raise e
