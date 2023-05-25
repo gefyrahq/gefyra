@@ -49,7 +49,7 @@ def delete_client(client_id: str, config=default_configuration) -> None:
     handle_delete_gefyraclient(config, client_id)
 
 
-def write_client_file(client_id: str, path: Path, config=default_configuration):
+def write_client_file(client_id: str, path: Path):
     """
     Write a client file
     """
