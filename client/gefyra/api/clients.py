@@ -1,5 +1,7 @@
 from argparse import Namespace
+from dataclasses import dataclass
 import logging
+from typing import Optional
 import uuid
 
 from pathlib import Path
@@ -16,6 +18,18 @@ from .utils import stopwatch
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class GefyraClientFile:
+    cacrt: str
+    url: str
+    access_token: str
+    namespace: Optional[str] = None
+    current_context: Optional[str] = None
+    user: str
+    host: str
+    port: str
+
+
 @stopwatch
 def add_client(client_id: str, config=default_configuration) -> GefyraClient:
     """
@@ -30,8 +44,6 @@ def add_client(client_id: str, config=default_configuration) -> GefyraClient:
     gclient = handle_create_gefyraclient(config, gclient_req)
     return GefyraClient(gclient, config)
 
-
-@stopwatch
 def get_client(client_id: str, config=default_configuration) -> GefyraClient:
     """
     Get a GefyraClient object
@@ -61,8 +73,7 @@ def client(args: Namespace, config=default_configuration):
     """
     if args.verb == "create":
         add_client(args.client_id, config)
-    if args.verb == "get":
-        gc = get_client(args.client_id, config)
-        print(gc.as_dict())
     if args.verb == "delete":
         delete_client(args.client_id, config)
+    if args.verb == "list":
+        pass
