@@ -234,13 +234,17 @@ client_create_parser = client_subparsers.add_parser(
     "create", help="Create a new client"
 )
 client_create_parser.add_argument(
-    "client-id", help="The client id (optional)", required=False, dest="client_id"
+    "--client-id", help="The client id (optional)", required=False, dest="client_id"
 )
 client_delete_parser = client_subparsers.add_parser("delete", help="Delete a client")
-client_delete_parser.add_argument(
-    "client-id", help="The client id", required=True, dest="client_id"
-)
+client_delete_parser.add_argument("client_id", help="The client id")
 client_list_parser = client_subparsers.add_parser("list", help="List all clients")
+client_delete_parser.add_argument("client_id", help="The client id")
+client_config_parser = client_subparsers.add_parser(
+    "config", help="Output client config"
+)
+client_config_parser.add_argument("client_id", help="The client id")
+client_config_parser.add_argument("-o", help="Output path", dest="path", default=None)
 
 version_parser.add_argument(
     "-n",

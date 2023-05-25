@@ -18,18 +18,6 @@ from .utils import stopwatch
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class GefyraClientFile:
-    cacrt: str
-    url: str
-    access_token: str
-    namespace: Optional[str] = None
-    current_context: Optional[str] = None
-    user: str
-    host: str
-    port: str
-
-
 @stopwatch
 def add_client(client_id: str, config=default_configuration) -> GefyraClient:
     """
@@ -43,6 +31,7 @@ def add_client(client_id: str, config=default_configuration) -> GefyraClient:
     gclient_req = get_gefyraclient_body(config, client_id)
     gclient = handle_create_gefyraclient(config, gclient_req)
     return GefyraClient(gclient, config)
+
 
 def get_client(client_id: str, config=default_configuration) -> GefyraClient:
     """
@@ -60,11 +49,18 @@ def delete_client(client_id: str, config=default_configuration) -> None:
     handle_delete_gefyraclient(config, client_id)
 
 
-def write_client_file(path: Path):
+def write_client_file(client_id: str, path: Path, config=default_configuration):
     """
     Write a client file
     """
-    pass
+    client = get_client(client_id)
+    json_str = client.get_client_config("me").json
+    if not path:
+        print(json_str)
+    else:
+        with open(path, "w") as f:
+            f.write(json_str)
+    return True
 
 
 def client(args: Namespace, config=default_configuration):
@@ -72,8 +68,10 @@ def client(args: Namespace, config=default_configuration):
     Run a client command
     """
     if args.verb == "create":
-        add_client(args.client_id, config)
+        add_client(getattr(args, "client_id", None), config)
     if args.verb == "delete":
         delete_client(args.client_id, config)
     if args.verb == "list":
         pass
+    if args.verb == "config":
+        write_client_file(args.client_id, args.path, config=config)

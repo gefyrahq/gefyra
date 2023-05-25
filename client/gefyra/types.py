@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import json
 import logging
 from typing import Any, Dict, Optional
 
@@ -9,10 +10,12 @@ from gefyra.local.clients import handle_get_gefyraclient
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class StowawayParameter:
     # the subnet for a client
     subnet: str
+
 
 @dataclass
 class GefyraClientConfig:
@@ -23,6 +26,11 @@ class GefyraClientConfig:
     namespace: str
     ca_crt: str
     gefyra_server: str
+
+    @property
+    def json(self):
+        return json.dumps(self.__dict__)
+
 
 @dataclass
 class StowawayConfig:
@@ -75,11 +83,12 @@ class GefyraClient:
     service_account: Dict[str, str]
 
     def __init__(
-        self, gclient: dict[str, Any], config: ClientConfiguration = default_configuration
+        self,
+        gclient: dict[str, Any],
+        config: ClientConfiguration = default_configuration,
     ):
         self._init_data(gclient)
         self._config = config
-
 
     def _init_data(self, _object: dict[str, Any]):
         self.client_id = _object["metadata"]["name"]
@@ -128,12 +137,12 @@ class GefyraClient:
                 else:
                     data[_field.name] = _v
         return data
-    
+
     @property
     def state(self):
         self.update()
         return GefyraClientState(self._state)
-    
+
     @property
     def state_transitions(self):
         self.update()
@@ -144,11 +153,14 @@ class GefyraClient:
         gclient = handle_get_gefyraclient(self._config, self.client_id)
         self._init_data(gclient)
 
-    def get_client_config(self, gefyra_server: str, k8s_server: str = None) -> GefyraClientConfig:
+    def get_client_config(
+        self, gefyra_server: str, k8s_server: str = None
+    ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
         if bool(self.service_account):
             return GefyraClientConfig(
+                client_id=self.client_id,
                 kubernetes_server=k8s_server or self._config.get_kubernetes_api_url(),
                 provider=self.provider,
                 token=self.service_account["token"],
@@ -158,4 +170,3 @@ class GefyraClient:
             )
         else:
             raise RuntimeError("Cannot get client config, no service account found.")
-
