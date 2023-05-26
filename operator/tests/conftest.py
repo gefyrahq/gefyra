@@ -53,7 +53,7 @@ def operator(k3d, stowaway_image, carrier_image):
     os.environ["GEFYRA_CARRIER_IMAGE"] = carrier_image.split(":")[0]
     os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier_image.split(":")[1]
     k3d.load_image(stowaway_image)
-    operator = KopfRunner(["run", "-A", "main.py"])
+    operator = KopfRunner(["run", "-A", "--dev", "main.py"])
     operator.__enter__()
     kopf_logger = logging.getLogger("kopf")
     kopf_logger.setLevel(logging.INFO)

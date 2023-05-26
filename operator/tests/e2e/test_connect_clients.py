@@ -6,6 +6,7 @@ from .utils import GefyraDockerClient
 
 logger = logging.getLogger(__name__)
 
+
 def test_a_connect_clients(
     cargo_image,
     operator: AClusterManager,
@@ -21,6 +22,7 @@ def test_a_connect_clients(
         namespace="gefyra",
         timeout=20,
     )
+    # client connect taking place
     k3d.kubectl(
         [
             "-n",
@@ -47,6 +49,7 @@ def test_a_connect_clients(
     logger.info(client_a["providerConfig"])
     gclient_a.connect(client_a["providerConfig"])
     gclient_a.probe()
+    # client disconnect taking place
     gclient_a.delete()
     k3d.kubectl(
         [
@@ -113,11 +116,11 @@ def test_a_connect_clients(
     client_a = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
     )
-    
+
     client_b = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-b"]
     )
-    
+
     gclient_a.connect(client_a["providerConfig"])
     gclient_a.probe()
     gclient_b.connect(client_b["providerConfig"])

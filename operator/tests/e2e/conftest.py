@@ -15,6 +15,7 @@ def cargo_image(request):
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
+
 @pytest.fixture(scope="session")
 def gclient_a(cargo_image):
     c = GefyraDockerClient("gclient-a")

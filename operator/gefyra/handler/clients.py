@@ -1,3 +1,4 @@
+import click
 import kopf
 import kubernetes as k8s
 
@@ -55,3 +56,35 @@ async def client_deleted(body, logger, **kwargs):
     obj = GefyraClientObject(body)
     client = GefyraClient(obj, configuration, logger)
     client.terminate()
+
+
+# this is a workaround to get the --dev flag from the CLI for testing
+# https://kopf.readthedocs.io/en/stable/cli/#development-mode
+try:
+    _ctx = click.get_current_context()
+    if "priority" in _ctx.params and _ctx.params["priority"] == 666:
+        RECONCILIATION_INTERVAL = 2
+    else:
+        RECONCILIATION_INTERVAL = 60
+except RuntimeError:
+    # this module is not imported via kopf CLI
+    RECONCILIATION_INTERVAL = 2
+
+
+@kopf.timer("gefyraclients.gefyra.dev", interval=RECONCILIATION_INTERVAL)
+async def client_reconcile(body, logger, **kwargs):
+    obj = GefyraClientObject(body)
+    client = GefyraClient(obj, configuration, logger)
+    if client.should_terminate:
+        # terminate this client
+        client.terminate()
+        try:
+            client.custom_api.delete_namespaced_custom_object(
+                namespace=client.configuration.NAMESPACE,
+                name=client.client_name,
+                group="gefyra.dev",
+                plural="gefyraclients",
+                version="v1",
+            )
+        except k8s.client.ApiException:
+            pass

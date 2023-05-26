@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, Tuple
+from typing import Any, Optional
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.bridge.factory import BridgeProviderType, bridge_provider_factory
 
@@ -190,66 +190,3 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     def on_terminate(self):
         pass
-
-    def get_latest_transition(self) -> Optional[datetime]:
-        """
-        > Get the latest transition time for a GefyraBridge
-        :return: The latest transition times
-        """
-        timestamps = list(
-            filter(
-                lambda k: k is not None,
-                [
-                    self.completed_transition(GefyraBridge.creating.value),
-                    self.completed_transition(GefyraBridge.active.value),
-                    self.completed_transition(GefyraBridge.error.value),
-                ],
-            )
-        )
-        if timestamps:
-            return max(
-                map(
-                    lambda x: datetime.fromisoformat(x.strip("Z")),  # type: ignore
-                    timestamps,
-                )
-            )
-        else:
-            return None
-
-    def get_latest_state(self) -> Optional[Tuple[str, datetime]]:
-        """
-        It returns the latest state of the GefyraBridge, and the timestamp
-        of when it was in that state
-        :return: A tuple of the latest state and the timestamp of the
-         latest state.
-        """
-        states = list(
-            filter(
-                lambda k: k[1] is not None,
-                {
-                    GefyraBridge.creating.value: self.completed_transition(
-                        GefyraBridge.creating.value
-                    ),
-                    GefyraBridge.active.value: self.completed_transition(
-                        GefyraBridge.active.value
-                    ),
-                    GefyraBridge.error.value: self.completed_transition(
-                        GefyraBridge.error.value
-                    ),
-                }.items(),
-            )
-        )
-        if states:
-            latest_state, latest_timestamp = None, None
-            for state, timestamp in states:
-                if latest_state is None:
-                    latest_state = state
-                    latest_timestamp = datetime.fromisoformat(timestamp.strip("Z"))
-                else:
-                    _timestamp = datetime.fromisoformat(timestamp.strip("Z"))
-                    if latest_timestamp < _timestamp:
-                        latest_state = state
-                        latest_timestamp = _timestamp
-            return latest_state, latest_timestamp  # type: ignore
-        else:
-            return None
