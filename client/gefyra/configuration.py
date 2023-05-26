@@ -1,4 +1,5 @@
 from os import path
+import platform
 import struct
 import socket
 import sys
@@ -100,25 +101,11 @@ class ClientConfiguration(object):
         if cargo_endpoint_host:
             self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{cargo_endpoint_port}"
         else:
-            docker_os = self._get_docker_info_by_name("OperatingSystem")
-            docker_server_name = self._get_docker_info_by_name("Name")
-            logger.debug(f"Docker OS: {docker_os}")
-            logger.debug(f"Docker Server Name: {docker_server_name}")
-            # virtualized envs don't expose network interface to host
+            self.DOCKER.info
             if (
-                "docker desktop" in docker_os
-                or "windows" in docker_os
-                or "colima" in docker_server_name
+                platform.system().lower() == "linux"
+                and "microsoft" not in platform.release().lower()
             ):
-                try:
-                    _ip_output = self.DOCKER.containers.run(
-                        "alpine", "getent hosts host.docker.internal", remove=True
-                    )
-                    _ip = _ip_output.decode("utf-8").split(" ")[0]
-                    self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
-                except Exception as e:
-                    logger.error("Could not create a valid configuration: " + str(e))
-            else:
                 # get linux docker0 network address
                 import fcntl
 
@@ -131,6 +118,16 @@ class ClientConfiguration(object):
                     )[20:24]
                 )
                 self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
+            else:
+                try:
+                    _ip_output = self.DOCKER.containers.run(
+                        "alpine", "getent hosts host.docker.internal", remove=True
+                    )
+                    _ip = _ip_output.decode("utf-8").split(" ")[0]
+                    self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
+                except Exception as e:
+                    logger.error("Could not create a valid configuration: " + str(e))
+
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
