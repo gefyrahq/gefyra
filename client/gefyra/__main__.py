@@ -236,15 +236,34 @@ client_create_parser = client_subparsers.add_parser(
 client_create_parser.add_argument(
     "--client-id", help="The client id (optional)", required=False, dest="client_id"
 )
+client_create_parser.add_argument(
+    "-n",
+    help="Number of clients to be generated (not allowed with explicit client-id)",
+    required=False,
+    dest="quantity",
+    type=int,
+    default=1,
+)
 client_delete_parser = client_subparsers.add_parser("delete", help="Delete a client")
 client_delete_parser.add_argument("client_id", help="The client id")
 client_list_parser = client_subparsers.add_parser("list", help="List all clients")
-client_delete_parser.add_argument("client_id", help="The client id")
 client_config_parser = client_subparsers.add_parser(
     "config", help="Output client config"
 )
 client_config_parser.add_argument("client_id", help="The client id")
 client_config_parser.add_argument("-o", help="Output path", dest="path", default=None)
+client_config_parser.add_argument(
+    "--host",
+    help="Reachable host or IP of the Kubernetes cluster",
+    dest="host",
+    required=True,
+)
+client_config_parser.add_argument(
+    "--port", help="Host's Port", dest="port", default=None
+)
+client_config_parser.add_argument(
+    "--kube-api", help="Kubernetes API Server incl. port", dest="kube_api", default=None
+)
 
 version_parser.add_argument(
     "-n",
