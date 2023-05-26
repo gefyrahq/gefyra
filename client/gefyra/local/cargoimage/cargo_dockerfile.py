@@ -1,11 +1,12 @@
 # flake8: noqa
 import io
+import platform
 import sys
 
 
 def get_dockerfile(cargo_image):
     run_patch = ""
-    if sys.platform == "win32":
+    if sys.platform == "win32" or "microsoft" in platform.release().lower():
         run_patch = "RUN patch /usr/bin/wg-quick /wgquick.patch"
     return io.BytesIO(
         f""" 
