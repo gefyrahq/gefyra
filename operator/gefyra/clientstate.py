@@ -136,6 +136,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     def on_disable(self):
         self.logger.info(f"Client '{self.object_name}' is being disabled")
+        self.cleanup_all_bridges()
         self.wait()
 
     def on_terminate(self):
@@ -181,6 +182,26 @@ class GefyraClient(StateMachine, StateControllerMixin):
                     f"Cannot disable connection: {e.reason}", delay=1
                 )
         self._patch_object({"providerConfig": None})
+
+    def cleanup_all_bridges(self):
+        bridges = self.custom_api.list_namespaced_custom_object(
+            group="gefyra.dev",
+            version="v1",
+            plural="gefyrabridges",
+            namespace=self.configuration.NAMESPACE,
+        )
+        for bridge in bridges.get("items"):
+            if bridge.get("client") == self.client_name:
+                self.logger.warning(
+                    f"Now going to delete remaining Gefyra bridge '{bridge['metadata']['name']}' for client {self.client_name}"
+                )
+                self.custom_api.delete_namespaced_custom_object(
+                    group="gefyra.dev",
+                    version="v1",
+                    plural="gefyrabridges",
+                    namespace=self.configuration.NAMESPACE,
+                    name=bridge["metadata"]["name"],
+                )
 
     def get_latest_transition(self) -> Optional[datetime]:
         """

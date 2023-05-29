@@ -1,4 +1,3 @@
-from ast import Tuple
 import random
 import re
 import string
@@ -6,12 +5,14 @@ from time import sleep
 from collections import defaultdict
 from os import path
 import os
-from typing import Optional
+from types import MappingProxyType
+from typing import List, Optional, Tuple
 from gefyra.connection.stowaway.resources.configmaps import (
     create_stowaway_proxyroute_configmap,
 )
 from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
 from gefyra.resources.events import _get_now
+import kopf
 import kubernetes as k8s
 
 from gefyra.utils import exec_command_pod, get_label_selector, stream_copy_from_pod
@@ -41,6 +42,7 @@ from .components import (
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
+custom_api = k8s.client.CustomObjectsApi()
 
 STOWAWAY_LABELS = {
     "gefyra.dev/app": "stowaway",
@@ -53,6 +55,10 @@ PROXY_RELOAD_COMMAND = [
     "generate-proxyroutes.sh",
     "/stowaway/proxyroutes/",
 ]
+
+WIREGUARD_CIDR_PATTERN = re.compile(
+    "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\/[0-9]{1,3}$"
+)
 
 
 class Stowaway(AbstractGefyraConnectionProvider):
@@ -118,7 +124,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             return False
 
-    def add_peer(self, peer_id: str, parameters: dict = {}):
+    def add_peer(self, peer_id: str, parameters: dict = MappingProxyType({})):
         self.logger.info(
             f"Adding peer {peer_id} to stowaway with parameters: {parameters}"
         )
@@ -130,7 +136,6 @@ class Stowaway(AbstractGefyraConnectionProvider):
             self.logger.error(f"Error adding peer {peer_id} to stowaway: {e}")
 
     def remove_peer(self, peer_id: str):
-        # TODO remove existing proxy routes
         self.logger.info(f"Removing peer {peer_id} from stowaway")
         try:
             self._edit_peer_configmap(remove=peer_id)
@@ -174,7 +179,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         peer_id: str,
         destination_ip: str,
         destination_port: int,
-        parameters: dict = {},
+        parameters: dict = MappingProxyType({}),
     ):
         # create service with random port that is not taken
         stowaway_port = self._edit_proxyroutes_configmap(
@@ -271,6 +276,31 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             return False
 
+    def validate(self, gclient: dict, hints: dict = MappingProxyType({})):
+        if wireguard_parameter := gclient.get("providerParameter"):
+            if subnet := wireguard_parameter.get("subnet"):
+                if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
+                    raise kopf.AdmissionError(
+                        f"The Wireguard subnet '{subnet}' does not validate with regex '{WIREGUARD_CIDR_PATTERN}'."
+                    )
+                if self._subnet_taken(subnet):
+                    raise kopf.AdmissionError(
+                        f"The Wireguard subnet '{subnet}' is already taken."
+                    )
+
+    def _subnet_taken(self, subnet: str) -> bool:
+        _config = create_stowaway_configmap()
+        configmap = core_v1_api.read_namespaced_config_map(
+            _config.metadata.name, _config.metadata.namespace
+        )
+        for k, v in configmap.data.items():
+            if k.startswith("SERVER_ALLOWEDIPS_PEER_"):
+                if v.split("/", 1)[0] == subnet.split("/", 1)[0]:
+                    return True
+            else:
+                continue
+        return False
+
     def _restart_stowaway(self) -> None:
         pod = self._get_stowaway_pod()
         core_v1_api.delete_namespaced_pod(
@@ -334,7 +364,6 @@ class Stowaway(AbstractGefyraConnectionProvider):
             peers = [add] + peers
             data = {"PEERS": ",".join(peers)}
             if subnet:
-                # TODO check if subnet is valid and not already in use
                 data[f"SERVER_ALLOWEDIPS_PEER_{add}"] = subnet
             core_v1_api.patch_namespaced_config_map(
                 name=configmap.metadata.name,

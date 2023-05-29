@@ -101,3 +101,11 @@ class AbstractGefyraConnectionProvider(ABC):
         Returns the service URL for the destination
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def validate(self, gclient: dict, hints: dict = MappingProxyType({})):
+        """
+        Validate the Gefyra client object with this connection provider
+        Raises a kopf.AdmissionError if validation fails
+        """
+        raise NotImplementedError

@@ -89,3 +89,35 @@ def test_a_bridge(
     )
 
     gclient_a.delete()
+
+
+def test_b_cleanup_bridges_routes(
+    carrier_image,
+    operator: AClusterManager,
+):
+    k3d = operator
+
+  
+    k3d.apply("tests/fixtures/a_gefyra_bridge.yaml")
+    k3d.wait(
+        "gefyrabridges.gefyra.dev/bridge-a",
+        "jsonpath=.state=ACTIVE",
+        namespace="gefyra",
+        timeout=20,
+    )
+    k3d.wait(
+        "pod/backend",
+        "jsonpath=.status.containerStatuses[0].image=docker.io/library/"
+        + carrier_image,
+        namespace="demo",
+        timeout=60,
+    )
+    k3d.kubectl(
+        ["-n", "gefyra", "delete", "gefyraclients.gefyra.dev", "client-a"], as_dict=False
+    )
+    k3d.wait(
+        "gefyrabridges.gefyra.dev/bridge-a",
+        "delete",
+        namespace="gefyra",
+        timeout=60,
+    )

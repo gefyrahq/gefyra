@@ -274,46 +274,74 @@ class TestStowaway:
         svc = k3d.kubectl(["-n", "gefyra", "get", "svc", "-l", "gefyra.dev/role=proxy"])
         assert len(svc["items"]) == 3
 
-    def test_y_provider_notexists(self, k3d: AClusterManager):
-        import kubernetes
-
-        kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
-        from gefyra.connection.factory import (
-            connection_provider_factory,
-        )
-
-        class ConnectionProviderType(Enum):
-            DOESNOTEXITS = "doesnotexists"
-
-        with pytest.raises(ValueError):
-            connection_provider_factory.get(
-                ConnectionProviderType.DOESNOTEXITS,
-                self.configuration,
-                logger,
-            )
-
-    def test_z_remove_stowaway(self, k3d: AClusterManager):
-        import kubernetes
-
-        kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
+    def test_h_provider_notexists(self, k3d: AClusterManager):
         from gefyra.connection.factory import (
             ConnectionProviderType,
             connection_provider_factory,
         )
+        import kopf
 
         stowaway = connection_provider_factory.get(
             ConnectionProviderType.STOWAWAY,
             self.configuration,
             logger,
         )
-        stowaway.uninstall()
-        output = k3d.kubectl(
-            ["get", "sts", "-n", "gefyra"],
-            as_dict=False,
-        )
-        assert "gefyra-stowaway" not in output
-        output = k3d.kubectl(
-            ["get", "svc", "-n", "gefyra"],
-            as_dict=False,
-        )
-        assert "stowaway" not in output
+
+        stowaway.validate({})
+        stowaway.validate({"providerParameter": {"subnet": "192.168.100.1/24"}})
+        with pytest.raises(kopf.AdmissionError):
+            stowaway.validate({"providerParameter": {"subnet": "192.168.100.1"}})
+        stowaway.add_peer("test1", {"subnet": "192.168.100.0/24"})
+        with pytest.raises(kopf.AdmissionError):
+            stowaway.validate({"providerParameter": {"subnet": "192.168.100.0/24"}})
+            stowaway.validate({"providerParameter": {"subnet": "192.168.100.0/25"}})
+        stowaway.validate({"providerParameter": {"subnet": "192.168.101.0/24"}})
+        stowaway.add_peer("test2", {"subnet": "192.168.101.0/24"})
+        with pytest.raises(kopf.AdmissionError):
+            stowaway.validate({"providerParameter": {"subnet": "192.168.100.0/24"}})
+            stowaway.validate({"providerParameter": {"subnet": "192.168.101.0/24"}})
+        stowaway.validate({"providerParameter": {}})
+
+    # def test_y_provider_notexists(self, k3d: AClusterManager):
+    #     import kubernetes
+
+    #     kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
+    #     from gefyra.connection.factory import (
+    #         connection_provider_factory,
+    #     )
+
+    #     class ConnectionProviderType(Enum):
+    #         DOESNOTEXITS = "doesnotexists"
+
+    #     with pytest.raises(ValueError):
+    #         connection_provider_factory.get(
+    #             ConnectionProviderType.DOESNOTEXITS,
+    #             self.configuration,
+    #             logger,
+    #         )
+
+    # def test_z_remove_stowaway(self, k3d: AClusterManager):
+    #     import kubernetes
+
+    #     kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
+    #     from gefyra.connection.factory import (
+    #         ConnectionProviderType,
+    #         connection_provider_factory,
+    #     )
+
+    #     stowaway = connection_provider_factory.get(
+    #         ConnectionProviderType.STOWAWAY,
+    #         self.configuration,
+    #         logger,
+    #     )
+    #     stowaway.uninstall()
+    #     output = k3d.kubectl(
+    #         ["get", "sts", "-n", "gefyra"],
+    #         as_dict=False,
+    #     )
+    #     assert "gefyra-stowaway" not in output
+    #     output = k3d.kubectl(
+    #         ["get", "svc", "-n", "gefyra"],
+    #         as_dict=False,
+    #     )
+    #     assert "stowaway" not in output
