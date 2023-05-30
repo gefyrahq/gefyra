@@ -1,4 +1,5 @@
 from copy import deepcopy
+from gefyra.api.clients import add_clients, delete_client
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
 from gefyra.local.bridge import handle_delete_interceptrequest
 from gefyra.local.check import probe_docker, probe_kubernetes
@@ -600,6 +601,32 @@ class GefyraBaseTest:
 
     def test_n_run_gefyra_down_again_without_errors(self):
         self.test_n_run_gefyra_down()
+
+    def test_q_client_create_delete(self):
+        res = up(default_configuration)
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        clients = add_clients()
+        self.assertEqual(len(clients), 1)
+        k8s_client = self.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(
+            namespace=default_configuration.NAMESPACE,
+            name=clients[0].name,
+            group="gefyra.dev",
+            plural="gefyraclients",
+            version="v1",
+        )
+        self.assertEqual(k8s_client["spec"]["name"], clients[0].client_id)
+        self.assertEqual(k8s_client["spec"]["namespace"], clients[0].namespace)
+        delete_client(clients[0].name, default_configuration)
+        with self.assertRaises(ApiException):
+            self.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(
+                namespace=default_configuration.NAMESPACE,
+                name=clients[0].name,
+                group="gefyra.dev",
+                plural="gefyraclients",
+                version="v1",
+            )
 
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
