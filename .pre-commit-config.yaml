@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/python/black.git
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
       - id: black
         language_version: python3
@@ -15,6 +15,6 @@ repos:
 
   # gitlint - correct git commit format
   - repo: https://github.com/jorisroovers/gitlint
-    rev: v0.15.0
+    rev: v0.19.1
     hooks:
       - id: gitlint

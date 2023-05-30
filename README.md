@@ -7,7 +7,7 @@
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
 [![Coverage Information][coveralls-shield]][coveralls-url]
-[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/zFQBT8bnYX)
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/8NTPMVPaKy)
 
 
 <!-- PROJECT LOGO -->
@@ -67,9 +67,12 @@
 <!-- QUICK START -->
 ## Quick Start
 Short manual on where and how to start. You can find detailed information
-[here](https://gefyra.dev/try-it-out/).
+[here (installation)](https://gefyra.dev/installation/) and [here (usage)](https://gefyra.dev/getting-started/).
 
 ### Installation
+
+#### CLI
+
 We offer platform specific installations:
 <details>
   <summary>Linux/MacOS via script/cURL</summary>
@@ -91,6 +94,11 @@ brew install gefyra
 
 Download the latest binary for Windows under [here](https://github.com/gefyrahq/gefyra/releases/). 
 </details>
+
+#### Docker Desktop Extension
+
+Working with Docker Desktop? We offer an [extension](https://open.docker.com/extensions/marketplace?extensionId=gefyra/docker-desktop-extension) to operate Gefyra through a UI on Docker Desktop.
+
 
 ### Your First Bridge
 Bridge a local container into an existing cluster. For a detailed guide please

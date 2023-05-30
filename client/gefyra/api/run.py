@@ -4,7 +4,7 @@ import sys
 from threading import Thread
 
 from gefyra.configuration import default_configuration, ClientConfiguration
-from .utils import stopwatch, get_workload_type
+from .utils import generate_env_dict_from_strings, stopwatch, get_workload_type
 
 
 logger = logging.getLogger(__name__)
@@ -139,18 +139,13 @@ def run(
                 config, env_from_pod, namespace, env_from_container
             )
             logger.debug("ENV from pod/container is:\n" + raw_env)
-            env_dict = {
-                k[0]: k[1]
-                for k in [arg.split("=") for arg in raw_env.split("\n")]
-                if len(k) > 1
-            }
+            raw_env_vars = raw_env.split("\n")
+            env_dict = generate_env_dict_from_strings(raw_env_vars)
     except ApiException as e:
         logger.error(f"Cannot copy environment from Pod: {e.reason} ({e.status}).")
         return False
     if env:
-        env_overrides = {
-            k[0]: k[1] for k in [arg.split("=") for arg in env] if len(k) > 1
-        }
+        env_overrides = generate_env_dict_from_strings(env)
         env_dict.update(env_overrides)
 
     #

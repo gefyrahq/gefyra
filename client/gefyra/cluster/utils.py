@@ -55,3 +55,53 @@ def get_env_from_pod_container(
     raise RuntimeError(
         f"Failed to get env from pod {pod_name} in namespace {namespace} after {retries} tries."
     )
+
+
+def get_container(pod, container_name: str):
+    for container in pod.spec.containers:
+        if container.name == container_name:
+            return container
+    raise RuntimeError(f"Container {container_name} not found.")
+
+
+def get_container_image(pod, container_name: str):
+    container = get_container(pod, container_name=container_name)
+    if container.image:
+        return container.image
+    raise RuntimeError(f"Container {container_name} image could not be determined.")
+
+
+def get_container_command(pod, container_name: str):
+    container = get_container(pod, container_name=container_name)
+    res = []
+    if container.command:
+        res.extend(container.command)
+    if container.args:
+        res.extend(container.args)
+    return " ".join(res)
+
+
+def get_container_ports(pod, container_name: str):
+    container = get_container(pod, container_name=container_name)
+    if container.ports:
+        return container.ports
+    return []
+
+
+def get_v1pod(
+    config: ClientConfiguration,
+    pod_name: str,
+    namespace: str,
+):
+    from kubernetes.client import ApiException
+
+    try:
+        pod = config.K8S_CORE_API.read_namespaced_pod(pod_name, namespace)
+    except ApiException as e:
+        if e.status == 404:
+            raise RuntimeError(
+                f"Pod {pod_name} in namespace {namespace} does not exist."
+            )
+        else:
+            raise e
+    return pod

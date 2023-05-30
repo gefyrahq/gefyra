@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Gefyra"
-version = "1.0.4"
+version = "1.1.1"
 description = "Gefyra runs all developer machine side components of Gefyra's Kubernetes-based development infrastructure"
 authors = ["Michael Schilonka <michael@unikube.io>"]
 readme = "README.md"

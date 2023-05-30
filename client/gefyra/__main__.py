@@ -21,6 +21,8 @@ parser = argparse.ArgumentParser(
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
 
+port_mapping_help_text = "Add port mapping in form of <container_port>:<host_port>"
+namespace_help_text = "The namespace for this container to run in"
 
 up_parser = action.add_parser("up")
 up_parser.add_argument(
@@ -108,6 +110,63 @@ up_parser.add_argument(
     help="The context name from kubeconfig",
 )
 
+reflect_parser = action.add_parser("reflect")
+reflect_parser.add_argument(
+    "-w", "--workload", help="Workload to reflect locally", required=True
+)
+reflect_parser.add_argument(
+    "-e",
+    "--expose",
+    help="Exposes ports from k8s container spec to host",
+    required=False,
+    default=True,
+    action="store_false",
+)
+reflect_parser.add_argument(
+    "-i", "--image", help="The docker image to run in Gefyra", required=True
+)
+reflect_parser.add_argument(
+    "-v",
+    "--volume",
+    action="append",
+    help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
+    required=False,
+)
+reflect_parser.add_argument(
+    "-p",
+    "--port",
+    help=port_mapping_help_text,
+    required=False,
+    action=PortMappingParser,
+)
+reflect_parser.add_argument(
+    "-b",
+    "--bridge",
+    help="Bridge workload and make local container accessible to k8s workloads",
+    required=False,
+    default=False,
+    action="store_true",
+)
+
+reflect_parser.add_argument(
+    "-c",
+    "--command",
+    help="The command for this container to in Gefyra",
+    nargs="+",
+    required=False,
+)
+reflect_parser.add_argument(
+    "-n",
+    "--namespace",
+    help=namespace_help_text,
+    default="default",
+)
+reflect_parser.add_argument(
+    "--env",
+    action="append",
+    help="Set or override environment variables in the form ENV=value, allowed multiple times",
+    required=False,
+)
 
 run_parser = action.add_parser("run")
 run_parser.add_argument(
@@ -126,7 +185,7 @@ run_parser.add_argument(
 run_parser.add_argument(
     "-n",
     "--namespace",
-    help="The namespace for this container to run in",
+    help=namespace_help_text,
 )
 run_parser.add_argument(
     "--env",
@@ -149,7 +208,7 @@ run_parser.add_argument(
 run_parser.add_argument(
     "-p",
     "--expose",
-    help="Add port mapping in form of <container_port>:<host_port>",
+    help=port_mapping_help_text,
     required=False,
     action=IpPortMappingParser,
 )
@@ -176,14 +235,14 @@ bridge_parser.add_argument(
 bridge_parser.add_argument(
     "-p",
     "--port",
-    help="Add port mapping in form of <container_port>:<host_port>",
+    help=port_mapping_help_text,
     required=True,
     action=PortMappingParser,
 )
 bridge_parser.add_argument(
     "-n",
     "--namespace",
-    help="The namespace for this container to run in",
+    help=namespace_help_text,
     default="default",
 )
 bridge_parser.add_argument(
@@ -381,27 +440,39 @@ def cli_up(configuration):
         raise RuntimeError("Failed to start Gefyra")
 
 
+def setup_logger(args, configuration_package):
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.INFO)
+    logger.addHandler(configuration_package.console)
+
+
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status, client
+        from gefyra.api import (
+            bridge,
+            down,
+            run,
+            unbridge,
+            unbridge_all,
+            status,
+            reflect,
+        )
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
-        if args.debug:
-            logger.setLevel(logging.DEBUG)
-        else:
-            logger.setLevel(logging.INFO)
-        logger.addHandler(configuration_package.console)
+
+        setup_logger(args, configuration_package)
+
+        configuration = get_client_configuration(args)
 
         if args.action == "version":
             check = not args.no_check
             version(configuration_package, check)
             exit(0)
-
-        configuration = get_client_configuration(args)
-
-        if args.action == "up":
+        elif args.action == "up":
             cli_up(configuration=configuration)
         elif args.action == "run":
             run(
@@ -416,6 +487,17 @@ def main():
                 volumes=args.volume,
                 config=configuration,
                 detach=args.detach,
+            )
+        elif args.action == "reflect":
+            reflect(
+                workload=args.workload,
+                expose_ports=args.expose,
+                volumes=args.volume,
+                command=args.command,
+                namespace=args.namespace,
+                do_bridge=args.bridge,
+                ports=args.port,
+                image=args.image,
             )
         elif args.action == "bridge":
             bridge(
@@ -452,6 +534,7 @@ def main():
         elif args.action == "check":
             probe_docker()
             probe_kubernetes(config=configuration)
+            version(config=configuration_package, check=False)
         elif args.action == "telemetry":
             telemetry_command(on=args.on, off=args.off)
         elif args.action == "client":

@@ -18,7 +18,9 @@ logger = logging.getLogger("gefyra")
 # Just opt out via `gefyra telemetry --off`.
 #########################################################################################
 
-SENTRY_DSN = "https://a94b0a0194b045f79897f70f9727d299@sentry.unikube.io/3"
+SENTRY_DSN = (
+    "https://97c8c0409cb74a079a93f05021b329f0@o146863.ingest.sentry.io/4505119985172480"
+)
 
 
 class CliTelemetry:

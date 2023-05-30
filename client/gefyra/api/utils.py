@@ -1,7 +1,21 @@
 import logging
+import socket
 import time
+from typing import Iterable
 
 logger = logging.getLogger(__name__)
+
+
+def is_port_free(port):
+    """
+    Check if a port is free on the current system.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        try:
+            s.bind(("127.0.0.1", port))
+            return True
+        except OSError:
+            return False
 
 
 def get_workload_type(workload_type_str: str):
@@ -22,6 +36,10 @@ def get_workload_type(workload_type_str: str):
         return "deployment"
     elif workload_type_str in STATEFULSET:
         return "statefulset"
+
+
+def generate_env_dict_from_strings(env_vars: Iterable[str]) -> dict:
+    return {k[0]: k[1] for k in [arg.split("=", 1) for arg in env_vars] if len(k) > 1}
 
 
 def stopwatch(func):
