@@ -225,6 +225,45 @@ down_parser = action.add_parser("down")
 check_parser = action.add_parser("check")
 status_parser = action.add_parser("status")
 version_parser = action.add_parser("version")
+client_parser = action.add_parser("client")
+
+client_subparsers = client_parser.add_subparsers(
+    title="client commands", dest="verb", required=True
+)
+client_create_parser = client_subparsers.add_parser(
+    "create", help="Create a new client"
+)
+client_create_parser.add_argument(
+    "--client-id", help="The client id (optional)", required=False, dest="client_id"
+)
+client_create_parser.add_argument(
+    "-n",
+    help="Number of clients to be generated (not allowed with explicit client-id)",
+    required=False,
+    dest="quantity",
+    type=int,
+    default=1,
+)
+client_delete_parser = client_subparsers.add_parser("delete", help="Delete a client")
+client_delete_parser.add_argument("client_id", help="The client id")
+client_list_parser = client_subparsers.add_parser("list", help="List all clients")
+client_config_parser = client_subparsers.add_parser(
+    "config", help="Output client config"
+)
+client_config_parser.add_argument("client_id", help="The client id")
+client_config_parser.add_argument("-o", help="Output path", dest="path", default=None)
+client_config_parser.add_argument(
+    "--host",
+    help="Reachable host or IP of the Kubernetes cluster",
+    dest="host",
+    required=True,
+)
+client_config_parser.add_argument(
+    "--port", help="Host's Port", dest="port", default=None
+)
+client_config_parser.add_argument(
+    "--kube-api", help="Kubernetes API Server incl. port", dest="kube_api", default=None
+)
 
 version_parser.add_argument(
     "-n",
@@ -345,7 +384,7 @@ def cli_up(configuration):
 def main():
     try:
         from gefyra import configuration as configuration_package
-        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status
+        from gefyra.api import bridge, down, run, unbridge, unbridge_all, status, client
         from gefyra.local.check import probe_kubernetes, probe_docker
 
         args = parser.parse_args()
@@ -415,6 +454,8 @@ def main():
             probe_kubernetes(config=configuration)
         elif args.action == "telemetry":
             telemetry_command(on=args.on, off=args.off)
+        elif args.action == "client":
+            client(args, config=configuration)
         else:
             parser.print_help()
     except KeyboardInterrupt:
