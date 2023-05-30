@@ -495,6 +495,7 @@ def main():
         elif args.action == "check":
             probe_docker()
             probe_kubernetes(config=configuration)
+            version(config=configuration, check=False)
         elif args.action == "telemetry":
             telemetry_command(on=args.on, off=args.off)
         else:
