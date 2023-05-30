@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from types import MappingProxyType
+from typing import Any, Dict, Optional
 
 
 class AbstractGefyraBridgeProvider(ABC):
@@ -9,7 +9,7 @@ class AbstractGefyraBridgeProvider(ABC):
     provider_type = ""
 
     @abstractmethod
-    def install(self, parameters: dict = MappingProxyType({})):
+    def install(self, parameters: Optional[Dict[Any, Any]] = None):
         """
         Install this Gefyra bridge provider to the Kubernetes Pod
         """
@@ -42,7 +42,7 @@ class AbstractGefyraBridgeProvider(ABC):
         container_port: int,
         destination_host: str,
         destination_port: int,
-        parameters: dict = MappingProxyType({}),
+        parameters: Optional[Dict[Any, Any]] = None,
     ):
         """
         Add a new proxy_route to the bridge provider

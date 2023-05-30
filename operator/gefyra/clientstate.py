@@ -193,7 +193,8 @@ class GefyraClient(StateMachine, StateControllerMixin):
         for bridge in bridges.get("items"):
             if bridge.get("client") == self.client_name:
                 self.logger.warning(
-                    f"Now going to delete remaining Gefyra bridge '{bridge['metadata']['name']}' for client {self.client_name}"
+                    "Now going to delete remaining Gefyra bridge "
+                    f"'{bridge['metadata']['name']}' for client {self.client_name}"
                 )
                 self.custom_api.delete_namespaced_custom_object(
                     group="gefyra.dev",
@@ -262,12 +263,12 @@ class GefyraClient(StateMachine, StateControllerMixin):
         if states:
             latest_state, latest_timestamp = None, None
             for state, timestamp in states:
-                if latest_state is None:
+                if latest_state is None and timestamp is not None:
                     latest_state = state
                     latest_timestamp = datetime.fromisoformat(timestamp.strip("Z"))
-                else:
+                elif timestamp is not None:
                     _timestamp = datetime.fromisoformat(timestamp.strip("Z"))
-                    if latest_timestamp < _timestamp:
+                    if latest_timestamp and latest_timestamp < _timestamp:
                         latest_state = state
                         latest_timestamp = _timestamp
             return latest_state, latest_timestamp  # type: ignore

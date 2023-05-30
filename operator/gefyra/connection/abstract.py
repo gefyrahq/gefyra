@@ -1,26 +1,26 @@
 from abc import ABC, abstractmethod
-from types import MappingProxyType
+from typing import Any, Dict, Optional
 
 
 class AbstractGefyraConnectionProvider(ABC):
     provider_type = ""
 
     @abstractmethod
-    def installed(self, config: dict = MappingProxyType({})) -> bool:
+    def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
         """
         Check if this Gefyra connection provider is properly installed to the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    def install(self, config: dict = MappingProxyType({})):
+    def install(self, config: Optional[Dict[Any, Any]] = None):
         """
         Install this Gefyra connection provider to the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    def uninstall(self, config: dict = MappingProxyType({})):
+    def uninstall(self, config: Optional[Dict[Any, Any]] = None):
         """
         Uninstall this Gefyra connection provider from the cluster
         """
@@ -34,7 +34,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def add_peer(self, peer_id: str, parameters: dict = MappingProxyType({})):
+    def add_peer(self, peer_id: str, parameters: Optional[Dict[Any, Any]] = None):
         """
         Add a new peer to the connection provider
         """
@@ -67,7 +67,7 @@ class AbstractGefyraConnectionProvider(ABC):
         peer_id: str,
         destination_ip: str,
         destination_port: int,
-        parameters: dict = MappingProxyType({}),
+        parameters: Optional[Dict[Any, Any]] = None,
     ) -> str:
         """
         Add a destintation route to this connection provider proxy, returns
@@ -103,7 +103,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def validate(self, gclient: dict, hints: dict = MappingProxyType({})):
+    def validate(self, gclient: dict, hints: Optional[Dict[Any, Any]] = None):
         """
         Validate the Gefyra client object with this connection provider
         Raises a kopf.AdmissionError if validation fails

@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 import uuid
+from gefyra.configuration import OperatorConfiguration
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 import kubernetes as k8s
 from statemachine import State
@@ -13,7 +14,7 @@ from gefyra.resources.events import _get_now
 
 
 class GefyraStateObject:
-    plural = None
+    plural: str
 
     def __init__(self, data: dict):
         self._state = None
@@ -52,6 +53,16 @@ class GefyraStateObject:
 
 
 class StateControllerMixin:
+    configuration: OperatorConfiguration
+    logger: Any
+    custom_api: k8s.client.CustomObjectsApi
+    events_api: k8s.client.EventsV1Api
+    plural: str
+    kind: str
+    connection_provider_field: str
+    data: Dict[str, Any]
+    model: Any
+
     @property
     def object_name(self) -> str:
         """

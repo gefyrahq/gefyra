@@ -55,3 +55,4 @@ class TestClientStates:
         client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
         assert client_a["state"] == "WAITING"
         assert client_a.get("stateTransitions") is not None
+        client.get_latest_state()

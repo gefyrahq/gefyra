@@ -58,7 +58,6 @@ async def client_deleted(body, logger, **kwargs):
     client.terminate()
     # remove remaining briges for this client (in case there are any)
     client.cleanup_all_bridges()
-    
 
 
 # this is a workaround to get the --dev flag from the CLI for testing

@@ -27,12 +27,13 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
                 and body["state"] != GefyraClient.waiting.value
             ):
                 raise kopf.AdmissionError(
-                    f"Cannot set 'providerParameter' when state is not {GefyraClient.waiting.value}"
+                    "Cannot set 'providerParameter' when "
+                    f"state is not {GefyraClient.waiting.value}"
                 )
     if operation == "CREATE":
         if bool(body.get("providerParameter")):
             raise kopf.AdmissionError(
-                f"Cannot set 'providerParameter' when creating a Gefyra client"
+                "Cannot set 'providerParameter' when creating a Gefyra client"
             )
     if sunset := body.get("sunset"):
         try:

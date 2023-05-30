@@ -90,9 +90,9 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         provider = bridge_provider_factory.get(
             BridgeProviderType(self.data.get("provider")),
             self.configuration,
-            self.data.get("targetNamespace"),
-            self.data.get("targetPod"),
-            self.data.get("targetContainer"),
+            self.data["targetNamespace"],
+            self.data["targetPod"],
+            self.data["targetContainer"],
             self.logger,
         )
         return provider

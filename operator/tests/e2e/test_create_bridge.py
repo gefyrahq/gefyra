@@ -97,7 +97,6 @@ def test_b_cleanup_bridges_routes(
 ):
     k3d = operator
 
-  
     k3d.apply("tests/fixtures/a_gefyra_bridge.yaml")
     k3d.wait(
         "gefyrabridges.gefyra.dev/bridge-a",
@@ -113,7 +112,8 @@ def test_b_cleanup_bridges_routes(
         timeout=60,
     )
     k3d.kubectl(
-        ["-n", "gefyra", "delete", "gefyraclients.gefyra.dev", "client-a"], as_dict=False
+        ["-n", "gefyra", "delete", "gefyraclients.gefyra.dev", "client-a"],
+        as_dict=False,
     )
     k3d.wait(
         "gefyrabridges.gefyra.dev/bridge-a",

@@ -1,5 +1,5 @@
 import json
-from typing import List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from gefyra.utils import exec_command_pod
 import kubernetes as k8s
 
@@ -31,7 +31,8 @@ class Carrier(AbstractGefyraBridgeProvider):
         self.container = target_container
         self.logger = logger
 
-    def install(self, parameters: dict = {}):
+    def install(self, parameters: Optional[Dict[Any, Any]] = None):
+        parameters = parameters or {}
         self._patch_pod_with_carrier(handle_probes=parameters.get("handleProbes", True))
 
     def installed(self) -> bool:
@@ -69,7 +70,7 @@ class Carrier(AbstractGefyraBridgeProvider):
         container_port: int,
         destination_host: str,
         destination_port: int,
-        parameters: dict = {},
+        parameters: Optional[Dict[Any, Any]] = None,
     ):
         self._configure_carrier(container_port, destination_host, destination_port)
 
@@ -96,18 +97,17 @@ class Carrier(AbstractGefyraBridgeProvider):
         else:
             return False
 
-    def validate(self, brige_request: dict):
+    def validate(self, brige_request: Optional[Dict[Any, Any]] = None):
         raise NotImplementedError
 
     def _patch_pod_with_carrier(
         self,
         handle_probes: bool,
-    ) -> Tuple[bool, k8s.client.V1Pod]:
+    ):
         """
         Install Gefyra Carrier to the target Pod
         :param pod_name: the name of the Pod to be patched with Carrier
         :param handle_probes: See if Gefyra can handle probes of this Pod
-        :return: True if the patch was successful else False
         """
 
         pod = core_v1_api.read_namespaced_pod(name=self.pod, namespace=self.namespace)
@@ -134,7 +134,6 @@ class Carrier(AbstractGefyraBridgeProvider):
                     self.logger.info(
                         f"The container {self.container} in Pod {self.pod} is already running Carrier"
                     )
-                    return True, pod
                 self._store_pod_original_config(container)
                 container.image = f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
                 break

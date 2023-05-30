@@ -6,7 +6,7 @@ from collections import defaultdict
 from os import path
 import os
 from types import MappingProxyType
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from gefyra.connection.stowaway.resources.configmaps import (
     create_stowaway_proxyroute_configmap,
 )
@@ -72,7 +72,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         self.configuration = configuration
         self.logger = logger
 
-    def install(self, config: dict = ...):
+    def install(self, config: Optional[Dict[Any, Any]] = None):
         handle_serviceaccount(self.logger, self.configuration)
         handle_proxyroute_configmap(self.logger, self.configuration)
         handle_config_configmap(self.logger, self.configuration)
@@ -83,7 +83,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         handle_stowaway_nodeport_service(self.logger, self.configuration, sts_stowaway)
         handle_stowaway_rsync_service(self.logger, self.configuration, sts_stowaway)
 
-    def installed(self, config: dict = ...) -> bool:
+    def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
         return all(
             [
                 check_serviceaccount(self.logger, self.configuration),
@@ -105,7 +105,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             ]
         )
 
-    def uninstall(self, config: dict = {}):
+    def uninstall(self, config: Optional[Dict[Any, Any]] = None):
         remove_stowaway_services(self.logger, self.configuration)
         remove_stowaway_statefulset(
             self.logger,
@@ -124,7 +124,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             return False
 
-    def add_peer(self, peer_id: str, parameters: dict = MappingProxyType({})):
+    def add_peer(self, peer_id: str, parameters: Optional[Dict[Any, Any]] = None):
+        parameters = parameters or {}
         self.logger.info(
             f"Adding peer {peer_id} to stowaway with parameters: {parameters}"
         )
@@ -140,6 +141,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
         try:
             self._edit_peer_configmap(remove=peer_id)
             pod = self._get_stowaway_pod()
+            if pod is None:
+                raise RuntimeError("No Stowaway Pod found for peer removal")
             exec_command_pod(
                 core_v1_api,
                 pod.metadata.name,
@@ -179,7 +182,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         peer_id: str,
         destination_ip: str,
         destination_port: int,
-        parameters: dict = MappingProxyType({}),
+        parameters: Optional[Dict[Any, Any]] = None,
     ):
         # create service with random port that is not taken
         stowaway_port = self._edit_proxyroutes_configmap(
@@ -194,6 +197,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
             peer_id,
         )
         stowaway_pod = self._get_stowaway_pod()
+        if stowaway_pod is None:
+            raise RuntimeError("No Stowaway Pod found for destination addition")
         self._notify_stowaway_pod(stowaway_pod.metadata.name)
         exec_command_pod(
             core_v1_api,
@@ -246,6 +251,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
                     f"Error removing proxy service {proxy_svc.metadata.name}: {e}"
                 )
         stowaway_pod = self._get_stowaway_pod()
+        if stowaway_pod is None:
+            raise RuntimeError("No Stowaway Pod found for destination removal")
         self._notify_stowaway_pod(stowaway_pod.metadata.name)
         exec_command_pod(
             core_v1_api,
@@ -276,7 +283,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             return False
 
-    def validate(self, gclient: dict, hints: dict = MappingProxyType({})):
+    def validate(self, gclient: dict, hints: Optional[Dict[Any, Any]] = None):
         if wireguard_parameter := gclient.get("providerParameter"):
             if subnet := wireguard_parameter.get("subnet"):
                 if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
@@ -303,6 +310,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
 
     def _restart_stowaway(self) -> None:
         pod = self._get_stowaway_pod()
+        if pod is None:
+            raise RuntimeError("No Stowaway Pod found for restart")
         core_v1_api.delete_namespaced_pod(
             pod.metadata.name,
             pod.metadata.namespace,
@@ -427,9 +436,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 body={"data": routes},
             )
             return int(stowaway_port)
-        if remove:
+        elif remove:
             to_be_deleted = None
-            stowaway_port = None
+            stowaway_port = 0
             for k, v in routes.items():
                 if v.split(",")[0] == remove:
                     to_be_deleted = k
@@ -443,9 +452,13 @@ class Stowaway(AbstractGefyraConnectionProvider):
                     body=configmap,
                 )
             return int(stowaway_port)
+        else:
+            raise ValueError("Either the add or remove parameter must be set")
 
     def _get_wireguard_connection_details(self, peer_id: str) -> dict[str, str]:
         pod = self._get_stowaway_pod()
+        if pod is None:
+            raise RuntimeError("No Stowaway Pod found for peer lookup")
         peer_config_file = path.join(
             self.configuration.STOWAWAY_PEER_CONFIG_PATH,
             f"peer_{self._translate_peer_name(peer_id)}",
@@ -478,7 +491,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         :param raw: the wireguard config string; similar to TOML but does not comply with
         :return: a parsed dict of the configuration
         """
-        data = defaultdict(dict)
+        data: dict = defaultdict(dict)
         _prefix = "none"
         for line in raw.split("\n"):
             try:
