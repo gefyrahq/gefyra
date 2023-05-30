@@ -1,7 +1,7 @@
 from argparse import Namespace
 from dataclasses import dataclass
 import logging
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 import uuid
 
 from pathlib import Path
@@ -85,7 +85,7 @@ def write_client_file(
 
 
 @stopwatch
-def list_client(config=default_configuration):
+def list_client(config=default_configuration) -> List[GefyraClient]:
     """
     List all GefyraClient objects
     """
@@ -95,15 +95,17 @@ def list_client(config=default_configuration):
         plural="gefyraclients",
         version="v1",
     )
-    clients = [
-        [
-            client["metadata"]["name"],
-            client["state"],
-            client["stateTransitions"]["CREATING"],
-        ]
-        for client in clients["items"]
-    ]
-    print(tabulate(clients, headers=["ID", "STATE", "CREATED"], tablefmt="plain"))
+    return [GefyraClient(client, config) for client in clients["items"]]
+    # Todo move to CLI
+    # clients = [
+    #     [
+    #         client["metadata"]["name"],
+    #         client["state"],
+    #         client["stateTransitions"]["CREATING"],
+    #     ]
+    #     for client in clients["items"]
+    # ]
+    # print(tabulate(clients, headers=["ID", "STATE", "CREATED"], tablefmt="plain"))
 
 
 def client(args: Namespace, config=default_configuration):

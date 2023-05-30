@@ -12,7 +12,7 @@ console.setFormatter(formatter)
 logger = logging.getLogger("gefyra")
 logger.addHandler(console)
 
-__VERSION__ = "1.1.1"
+__VERSION__ = "2.0.0-alpha"
 
 
 def fix_pywin32_in_frozen_build() -> None:  # pragma: no cover

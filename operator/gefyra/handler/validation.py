@@ -21,15 +21,15 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
     )
     changeset = {field[0]: new for op, field, old, new in diff}
     if operation == "UPDATE":
-        if "providerParameter" in changeset:
-            if (
-                bool(changeset["providerParameter"]) is True
-                and body["state"] != GefyraClient.waiting.value
-            ):
-                raise kopf.AdmissionError(
-                    "Cannot set 'providerParameter' when "
-                    f"state is not {GefyraClient.waiting.value}"
-                )
+        if (
+            "providerParameter" in changeset
+            and bool(changeset["providerParameter"]) is True
+            and body["state"] != GefyraClient.waiting.value
+        ):
+            raise kopf.AdmissionError(
+                "Cannot set 'providerParameter' when "
+                f"state is not {GefyraClient.waiting.value}"
+            )
     if operation == "CREATE":
         if bool(body.get("providerParameter")):
             raise kopf.AdmissionError(

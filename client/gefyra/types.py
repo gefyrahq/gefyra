@@ -1,11 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 import json
 import logging
 from typing import Any, Dict, Optional
 
 from attr import fields
-from gefyra.configuration import ClientConfiguration, default_configuration
+from gefyra.configuration import ClientConfiguration, default_configuration, __VERSION__
 from gefyra.local.clients import handle_get_gefyraclient
 
 logger = logging.getLogger(__name__)
@@ -170,3 +170,42 @@ class GefyraClient:
             )
         else:
             raise RuntimeError("Cannot get client config, no service account found.")
+        
+@dataclass
+class GefyraInstallOptions:
+    namespace: str = field(
+        default_factory=lambda: "gefyra",
+        metadata=dict(
+            help="The namespace to install Gefyra into (default: gefyra)", short="ns"
+        ),
+    )
+    version: str = field(
+        default_factory=lambda: __VERSION__,
+        metadata=dict(
+            help=f"Set the Operator version; components are created according to this Gefyra version (default: {__VERSION__})"
+        ),
+    )
+    service_type: str = field(
+        default_factory=lambda: "NodePort",
+        metadata=dict(
+            help="The Kubernetes service for Stowaway to expose the Wireguard endpoint (default: NodePort)"
+        ),
+    )
+    service_port: int = field(
+        default_factory=lambda: 31820,
+        metadata=dict(
+            help="The port for Stowaway to expose the Wireguard endpoint (default: 31820)"
+        ),
+    )
+    service_labels: Dict[str, str] = field(
+        default_factory=lambda: {},
+        metadata=dict(
+            help="Additional Kubernetes labels for the Stowaway service (default: [])"
+        ),
+    )
+    service_annotations: Dict[str, str] = field(
+        default_factory=lambda: {},
+        metadata=dict(
+            help="Kubernetes annotations for the Stowaway service (default: [])"
+        ),
+    )
