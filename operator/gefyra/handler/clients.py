@@ -14,8 +14,6 @@ async def client_created(body, logger, **kwargs):
     client = GefyraClient(obj, configuration, logger)
     if client.requested.is_active or client.creating.is_active:
         client.create()
-    if client.waiting.is_active:
-        pass
 
 
 # 'providerParameter' activates the client, once set to a provider specific value the

@@ -2,7 +2,7 @@ import kubernetes as k8s
 
 from gefyra.configuration import configuration
 
-RSYNC_SERVICE_PORT = 10873
+GEFYRA_APP_LABEL = "gefyra.dev/app"
 
 
 def create_stowaway_nodeport_service(
@@ -28,7 +28,7 @@ def create_stowaway_nodeport_service(
         metadata=k8s.client.V1ObjectMeta(
             name="gefyra-stowaway-wireguard",
             namespace=stowaway_deployment.metadata.namespace,
-            labels={"gefyra.dev/app": "stowaway"},
+            labels={GEFYRA_APP_LABEL: "stowaway"},
         ),
         spec=spec,
     )
@@ -59,41 +59,11 @@ def create_stowaway_proxy_service(
             name=f"gefyra-stowaway-proxy-{port}",
             namespace=stowaway_deployment.metadata.namespace,
             labels={
-                "gefyra.dev/app": "stowaway",
+                GEFYRA_APP_LABEL: "stowaway",
                 "gefyra.dev/role": "proxy",
                 "gefyra.dev/proxy-port": str(port),
                 "gefyra.dev/client-id": client_id,
             },
-        ),
-        spec=spec,
-    )
-
-    return service
-
-
-def create_stowaway_rsync_service(
-    stowaway_deployment: k8s.client.V1Deployment,
-) -> k8s.client.V1Service:
-    spec = k8s.client.V1ServiceSpec(
-        type="ClusterIP",
-        selector=stowaway_deployment.spec.template.metadata.labels,
-        cluster_ip="None",  # this is a headless service
-        ports=[
-            k8s.client.V1ServicePort(
-                name=str(RSYNC_SERVICE_PORT),
-                target_port=RSYNC_SERVICE_PORT,
-                port=RSYNC_SERVICE_PORT,
-            )
-        ],
-    )
-
-    service = k8s.client.V1Service(
-        api_version="v1",
-        kind="Service",
-        metadata=k8s.client.V1ObjectMeta(
-            name="gefyra-stowaway-rsync",
-            namespace=stowaway_deployment.metadata.namespace,
-            labels={"gefyra.dev/app": "stowaway"},
         ),
         spec=spec,
     )

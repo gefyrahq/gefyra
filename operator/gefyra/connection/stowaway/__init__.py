@@ -25,14 +25,12 @@ from .components import (
     check_serviceaccount,
     check_stowaway_statefulset,
     check_stowaway_nodeport_service,
-    check_stowaway_rsync_service,
     handle_config_configmap,
     handle_serviceaccount,
     handle_proxyroute_configmap,
     handle_stowaway_proxy_service,
     handle_stowaway_statefulset,
     handle_stowaway_nodeport_service,
-    handle_stowaway_rsync_service,
     create_stowaway_statefulset,
     create_stowaway_configmap,
     remove_stowaway_configmaps,
@@ -56,9 +54,7 @@ PROXY_RELOAD_COMMAND = [
     "/stowaway/proxyroutes/",
 ]
 
-WIREGUARD_CIDR_PATTERN = re.compile(
-    "^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\/[0-9]{1,3}$"
-)
+WIREGUARD_CIDR_PATTERN = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,3}$")
 
 
 class Stowaway(AbstractGefyraConnectionProvider):
@@ -81,25 +77,18 @@ class Stowaway(AbstractGefyraConnectionProvider):
         )
 
         handle_stowaway_nodeport_service(self.logger, self.configuration, sts_stowaway)
-        handle_stowaway_rsync_service(self.logger, self.configuration, sts_stowaway)
 
     def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
         return all(
             [
-                check_serviceaccount(self.logger, self.configuration),
-                check_proxyroute_configmap(self.logger, self.configuration),
-                check_config_configmap(self.logger, self.configuration),
+                check_serviceaccount(self.logger),
+                check_proxyroute_configmap(self.logger),
+                check_config_configmap(self.logger),
                 check_stowaway_statefulset(
                     self.logger, self.configuration, STOWAWAY_LABELS
                 ),
                 check_stowaway_nodeport_service(
                     self.logger,
-                    self.configuration,
-                    create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
-                ),
-                check_stowaway_rsync_service(
-                    self.logger,
-                    self.configuration,
                     create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
                 ),
             ]
@@ -275,8 +264,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             for k, v in configmap.data.items():
                 if f"{destination_ip}:{destination_port}" in v:
                     return True
-            else:
-                return False
+            return False
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
                 f"Error looking up destination {destination_ip}:{destination_port} for peer {peer_id}: {e}"
@@ -337,15 +325,13 @@ class Stowaway(AbstractGefyraConnectionProvider):
             return None
 
     def _notify_stowaway_pod(self, pod_name: str):
-        self.logger.info(f"Notify stowaway")
+        self.logger.info("Notify stowaway")
         try:
             core_v1_api.patch_namespaced_pod(
                 name=pod_name,
                 body={
                     "metadata": {
-                        "annotations": {
-                            "operator": f"update-notification-" f"{_get_now()}"
-                        }
+                        "annotations": {"operator": f"update-notification-{_get_now()}"}
                     }
                 },
                 namespace=self.configuration.NAMESPACE,
@@ -409,8 +395,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         for port in range(10000, 60000):
             if port not in taken_ports:
                 return port
-        else:
-            raise RuntimeError("No free port found for proxy route")
+        raise RuntimeError("No free port found for proxy route")
 
     def _edit_proxyroutes_configmap(
         self,

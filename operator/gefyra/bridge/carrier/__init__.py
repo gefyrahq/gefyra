@@ -10,9 +10,10 @@ app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_object_api = k8s.client.CustomObjectsApi()
 
-CARRIER_CONFIGURE_COMMAND_BASE = ["/bin/busybox", "sh", "setroute.sh"]
-CARRIER_CONFIGURE_PROBE_COMMAND_BASE = ["/bin/busybox", "sh", "setprobe.sh"]
-CARRIER_RSYNC_COMMAND_BASE = ["/bin/busybox", "sh", "syncdirs.sh"]
+BUSYBOX_COMMAND = "/bin/busybox"
+CARRIER_CONFIGURE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setroute.sh"]
+CARRIER_CONFIGURE_PROBE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setprobe.sh"]
+CARRIER_RSYNC_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "syncdirs.sh"]
 CARRIER_ORIGINAL_CONFIGMAP = "gefyra-carrier-restore-configmap"
 
 
@@ -38,14 +39,13 @@ class Carrier(AbstractGefyraBridgeProvider):
     def installed(self) -> bool:
         pod = core_v1_api.read_namespaced_pod(name=self.pod, namespace=self.namespace)
         for container in pod.spec.containers:
-            if container.name == self.container:
-                if (
-                    container.image
-                    == f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
-                ):
-                    return True
-        else:
-            return False
+            if (
+                container.name == self.container
+                and container.image
+                == f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
+            ):
+                return True
+        return False
 
     def ready(self) -> bool:
         if self.installed():
@@ -77,6 +77,7 @@ class Carrier(AbstractGefyraBridgeProvider):
     def remove_proxy_route(
         self, container_port: int, destination_host: str, destination_port: int
     ):
+        """This feature is currently not support by Carrier and does nothing"""
         pass
 
     def proxy_route_exists(

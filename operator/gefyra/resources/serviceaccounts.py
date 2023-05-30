@@ -66,9 +66,7 @@ def handle_create_gefyraclient_serviceaccount(
         )
         logger.info(f"Created serviceaccount and permissions for GefyraClient: {name}")
     except k8s.client.exceptions.ApiException as e:
-        if e.status == 409:
-            pass
-        else:
+        if e.status != 409:
             raise e
 
 

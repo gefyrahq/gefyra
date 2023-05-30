@@ -187,6 +187,3 @@ class GefyraBridge(StateMachine, StateControllerMixin):
     def on_restore(self):
         self.bridge_provider.uninstall()
         self.send("terminate")
-
-    def on_terminate(self):
-        pass

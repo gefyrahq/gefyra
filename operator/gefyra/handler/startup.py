@@ -100,9 +100,7 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
                 namespace=configuration.NAMESPACE,
             )
         except k8s.client.exceptions.ApiException as e:
-            if e.status == 409:
-                pass
-            else:
+            if e.status != 409:
                 logger.error("Could not create startup event: " + str(e))
 
     _write_startup_task()
