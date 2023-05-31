@@ -7,6 +7,7 @@ STOWAWAY_LABELS = {
     "gefyra.dev/provider": "stowaway",
 }
 
+
 def data(params: GefyraInstallOptions) -> list[dict]:
     stowaway_labels = STOWAWAY_LABELS.copy()
     stowaway_labels.update(params.service_labels)
@@ -28,9 +29,16 @@ def data(params: GefyraInstallOptions) -> list[dict]:
             },
             "spec": {
                 "type": type,
-                "ports": [{"name": "gefyra-wireguard", "port": 51820, "targetPort": 51820, "nodePort": params.service_port, "protocol": "UDP"}],
+                "ports": [
+                    {
+                        "name": "gefyra-wireguard",
+                        "port": 51820,
+                        "targetPort": 51820,
+                        "nodePort": params.service_port,
+                        "protocol": "UDP",
+                    }
+                ],
                 "selector": STOWAWAY_LABELS,
             },
         }
     ]
-        

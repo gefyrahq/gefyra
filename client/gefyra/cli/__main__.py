@@ -22,6 +22,14 @@ def cli(ctx, kubeconfig, context, debug):
     ctx.obj["config"] = ClientConfiguration()
 
 
+@cli.group(
+    "clients", cls=AliasedGroup, help="Manage clients for this Gefyra installation"
+)
+@click.pass_context
+def clients(ctx):
+    pass
+
+
 @cli.command()
 @click.pass_context
 def version(ctx):
@@ -38,3 +46,4 @@ if __name__ == "__main__":
     main()
 
 from .install import *  # noqa
+from .clients import *  # noqa

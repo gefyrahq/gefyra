@@ -92,6 +92,7 @@ class GefyraClient:
 
     def _init_data(self, _object: dict[str, Any]):
         self.client_id = _object["metadata"]["name"]
+        self.uid = _object["metadata"]["uid"]
         self.provider = _object.get("provider")
         self._state = _object.get("state")
         self._state_transitions = _object.get("stateTransitions", {})
@@ -170,7 +171,8 @@ class GefyraClient:
             )
         else:
             raise RuntimeError("Cannot get client config, no service account found.")
-        
+
+
 @dataclass
 class GefyraInstallOptions:
     namespace: str = field(

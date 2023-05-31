@@ -1,18 +1,31 @@
 from dataclasses import fields
+import json
 from typing import Any, Dict, List, Union
+from gefyra.cli import console
 from gefyra.types import GefyraInstallOptions
 import click
 from click import ClickException
 
 
 def standard_error_handler(func):
+    import kubernetes
+
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
             return result
+        except kubernetes.client.rest.ApiException as e:
+            if (
+                e.status == 404
+                and json.loads(e.body)["details"].get("kind") == "namespace"
+            ):
+                console.error("Gefyra is not installed in this cluster")
+            else:
+                raise ClickException(message=str(e))
         except Exception as e:  # noqa
             ce = ClickException(message=str(e))
             raise ce
+
     return wrapper
 
 
@@ -51,7 +64,6 @@ class AliasedCommand(click.Command):
 
 
 class AliasedGroup(click.Group):
-
     command_class = AliasedCommand
 
     def get_command(self, ctx, cmd_name):
@@ -145,7 +157,6 @@ class OptionEatAll(click.Option):
                 our_parser.process = parser_process
                 break
         return retval
-
 
 
 def multi_options(options):

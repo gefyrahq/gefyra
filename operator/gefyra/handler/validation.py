@@ -19,8 +19,8 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
         configuration,
         logger,
     )
-    changeset = {field[0]: new for op, field, old, new in diff}
     if operation == "UPDATE":
+        changeset = {field[0]: new for op, field, old, new in diff}
         if (
             "providerParameter" in changeset
             and bool(changeset["providerParameter"]) is True

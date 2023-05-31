@@ -8,6 +8,7 @@ import pytest
 from pytest_kubernetes.providers import AClusterManager, select_provider_manager
 from pytest_kubernetes.options import ClusterOptions
 
+
 @pytest.fixture(scope="module")
 def k3d():
     k8s: AClusterManager = select_provider_manager("k3d")("gefyra")
@@ -32,6 +33,7 @@ def operator_image(request):
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
+
 @pytest.fixture(scope="session")
 def stowaway_image(request):
     name = "stowaway:pytest"
@@ -49,7 +51,7 @@ def operator(k3d: AClusterManager, operator_image, stowaway_image):
     k3d.load_image(operator_image)
     k3d.load_image(stowaway_image)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator.yaml"))
-    
+
     not_found = True
     _i = 0
     while not_found and _i < 120:

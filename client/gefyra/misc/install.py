@@ -4,7 +4,7 @@ from gefyra.types import GefyraInstallOptions
 
 
 def synthesize_config_as_dict(
-    options: GefyraInstallOptions, components: list[str] = []
+    options: GefyraInstallOptions, components: list[str] = []  # noqa: B006
 ) -> list[dict]:
     req_comps = []
     if components:
@@ -16,7 +16,8 @@ def synthesize_config_as_dict(
                 req_comps = [comp]
         if not req_comps or len(req_comps) != len(components):
             raise RuntimeError(
-                f"Component(s) {','.join(components)} not found. Choices are: {','.join(_comp_names)}"
+                f"Component(s) {','.join(components)} not found. "
+                f"Choices are: {','.join(_comp_names)}"
             )
     else:
         req_comps = COMPONENTS
@@ -29,7 +30,7 @@ def synthesize_config_as_dict(
 
 
 def synthesize_config_as_json(
-    options: GefyraInstallOptions, components: list[str] = []
+    options: GefyraInstallOptions, components: list[str] = []  # noqa: B006
 ) -> str:
     import json
 
@@ -38,7 +39,7 @@ def synthesize_config_as_json(
 
 
 def synthesize_config_as_yaml(
-    options: GefyraInstallOptions, components: list[str] = []
+    options: GefyraInstallOptions, components: list[str] = []  # noqa: B006
 ) -> str:
     import yaml
 

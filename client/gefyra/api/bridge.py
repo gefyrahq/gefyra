@@ -197,7 +197,8 @@ def bridge(
             ):
                 bridges[str(kube_ireq["metadata"]["uid"])] = True
                 logger.info(
-                    f"Bridge {kube_ireq['metadata']['name']} ({sum(bridges.values())}/{len(ireqs)}) established."
+                    f"Bridge {kube_ireq['metadata']['name']} "
+                    f"({sum(bridges.values())}/{len(ireqs)}) established."
                 )
         if all(bridges.values()):
             break

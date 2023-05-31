@@ -51,11 +51,11 @@ def get_client(client_id: str, config=default_configuration) -> GefyraClient:
 
 
 @stopwatch
-def delete_client(client_id: str, config=default_configuration) -> None:
+def delete_client(client_id: str, config=default_configuration) -> bool:
     """
     Delete a GefyraClient configuration
     """
-    handle_delete_gefyraclient(config, client_id)
+    return handle_delete_gefyraclient(config, client_id)
 
 
 @stopwatch
@@ -96,16 +96,6 @@ def list_client(config=default_configuration) -> List[GefyraClient]:
         version="v1",
     )
     return [GefyraClient(client, config) for client in clients["items"]]
-    # Todo move to CLI
-    # clients = [
-    #     [
-    #         client["metadata"]["name"],
-    #         client["state"],
-    #         client["stateTransitions"]["CREATING"],
-    #     ]
-    #     for client in clients["items"]
-    # ]
-    # print(tabulate(clients, headers=["ID", "STATE", "CREATED"], tablefmt="plain"))
 
 
 def client(args: Namespace, config=default_configuration):

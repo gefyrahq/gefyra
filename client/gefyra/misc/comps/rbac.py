@@ -70,18 +70,18 @@ def data(params: GefyraInstallOptions) -> list[dict]:
             "apiVersion": "rbac.authorization.k8s.io/v1",
             "kind": "ClusterRoleBinding",
             "metadata": {
-                "name": "getdeck-beiboot-operator",
+                "name": "gefyra-operator",
                 "namespace": params.namespace,
             },
             "roleRef": {
                 "apiGroup": "rbac.authorization.k8s.io",
                 "kind": "ClusterRole",
-                "name": "getdeck:beiboot:operator",
+                "name": "gefyra:operator",
             },
             "subjects": [
                 {
                     "kind": "ServiceAccount",
-                    "name": "beiboot-operator",
+                    "name": "gefyra-operator",
                     "namespace": params.namespace,
                 }
             ],

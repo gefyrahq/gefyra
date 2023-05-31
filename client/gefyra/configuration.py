@@ -102,7 +102,6 @@ class ClientConfiguration(object):
         self.cargo_endpoint_port = cargo_endpoint_port
         if cargo_endpoint_host:
             self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
-            
 
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
@@ -149,7 +148,6 @@ class ClientConfiguration(object):
                 except Exception as e:
                     logger.error("Could not create a valid configuration: " + str(e))
 
-    
     @CARGO_ENDPOINT.setter
     def CARGO_ENDPOINT(self, value):
         self._cargo_endpoint = value
@@ -245,7 +243,7 @@ class ClientConfiguration(object):
 
     def __str__(self):
         return str(self.to_dict())
-    
+
     def get_kubernetes_api_url(self) -> str:
         return self.K8S_CORE_API.api_client.configuration.host
 

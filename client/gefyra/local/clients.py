@@ -39,14 +39,15 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
     except ApiException as e:
         if e.status == 404:
             raise RuntimeError(f"Client {client_id} does not exists.")
-        logger.error(
-            f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
-        )
-        raise e
+        else:
+            logger.error(
+                f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
+            )
+            raise e
     return gclient
 
 
-def handle_delete_gefyraclient(config: ClientConfiguration, client_id: str) -> None:
+def handle_delete_gefyraclient(config: ClientConfiguration, client_id: str) -> bool:
     from kubernetes.client import ApiException
 
     try:
@@ -57,13 +58,15 @@ def handle_delete_gefyraclient(config: ClientConfiguration, client_id: str) -> N
             plural="gefyraclients",
             version="v1",
         )
+        return True
     except ApiException as e:
         if e.status == 404:
-            pass
-        logger.error(
-            f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
-        )
-        raise e
+            return False
+        else:
+            logger.error(
+                f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
+            )
+            raise e
 
 
 def get_gefyraclient_body(

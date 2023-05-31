@@ -41,6 +41,7 @@ def remove_remainder_bridges(config: ClientConfiguration):
             continue
     return None
 
+
 def remove_gefyra_namespace(config: ClientConfiguration):
     try:
         config.K8S_CORE_API.delete_namespace(name=config.NAMESPACE)

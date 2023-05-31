@@ -8,7 +8,7 @@ from gefyra.configuration import __VERSION__
 
 logger = logging.getLogger("gefyra")
 
-#########################################################################################
+########################################################################################
 # Telemetry information
 # We are collecting anonymous data about the usage of Gefyra as CLI
 # All the data we collect is published here: ``
@@ -16,7 +16,7 @@ logger = logging.getLogger("gefyra")
 # issues and work on bugs, features and review of pull requests.
 # If you do not which to send telemetry data this is totally fine.
 # Just opt out via `gefyra telemetry --off`.
-#########################################################################################
+########################################################################################
 
 SENTRY_DSN = (
     "https://97c8c0409cb74a079a93f05021b329f0@o146863.ingest.sentry.io/4505119985172480"
