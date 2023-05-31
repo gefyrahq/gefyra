@@ -58,7 +58,7 @@ class ClientConfiguration(object):
         cargo_image_url: str = None,
         kube_config_file: str = None,
         kube_context: str = None,
-        wireguard_mtu: str = None,
+        wireguard_mtu: str = "1340",
     ):
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
@@ -98,10 +98,31 @@ class ClientConfiguration(object):
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:
             self.DOCKER = docker_client
+
+        self.cargo_endpoint_port = cargo_endpoint_port
         if cargo_endpoint_host:
-            self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{cargo_endpoint_port}"
+            self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
+            
+
+        self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
+        self.STOWAWAY_IP = "192.168.99.1"
+        self.NETWORK_NAME = network_name or "gefyra"
+        self.BRIDGE_TIMEOUT = 60  # in seconds
+        self.CARGO_PROBE_TIMEOUT = 10  # in seconds
+        self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
+        if kube_config_file:
+            self.KUBE_CONFIG_FILE = kube_config_file
+
+        if kube_context:
+            self.KUBE_CONTEXT = kube_context
+
+        self.WIREGUARD_MTU = wireguard_mtu
+
+    @property
+    def CARGO_ENDPOINT(self):
+        if self._cargo_endpoint:
+            return self._cargo_endpoint
         else:
-            self.DOCKER.info
             if (
                 platform.system().lower() == "linux"
                 and "microsoft" not in platform.release().lower()
@@ -117,37 +138,21 @@ class ClientConfiguration(object):
                         struct.pack("256s", "docker0".encode("utf-8")[:15]),
                     )[20:24]
                 )
-                self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
+                return f"{_ip}:{self.cargo_endpoint_port}"
             else:
                 try:
                     _ip_output = self.DOCKER.containers.run(
                         "alpine", "getent hosts host.docker.internal", remove=True
                     )
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
-                    self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
+                    return f"{_ip}:{self.cargo_endpoint_port}"
                 except Exception as e:
                     logger.error("Could not create a valid configuration: " + str(e))
 
-        self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
-        self.STOWAWAY_IP = "192.168.99.1"
-        self.NETWORK_NAME = network_name or "gefyra"
-        self.BRIDGE_TIMEOUT = 60  # in seconds
-        self.CARGO_PROBE_TIMEOUT = 10  # in seconds
-        self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
-        if kube_config_file:
-            self.KUBE_CONFIG_FILE = kube_config_file
-
-        if kube_context:
-            self.KUBE_CONTEXT = kube_context
-
-        self.WIREGUARD_MTU = wireguard_mtu or "1340"
-
-    def _get_docker_info_by_name(self, name):
-        """Returns lower case docker information value for a given name."""
-        try:
-            return self.DOCKER.info()[name].lower()
-        except Exception:
-            return ""
+    
+    @CARGO_ENDPOINT.setter
+    def CARGO_ENDPOINT(self, value):
+        self._cargo_endpoint = value
 
     @property
     def KUBE_CONTEXT(self):

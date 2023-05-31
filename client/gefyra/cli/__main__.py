@@ -18,14 +18,8 @@ from gefyra.configuration import ClientConfiguration
 @click.option("-d", "--debug", default=False, is_flag=True)
 @click.pass_context
 def cli(ctx, kubeconfig, context, debug):
-    import kubernetes as k8s
-
     ctx.ensure_object(dict)
-
-    try:
-        k8s.config.load_kube_config(config_file=kubeconfig, context=context)
-    except k8s.config.ConfigException as e:
-        raise RuntimeError(f"Could not load KUBECONFIG: {e}")
+    ctx.obj["config"] = ClientConfiguration()
 
 
 @cli.command()
