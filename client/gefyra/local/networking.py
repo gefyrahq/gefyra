@@ -10,16 +10,16 @@ from gefyra.local import CREATED_BY_LABEL
 logger = logging.getLogger(__name__)
 
 
-def create_gefyra_network(config: ClientConfiguration) -> Network:
-    gefyra_network = handle_create_network(config)
+def create_gefyra_network(config: ClientConfiguration, suffix: str = "") -> Network:
+    gefyra_network = handle_create_network(config, suffix)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
 
-def handle_create_network(config: ClientConfiguration) -> Network:
+def handle_create_network(config: ClientConfiguration, suffix: str = "") -> Network:
     DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
     try:
-        network = config.DOCKER.networks.get(config.NETWORK_NAME)
+        network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}{suffix}")
         logger.info("Gefyra network already exists")
         if (
             CREATED_BY_LABEL[0] not in network.attrs["Labels"]
@@ -56,7 +56,7 @@ def handle_create_network(config: ClientConfiguration) -> Network:
     # ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
     # ipam_config = IPAMConfig(pool_configs=[ipam_pool])
     network = config.DOCKER.networks.create(
-        config.NETWORK_NAME,
+        f"{config.NETWORK_NAME}{suffix}",
         driver="bridge",
         #    ipam=ipam_config,
         labels={
@@ -68,12 +68,12 @@ def handle_create_network(config: ClientConfiguration) -> Network:
     return network
 
 
-def handle_remove_network(config: ClientConfiguration) -> None:
+def handle_remove_network(config: ClientConfiguration, suffix: str = "") -> None:
     """Removes all docker networks with the given name."""
     # we would need the id to identify the network unambiguously, so we just remove all networks that can be found with
     # the given name, under the assumption that no other docker network inadvertently uses the same name
     try:
-        gefyra_network = config.DOCKER.networks.get(config.NETWORK_NAME)
+        gefyra_network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}{suffix}")
         if (
             CREATED_BY_LABEL[0] in gefyra_network.attrs["Labels"]
             and gefyra_network.attrs["Labels"][CREATED_BY_LABEL[0]] == "true"

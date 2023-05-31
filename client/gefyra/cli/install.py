@@ -12,11 +12,7 @@ from gefyra.misc.uninstall import (
 from gefyra.types import GefyraInstallOptions
 
 from gefyra.cli.console import error, info
-from gefyra.cli.utils import (
-    installoptions_to_cli_options,
-    multi_options,
-    standard_error_handler,
-)
+from gefyra.cli.utils import installoptions_to_cli_options, multi_options
 from gefyra.cli.__main__ import cli as _cli
 
 PRESETS = {

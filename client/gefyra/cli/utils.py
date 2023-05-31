@@ -17,7 +17,7 @@ def standard_error_handler(func):
         except kubernetes.client.rest.ApiException as e:
             if (
                 e.status == 404
-                and json.loads(e.body)["details"].get("kind") == "namespace"
+                and json.loads(e.body)["details"].get("kind") == "namespaces"
             ):
                 console.error("Gefyra is not installed in this cluster")
             else:

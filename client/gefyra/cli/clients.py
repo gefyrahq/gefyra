@@ -54,8 +54,43 @@ def list_client(ctx):
 @clients.command("inspect", alias=["show", "get"], help="Discribe a Gefyra client")
 @click.argument("client_id")
 @click.pass_context
+@standard_error_handler
 def inspect_client(ctx, client_id):
     client = api.get_client(client_id, ctx.obj["config"])
     console.heading(client.client_id)
     console.info(f"uid: {client.uid}")
     console.info(f"States: {client.state_transitions}")
+
+
+@clients.command(
+    "config", alias=["write"], help="Get a Gefyra connection config for a client"
+)
+@click.argument("client_id")
+@click.option("-h", "--host", help="The connection port (default: 31820)", type=str)
+@click.option("-p", "--port", help="The connection port (default: 31820)", type=int)
+@click.option(
+    "-a",
+    "--kube-api",
+    "--kubernetes-api",
+    help="The Kubernetes API adress for the host cluster (default: API adresse of your kubeconfig)",
+    type=str,
+)
+@click.option(
+    "-o",
+    "--output",
+    help="The output file to write the config to",
+    type=click.File("wb"),
+)
+@click.pass_context
+@standard_error_handler
+def get_config(ctx, client_id, host, port, kube_api, output):
+    json_str = api.write_client_file(
+        client_id,
+        host=host,
+        port=port,
+        kube_api=kube_api,
+    )
+    if output:
+        output.write(json_str.encode("utf-8"))
+    else:
+        click.echo(json_str)

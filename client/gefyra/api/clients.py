@@ -60,28 +60,22 @@ def delete_client(client_id: str, config=default_configuration) -> bool:
 
 @stopwatch
 def write_client_file(
-    client_id: str, path: Path, host: str = None, port: str = None, kube_api: str = None
-):
+    client_id: str, host: str = None, port: str = None, kube_api: str = None
+) -> str:
     """
     Write a client file
     """
     client = get_client(client_id)
     gefyra_server = None
     if not port:
-        port = "51820"
+        port = "31820"
     if host:
         gefyra_server = f"{host}:{port}"
 
     json_str = client.get_client_config(
         gefyra_server=gefyra_server, k8s_server=kube_api
     ).json
-
-    if not path:
-        print(json_str)
-    else:
-        with open(path, "w") as f:
-            f.write(json_str)
-    return True
+    return json_str
 
 
 @stopwatch
@@ -97,7 +91,7 @@ def list_client(config=default_configuration) -> List[GefyraClient]:
     )
     return [GefyraClient(client, config) for client in clients["items"]]
 
-
+# TODO becomes obsolete
 def client(args: Namespace, config=default_configuration):
     """
     Run a client command

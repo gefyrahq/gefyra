@@ -245,3 +245,27 @@ class IpPortMappingParser(PortMappingParser):
             return res
         else:
             raise ValueError("Invalid value for port mapping.")
+
+
+def compose_kubeconfig_for_serviceaccount(
+    server: str, ca: str, namespace: str, token: str
+):
+    return f"""apiVersion: v1
+kind: Config
+clusters:
+  - name: default-cluster
+    cluster:
+      certificate-authority-data: {ca}
+      server: {server}
+contexts:
+  - name: default-context
+    context:
+      cluster: default-cluster
+      namespace: {namespace}
+      user: default-user
+current-context: default-context
+users:
+  - name: default-user
+    user:
+      token: {token}
+    """

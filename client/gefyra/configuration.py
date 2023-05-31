@@ -1,9 +1,13 @@
 from os import path
+import os
 import platform
 import struct
 import socket
 import sys
 import logging
+from typing import Optional, Union
+
+from pathlib import Path
 
 console = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("[%(levelname)s] %(message)s")
@@ -13,6 +17,7 @@ logger = logging.getLogger("gefyra")
 logger.addHandler(console)
 
 __VERSION__ = "2.0.0-alpha"
+USER_HOME = os.path.expanduser("~")
 
 
 def fix_pywin32_in_frozen_build() -> None:  # pragma: no cover
@@ -48,6 +53,7 @@ class ClientConfiguration(object):
         self,
         docker_client=None,
         network_name: str = None,
+        connection_name: str = None,
         cargo_endpoint_host: str = None,
         cargo_endpoint_port: str = "31820",
         cargo_container_name: str = None,
@@ -59,6 +65,7 @@ class ClientConfiguration(object):
         kube_config_file: str = None,
         kube_context: str = None,
         wireguard_mtu: str = "1340",
+        gefyra_config_root: Optional[Union[str, Path]] = None,
     ):
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
@@ -106,6 +113,7 @@ class ClientConfiguration(object):
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
+        self.CONNECTION_NAME = connection_name or ""
         self.BRIDGE_TIMEOUT = 60  # in seconds
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
@@ -116,6 +124,10 @@ class ClientConfiguration(object):
             self.KUBE_CONTEXT = kube_context
 
         self.WIREGUARD_MTU = wireguard_mtu
+        if not gefyra_config_root:
+            self.GEFYRA_LOCATION = Path.home().joinpath(".gefyra")
+        else:
+            self.GEFYRA_LOCATION = Path(gefyra_config_root)
 
     @property
     def CARGO_ENDPOINT(self):
@@ -246,6 +258,55 @@ class ClientConfiguration(object):
 
     def get_kubernetes_api_url(self) -> str:
         return self.K8S_CORE_API.api_client.configuration.host
+
+
+def create_configuration(
+    docker_client=None,
+    network_name: str = None,
+    cargo_endpoint_host: str = None,
+    cargo_endpoint_port: str = "31820",
+    cargo_container_name: str = None,
+    registry_url: str = None,
+    operator_image_url: str = None,
+    stowaway_image_url: str = None,
+    carrier_image_url: str = None,
+    cargo_image_url: str = None,
+    kube_config_file: str = None,
+    kube_context: str = None,
+    wireguard_mtu: str = "1340",
+    gefyra_config_root: Optional[Union[str, Path]] = None,
+) -> ClientConfiguration:
+    config = ClientConfiguration(
+        docker_client,
+        network_name,
+        cargo_endpoint_host,
+        cargo_endpoint_port,
+        cargo_container_name,
+        registry_url,
+        operator_image_url,
+        stowaway_image_url,
+        carrier_image_url,
+        cargo_image_url,
+        kube_config_file,
+        kube_context,
+        wireguard_mtu,
+        gefyra_config_root,
+    )
+    return config
+
+
+def get_gefyra_config_location(config: ClientConfiguration) -> str:
+    """
+    It creates a directory for the client config if it doesn't already exist, and returns the path to
+    that directory
+
+    :param config: ClientConfiguration
+    :type config: ClientConfiguration
+    :return: The path to the directory where the files will be stored.
+    """
+    config_dir = config.GEFYRA_LOCATION
+    config_dir.mkdir(parents=True, exist_ok=True)
+    return str(config_dir)
 
 
 default_configuration = ClientConfiguration()

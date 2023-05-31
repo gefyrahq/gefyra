@@ -31,6 +31,11 @@ class GefyraClientConfig:
     def json(self):
         return json.dumps(self.__dict__)
 
+    @classmethod
+    def from_json_str(cls, json_data: str):
+        data = json.loads(json_data)
+        return cls(**data)
+
 
 @dataclass
 class StowawayConfig:

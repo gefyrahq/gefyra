@@ -45,5 +45,6 @@ def main():
 if __name__ == "__main__":
     main()
 
+from .connect import *  # noqa
 from .install import *  # noqa
 from .clients import *  # noqa
