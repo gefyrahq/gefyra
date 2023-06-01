@@ -146,6 +146,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
                 f"Removing '{self.object_name}' from connection provider"
             )
             self.connection_provider.remove_peer(self.object_name)
+        # TODO delete SA, Rolebinding
 
     def can_add_client(self):
         if self.connection_provider.peer_exists(self.object_name):

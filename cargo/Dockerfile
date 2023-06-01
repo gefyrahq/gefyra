@@ -23,7 +23,7 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
     make && \
     make install
 
-FROM ghcr.io/linuxserver/baseimage-alpine:3.17
+FROM ghcr.io/linuxserver/baseimage-alpine:3.17 as cargo
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/
 
@@ -64,5 +64,5 @@ RUN \
 COPY /root /
 
 
-# This might be required for Windows
-# RUN patch /usr/bin/wg-quick /wgquick.patch
+FROM cargo as cargo-win
+RUN patch /usr/bin/wg-quick /wgquick.patch

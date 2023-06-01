@@ -18,6 +18,10 @@ from gefyra.configuration import ClientConfiguration
 @click.option("-d", "--debug", default=False, is_flag=True)
 @click.pass_context
 def cli(ctx, kubeconfig, context, debug):
+    if debug:
+        import logging
+
+        logging.getLogger("gefyra").setLevel(logging.DEBUG)
     ctx.ensure_object(dict)
     ctx.obj["config"] = ClientConfiguration()
 
@@ -27,6 +31,16 @@ def cli(ctx, kubeconfig, context, debug):
 )
 @click.pass_context
 def clients(ctx):
+    pass
+
+
+@cli.group(
+    "connections",
+    cls=AliasedGroup,
+    help="Manage connections to clusters for this Gefyra installation",
+)
+@click.pass_context
+def connections(ctx):
     pass
 
 

@@ -32,7 +32,7 @@ def delete_client(ctx, client_id):
     for _del in list(client_id):
         deleted = api.delete_client(_del, ctx.obj["config"])
         if deleted:
-            console.success(f"Client {_del} deleted successfully")
+            console.success(f"Client {_del} marked for deletion")
 
 
 @clients.command("list", alias=["ls"], help="List all Gefyra clients")

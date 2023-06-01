@@ -18,8 +18,9 @@ def create_gefyra_network(config: ClientConfiguration, suffix: str = "") -> Netw
 
 def handle_create_network(config: ClientConfiguration, suffix: str = "") -> Network:
     DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
+    network_name = f"{config.NETWORK_NAME}-{suffix}"
     try:
-        network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}{suffix}")
+        network = config.DOCKER.networks.get(network_name)
         logger.info("Gefyra network already exists")
         if (
             CREATED_BY_LABEL[0] not in network.attrs["Labels"]
@@ -40,31 +41,31 @@ def handle_create_network(config: ClientConfiguration, suffix: str = "") -> Netw
                 else "default"
             )
             logger.warning(
-                f"The MTU value of the 'gefyra' network (={_mtu}) is different from the --wireguard-mtu parameter "
+                f"The MTU value of the '{network_name}' network (={_mtu}) is different from the --wireguard-mtu parameter "
                 f"(={config.WIREGUARD_MTU}) or default. You may experience bad network connections. Consider removing "
-                f"the network 'gefyra' with 'docker network rm gefyra' before running 'gefyra up'."
+                f"the network '{network_name}' with 'docker network rm gefyra' before running 'gefyra up'."
             )
         return network
     except NotFound:
         pass
 
     # this is a workaround to select a free subnet (instead of finding it with python code)
-    # temp_network = config.DOCKER.networks.create(config.NETWORK_NAME, driver="bridge")
-    # subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
-    # temp_network.remove()  # remove the temp network again
+    temp_network = config.DOCKER.networks.create(network_name, driver="bridge")
+    subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
+    temp_network.remove()  # remove the temp network again
 
-    # ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
-    # ipam_config = IPAMConfig(pool_configs=[ipam_pool])
+    ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
+    ipam_config = IPAMConfig(pool_configs=[ipam_pool])
     network = config.DOCKER.networks.create(
-        f"{config.NETWORK_NAME}{suffix}",
+        network_name,
         driver="bridge",
-        #    ipam=ipam_config,
+        ipam=ipam_config,
         labels={
             CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
         },
         options={DOCKER_MTU_OPTION: config.WIREGUARD_MTU},
     )
-    logger.info(f"Created network '{config.NETWORK_NAME}' ({network.short_id})")
+    logger.info(f"Created network '{network_name}' ({network.short_id})")
     return network
 
 

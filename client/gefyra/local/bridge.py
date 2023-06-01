@@ -5,7 +5,6 @@ from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
 
-from .cargo import get_cargo_ip_from_netaddress, delete_syncdown_job
 from .utils import handle_docker_run_container
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,6 @@ def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bo
             plural="interceptrequests",
             version="v1",
         )
-        delete_syncdown_job(config, ireq["metadata"]["name"])
         return ireq
     except ApiException as e:
         if e.status == 404:

@@ -19,8 +19,11 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
         configuration,
         logger,
     )
+    hints = {}
     if operation == "UPDATE":
         changeset = {field[0]: new for op, field, old, new in diff}
+        if "providerParameter" in changeset:
+            hints["added"] = "providerParameter"
         if (
             "providerParameter" in changeset
             and bool(changeset["providerParameter"]) is True
@@ -40,5 +43,5 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
             datetime.fromisoformat(sunset.strip("Z"))
         except ValueError as e:
             raise kopf.AdmissionError(f"Cannot parse 'sunset': {e}")
-    provider.validate(body)
+    provider.validate(body, hints)
     return True

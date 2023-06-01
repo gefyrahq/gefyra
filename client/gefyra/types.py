@@ -105,15 +105,13 @@ class GefyraClient:
         self.service_account = _object.get("serviceAccountData", {})
         if (
             providerparams := _object.get("providerParameter")
-            and self.provider == "stowaway"
-        ):
+        ) and self.provider == "stowaway":
             self.provider_parameter = StowawayParameter(
                 subnet=providerparams.get("subnet")
             )
         if (
             providerconfig := _object.get("providerConfig")
-            and self.provider == "stowaway"
-        ):
+        ) and self.provider == "stowaway":
             self.provider_config = StowawayConfig(
                 iaddress=providerconfig.get("Interface.Address"),
                 idns=providerconfig.get("Interface.DNS"),
@@ -145,7 +143,7 @@ class GefyraClient:
         return data
 
     @property
-    def state(self):
+    def state(self) -> GefyraClientState:
         self.update()
         return GefyraClientState(self._state)
 
@@ -176,6 +174,44 @@ class GefyraClient:
             )
         else:
             raise RuntimeError("Cannot get client config, no service account found.")
+
+    def activate_connection(self, subnet: str):
+        _state = self.state
+        if _state == GefyraClientState.ACTIVE:
+            return
+        elif _state == GefyraClientState.WAITING:
+            logger.debug(f"Activating connection for client {self.client_id}")
+            self._config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                namespace=self._config.NAMESPACE,
+                plural="gefyraclients",
+                name=self.client_id,
+                body={"providerParameter": {"subnet": subnet}},
+            )
+        else:
+            raise RuntimeError(
+                f"Cannot activate connection for client {self.client_id}, state is {self.state}"
+            )
+
+    def deactivate_connection(self):
+        _state = self.state
+        if _state == GefyraClientState.WAITING:
+            return
+        elif _state == GefyraClientState.ACTIVE:
+            logger.debug(f"Deactivating connection for client {self.client_id}")
+            self._config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                namespace=self._config.NAMESPACE,
+                plural="gefyraclients",
+                name=self.client_id,
+                body={"providerParameter": None},
+            )
+        else:
+            raise RuntimeError(
+                f"Cannot deactivate connection for client {self.client_id}, state is {self.state}"
+            )
 
 
 @dataclass

@@ -278,7 +278,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                     raise kopf.AdmissionError(
                         f"The Wireguard subnet '{subnet}' does not validate with regex '{WIREGUARD_CIDR_PATTERN}'."
                     )
-                if self._subnet_taken(subnet):
+                if hints.get("added") == "providerParameter" and self._subnet_taken(subnet):
                     raise kopf.AdmissionError(
                         f"The Wireguard subnet '{subnet}' is already taken."
                     )

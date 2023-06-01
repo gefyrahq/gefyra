@@ -1,30 +1,38 @@
+import base64
 import logging
 import os
 
 import click
-from gefyra.configuration import get_gefyra_config_location
+from gefyra import api
+from gefyra.api.clients import get_client
+from gefyra.configuration import (
+    get_configuration_for_connection_name,
+    get_gefyra_config_location,
+)
+from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.local.utils import compose_kubeconfig_for_serviceaccount
 
 from gefyra.types import GefyraClientConfig
 
 from gefyra.cli import console
 from gefyra.cli.utils import standard_error_handler
-from gefyra.cli.__main__ import cli as _cli
+from gefyra.cli.__main__ import connections
+from tabulate import tabulate
 
 logger = logging.getLogger(__name__)
 
 
-@_cli.command(
+@connections.command(
     "connect",
     help="Connect this local machine to a Gefyra cluster",
 )
 @click.argument("client_config", type=click.File("r"))
 @click.option("-n", "--name", help="Name of the client connection", type=str)
 @click.pass_context
-@standard_error_handler
 def connect_client(ctx, client_config, name):
     import hashlib
 
+    configuration = ctx.obj["config"]
     file_str = client_config.read()
     # TODO migrate to a utils function to make it available for gefyra-ext too?
     # copy & transform client config to kubeconfig
@@ -36,20 +44,41 @@ def connect_client(ctx, client_config, name):
     kubeconfig_str = compose_kubeconfig_for_serviceaccount(
         gclient_conf.kubernetes_server,
         gclient_conf.ca_crt,
-        "default",
-        gclient_conf.token,
+        "gefyra",
+        base64.b64decode(gclient_conf.token).decode("utf-8"),
     )
     with open(loc, "w") as f:
         f.write(kubeconfig_str)
         console.info(f"Client kubeconfig saved to {loc}")
 
-    # TODO this is just for testing
-    ctx.obj["config"].KUBE_CONFIG_FILE = loc
-    clients = ctx.obj["config"].K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
-        namespace=ctx.obj["config"].NAMESPACE,
-        group="gefyra.dev",
-        plural="gefyraclients",
-        version="v1",
-    )
+    configuration.KUBE_CONFIG_FILE = loc
+    configuration.CONNECTION_NAME = config_name
+    configuration.CLIENT_ID = gclient_conf.client_id
+    api.connect(get_client(gclient_conf.client_id, configuration), configuration)
 
-    click.echo(clients["items"])
+
+@connections.command(
+    "disconnect",
+    help="Disconnect this local machine from a Gefyra cluster",
+)
+@click.argument("connection_name", type=str)
+@click.pass_context
+def disconnect_client(ctx, connection_name):
+    config = get_configuration_for_connection_name(connection_name)
+    api.disconnect(get_client(config.CLIENT_ID, config), config)
+
+
+@connections.command(
+    "list",
+    alias=["ls"],
+    help="List all Gefyra connections",
+)
+@click.pass_context
+def list_connections(ctx):
+    conns = api.list_connections(ctx.obj["config"])
+    data = [conn.values() for conn in conns]
+    click.echo(
+        tabulate(
+            data, headers=["NAME", "VERSION", "CREATED", "status"], tablefmt="plain"
+        )
+    )

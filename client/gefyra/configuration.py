@@ -65,6 +65,7 @@ class ClientConfiguration(object):
         kube_config_file: str = None,
         kube_context: str = None,
         wireguard_mtu: str = "1340",
+        client_id: str = None,
         gefyra_config_root: Optional[Union[str, Path]] = None,
     ):
         if sys.platform == "win32":  # pragma: no cover
@@ -113,10 +114,12 @@ class ClientConfiguration(object):
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
-        self.CONNECTION_NAME = connection_name or ""
+        self.CONNECTION_NAME = connection_name or "default"
         self.BRIDGE_TIMEOUT = 60  # in seconds
+        self.CONNECTION_TIMEOUT = 10  # in seconds
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
+        self.CLIENT_ID = client_id
         if kube_config_file:
             self.KUBE_CONFIG_FILE = kube_config_file
 
@@ -131,7 +134,7 @@ class ClientConfiguration(object):
 
     @property
     def CARGO_ENDPOINT(self):
-        if self._cargo_endpoint:
+        if hasattr(self, "_cargo_endpoint") and self._cargo_endpoint:
             return self._cargo_endpoint
         else:
             if (
@@ -260,38 +263,23 @@ class ClientConfiguration(object):
         return self.K8S_CORE_API.api_client.configuration.host
 
 
-def create_configuration(
-    docker_client=None,
-    network_name: str = None,
-    cargo_endpoint_host: str = None,
-    cargo_endpoint_port: str = "31820",
-    cargo_container_name: str = None,
-    registry_url: str = None,
-    operator_image_url: str = None,
-    stowaway_image_url: str = None,
-    carrier_image_url: str = None,
-    cargo_image_url: str = None,
-    kube_config_file: str = None,
-    kube_context: str = None,
-    wireguard_mtu: str = "1340",
-    gefyra_config_root: Optional[Union[str, Path]] = None,
-) -> ClientConfiguration:
-    config = ClientConfiguration(
-        docker_client,
-        network_name,
-        cargo_endpoint_host,
-        cargo_endpoint_port,
-        cargo_container_name,
-        registry_url,
-        operator_image_url,
-        stowaway_image_url,
-        carrier_image_url,
-        cargo_image_url,
-        kube_config_file,
-        kube_context,
-        wireguard_mtu,
-        gefyra_config_root,
+def get_configuration_for_connection_name(name: str) -> ClientConfiguration:
+    from gefyra.local import (
+        CONNECTION_NAME_LABEL,
+        CARGO_ENDPOINT_LABEL,
+        ACTIVE_KUBECONFIG_LABEL,
+        CLIENT_ID_LABEL,
     )
+
+    config = ClientConfiguration(connection_name=name)
+    containers = config.DOCKER.containers.list(
+        filters={"label": f"{CONNECTION_NAME_LABEL}={name}"}
+    )
+    if containers:
+        cargo_container = containers[0]
+        config.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
+        config.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
+        config.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
     return config
 
 

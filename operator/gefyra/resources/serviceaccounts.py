@@ -32,7 +32,7 @@ def handle_create_gefyraclient_serviceaccount(
                     ),
                     rules=[
                         k8s.client.V1PolicyRule(
-                            api_groups=["gefyra.dev/v1"],
+                            api_groups=["gefyra.dev"],
                             resources=["gefyraclients"],
                             verbs=["*"],
                         ),
@@ -52,7 +52,7 @@ def handle_create_gefyraclient_serviceaccount(
             namespace=namespace,
             body=k8s.client.V1RoleBinding(
                 metadata=k8s.client.V1ObjectMeta(
-                    name=f"gefyra-client-{sa.metadata.name}", namespace=namespace
+                    name=f"gefyra-rolebinding-{sa.metadata.name}", namespace=namespace
                 ),
                 subjects=[
                     k8s.client.V1Subject(kind="ServiceAccount", name=sa.metadata.name)

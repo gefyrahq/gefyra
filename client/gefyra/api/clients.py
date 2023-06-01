@@ -91,6 +91,7 @@ def list_client(config=default_configuration) -> List[GefyraClient]:
     )
     return [GefyraClient(client, config) for client in clients["items"]]
 
+
 # TODO becomes obsolete
 def client(args: Namespace, config=default_configuration):
     """
