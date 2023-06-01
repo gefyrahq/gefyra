@@ -6,6 +6,7 @@ from typing import List, Optional
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration, logger
+from gefyra.exceptions import CargoNotFound, ImproperlyConfiguredCargo
 from gefyra.local.cargoimage.cargo_dockerfile import get_dockerfile
 from gefyra.local import (
     CREATED_BY_LABEL,
@@ -28,12 +29,9 @@ def set_gefyra_network_from_cargo(config) -> ClientConfiguration:
             pass
         config.NETWORK_NAME = networks[0]
     except NotFound:
-        raise RuntimeError("Gefyra Cargo not running. Please run 'gefyra up' first.")
+        raise CargoNotFound()
     except KeyError:
-        raise RuntimeError(
-            "Gefyra Cargo is not configured properly. "
-            "Please set up Gefyra again with 'gefyra down' and 'gefyra up'."
-        )
+        raise ImproperlyConfiguredCargo()
     return config
 
 
