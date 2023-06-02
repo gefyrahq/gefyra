@@ -123,7 +123,7 @@ reflect_parser.add_argument(
     action="store_false",
 )
 reflect_parser.add_argument(
-    "-i", "--image", help="The docker image to run in Gefyra", required=True
+    "-i", "--image", help="The docker image to run in Gefyra", required=False
 )
 reflect_parser.add_argument(
     "-v",
