@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 # - correct labels set on all resources
 # - service account
 
+STOWAWAY_POD_NAME = "pod/gefyra-stowaway-0"
+CONDITION_READY_STR = "condition=ready"
+INTERFACE_PRIVATE_KEY_STR = "Interface.PrivateKey"
+
 
 class TestStowaway:
     configuration = OperatorConfiguration()
@@ -42,8 +46,8 @@ class TestStowaway:
         assert stowaway.installed() is True
         assert stowaway.ready() is False
         k3d.wait(
-            "pod/gefyra-stowaway-0",
-            "condition=ready",
+            STOWAWAY_POD_NAME,
+            CONDITION_READY_STR,
             namespace="gefyra",
             timeout=120,
         )
@@ -96,8 +100,8 @@ class TestStowaway:
         assert cm["data"]["PEERS"] == "test2,test1,0"
         assert cm["data"]["SERVER_ALLOWEDIPS_PEER_test2"] == "192.168.101.0/24"
         k3d.wait(
-            "pod/gefyra-stowaway-0",
-            "condition=ready",
+            STOWAWAY_POD_NAME,
+            CONDITION_READY_STR,
             namespace="gefyra",
             timeout=120,
         )
@@ -127,22 +131,25 @@ class TestStowaway:
         )
 
         peer1_config = stowaway.get_peer_config("test1")
-        # {'Interface.Address': '192.168.99.4', 'Interface.PrivateKey': 'MFQ3v+y612uZSsLXjW1smlJIFeDWWFcZCCtmW4mC624=',
+        # {'Interface.Address': '192.168.99.4', 'Interface.PrivateKey':
+        # 'MFQ3v+y612uZSsLXjW1smlJIFeDWWFcZCCtmW4mC624=',
         #  'Interface.ListenPort': '51820', 'Interface.DNS': '192.168.99.1',
         #  'Peer.PublicKey': 'sy8jXi7S7rUGpqLnqgKnmHFXylqQdvCPCfhBAgSVGEM=',
-        #  'Peer.Endpoint': '79.223.135.126:31820', 'Peer.AllowedIPs': '0.0.0.0/0, ::/0'}
-        assert "Interface.PrivateKey" in peer1_config
+        #  'Peer.Endpoint': '79.223.135.126:31820', 'Peer.AllowedIPs': '0.0.0.0/0,
+        # ::/0'}
+        assert INTERFACE_PRIVATE_KEY_STR in peer1_config
         assert "Peer.PublicKey" in peer1_config
         assert "Peer.Endpoint" in peer1_config
 
         peer2_config = stowaway.get_peer_config("test2")
-        assert "Interface.PrivateKey" in peer2_config
+        assert INTERFACE_PRIVATE_KEY_STR in peer2_config
         assert "Peer.PublicKey" in peer2_config
         assert "Peer.Endpoint" in peer2_config
         assert "Peer.AllowedIPs" in peer2_config
 
         assert (
-            peer1_config["Interface.PrivateKey"] != peer2_config["Interface.PrivateKey"]
+            peer1_config[INTERFACE_PRIVATE_KEY_STR]
+            != peer2_config[INTERFACE_PRIVATE_KEY_STR]
         )
 
     def test_e_remove_peer(self, k3d: AClusterManager):
@@ -164,8 +171,8 @@ class TestStowaway:
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test2,0"
         k3d.wait(
-            "pod/gefyra-stowaway-0",
-            "condition=ready",
+            STOWAWAY_POD_NAME,
+            CONDITION_READY_STR,
             namespace="gefyra",
             timeout=120,
         )
@@ -180,8 +187,8 @@ class TestStowaway:
         assert stowaway.peer_exists("test1") is False
         assert stowaway.peer_exists("test3") is False
         k3d.wait(
-            "pod/gefyra-stowaway-0",
-            "condition=ready",
+            STOWAWAY_POD_NAME,
+            CONDITION_READY_STR,
             namespace="gefyra",
             timeout=120,
         )
