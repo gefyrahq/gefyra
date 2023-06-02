@@ -24,11 +24,11 @@ classifiers = [
 python = ">=3.8.1,<4.0.0"
 kubernetes = ">=24.2,<27.0"
 docker = "^6.0.0"
-prompt-toolkit = "^3.0.38"
 
 [tool.poetry.group.cli.dependencies]
 cli-tracker = ">=0.2.7,<0.4.0"
 tabulate = ">=0.8.10,<0.10.0"
+prompt-toolkit = "^3.0.38"
 
 [tool.poetry.group.dev.dependencies]
 flake8-bugbear = "^23.3.12"
