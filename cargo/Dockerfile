@@ -23,7 +23,7 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
     make && \
     make install
 
-FROM ghcr.io/linuxserver/baseimage-alpine:3.17 as cargo
+FROM alpine:3.17 as cargo
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/
 
@@ -46,6 +46,7 @@ RUN \
     docker \
     gnupg \
     grep \
+    docker \
     iproute2 \
     iptables \
     ip6tables \

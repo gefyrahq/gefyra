@@ -51,11 +51,11 @@ def get_client(client_id: str, config=default_configuration) -> GefyraClient:
 
 
 @stopwatch
-def delete_client(client_id: str, config=default_configuration) -> bool:
+def delete_client(client_id: str, force: bool = False, config=default_configuration) -> bool:
     """
     Delete a GefyraClient configuration
     """
-    return handle_delete_gefyraclient(config, client_id)
+    return handle_delete_gefyraclient(config, client_id, force)
 
 
 @stopwatch

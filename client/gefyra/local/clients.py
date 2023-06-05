@@ -47,7 +47,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
     return gclient
 
 
-def handle_delete_gefyraclient(config: ClientConfiguration, client_id: str) -> bool:
+def handle_delete_gefyraclient(config: ClientConfiguration, client_id: str, force: bool) -> bool:
     from kubernetes.client import ApiException
 
     try:
@@ -58,6 +58,15 @@ def handle_delete_gefyraclient(config: ClientConfiguration, client_id: str) -> b
             plural="gefyraclients",
             version="v1",
         )
+        if force:
+            config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
+                namespace=config.NAMESPACE,
+                name=client_id,
+                group="gefyra.dev",
+                plural="gefyraclients",
+                version="v1",
+                body={"metadata": {"finalizers": None}},
+            )
         return True
     except ApiException as e:
         if e.status == 404:
