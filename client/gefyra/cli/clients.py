@@ -66,7 +66,7 @@ def inspect_client(ctx, client_id):
     "config", alias=["write"], help="Get a Gefyra connection config for a client"
 )
 @click.argument("client_id")
-@click.option("-h", "--host", help="The connection port (default: 31820)", type=str)
+@click.option("-h", "--host", help="The connection host", type=str)
 @click.option("-p", "--port", help="The connection port (default: 31820)", type=int)
 @click.option(
     "-a",

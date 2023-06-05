@@ -88,20 +88,19 @@ def probe_wireguard_connection(config: ClientConfiguration):
         )
 
 
-def create_wireguard_config(params: StowawayConfig, mtu: str = "1340") -> str:
-    return f"""
-    [Interface]
-    Address = {params.iaddress}
-    MTU = {mtu}
-    PrivateKey = {params.iprivatekey}
-    DNS = {params.idns}
-    PreUp = sysctl -w net.ipv4.ip_forward=1
-    PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
-    PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth1 -j MASQUERADE
+def create_wireguard_config(params: StowawayConfig, cargo_endpoint: str,  mtu: str = "1340") -> str:
+    return f"""[Interface]
+Address = {params.iaddress}
+MTU = {mtu}
+PrivateKey = {params.iprivatekey}
+DNS = {params.idns}
+PreUp = sysctl -w net.ipv4.ip_forward=1
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth1 -j MASQUERADE
     
-    [Peer] 
-    PublicKey = {params.ppublickey}
-    Endpoint = {params.pendpoint}
-    PersistentKeepalive = 21
-    AllowedIPs = 0.0.0.0/0
-    """
+[Peer] 
+PublicKey = {params.ppublickey}
+Endpoint = {cargo_endpoint}
+PersistentKeepalive = 21
+AllowedIPs = 0.0.0.0/0
+"""

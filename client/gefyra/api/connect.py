@@ -60,16 +60,20 @@ def connect(client: GefyraClient, config=default_configuration) -> bool:
             break
         else:
             _i += 1
-            time.sleep(1)
-
+            time.sleep(0.5)
+    else:
+        raise RuntimeError("Could not activate connection") from None
+    client.update()
     # place wireguard config to disk, mount it as
     wg_conf = os.path.join(
         get_gefyra_config_location(config), f"{config.CONNECTION_NAME}.conf"
     )
+    if config.CARGO_ENDPOINT is None:
+        config.CARGO_ENDPOINT = client.provider_config.pendpoint
 
     with open(wg_conf, "w") as f:
-        f.write(create_wireguard_config(client.provider_config, config.WIREGUARD_MTU))
-    config.CARGO_ENDPOINT = client.provider_config.pendpoint
+        f.write(create_wireguard_config(client.provider_config, config.CARGO_ENDPOINT, config.WIREGUARD_MTU))
+    
 
     if sys.platform == "win32" or "microsoft" in platform.release().lower():
         image_name_and_tag = f"{config.CARGO_IMAGE}-win32"
@@ -88,7 +92,7 @@ def connect(client: GefyraClient, config=default_configuration) -> bool:
             f"{config.CARGO_CONTAINER_NAME}-{config.CONNECTION_NAME}",
             image_name_and_tag,
             detach=True,
-            # auto_remove=True,
+            auto_remove=True,
             cap_add=["NET_ADMIN"],
             privileged=True,
             volumes=[

@@ -215,9 +215,9 @@ class ClientConfiguration(object):
                 self.DOCKER = docker.from_env()
         except docker.errors.DockerException as de:
             logger.fatal(f"Docker init error: {de}")
-            raise docker.errors.DockerException(
+            raise RuntimeError(
                 "Docker init error. Docker host not running?"
-            )
+            ) from None
 
     def _init_kubeapi(self):
         from kubernetes.client import (

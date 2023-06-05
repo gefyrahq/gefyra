@@ -27,19 +27,20 @@ logger = logging.getLogger(__name__)
     help="Connect this local machine to a Gefyra cluster",
 )
 @click.argument("client_config", type=click.File("r"))
-@click.option("-n", "--name", help="Name of the client connection", type=str)
+@click.option("-n", "--connection-name", help="Assign a local name to this client connection", type=str)
 @click.pass_context
-def connect_client(ctx, client_config, name):
+# @standard_error_handler
+def connect_client(ctx, client_config, connection_name):
     import hashlib
 
     configuration = ctx.obj["config"]
     file_str = client_config.read()
     # TODO migrate to a utils function to make it available for gefyra-ext too?
     # copy & transform client config to kubeconfig
-    config_name = name or hashlib.md5(file_str.encode("utf-8")).hexdigest()
+    configuration.CONNECTION_NAME = connection_name or hashlib.md5(file_str.encode("utf-8")).hexdigest()
     gclient_conf = GefyraClientConfig.from_json_str(file_str)
     loc = os.path.join(
-        get_gefyra_config_location(ctx.obj["config"]), f"{config_name}.yaml"
+        get_gefyra_config_location(ctx.obj["config"]), f"{configuration.CONNECTION_NAME}.yaml"
     )
     kubeconfig_str = compose_kubeconfig_for_serviceaccount(
         gclient_conf.kubernetes_server,
@@ -52,8 +53,8 @@ def connect_client(ctx, client_config, name):
         console.info(f"Client kubeconfig saved to {loc}")
 
     configuration.KUBE_CONFIG_FILE = loc
-    configuration.CONNECTION_NAME = config_name
     configuration.CLIENT_ID = gclient_conf.client_id
+    configuration.CARGO_ENDPOINT = gclient_conf.gefyra_server
     api.connect(get_client(gclient_conf.client_id, configuration), configuration)
 
 
@@ -63,6 +64,7 @@ def connect_client(ctx, client_config, name):
 )
 @click.argument("connection_name", type=str)
 @click.pass_context
+@standard_error_handler
 def disconnect_client(ctx, connection_name):
     config = get_configuration_for_connection_name(connection_name)
     api.disconnect(get_client(config.CLIENT_ID, config), config)
@@ -79,6 +81,6 @@ def list_connections(ctx):
     data = [conn.values() for conn in conns]
     click.echo(
         tabulate(
-            data, headers=["NAME", "VERSION", "CREATED", "status"], tablefmt="plain"
+            data, headers=["NAME", "VERSION", "CREATED", "STATUS"], tablefmt="plain"
         )
     )
