@@ -27,7 +27,12 @@ logger = logging.getLogger(__name__)
     help="Connect this local machine to a Gefyra cluster",
 )
 @click.argument("client_config", type=click.File("r"))
-@click.option("-n", "--connection-name", help="Assign a local name to this client connection", type=str)
+@click.option(
+    "-n",
+    "--connection-name",
+    help="Assign a local name to this client connection",
+    type=str,
+)
 @click.pass_context
 # @standard_error_handler
 def connect_client(ctx, client_config, connection_name):
@@ -37,10 +42,13 @@ def connect_client(ctx, client_config, connection_name):
     file_str = client_config.read()
     # TODO migrate to a utils function to make it available for gefyra-ext too?
     # copy & transform client config to kubeconfig
-    configuration.CONNECTION_NAME = connection_name or hashlib.md5(file_str.encode("utf-8")).hexdigest()
+    configuration.CONNECTION_NAME = (
+        connection_name or hashlib.md5(file_str.encode("utf-8")).hexdigest()
+    )
     gclient_conf = GefyraClientConfig.from_json_str(file_str)
     loc = os.path.join(
-        get_gefyra_config_location(ctx.obj["config"]), f"{configuration.CONNECTION_NAME}.yaml"
+        get_gefyra_config_location(ctx.obj["config"]),
+        f"{configuration.CONNECTION_NAME}.yaml",
     )
     kubeconfig_str = compose_kubeconfig_for_serviceaccount(
         gclient_conf.kubernetes_server,

@@ -215,9 +215,7 @@ class ClientConfiguration(object):
                 self.DOCKER = docker.from_env()
         except docker.errors.DockerException as de:
             logger.fatal(f"Docker init error: {de}")
-            raise RuntimeError(
-                "Docker init error. Docker host not running?"
-            ) from None
+            raise RuntimeError("Docker init error. Docker host not running?") from None
 
     def _init_kubeapi(self):
         from kubernetes.client import (
@@ -280,7 +278,9 @@ def get_configuration_for_connection_name(name: str) -> ClientConfiguration:
         config.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
         config.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
         config.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
-        config.NETWORK_NAME = f"{config.NETWORK_NAME}-{name}"  # TODO set base network name
+        config.NETWORK_NAME = (
+            f"{config.NETWORK_NAME}-{name}"  # TODO set base network name
+        )
         config.CARGO_CONTAINER_NAME = cargo_container.name
     return config
 

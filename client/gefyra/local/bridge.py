@@ -165,7 +165,7 @@ def deploy_app_container(
         "environment": env,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
-    
+
     container = handle_docker_run_container(config, image, **not_none_kwargs)
 
     cargo = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)

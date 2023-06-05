@@ -72,8 +72,11 @@ def connect(client: GefyraClient, config=default_configuration) -> bool:
         config.CARGO_ENDPOINT = client.provider_config.pendpoint
 
     with open(wg_conf, "w") as f:
-        f.write(create_wireguard_config(client.provider_config, config.CARGO_ENDPOINT, config.WIREGUARD_MTU))
-    
+        f.write(
+            create_wireguard_config(
+                client.provider_config, config.CARGO_ENDPOINT, config.WIREGUARD_MTU
+            )
+        )
 
     if sys.platform == "win32" or "microsoft" in platform.release().lower():
         image_name_and_tag = f"{config.CARGO_IMAGE}-win32"

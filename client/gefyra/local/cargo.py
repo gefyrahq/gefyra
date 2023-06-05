@@ -70,9 +70,7 @@ def get_cargo_ip_from_netaddress(network_address: str) -> str:
 
 
 def probe_wireguard_connection(config: ClientConfiguration):
-    cargo = config.DOCKER.containers.get(
-        f"{config.CARGO_CONTAINER_NAME}"
-    )
+    cargo = config.DOCKER.containers.get(f"{config.CARGO_CONTAINER_NAME}")
     for _attempt in range(0, config.CARGO_PROBE_TIMEOUT):
         _r = cargo.exec_run(f"timeout 1 ping -c 1 {config.STOWAWAY_IP}")
         if _r.exit_code != 0:
@@ -88,7 +86,9 @@ def probe_wireguard_connection(config: ClientConfiguration):
         )
 
 
-def create_wireguard_config(params: StowawayConfig, cargo_endpoint: str,  mtu: str = "1340") -> str:
+def create_wireguard_config(
+    params: StowawayConfig, cargo_endpoint: str, mtu: str = "1340"
+) -> str:
     return f"""[Interface]
 Address = {params.iaddress}
 MTU = {mtu}
