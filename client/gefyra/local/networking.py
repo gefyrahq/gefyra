@@ -18,7 +18,7 @@ def create_gefyra_network(config: ClientConfiguration, suffix: str = "") -> Netw
 
 def handle_create_network(config: ClientConfiguration, suffix: str = "") -> Network:
     DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
-    network_name = f"{config.NETWORK_NAME}-{suffix}"
+    network_name = f"{config.NETWORK_NAME}-{suffix}"  # TODO set base network name
     try:
         network = config.DOCKER.networks.get(network_name)
         logger.info("Gefyra network already exists")

@@ -4,6 +4,7 @@ from time import sleep
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.local.cargo import get_cargo_ip_from_netaddress
 
 from .utils import handle_docker_run_container
 
@@ -162,10 +163,9 @@ def deploy_app_container(
         "dns_search": [dns_search],
         "auto_remove": auto_remove,
         "environment": env,
-        "pid_mode": "container:gefyra-cargo",
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
-
+    
     container = handle_docker_run_container(config, image, **not_none_kwargs)
 
     cargo = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)

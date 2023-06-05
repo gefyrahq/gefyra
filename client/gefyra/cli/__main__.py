@@ -111,8 +111,11 @@ def version(ctx):
 @click.option(
     "-i", "--image", help="The docker image to run in Gefyra", type=str, required=True
 )
+@click.option(
+    "--connection-name", type=str, required=True
+)
 def run(
-    detach, auto_remove, expose, env_from, volume, env, namespace, command, name, image
+    detach, auto_remove, expose, env_from, volume, env, namespace, command, name, image, connection_name
 ):
     configuration = ClientConfiguration()
     api.run(
@@ -127,6 +130,7 @@ def run(
         volumes=volume,
         config=configuration,
         detach=detach,
+        connection_name=connection_name,
     )
 
 

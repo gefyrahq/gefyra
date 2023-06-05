@@ -71,7 +71,7 @@ def get_cargo_ip_from_netaddress(network_address: str) -> str:
 
 def probe_wireguard_connection(config: ClientConfiguration):
     cargo = config.DOCKER.containers.get(
-        f"{config.CARGO_CONTAINER_NAME}-{config.CONNECTION_NAME}"
+        f"{config.CARGO_CONTAINER_NAME}"
     )
     for _attempt in range(0, config.CARGO_PROBE_TIMEOUT):
         _r = cargo.exec_run(f"timeout 1 ping -c 1 {config.STOWAWAY_IP}")

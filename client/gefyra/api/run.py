@@ -3,7 +3,7 @@ import os
 import sys
 from threading import Thread
 
-from gefyra.configuration import default_configuration, ClientConfiguration
+from gefyra.configuration import default_configuration, ClientConfiguration, get_configuration_for_connection_name
 from .utils import generate_env_dict_from_strings, stopwatch, get_workload_type
 
 
@@ -87,6 +87,7 @@ def run(
     namespace: str = None,
     env: list = None,
     env_from: str = None,
+    connection_name: str = None,
     config=default_configuration,
 ) -> bool:
     from kubernetes.client import ApiException
@@ -95,13 +96,11 @@ def run(
     from gefyra.local.bridge import deploy_app_container
     from gefyra.local.utils import (
         get_processed_paths,
-        set_gefyra_network_from_cargo,
-        set_kubeconfig_from_cargo,
     )
     from gefyra.local.cargo import probe_wireguard_connection
 
     # Check if kubeconfig is available through running Cargo
-    config = set_kubeconfig_from_cargo(config)
+    config = get_configuration_for_connection_name(connection_name)
 
     # #125: Fallback to namespace in kube config
     if namespace is None:
@@ -114,7 +113,6 @@ def run(
         ns_source = "--namespace argument"
 
     dns_search = f"{namespace}.svc.cluster.local"
-    config = set_gefyra_network_from_cargo(config)
     #
     # Confirm the wireguard connection working
     #

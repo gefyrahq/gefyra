@@ -55,6 +55,7 @@ def connect_client(ctx, client_config, connection_name):
     configuration.KUBE_CONFIG_FILE = loc
     configuration.CLIENT_ID = gclient_conf.client_id
     configuration.CARGO_ENDPOINT = gclient_conf.gefyra_server
+    configuration.CARGO_CONTAINER_NAME = f"gefyra-cargo-{configuration.CONNECTION_NAME}"
     api.connect(get_client(gclient_conf.client_id, configuration), configuration)
 
 

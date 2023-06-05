@@ -80,7 +80,7 @@ def connect(client: GefyraClient, config=default_configuration) -> bool:
     else:
         image_name_and_tag = config.CARGO_IMAGE
 
-    config.DOCKER.images.pull(image_name_and_tag)
+    # config.DOCKER.images.pull(image_name_and_tag)
     # "user specified IP address is supported only when connecting to networks with user configured subnets"
     cargo_ip_address = get_cargo_ip_from_netaddress(
         gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
@@ -89,7 +89,7 @@ def connect(client: GefyraClient, config=default_configuration) -> bool:
     try:
         cargo_container = handle_docker_get_or_create_container(
             config,
-            f"{config.CARGO_CONTAINER_NAME}-{config.CONNECTION_NAME}",
+            f"{config.CARGO_CONTAINER_NAME}",
             image_name_and_tag,
             detach=True,
             auto_remove=True,
@@ -124,7 +124,7 @@ def disconnect(client: GefyraClient, config=default_configuration) -> bool:
     gefyra_network = create_gefyra_network(config, suffix=config.CONNECTION_NAME)
     try:
         cargo_container = config.DOCKER.containers.get(
-            f"{config.CARGO_CONTAINER_NAME}-{config.CONNECTION_NAME}",
+            f"{config.CARGO_CONTAINER_NAME}",
         )
         cargo_container.stop()
     except docker.errors.NotFound:

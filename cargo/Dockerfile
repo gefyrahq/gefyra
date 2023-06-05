@@ -43,6 +43,7 @@ RUN \
   apk add --no-cache \
     bc \
     wget \
+    docker \
     gnupg \
     grep \
     iproute2 \
