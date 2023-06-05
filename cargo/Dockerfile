@@ -42,21 +42,20 @@ RUN \
     linux-headers && \
   apk add --no-cache \
     bc \
+    bash \
     wget \
     docker \
     gnupg \
     grep \
-    docker \
     iproute2 \
     iptables \
     ip6tables \
     iputils \
     libcap-utils \
-    libqrencode \
     net-tools \
     patch \
     openresolv \
-    perl && \
+    && \
   echo "**** clean up ****" && \
   apk del --no-network build-dependencies && \
   rm -rf \
@@ -64,7 +63,10 @@ RUN \
     
 # add local files
 COPY /root /
-
+RUN chmod u+x,g+x /usr/local/bin/entrypoint.sh\
+  && ln -s /usr/local/bin/entrypoint.sh / # backwards compat
+RUN echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+ENTRYPOINT ["entrypoint.sh"]
 
 FROM cargo as cargo-win
 RUN patch /usr/bin/wg-quick /wgquick.patch

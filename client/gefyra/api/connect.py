@@ -95,14 +95,14 @@ def connect(client: GefyraClient, config=default_configuration) -> bool:
             f"{config.CARGO_CONTAINER_NAME}",
             image_name_and_tag,
             detach=True,
-            auto_remove=True,
+            # auto_remove=True,
             cap_add=["NET_ADMIN"],
             privileged=True,
             volumes=[
                 "/var/run/docker.sock:/var/run/docker.sock",
                 f"{wg_conf}:/config/wg0.conf",
-            ]
-            #            pid_mode="host",
+            ],
+            pid_mode="host",
         )
         logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
         gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)

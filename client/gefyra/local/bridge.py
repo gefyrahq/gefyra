@@ -163,6 +163,7 @@ def deploy_app_container(
         "dns_search": [dns_search],
         "auto_remove": auto_remove,
         "environment": env,
+        "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 
