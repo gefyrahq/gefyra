@@ -9,6 +9,14 @@ from typing import Optional, Union
 
 from pathlib import Path
 
+
+from gefyra.local import (
+    CONNECTION_NAME_LABEL,
+    CARGO_ENDPOINT_LABEL,
+    ACTIVE_KUBECONFIG_LABEL,
+    CLIENT_ID_LABEL,
+)
+
 console = logging.StreamHandler(sys.stdout)
 formatter = logging.Formatter("[%(levelname)s] %(message)s")
 console.setFormatter(formatter)
@@ -120,6 +128,19 @@ class ClientConfiguration(object):
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
+        containers = self.DOCKER.containers.list(
+            filters={"label": f"{CONNECTION_NAME_LABEL}={connection_name}"}
+        )
+        if containers:
+            cargo_container = containers[0]
+            self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
+            self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
+            self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
+            self.NETWORK_NAME = (
+                f"{self.NETWORK_NAME}-{connection_name}"  # TODO set base network name
+            )
+            self.CARGO_CONTAINER_NAME = cargo_container.name
+
         if kube_config_file:
             self.KUBE_CONFIG_FILE = kube_config_file
 
@@ -259,30 +280,6 @@ class ClientConfiguration(object):
 
     def get_kubernetes_api_url(self) -> str:
         return self.K8S_CORE_API.api_client.configuration.host
-
-
-def get_configuration_for_connection_name(name: str) -> ClientConfiguration:
-    from gefyra.local import (
-        CONNECTION_NAME_LABEL,
-        CARGO_ENDPOINT_LABEL,
-        ACTIVE_KUBECONFIG_LABEL,
-        CLIENT_ID_LABEL,
-    )
-
-    config = ClientConfiguration(connection_name=name)
-    containers = config.DOCKER.containers.list(
-        filters={"label": f"{CONNECTION_NAME_LABEL}={name}"}
-    )
-    if containers:
-        cargo_container = containers[0]
-        config.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
-        config.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
-        config.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
-        config.NETWORK_NAME = (
-            f"{config.NETWORK_NAME}-{name}"  # TODO set base network name
-        )
-        config.CARGO_CONTAINER_NAME = cargo_container.name
-    return config
 
 
 def get_gefyra_config_location(config: ClientConfiguration) -> str:

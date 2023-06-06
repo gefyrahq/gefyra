@@ -103,8 +103,9 @@ def run(
     )
     from gefyra.local.cargo import probe_wireguard_connection
 
-    # Check if kubeconfig is available through running Cargo
-    config = get_configuration_for_connection_name(connection_name)
+    if not connection_name:
+        raise RuntimeError("Connection name is required")
+    config = ClientConfiguration(connection_name=connection_name)
 
     # #125: Fallback to namespace in kube config
     if namespace is None:
