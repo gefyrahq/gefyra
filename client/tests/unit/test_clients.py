@@ -6,9 +6,9 @@ from pytest_kubernetes.providers import AClusterManager
 
 def test_a_create_client(operator: AClusterManager):
     k3d = operator
-    from gefyra.api.clients import add_client
+    from gefyra.api.clients import add_clients
 
-    gclient = add_client("client-a")
+    gclient = add_clients("client-a")
     client_a = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
     )
@@ -44,10 +44,10 @@ def test_b_get_client(operator: AClusterManager):
 
 def test_c_create_clients(operator: AClusterManager):
     k3d = operator
-    from gefyra.api.clients import add_client
+    from gefyra.api.clients import add_clients
 
     for client in ["client-b", "client-c", "client-d", "client-e", "client-f"]:
-        add_client(client)
+        add_clients(client)
 
 
 def test_d_delete_client(operator: AClusterManager):
