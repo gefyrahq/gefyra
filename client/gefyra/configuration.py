@@ -116,8 +116,6 @@ class ClientConfiguration(object):
             self.DOCKER = docker_client
 
         self.cargo_endpoint_port = cargo_endpoint_port
-        if cargo_endpoint_host:
-            self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
 
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
@@ -129,17 +127,19 @@ class ClientConfiguration(object):
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
         containers = self.DOCKER.containers.list(
-            filters={"label": f"{CONNECTION_NAME_LABEL}={connection_name}"}
+            all=True,
+            filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
         )
         if containers:
             cargo_container = containers[0]
             self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
             self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
             self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
-            self.NETWORK_NAME = (
-                f"{self.NETWORK_NAME}-{connection_name}"  # TODO set base network name
-            )
+            self.NETWORK_NAME = f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"  # TODO set base network name
             self.CARGO_CONTAINER_NAME = cargo_container.name
+
+        if cargo_endpoint_host:
+            self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
 
         if kube_config_file:
             self.KUBE_CONFIG_FILE = kube_config_file

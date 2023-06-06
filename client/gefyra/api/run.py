@@ -82,6 +82,7 @@ def print_logs(container):
 @stopwatch
 def run(
     image: str,
+    connection_name: str,
     name: str = None,
     command: str = None,
     volumes: dict = None,
@@ -91,8 +92,6 @@ def run(
     namespace: str = None,
     env: list = None,
     env_from: str = None,
-    connection_name: str = None,
-    config=default_configuration,
 ) -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
@@ -103,8 +102,6 @@ def run(
     )
     from gefyra.local.cargo import probe_wireguard_connection
 
-    if not connection_name:
-        raise RuntimeError("Connection name is required")
     config = ClientConfiguration(connection_name=connection_name)
 
     # #125: Fallback to namespace in kube config
