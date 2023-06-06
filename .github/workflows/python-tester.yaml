@@ -140,6 +140,8 @@ jobs:
         working-directory: ./client
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
+      - name: Install k3d
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
       - name: Run PyTest
         working-directory: ./client
         run: poetry run coverage run -m pytest tests/unit/
