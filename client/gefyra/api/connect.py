@@ -20,7 +20,7 @@ from gefyra.local.utils import (
     compose_kubeconfig_for_serviceaccount,
     handle_docker_get_or_create_container,
 )
-from gefyra.types import GefyraClient, GefyraClientConfig, GefyraClientState
+from gefyra.types import GefyraClientConfig, GefyraClientState
 
 
 logger = logging.getLogger(__name__)

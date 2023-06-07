@@ -14,7 +14,7 @@ def test_a_create_client(operator: AClusterManager):
     )
     assert client_a["state"] is not None
     with pytest.raises(RuntimeError):
-        config = gclient.get_client_config(gefyra_server="localhost:31820")
+        gclient.get_client_config(gefyra_server="localhost:31820")
     k3d.wait(
         "gefyraclients.gefyra.dev/client-a",
         "jsonpath=.state=WAITING",
@@ -32,9 +32,7 @@ def test_b_get_client(operator: AClusterManager):
     assert gclient.state is GefyraClientState.WAITING
     assert gclient.provider_parameter is None
     assert gclient.provider_config is None
-    client_a = k3d.kubectl(
-        ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
-    )
+    k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"])
     config = gclient.get_client_config(gefyra_server="localhost:31820")
     assert config.kubernetes_server is not None
     assert config.ca_crt is not None
@@ -44,6 +42,7 @@ def test_b_get_client(operator: AClusterManager):
 
 def test_c_create_clients(operator: AClusterManager):
     k3d = operator
+    k3d.version()
     from gefyra.api.clients import add_clients
 
     for client in ["client-b", "client-c", "client-d", "client-e", "client-f"]:

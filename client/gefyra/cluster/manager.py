@@ -90,8 +90,9 @@ def handle_serviceaccount(
             if e.status == 409:
                 break
             elif e.status == 403:
-                # this sometimes happens when to cluster in terminating the gefyra namespace
-                # due to a previous `gefyra down`. As long as it is terminating this error occurs.
+                # this sometimes happens when to cluster in terminating
+                # the gefyra namespace due to a previous `gefyra down`.
+                # As long as it is terminating this error occurs.
                 if counter > retries:
                     raise RuntimeError(
                         "You're not allowed to create a serviceaccount in namespace"
@@ -144,7 +145,8 @@ def handle_deployment(
 
 def install_operator(config: ClientConfiguration, gefyra_network_subnet: str) -> dict:
     """
-    Installs Gefyra Operator to the configured cluster, waits for the installation to complete and returns the
+    Installs Gefyra Operator to the configured cluster,
+    waits for the installation to complete and returns the
     connection secrets for Cargo
     :param config: a ClientConfiguration install
     :return: Cargo connection details

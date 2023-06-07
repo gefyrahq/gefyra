@@ -1,5 +1,5 @@
 from dataclasses import fields
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterable, List, Union
 from gefyra.cli import console
 from gefyra.types import GefyraInstallOptions
 import click
@@ -30,7 +30,7 @@ class AliasedCommand(click.Command):
     def __init__(
         self,
         name,
-        alias=[],
+        alias: Iterable = None,
         context_settings=None,
         callback=None,
         params=None,
@@ -43,6 +43,8 @@ class AliasedCommand(click.Command):
         hidden: bool = False,
         deprecated: bool = False,
     ) -> None:
+        if not alias:
+            alias = []
         super().__init__(
             name,
             context_settings,

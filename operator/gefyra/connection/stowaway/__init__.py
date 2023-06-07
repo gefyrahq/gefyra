@@ -53,7 +53,7 @@ PROXY_RELOAD_COMMAND = [
     "/stowaway/proxyroutes/",
 ]
 
-WIREGUARD_CIDR_PATTERN = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,3}$")
+WIREGUARD_CIDR_PATTERN = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,3}$")
 
 
 class Stowaway(AbstractGefyraConnectionProvider):

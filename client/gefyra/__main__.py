@@ -7,7 +7,6 @@ from gefyra.api import (
     get_containers_and_print,
     get_bridges_and_print,
     GefyraStatus,
-    client,
 )
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import (
@@ -564,8 +563,6 @@ def main():
             version(config=configuration_package, check=False)
         elif args.action == "telemetry":
             telemetry_command(on=args.on, off=args.off)
-        elif args.action == "client":
-            client(args, config=configuration)
         else:
             parser.print_help()
     except KeyboardInterrupt:
