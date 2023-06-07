@@ -2,7 +2,7 @@ import logging
 from tabulate import tabulate
 from typing import List
 
-from gefyra.configuration import default_configuration
+from gefyra.configuration import ClientConfiguration
 
 from .utils import stopwatch
 
@@ -10,8 +10,10 @@ from .utils import stopwatch
 logger = logging.getLogger(__name__)
 
 
-def get_containers_and_print(config: default_configuration):
+def get_containers_and_print():
     from gefyra.api import list_containers
+
+    config = ClientConfiguration()
 
     containers = list_containers(config=config)
     print(
@@ -21,8 +23,10 @@ def get_containers_and_print(config: default_configuration):
     )
 
 
-def get_bridges_and_print(config: default_configuration):
+def get_bridges_and_print():
     from gefyra.api import list_interceptrequests
+
+    config = ClientConfiguration()
 
     ireqs = list_interceptrequests(config=config)
     if ireqs:
@@ -33,17 +37,12 @@ def get_bridges_and_print(config: default_configuration):
 
 
 @stopwatch
-def list_interceptrequests(config=default_configuration) -> List[str]:
+def list_interceptrequests() -> List[str]:
     from gefyra.local.bridge import get_all_interceptrequests
-    from gefyra.local.utils import (
-        set_gefyra_network_from_cargo,
-        set_kubeconfig_from_cargo,
-    )
+
+    config = ClientConfiguration()
 
     # Check if kubeconfig is available through running Cargo
-    config = set_kubeconfig_from_cargo(config)
-
-    config = set_gefyra_network_from_cargo(config)
     ireqs = []
     for ireq in get_all_interceptrequests(config):
         ireqs.append(ireq["metadata"]["name"])
@@ -51,10 +50,9 @@ def list_interceptrequests(config=default_configuration) -> List[str]:
 
 
 @stopwatch
-def list_containers(config=default_configuration) -> List[str]:
+def list_containers() -> List[str]:
     from gefyra.local.bridge import get_all_containers
-    from gefyra.local.utils import set_gefyra_network_from_cargo
 
-    config = set_gefyra_network_from_cargo(config)
+    config = ClientConfiguration()
 
     return get_all_containers(config)

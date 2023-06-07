@@ -294,6 +294,3 @@ def get_gefyra_config_location(config: ClientConfiguration) -> str:
     config_dir = config.GEFYRA_LOCATION
     config_dir.mkdir(parents=True, exist_ok=True)
     return str(config_dir)
-
-
-default_configuration = ClientConfiguration()

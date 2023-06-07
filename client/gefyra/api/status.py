@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 
 from gefyra.api import stopwatch
-from gefyra.configuration import default_configuration, ClientConfiguration
+from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -185,11 +185,9 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
 
 
 @stopwatch
-def status(config=default_configuration) -> GefyraStatus:
-    from gefyra.local.utils import set_kubeconfig_from_cargo
-
+def status() -> GefyraStatus:
     # Check if kubeconfig is available through running Cargo
-    config = set_kubeconfig_from_cargo(config)
+    config = ClientConfiguration()
 
     cluster = _get_cluster_status(config)
     client = _get_client_status(config)

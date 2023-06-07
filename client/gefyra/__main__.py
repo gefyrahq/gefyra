@@ -485,7 +485,6 @@ def main():
                 ports=args.expose,
                 auto_remove=args.auto_remove,
                 volumes=args.volume,
-                config=configuration,
                 detach=args.detach,
             )
         elif args.action == "reflect":
@@ -505,7 +504,6 @@ def main():
                 args.port,
                 namespace=args.namespace,
                 handle_probes=not args.no_probe_handling,
-                config=configuration,
                 target=args.target,
             )
         elif args.action == "unbridge":

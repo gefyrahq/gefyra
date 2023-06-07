@@ -5,7 +5,7 @@ import sys
 import time
 from typing import Dict, List
 
-from gefyra.configuration import default_configuration, get_gefyra_config_location
+from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.local import CONNECTION_NAME_LABEL
 from gefyra.local.cargo import (
     create_cargo_container,
@@ -27,9 +27,11 @@ from . import down
 logger = logging.getLogger(__name__)
 
 
-def connect(client: GefyraClient, config=default_configuration) -> bool:
+def connect(client: GefyraClient) -> bool:
     import kubernetes
     import docker
+
+    config = ClientConfiguration()
 
     # 1. get or create a dedicated gefyra network with suffix (from connection name)
     # 2. try activate the GeyfraClient in the cluster by submitting the subnet (see: operator/tests/e2e/test_connect_clients.py)
@@ -121,10 +123,11 @@ def connect(client: GefyraClient, config=default_configuration) -> bool:
     return True
 
 
-def disconnect(client: GefyraClient, config=default_configuration) -> bool:
+def disconnect(client: GefyraClient) -> bool:
     import docker
 
-    gefyra_network = create_gefyra_network(config, suffix=config.CONNECTION_NAME)
+    config = ClientConfiguration()
+    create_gefyra_network(config, suffix=config.CONNECTION_NAME)
     try:
         cargo_container = config.DOCKER.containers.get(
             f"{config.CARGO_CONTAINER_NAME}",
@@ -136,9 +139,10 @@ def disconnect(client: GefyraClient, config=default_configuration) -> bool:
     return True
 
 
-def list_connections(config=default_configuration) -> List[Dict[str, str]]:
+def list_connections() -> List[Dict[str, str]]:
     from gefyra.local import CARGO_LABEL, CONNECTION_NAME_LABEL, VERSION_LABEL
 
+    config = ClientConfiguration()
     result = []
     containers = config.DOCKER.containers.list(
         all=True, filters={"label": f"{CARGO_LABEL[0]}={CARGO_LABEL[1]}"}

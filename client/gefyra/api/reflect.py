@@ -9,7 +9,7 @@ from gefyra.cluster.utils import (
     get_container_ports,
     get_v1pod,
 )
-from gefyra.configuration import default_configuration
+from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,6 @@ def _check_ports(host_ports):
 def reflect(
     workload: str,  # deploy/my-deployment
     namespace: str = "default",
-    config=default_configuration,
     do_bridge: bool = False,
     env: list = None,
     command: str = "",
@@ -40,6 +39,7 @@ def reflect(
     image: str = None,
     ports: dict = None,
 ):
+    config = ClientConfiguration()
     if expose_ports and ports:
         raise RuntimeError(
             "You cannot specify ports and expose_ports at the same time."

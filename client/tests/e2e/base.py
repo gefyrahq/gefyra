@@ -45,8 +45,10 @@ from gefyra.cluster.resources import (
     get_pods_and_containers_for_workload,
     owner_reference_consistent,
 )
-from gefyra.configuration import default_configuration, ClientConfiguration
+from gefyra.configuration import ClientConfiguration
 import gefyra.configuration as config_package
+
+default_configuration = ClientConfiguration()
 
 
 class GefyraBaseTest:

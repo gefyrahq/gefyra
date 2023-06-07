@@ -5,7 +5,7 @@ from typing import Iterable, List, Optional
 import uuid
 
 from pathlib import Path
-from gefyra.configuration import default_configuration
+from gefyra.configuration import ClientConfiguration
 from gefyra.local.clients import (
     get_gefyraclient_body,
     handle_create_gefyraclient,
@@ -21,11 +21,13 @@ logger = logging.getLogger(__name__)
 
 @stopwatch
 def add_clients(
-    client_id: str, quantity: int = 1, config=default_configuration
+    client_id: str,
+    quantity: int = 1,
 ) -> Iterable[GefyraClient]:
     """
     Add a new client to the connection provider
     """
+    config = ClientConfiguration()
     if quantity > 1 and client_id:
         raise RuntimeError("Cannot specify both quantity > 1 and client_id")
     result = []
@@ -42,19 +44,21 @@ def add_clients(
     return result
 
 
-def get_client(client_id: str, config=default_configuration) -> GefyraClient:
+def get_client(client_id: str, connection_name: str = None) -> GefyraClient:
     """
     Get a GefyraClient object
     """
+    config = ClientConfiguration(connection_name=connection_name)
     gclient = handle_get_gefyraclient(config, client_id)
     return GefyraClient(gclient, config)
 
 
 @stopwatch
-def delete_client(client_id: str, force: bool = False, config=default_configuration) -> bool:
+def delete_client(client_id: str, force: bool = False) -> bool:
     """
     Delete a GefyraClient configuration
     """
+    config = ClientConfiguration()
     return handle_delete_gefyraclient(config, client_id, force)
 
 
@@ -79,10 +83,11 @@ def write_client_file(
 
 
 @stopwatch
-def list_client(config=default_configuration) -> List[GefyraClient]:
+def list_client() -> List[GefyraClient]:
     """
     List all GefyraClient objects
     """
+    config = ClientConfiguration()
     clients = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
         namespace=config.NAMESPACE,
         group="gefyra.dev",
@@ -93,10 +98,11 @@ def list_client(config=default_configuration) -> List[GefyraClient]:
 
 
 # TODO becomes obsolete
-def client(args: Namespace, config=default_configuration):
+def client(args: Namespace):
     """
     Run a client command
     """
+    config = ClientConfiguration()
     if args.verb == "create":
         add_clients(
             getattr(args, "client_id", None), getattr(args, "quantity", 1), config

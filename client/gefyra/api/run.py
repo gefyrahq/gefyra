@@ -4,9 +4,7 @@ import sys
 from threading import Thread
 
 from gefyra.configuration import (
-    default_configuration,
     ClientConfiguration,
-    get_configuration_for_connection_name,
 )
 from .utils import generate_env_dict_from_strings, stopwatch, get_workload_type
 

@@ -5,7 +5,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from attr import fields
-from gefyra.configuration import ClientConfiguration, default_configuration, __VERSION__
+from gefyra.configuration import ClientConfiguration, __VERSION__
 from gefyra.local.clients import handle_get_gefyraclient
 
 logger = logging.getLogger(__name__)
@@ -90,8 +90,8 @@ class GefyraClient:
     def __init__(
         self,
         gclient: dict[str, Any],
-        config: ClientConfiguration = default_configuration,
     ):
+        config = ClientConfiguration()
         self._init_data(gclient)
         self._config = config
 

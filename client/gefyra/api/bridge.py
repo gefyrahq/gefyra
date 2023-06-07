@@ -2,7 +2,7 @@ import logging
 from time import sleep
 from typing import List, Dict
 
-from gefyra.configuration import default_configuration
+from gefyra.configuration import ClientConfiguration
 
 from .utils import stopwatch
 
@@ -70,18 +70,12 @@ def bridge(
     sync_down_dirs: List[str] = None,
     handle_probes: bool = True,
     timeout: int = 0,
-    config=default_configuration,
+    connection_name: str = None,
 ) -> bool:
     from docker.errors import NotFound
-    from gefyra.local.utils import (
-        set_gefyra_network_from_cargo,
-        set_kubeconfig_from_cargo,
-    )
     from gefyra.local.bridge import get_all_interceptrequests
 
-    # Check if kubeconfig is available through running Cargo
-    config = set_kubeconfig_from_cargo(config)
-    config = set_gefyra_network_from_cargo(config)
+    config = ClientConfiguration(connection_name=connection_name)
 
     try:
         container = config.DOCKER.containers.get(name)
@@ -249,15 +243,11 @@ def wait_for_deletion(ireqs: List, config=default_configuration):
 @stopwatch
 def unbridge(
     name: str,
-    config=default_configuration,
     wait: bool = False,
 ) -> bool:
     from gefyra.local.bridge import handle_delete_interceptrequest
-    from gefyra.local.utils import (
-        set_kubeconfig_from_cargo,
-    )
 
-    config = set_kubeconfig_from_cargo(config)
+    config = ClientConfiguration()
 
     ireq = handle_delete_interceptrequest(config, name)
     if ireq:
@@ -269,18 +259,14 @@ def unbridge(
 
 @stopwatch
 def unbridge_all(
-    config=default_configuration,
     wait: bool = False,
 ) -> bool:
     from gefyra.local.bridge import (
         handle_delete_interceptrequest,
         get_all_interceptrequests,
     )
-    from gefyra.local.utils import (
-        set_kubeconfig_from_cargo,
-    )
 
-    config = set_kubeconfig_from_cargo(config)
+    config = ClientConfiguration()
 
     ireqs = get_all_interceptrequests(config)
     for ireq in ireqs:

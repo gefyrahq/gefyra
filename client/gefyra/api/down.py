@@ -1,6 +1,6 @@
 import logging
 
-from gefyra.configuration import default_configuration
+from gefyra.configuration import ClientConfiguration
 
 from .utils import stopwatch
 
@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 @stopwatch
-def down(config=default_configuration) -> bool:
+def down() -> bool:
     from gefyra.cluster.manager import uninstall_operator
     from gefyra.local.cargo import remove_cargo_container
     from gefyra.local.networking import (
@@ -17,16 +17,8 @@ def down(config=default_configuration) -> bool:
         kill_remainder_container_in_network,
     )
     from gefyra.local.bridge import remove_interceptrequest_remainder
-    from gefyra.local.utils import (
-        set_gefyra_network_from_cargo,
-        set_kubeconfig_from_cargo,
-    )
 
-    try:
-        config = set_kubeconfig_from_cargo(config)
-        config = set_gefyra_network_from_cargo(config)
-    except RuntimeError:
-        logger.info("Gefyra client is not running.")
+    config = ClientConfiguration()
     try:
         logger.info("Removing running bridges")
         remove_interceptrequest_remainder(config)

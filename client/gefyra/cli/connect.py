@@ -75,8 +75,7 @@ def connect_client(ctx, client_config, connection_name):
 @click.pass_context
 @standard_error_handler
 def disconnect_client(ctx, connection_name):
-    config = get_configuration_for_connection_name(connection_name)
-    api.disconnect(get_client(config.CLIENT_ID, config), config)
+    api.disconnect(get_client(config.CLIENT_ID, connection_name=connection_name))
 
 
 @connections.command(
