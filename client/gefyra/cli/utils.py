@@ -1,5 +1,4 @@
 from dataclasses import fields
-import json
 from typing import Any, Dict, List, Union
 from gefyra.cli import console
 from gefyra.types import GefyraInstallOptions

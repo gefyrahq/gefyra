@@ -70,7 +70,7 @@ def operator(k3d, stowaway_image, carrier_image):
             for event in events["items"]:
                 if event["reason"] == "Gefyra-Ready":
                     not_found = False
-    except:
+    except Exception:
         operator.timeout = 10
         operator.__exit__(None, None, None)
     if not_found:

@@ -1,10 +1,7 @@
 from argparse import Namespace
-from dataclasses import dataclass
 import logging
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 import uuid
-
-from pathlib import Path
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.clients import (
     get_gefyraclient_body,
@@ -13,7 +10,6 @@ from gefyra.local.clients import (
     handle_get_gefyraclient,
 )
 from gefyra.types import GefyraClient
-from tabulate import tabulate
 from .utils import stopwatch
 
 logger = logging.getLogger(__name__)

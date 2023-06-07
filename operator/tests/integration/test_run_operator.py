@@ -1,4 +1,3 @@
-from time import sleep
 from pytest_kubernetes.providers import AClusterManager
 
 

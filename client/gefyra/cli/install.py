@@ -1,5 +1,3 @@
-import dataclasses
-
 import click
 
 import gefyra.api as api

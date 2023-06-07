@@ -31,7 +31,7 @@ def test_a_connect_clients(
             "gefyraclient",
             "client-a",
             "--type='merge'",
-            f"--patch='"
+            "--patch='"
             + json.dumps({"providerParameter": {"subnet": "192.168.101.0/24"}})
             + "'",
         ]
@@ -59,7 +59,7 @@ def test_a_connect_clients(
             "gefyraclient",
             "client-a",
             "--type='merge'",
-            f"--patch='" + json.dumps({"providerParameter": None}) + "'",
+            "--patch='" + json.dumps({"providerParameter": None}) + "'",
         ]
     )
     k3d.wait(
@@ -96,7 +96,7 @@ def test_a_connect_clients(
             "gefyraclient",
             "client-b",
             "--type='merge'",
-            f"--patch='"
+            "--patch='"
             + json.dumps({"providerParameter": {"subnet": "192.168.103.0/24"}})
             + "'",
         ]

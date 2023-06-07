@@ -25,7 +25,7 @@ def gclient_a(cargo_image):
     yield c
     try:
         c.delete()
-    except:
+    except Exception:
         pass
 
 
@@ -35,5 +35,5 @@ def gclient_b():
     yield c
     try:
         c.delete()
-    except:
+    except Exception:
         pass

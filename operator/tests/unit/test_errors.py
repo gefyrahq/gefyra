@@ -1,5 +1,4 @@
 import logging
-import pytest
 from pytest_kubernetes.providers import AClusterManager
 
 

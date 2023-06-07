@@ -1,7 +1,5 @@
-import json
 import logging
 from time import sleep
-import kopf
 
 from pytest_kubernetes.providers import AClusterManager
 
@@ -39,7 +37,7 @@ class TestClientStates:
         while _i < 10:
             try:
                 client.create()
-            except:
+            except Exception:
                 client_a = k3d.kubectl(
                     ["-n", "gefyra", "get", "gefyraclient", "client-a"]
                 )

@@ -1,4 +1,4 @@
-from gefyra.__main__ import get_client_configuration
+from gefyra import api
 from .utils import AliasedGroup
 
 import click

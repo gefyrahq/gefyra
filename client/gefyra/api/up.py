@@ -1,6 +1,5 @@
 import json
 import logging
-from gefyra.api import install
 
 from gefyra.configuration import ClientConfiguration
 

@@ -5,8 +5,7 @@ from time import sleep
 from collections import defaultdict
 from os import path
 import os
-from types import MappingProxyType
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 from gefyra.connection.stowaway.resources.configmaps import (
     create_stowaway_proxyroute_configmap,
 )

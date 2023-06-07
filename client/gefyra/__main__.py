@@ -3,7 +3,12 @@ import argparse
 import logging
 import traceback
 
-from gefyra.api import get_containers_and_print, get_bridges_and_print, GefyraStatus
+from gefyra.api import (
+    get_containers_and_print,
+    get_bridges_and_print,
+    GefyraStatus,
+    client,
+)
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import (
     PortMappingParser,

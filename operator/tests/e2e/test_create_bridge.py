@@ -44,7 +44,7 @@ def test_a_bridge(
             "gefyraclient",
             "client-a",
             "--type='merge'",
-            f"--patch='"
+            "--patch='"
             + json.dumps({"providerParameter": {"subnet": "192.168.101.0/24"}})
             + "'",
         ]

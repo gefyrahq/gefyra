@@ -1,6 +1,4 @@
 import json
-import os
-import sys
 from time import sleep
 from gefyra.configuration import OperatorConfiguration
 import pytest

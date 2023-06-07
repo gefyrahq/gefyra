@@ -25,7 +25,8 @@ def _get_a_worker_ip(config: dict):
 
 def detect_minikube_config(profile: Optional[str]) -> dict:
     """
-    Read the config for a local Minikube cluster from its configuration file and set Gefyra accordingly
+    Read the config for a local Minikube cluster from its configuration
+    file and set Gefyra accordingly.
     :return: a preped ClientConfiguration object
     """
     try:

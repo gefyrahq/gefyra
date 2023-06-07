@@ -1,21 +1,9 @@
-import base64
 import logging
-import os
 
 import click
 from gefyra import api
 from gefyra.api.clients import get_client
-from gefyra.configuration import (
-    ClientConfiguration,
-    get_configuration_for_connection_name,
-    get_gefyra_config_location,
-)
-from gefyra.local.clients import handle_get_gefyraclient
-from gefyra.local.utils import compose_kubeconfig_for_serviceaccount
 
-from gefyra.types import GefyraClientConfig
-
-from gefyra.cli import console
 from gefyra.cli.utils import standard_error_handler
 from gefyra.cli.__main__ import connections
 from tabulate import tabulate

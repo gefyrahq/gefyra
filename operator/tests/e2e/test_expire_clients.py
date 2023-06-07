@@ -17,7 +17,7 @@ def test_a_expire_client(
             "gefyraclient",
             "client-a",
             "--type='merge'",
-            f"--patch='" + json.dumps({"sunset": _timeout}) + "'",
+            "--patch='" + json.dumps({"sunset": _timeout}) + "'",
         ]
     )
     k3d.wait(

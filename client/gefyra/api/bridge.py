@@ -132,7 +132,8 @@ def bridge(
     else:
         use_index = False
 
-    # is is required to copy at least the service account tokens from the bridged container
+    # is is required to copy at least the service account
+    # tokens from the bridged container
     if sync_down_dirs:
         sync_down_dirs = [
             "/var/run/secrets/kubernetes.io/serviceaccount"

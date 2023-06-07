@@ -57,10 +57,12 @@ def connect(client_config: File, connection_name: str) -> bool:
     )
 
     # 1. get or create a dedicated gefyra network with suffix (from connection name)
-    # 2. try activate the GeyfraClient in the cluster by submitting the subnet (see: operator/tests/e2e/test_connect_clients.py)
+    # 2. try activate the GeyfraClient in the cluster by submitting the subnet
+    # (see: operator/tests/e2e/test_connect_clients.py)
     # -> feature to add to the GefyraClient type (see: client/gefyra/types.py)
     # 3. get the wireguard config from the GefyraClient
-    # 4. Deploy Cargo with the wireguard config (see code from here: operator/tests/e2e/utils.py)
+    # 4. Deploy Cargo with the wireguard config
+    # (see code from here: operator/tests/e2e/utils.py)
     _retry = 0
     while _retry < 5:
         gefyra_network = create_gefyra_network(config, suffix=config.CONNECTION_NAME)
@@ -146,10 +148,11 @@ def connect(client_config: File, connection_name: str) -> bool:
     return True
 
 
-def disconnect(client: GefyraClient) -> bool:
+def disconnect(connection_name: str) -> bool:
     import docker
 
-    config = ClientConfiguration()
+    config = ClientConfiguration(connection_name=connection_name)
+    client = get_client(config.CLIENT_ID, connection_name=connection_name)
     create_gefyra_network(config, suffix=config.CONNECTION_NAME)
     try:
         cargo_container = config.DOCKER.containers.get(

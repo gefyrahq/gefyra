@@ -25,7 +25,7 @@ def test_a_gefyraclients_validator(operator: AClusterManager):
     body = {
         "metadata": {"name": "test1"},
         "provider": "stowaway",
-        "sunset": f"ain't correct",
+        "sunset": "ain't correct",
     }
     with pytest.raises(kopf.AdmissionError):
         check_validate_provider_parameters(body, diff, logger, operation)

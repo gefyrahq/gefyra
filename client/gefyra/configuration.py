@@ -286,8 +286,8 @@ class ClientConfiguration(object):
 
 def get_gefyra_config_location() -> str:
     """
-    It creates a directory for the client config if it doesn't already exist, and returns the path to
-    that directory
+    It creates a directory for the client config if it doesn't
+    already exist, and returns the path to that directory
 
     :param config: ClientConfiguration
     :type config: ClientConfiguration

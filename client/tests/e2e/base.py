@@ -1,5 +1,4 @@
 from copy import deepcopy
-from gefyra.api.clients import add_clients, delete_client
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
 from gefyra.cluster.utils import (
     get_container_command,

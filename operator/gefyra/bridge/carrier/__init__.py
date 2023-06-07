@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from gefyra.utils import exec_command_pod
 import kubernetes as k8s
 

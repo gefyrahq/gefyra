@@ -1,6 +1,4 @@
-import logging
 import os
-import sys
 from pathlib import Path
 import subprocess
 from time import sleep
