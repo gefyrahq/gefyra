@@ -32,10 +32,9 @@ def connect_client(client_config, connection_name: str):
     help="Disconnect this local machine from a Gefyra cluster",
 )
 @click.argument("connection_name", type=str)
-@click.pass_context
 @standard_error_handler
-def disconnect_client(ctx, connection_name):
-    api.disconnect(get_client(config.CLIENT_ID, connection_name=connection_name))
+def disconnect_client(connection_name):
+    api.disconnect(connection_name=connection_name)
 
 
 @connections.command(
