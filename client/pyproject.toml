@@ -33,7 +33,7 @@ prompt-toolkit = "^3.0.38"
 [tool.poetry.group.dev.dependencies]
 flake8-bugbear = "^23.3.12"
 black = "^23.1.0"
-flake8 = "^5.0.4"
+flake8 = "^6.0.0"
 flake8-black = "^0.3.6"
 pytest = "^7.2.2"
 coverage = {extras = ["toml"], version = "^6.5.0"}
