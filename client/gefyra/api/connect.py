@@ -1,37 +1,60 @@
+import base64
 import logging
 import os
 import platform
 import sys
 import time
 from typing import Dict, List
+from click import File
+from gefyra.api.clients import get_client
+from gefyra.cli import console
 
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
-from gefyra.local import CONNECTION_NAME_LABEL
 from gefyra.local.cargo import (
-    create_cargo_container,
     create_wireguard_config,
     get_cargo_ip_from_netaddress,
     probe_wireguard_connection,
 )
 from gefyra.local.networking import create_gefyra_network
 from gefyra.local.utils import (
-    handle_docker_create_container,
+    compose_kubeconfig_for_serviceaccount,
     handle_docker_get_or_create_container,
 )
-from gefyra.types import GefyraClient, GefyraClientState
-
-
-from . import down
+from gefyra.types import GefyraClient, GefyraClientConfig, GefyraClientState
 
 
 logger = logging.getLogger(__name__)
 
 
-def connect(client: GefyraClient) -> bool:
+def connect(client_config: File, connection_name: str) -> bool:
     import kubernetes
     import docker
 
-    config = ClientConfiguration()
+    file_str = client_config.read()
+    gclient_conf = GefyraClientConfig.from_json_str(file_str)
+    client = get_client(gclient_conf.client_id, connection_name=connection_name)
+
+    loc = os.path.join(
+        get_gefyra_config_location(),
+        f"{connection_name}.yaml",
+    )
+    kubeconfig_str = compose_kubeconfig_for_serviceaccount(
+        gclient_conf.kubernetes_server,
+        gclient_conf.ca_crt,
+        "gefyra",
+        base64.b64decode(gclient_conf.token).decode("utf-8"),
+    )
+    with open(loc, "w") as f:
+        f.write(kubeconfig_str)
+        console.info(f"Client kubeconfig saved to {loc}")
+
+    config = ClientConfiguration(
+        kube_config_file=loc,
+        client_id=gclient_conf.client_id,
+        cargo_endpoint_host=gclient_conf.gefyra_server.split(":")[0],
+        cargo_endpoint_port=gclient_conf.gefyra_server.split(":")[1],
+        cargo_container_name=f"gefyra-cargo-{connection_name}",
+    )
 
     # 1. get or create a dedicated gefyra network with suffix (from connection name)
     # 2. try activate the GeyfraClient in the cluster by submitting the subnet (see: operator/tests/e2e/test_connect_clients.py)

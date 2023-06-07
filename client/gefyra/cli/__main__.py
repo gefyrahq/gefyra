@@ -18,7 +18,7 @@ from gefyra.configuration import ClientConfiguration
 )
 @click.option("-d", "--debug", default=False, is_flag=True)
 @click.pass_context
-def cli(ctx, kubeconfig, context, debug):
+def cli(ctx: click.Context, kubeconfig, context, debug):
     if debug:
         import logging
 

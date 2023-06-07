@@ -220,9 +220,9 @@ def bridge(
     return True
 
 
-def wait_for_deletion(ireqs: List, config=default_configuration):
+def wait_for_deletion(ireqs: List):
     from kubernetes.watch import Watch
-
+    config = ClientConfiguration()
     w = Watch()
     deleted = []
     uids = [ireq["metadata"]["uid"] for ireq in ireqs]

@@ -282,7 +282,7 @@ class ClientConfiguration(object):
         return self.K8S_CORE_API.api_client.configuration.host
 
 
-def get_gefyra_config_location(config: ClientConfiguration) -> str:
+def get_gefyra_config_location() -> str:
     """
     It creates a directory for the client config if it doesn't already exist, and returns the path to
     that directory
@@ -291,6 +291,7 @@ def get_gefyra_config_location(config: ClientConfiguration) -> str:
     :type config: ClientConfiguration
     :return: The path to the directory where the files will be stored.
     """
+    config = ClientConfiguration()
     config_dir = config.GEFYRA_LOCATION
     config_dir.mkdir(parents=True, exist_ok=True)
     return str(config_dir)
