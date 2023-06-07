@@ -48,12 +48,14 @@ def get_env_from_pod_container(
                 sleep(interval)
                 counter += 1
                 logger.debug(
-                    f"Failed to get env from pod {pod_name} in namespace {namespace} on try {counter}."
+                    f"Failed to get env from pod {pod_name} in namespace {namespace} on"
+                    f" try {counter}."
                 )
             else:
                 raise e
     raise RuntimeError(
-        f"Failed to get env from pod {pod_name} in namespace {namespace} after {retries} tries."
+        f"Failed to get env from pod {pod_name} in namespace {namespace} after"
+        f" {retries} tries."
     )
 
 

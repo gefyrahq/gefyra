@@ -72,7 +72,10 @@ def inspect_client(ctx, client_id):
     "-a",
     "--kube-api",
     "--kubernetes-api",
-    help="The Kubernetes API adress for the host cluster (default: API adresse of your kubeconfig)",
+    help=(
+        "The Kubernetes API adress for the host cluster (default: API adresse of your"
+        " kubeconfig)"
+    ),
     type=str,
 )
 @click.option(

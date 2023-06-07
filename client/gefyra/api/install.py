@@ -12,8 +12,12 @@ LB_PRESETS = {
             "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type": "ip",
             "service.beta.kubernetes.io/aws-load-balancer-healthcheck-port": "80",
             "service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol": "TCP",
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold": "3",
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold": "3",
+            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold": (
+                "3"
+            ),
+            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold": (
+                "3"
+            ),
             "service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout": "10",
             "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval": "10",
             "service.beta.kubernetes.io/aws-load-balancer-scheme": "internet-facing",

@@ -127,8 +127,10 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         if not self.bridge_provider.ready():
             # TODO add timeout
             raise kopf.TemporaryError(
-                "Waiting for Gefyra bridge provider "
-                f"{self.bridge_provider.__class__.__name__} to become ready",
+                (
+                    "Waiting for Gefyra bridge provider "
+                    f"{self.bridge_provider.__class__.__name__} to become ready"
+                ),
                 delay=1,
             )
         else:

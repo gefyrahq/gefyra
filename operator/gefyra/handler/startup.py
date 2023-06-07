@@ -87,9 +87,11 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
             )
         else:
             raise kopf.TemporaryError(
-                f"Connection provider(s) {gefyra_connector.name} is not ready yet "
-                f"(retry {retry}/"
-                f"{configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT})))",
+                (
+                    f"Connection provider(s) {gefyra_connector.name} is not ready yet "
+                    f"(retry {retry}/"
+                    f"{configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT})))"
+                ),
                 delay=1,
             )
 

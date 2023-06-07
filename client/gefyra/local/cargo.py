@@ -79,10 +79,12 @@ def probe_wireguard_connection(config: ClientConfiguration):
             break
     else:
         raise RuntimeError(
-            f"Gefyra could not successfully confirm the Wireguard connection working. Please make sure you "
-            f"are using the --endpoint argument for remote clusters and that the Kubernetes NodePort "
-            f"{config.CARGO_ENDPOINT} can be reached from this machine. Please check your firewall "
-            f"settings, too. If you are running a local Minikube cluster, please use the 'gefyra up --minikube' flag."
+            "Gefyra could not successfully confirm the Wireguard connection working."
+            " Please make sure you are using the --endpoint argument for remote"
+            f" clusters and that the Kubernetes NodePort {config.CARGO_ENDPOINT} can be"
+            " reached from this machine. Please check your firewall settings, too. If"
+            " you are running a local Minikube cluster, please use the 'gefyra up"
+            " --minikube' flag."
         )
 
 

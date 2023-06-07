@@ -49,8 +49,8 @@ def check_workloads(
 
     if workload_type != "pod" and workload_name not in cleaned_names:
         raise RuntimeError(
-            f"Could not find {workload_type}/{workload_name} to bridge. Available {workload_type}:"
-            f" {', '.join(cleaned_names)}"
+            f"Could not find {workload_type}/{workload_name} to bridge. Available"
+            f" {workload_type}: {', '.join(cleaned_names)}"
         )
     if container_name not in [
         container for c_list in pods_to_intercept.values() for container in c_list
@@ -91,8 +91,8 @@ def bridge(
         ]["IPAddress"]
     except KeyError:
         logger.error(
-            f"The target container '{name}' is not in Gefyra's network {config.NETWORK_NAME}."
-            f" Did you run 'gefyra up'?"
+            f"The target container '{name}' is not in Gefyra's network"
+            f" {config.NETWORK_NAME}. Did you run 'gefyra up'?"
         )
         return False
 
@@ -102,7 +102,8 @@ def bridge(
         container_name = _bits[2] if _bits[2:] else None
     except IndexError:
         raise RuntimeError(
-            "Invalid --target notation. Use <workload_type>/<workload_name>(/<container_name>)."
+            "Invalid --target notation. Use"
+            " <workload_type>/<workload_name>(/<container_name>)."
         )
         return False
 

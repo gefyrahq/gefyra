@@ -29,7 +29,8 @@ def probe_kubernetes():
         config.K8S_CORE_API.list_namespace()
     except Exception:
         logger.error(
-            "Kubernetes is not connected to a cluster or does not seem to be working for Gefyra"
+            "Kubernetes is not connected to a cluster or does not seem to be working"
+            " for Gefyra"
         )
         return False
     else:

@@ -191,7 +191,8 @@ class GefyraClient:
             )
         else:
             raise RuntimeError(
-                f"Cannot activate connection for client {self.client_id}, state is {self.state}"
+                f"Cannot activate connection for client {self.client_id}, state is"
+                f" {self.state}"
             )
 
     def deactivate_connection(self):
@@ -210,7 +211,8 @@ class GefyraClient:
             )
         else:
             raise RuntimeError(
-                f"Cannot deactivate connection for client {self.client_id}, state is {self.state}"
+                f"Cannot deactivate connection for client {self.client_id}, state is"
+                f" {self.state}"
             )
 
 
@@ -225,19 +227,28 @@ class GefyraInstallOptions:
     version: str = field(
         default_factory=lambda: __VERSION__,
         metadata=dict(
-            help=f"Set the Operator version; components are created according to this Gefyra version (default: {__VERSION__})"
+            help=(
+                "Set the Operator version; components are created according to this"
+                f" Gefyra version (default: {__VERSION__})"
+            )
         ),
     )
     service_type: str = field(
         default_factory=lambda: "NodePort",
         metadata=dict(
-            help="The Kubernetes service for Stowaway to expose the Wireguard endpoint (default: NodePort)"
+            help=(
+                "The Kubernetes service for Stowaway to expose the Wireguard endpoint"
+                " (default: NodePort)"
+            )
         ),
     )
     service_port: int = field(
         default_factory=lambda: 31820,
         metadata=dict(
-            help="The port for Stowaway to expose the Wireguard endpoint (default: 31820)"
+            help=(
+                "The port for Stowaway to expose the Wireguard endpoint (default:"
+                " 31820)"
+            )
         ),
     )
     service_labels: Dict[str, str] = field(

@@ -41,9 +41,11 @@ def handle_create_network(config: ClientConfiguration, suffix: str = "") -> Netw
                 else "default"
             )
             logger.warning(
-                f"The MTU value of the '{network_name}' network (={_mtu}) is different from the --wireguard-mtu parameter "
-                f"(={config.WIREGUARD_MTU}) or default. You may experience bad network connections. Consider removing "
-                f"the network '{network_name}' with 'docker network rm gefyra' before running 'gefyra up'."
+                f"The MTU value of the '{network_name}' network (={_mtu}) is different"
+                f" from the --wireguard-mtu parameter (={config.WIREGUARD_MTU}) or"
+                " default. You may experience bad network connections. Consider"
+                f" removing the network '{network_name}' with 'docker network rm"
+                " gefyra' before running 'gefyra up'."
             )
         return network
     except NotFound:

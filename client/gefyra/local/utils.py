@@ -197,12 +197,14 @@ def set_kubeconfig_from_cargo(config: ClientConfiguration) -> ClientConfiguratio
         ]
         if config.KUBE_CONFIG_FILE != kube_context:
             logger.debug(
-                f"Setting a different kubeconfig path from {config.KUBE_CONFIG_FILE} to {kube_config_path}"
+                f"Setting a different kubeconfig path from {config.KUBE_CONFIG_FILE} to"
+                f" {kube_config_path}"
             )
             config.KUBE_CONFIG_FILE = kube_config_path
         if config.KUBE_CONTEXT != kube_context:
             logger.debug(
-                f"Setting a different kubeconfig context from {config.KUBE_CONTEXT} to {kube_context}"
+                f"Setting a different kubeconfig context from {config.KUBE_CONTEXT} to"
+                f" {kube_context}"
             )
             config.KUBE_CONTEXT = kube_context
         return config
@@ -233,7 +235,8 @@ class PortMappingParser(argparse.Action):
             mapping = self.parse_split(res)
         except Exception:
             logger.error(
-                "Invalid port mapping. Example valid port mapping: 8080:8081 (<ip>:host_port:container_port)."
+                "Invalid port mapping. Example valid port mapping: 8080:8081"
+                " (<ip>:host_port:container_port)."
             )
             exit(1)
         else:

@@ -504,9 +504,9 @@ class GefyraBaseTest:
         run(**run_params)
         with self.assertRaises(RuntimeError) as rte:
             bridge_params = self.default_bridge_params
-            bridge_params[
-                "target"
-            ] = "deployment/hello-nginxdemo-command/hello-nginx-command"
+            bridge_params["target"] = (
+                "deployment/hello-nginxdemo-command/hello-nginx-command"
+            )
             bridge_params["namespace"] = "commands"
             bridge(**bridge_params)
         self.assertIn("Cannot bridge pod", str(rte.exception))

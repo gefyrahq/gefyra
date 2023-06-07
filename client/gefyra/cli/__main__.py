@@ -85,13 +85,19 @@ def version(ctx):
 @click.option(
     "-v",
     "--volume",
-    help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
+    help=(
+        "Bind mount a volume into the container in notation src:dest, allowed multiple"
+        " times"
+    ),
     type=str,
     multiple=True,
 )
 @click.option(
     "--env",
-    help="Set or override environment variables in the form ENV=value, allowed multiple times",
+    help=(
+        "Set or override environment variables in the form ENV=value, allowed multiple"
+        " times"
+    ),
     type=str,
     multiple=True,
 )

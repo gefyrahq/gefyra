@@ -26,8 +26,8 @@ def get_workload_type(workload_type_str: str):
 
     if workload_type_str not in VALID_TYPES:
         raise RuntimeError(
-            f"Unknown workload type {workload_type_str}\n"
-            f'Valid workload types include: {", ".join(str(valid_type) for valid_type in VALID_TYPES)}'
+            f"Unknown workload type {workload_type_str}\nValid workload types include:"
+            f" {', '.join(str(valid_type) for valid_type in VALID_TYPES)}"
         )
 
     if workload_type_str in POD:

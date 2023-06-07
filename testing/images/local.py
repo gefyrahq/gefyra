@@ -22,9 +22,8 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         now = datetime.utcnow()
         self.wfile.write(
             bytes(
-                f"<html><body><h1>Hello from Gefyra. It is {now} on {hostname}.</h1></body></html>".encode(
-                    "utf-8"
-                )
+                f"<html><body><h1>Hello from Gefyra. It is {now} on"
+                f" {hostname}.</h1></body></html>".encode("utf-8")
             )
         )
 

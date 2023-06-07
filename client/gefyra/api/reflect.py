@@ -21,9 +21,9 @@ def _check_ports(host_ports):
             ports_not_free.append(str(port))
     if len(ports_not_free):
         raise RuntimeError(
-            f"Following ports are needed for the container to run, but are occupied  \
-            on your host system: {', '.join(ports_not_free)}. \
-            Please provide a port mapping via --port to overwrite these ports."
+            "Following ports are needed for the container to run, but are occupied    "
+            f"          on your host system: {', '.join(ports_not_free)}.            "
+            " Please provide a port mapping via --port to overwrite these ports."
         )
 
 

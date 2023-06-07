@@ -182,7 +182,8 @@ def deploy_app_container(
             _i = _i + 1
     except docker.errors.NotFound:
         raise RuntimeError(
-            f"Container {container.id} is not running. Did you miss a valid startup command?"
+            f"Container {container.id} is not running. Did you miss a valid startup"
+            " command?"
         )
 
     if container.status != "running":
@@ -200,7 +201,8 @@ def deploy_app_container(
         container = config.DOCKER.containers.get(container.id)
         if container.status != "running":
             raise RuntimeError(
-                f"Container {name} is not running. Check whether your command is valid for the chosen image."
+                f"Container {name} is not running. Check whether your command is valid"
+                " for the chosen image."
             )
         raise RuntimeError(
             f"Gateway patch could not be applied to '{container.name}': {output}"

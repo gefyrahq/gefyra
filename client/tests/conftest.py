@@ -26,8 +26,11 @@ def k3d():
 def operator_image(request):
     name = "operator:pytest"
     subprocess.run(
-        f"docker build -t {name} -f {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
-        f" {(Path(__file__).parent / Path('../../operator/')).resolve()}",
+        (
+            f"docker build -t {name} -f"
+            f" {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
+        ),
         shell=True,
     )
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
@@ -38,8 +41,11 @@ def operator_image(request):
 def stowaway_image(request):
     name = "stowaway:pytest"
     subprocess.run(
-        f"docker build -t {name} -f {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
-        f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}",
+        (
+            f"docker build -t {name} -f"
+            f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
+        ),
         shell=True,
     )
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))

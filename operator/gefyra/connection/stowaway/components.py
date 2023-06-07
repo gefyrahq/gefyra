@@ -56,7 +56,8 @@ def handle_proxyroute_configmap(
         if e.status == 409:
             # the Stowaway proxy route configmap exist
             logger.warning(
-                "Stowaway proxy route configmap already available, now patching it with current configuration"
+                "Stowaway proxy route configmap already available, now patching it with"
+                " current configuration"
             )
             core_v1_api.replace_namespaced_config_map(
                 name=configmap_proxyroute.metadata.name,
@@ -97,7 +98,8 @@ def handle_config_configmap(
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
             logger.warning(
-                "Stowaway config configmap already available, now patching it with current configuration"
+                "Stowaway config configmap already available, now patching it with"
+                " current configuration"
             )
             core_v1_api.replace_namespaced_config_map(
                 name=configmap.metadata.name,
@@ -141,7 +143,8 @@ def handle_stowaway_statefulset(
         if e.status == 409:
             # the Stowaway deployment already exist
             logger.warning(
-                "Stowaway deployment already available, now patching it with current configuration"
+                "Stowaway deployment already available, now patching it with current"
+                " configuration"
             )
             app.patch_namespaced_stateful_set(
                 name=stowaway_sts.metadata.name,
@@ -187,7 +190,8 @@ def handle_stowaway_nodeport_service(
             # the Stowaway service already exist
             # status == 422 is nodeport already allocated
             logger.warning(
-                "Stowaway nodeport service already available, now patching it with current configuration"
+                "Stowaway nodeport service already available, now patching it with"
+                " current configuration"
             )
             core_v1_api.patch_namespaced_service(
                 name=nodeport_service_stowaway.metadata.name,
@@ -278,7 +282,8 @@ def handle_stowaway_proxy_service(
             # the Stowaway service already exist
             # status == 422 is nodeport already allocated
             logger.warn(
-                f"Stowaway proxy service for port {port} already available, now patching it with current configuration"
+                f"Stowaway proxy service for port {port} already available, now"
+                " patching it with current configuration"
             )
             core_v1_api.patch_namespaced_service(
                 name=proxy_service_stowaway.metadata.name,

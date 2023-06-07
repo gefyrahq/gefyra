@@ -69,7 +69,8 @@ def handle_create_namespace(config: ClientConfiguration, retries=10, wait=3):
         time.sleep(wait)
     if not created:
         raise RuntimeError(
-            f"Could not create namespace. Retried {retries} times. API returned HTTP 409."
+            f"Could not create namespace. Retried {retries} times. API returned HTTP"
+            " 409."
         )
 
 
@@ -93,7 +94,8 @@ def handle_serviceaccount(
                 # due to a previous `gefyra down`. As long as it is terminating this error occurs.
                 if counter > retries:
                     raise RuntimeError(
-                        f"You're not allowed to create a serviceaccount in namespace {config.NAMESPACE}."
+                        "You're not allowed to create a serviceaccount in namespace"
+                        f" {config.NAMESPACE}."
                     )
                 else:
                     counter += 1

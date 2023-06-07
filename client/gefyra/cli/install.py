@@ -18,12 +18,18 @@ from gefyra.cli.__main__ import cli as _cli
 
 @_cli.command(
     "install",
-    help="Create and print the Kubernetes configs for Gefyra; usage: 'gefyra install [options] | kubectl apply -f -",
+    help=(
+        "Create and print the Kubernetes configs for Gefyra; usage: 'gefyra install"
+        " [options] | kubectl apply -f -"
+    ),
 )
 @click.option(
     "--component",
     "--comp",
-    help=f"Limit config creation to this component (available: {','.join([c.__name__.split('.')[-1] for c in COMPONENTS])})",
+    help=(
+        "Limit config creation to this component (available:"
+        f" {','.join([c.__name__.split('.')[-1] for c in COMPONENTS])})"
+    ),
     type=str,
     multiple=True,
 )

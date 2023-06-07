@@ -89,8 +89,11 @@ def operator(k3d, stowaway_image, carrier_image):
 def stowaway_image(request):
     name = "stowaway:pytest"
     subprocess.run(
-        f"docker build -t {name} -f {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
-        f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}",
+        (
+            f"docker build -t {name} -f"
+            f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
+        ),
         shell=True,
     )
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
@@ -101,8 +104,11 @@ def stowaway_image(request):
 def operator_image(request):
     name = "operator:pytest"
     subprocess.run(
-        f"docker build -t {name} -f {(Path(__file__).parent / Path('../Dockerfile')).resolve()}"
-        f" {(Path(__file__).parent / Path('../')).resolve()}",
+        (
+            f"docker build -t {name} -f"
+            f" {(Path(__file__).parent / Path('../Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../')).resolve()}"
+        ),
         shell=True,
     )
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
@@ -113,8 +119,11 @@ def operator_image(request):
 def carrier_image(request):
     name = "carrier:pytest"
     subprocess.run(
-        f"docker build -t {name} -f {(Path(__file__).parent / Path('../../carrier/Dockerfile')).resolve()}"
-        f" {(Path(__file__).parent / Path('../../carrier/')).resolve()}",
+        (
+            f"docker build -t {name} -f"
+            f" {(Path(__file__).parent / Path('../../carrier/Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../../carrier/')).resolve()}"
+        ),
         shell=True,
     )
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))

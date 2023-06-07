@@ -32,9 +32,9 @@ def detect_minikube_config(profile: Optional[str]) -> dict:
         config = _read_minikube_config(profile)
     except FileNotFoundError:
         raise RuntimeError(
-            f"The minikube profile {profile} does not exist. Did you start Minikube?"
-            f"Please also review your profile with 'minikube profile list' and try again. "
-            f"Minikube profiles are case-sensitive."
+            f"The minikube profile {profile} does not exist. Did you start"
+            " Minikube?Please also review your profile with 'minikube profile list'"
+            " and try again. Minikube profiles are case-sensitive."
         )
     except Exception as e:
         raise RuntimeError(
@@ -55,7 +55,8 @@ def detect_minikube_config(profile: Optional[str]) -> dict:
 
     endpoint = _get_a_worker_ip(config)
     logger.debug(
-        f"Minikube setup with driver '{driver}' network '{network_name}' and endpoint '{endpoint}'"
+        f"Minikube setup with driver '{driver}' network '{network_name}' and endpoint"
+        f" '{endpoint}'"
     )
 
     configuration_parameters = {

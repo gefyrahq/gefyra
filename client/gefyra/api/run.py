@@ -169,8 +169,8 @@ def run(
             raise RuntimeError(e.explanation)
 
     logger.info(
-        f"Container image '{', '.join(container.image.tags)}' started with name '{container.name}' in "
-        f"Kubernetes namespace '{namespace}' (from {ns_source})"
+        f"Container image '{', '.join(container.image.tags)}' started with name"
+        f" '{container.name}' in Kubernetes namespace '{namespace}' (from {ns_source})"
     )
     if detach:
         return True

@@ -184,7 +184,8 @@ def _check_pod_for_command(pod: V1Pod, container_name: str):
             and container.command[0] not in ALLOWED_COMMANDS
         ):
             raise RuntimeError(
-                f"Cannot bridge pod {pod.metadata.name} since it has a `command` defined."
+                f"Cannot bridge pod {pod.metadata.name} since it has a `command`"
+                " defined."
             )
 
 
@@ -217,7 +218,8 @@ def owner_reference_consistent(
                 return False
         return replicaset_set.metadata.owner_references[0].uid == workload.metadata.uid
     raise RuntimeError(
-        f"Unknown workload type for owner reference check: {workload.kind}/{workload.metadata.name}."
+        "Unknown workload type for owner reference check:"
+        f" {workload.kind}/{workload.metadata.name}."
     )
 
 

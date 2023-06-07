@@ -135,7 +135,9 @@ class ClientConfiguration(object):
             self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
             self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
             self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
-            self.NETWORK_NAME = f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"  # TODO set base network name
+            self.NETWORK_NAME = (  # TODO set base network name
+                f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"
+            )
             self.CARGO_CONTAINER_NAME = cargo_container.name
 
         if cargo_endpoint_host:

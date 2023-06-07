@@ -213,7 +213,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
         )
         if len(svcs.items) == 0:
             raise RuntimeError(
-                f"Error looking up destination {destination_ip}:{destination_port} for client {peer_id}: no proxy service found"
+                f"Error looking up destination {destination_ip}:{destination_port} for"
+                f" client {peer_id}: no proxy service found"
             )
         _, stowaway_port = svcs.items[0].metadata.name.rsplit("-", 1)
         return f"{svcs.items[0].metadata.name}.{self.configuration.NAMESPACE}.svc.cluster.local:{stowaway_port}"
@@ -267,7 +268,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
             return False
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
-                f"Error looking up destination {destination_ip}:{destination_port} for peer {peer_id}: {e}"
+                f"Error looking up destination {destination_ip}:{destination_port} for"
+                f" peer {peer_id}: {e}"
             )
             return False
 
@@ -276,7 +278,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
             if subnet := wireguard_parameter.get("subnet"):
                 if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
                     raise kopf.AdmissionError(
-                        f"The Wireguard subnet '{subnet}' does not validate with regex '{WIREGUARD_CIDR_PATTERN}'."
+                        f"The Wireguard subnet '{subnet}' does not validate with regex"
+                        f" '{WIREGUARD_CIDR_PATTERN}'."
                     )
                 if hints.get("added") == "providerParameter" and self._subnet_taken(
                     subnet

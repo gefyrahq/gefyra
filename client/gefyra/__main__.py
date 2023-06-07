@@ -16,7 +16,10 @@ from gefyra.local.telemetry import CliTelemetry
 logger = logging.getLogger("gefyra")
 parser = argparse.ArgumentParser(
     prog="gefyra",
-    description="The Gefyra client. For more help please visit: https://gefyra.dev/reference/cli/",
+    description=(
+        "The Gefyra client. For more help please visit:"
+        " https://gefyra.dev/reference/cli/"
+    ),
 )
 action = parser.add_subparsers(dest="action", help="the action to be performed")
 parser.add_argument("-d", "--debug", action="store_true", help="add debug output")
@@ -36,8 +39,10 @@ up_parser.add_argument(
     "-H",
     "--host",
     dest="cargo_endpoint_host",
-    help="Hostname or IP of a K8s node for Gefyra to connect to."
-    "Gefyra tries to extract this from the current kubeconfig and context.",
+    help=(
+        "Hostname or IP of a K8s node for Gefyra to connect to."
+        "Gefyra tries to extract this from the current kubeconfig and context."
+    ),
     required=False,
 )
 up_parser.add_argument(
@@ -51,8 +56,10 @@ up_parser.add_argument(
 up_parser.add_argument(
     "-M",
     "--minikube",
-    help="Let Gefyra automatically find out the connection parameters for a "
-    "local Minikube cluster for the given profile (default 'minikube').",
+    help=(
+        "Let Gefyra automatically find out the connection parameters for a "
+        "local Minikube cluster for the given profile (default 'minikube')."
+    ),
     required=False,
     nargs="?",
     const="minikube",
@@ -129,7 +136,10 @@ reflect_parser.add_argument(
     "-v",
     "--volume",
     action="append",
-    help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
+    help=(
+        "Bind mount a volume into the container in notation src:dest, allowed multiple"
+        " times"
+    ),
     required=False,
 )
 reflect_parser.add_argument(
@@ -164,7 +174,10 @@ reflect_parser.add_argument(
 reflect_parser.add_argument(
     "--env",
     action="append",
-    help="Set or override environment variables in the form ENV=value, allowed multiple times",
+    help=(
+        "Set or override environment variables in the form ENV=value, allowed multiple"
+        " times"
+    ),
     required=False,
 )
 
@@ -190,14 +203,20 @@ run_parser.add_argument(
 run_parser.add_argument(
     "--env",
     action="append",
-    help="Set or override environment variables in the form ENV=value, allowed multiple times",
+    help=(
+        "Set or override environment variables in the form ENV=value, allowed multiple"
+        " times"
+    ),
     required=False,
 )
 run_parser.add_argument(
     "-v",
     "--volume",
     action="append",
-    help="Bind mount a volume into the container in notation src:dest, allowed multiple times",
+    help=(
+        "Bind mount a volume into the container in notation src:dest, allowed multiple"
+        " times"
+    ),
     required=False,
 )
 run_parser.add_argument(
@@ -254,9 +273,11 @@ bridge_parser.add_argument(
 )
 bridge_parser.add_argument(
     "--target",
-    help="Intercept the container given in the notation 'resource/name/container'. "
-    "Resource can be one of 'deployment', 'statefulset' or 'pod'. "
-    "E.g.: --target deployment/hello-nginx/nginx",
+    help=(
+        "Intercept the container given in the notation 'resource/name/container'. "
+        "Resource can be one of 'deployment', 'statefulset' or 'pod'. "
+        "E.g.: --target deployment/hello-nginx/nginx"
+    ),
     required=False,
 )
 
@@ -356,8 +377,8 @@ def version(config, check: bool):
         latest_release_version = release.json()["tag_name"].replace("-", ".")
         if config.__VERSION__ != latest_release_version:  # pragma: no cover
             logger.info(
-                f"You are using gefyra version {config.__VERSION__}; however, version {latest_release_version} is "
-                f"available."
+                f"You are using gefyra version {config.__VERSION__}; however, version"
+                f" {latest_release_version} is available."
             )
     return True
 
@@ -380,7 +401,8 @@ def get_client_configuration(args) -> ClientConfiguration:
     if args.action == "up":
         if args.cargo_endpoint:
             logger.warning(
-                "`--endpoint`/`-e` has been removed. Please consider `--host` and `--port` instead."
+                "`--endpoint`/`-e` has been removed. Please consider `--host` and"
+                " `--port` instead."
             )
             exit(1)
         if args.minikube and bool(args.cargo_endpoint_host):
@@ -398,7 +420,8 @@ def get_client_configuration(args) -> ClientConfiguration:
                     configuration_params["cargo_endpoint_port"] = endpoint.split(":")[1]
                 else:
                     logger.info(
-                        "There was no --host argument provided. Connecting to a local Kubernetes node."
+                        "There was no --host argument provided. Connecting to a local"
+                        " Kubernetes node."
                     )
         for argument in vars(args):
             if argument not in [
@@ -410,7 +433,8 @@ def get_client_configuration(args) -> ClientConfiguration:
                 # don't overwrite an option which has been determined already
                 if argument not in configuration_params:
                     logger.debug(
-                        f"Setting remainder option: {argument}:{getattr(args, argument)}"
+                        "Setting remainder option:"
+                        f" {argument}:{getattr(args, argument)}"
                     )
                     configuration_params[argument] = getattr(args, argument)
 

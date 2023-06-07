@@ -91,7 +91,9 @@ class Carrier(AbstractGefyraBridgeProvider):
             ["cat", "/etc/nginx/nginx.conf"],
         )
         if (
-            f"upstream stowaway-{container_port} {{server {destination_host}:{destination_port};}} server {{listen {container_port}; proxy_pass stowaway-{container_port};}}"
+            f"upstream stowaway-{container_port} {{server"
+            f" {destination_host}:{destination_port};}} server {{listen"
+            f" {container_port}; proxy_pass stowaway-{container_port};}}"
             in output
         ):
             return True
@@ -124,7 +126,8 @@ class Carrier(AbstractGefyraBridgeProvider):
                         )
                     ):
                         self.logger.error(
-                            "Not all of the probes to be handled are currently supported by Gefyra"
+                            "Not all of the probes to be handled are currently"
+                            " supported by Gefyra"
                         )
                         return False, pod
                 if (
@@ -133,7 +136,8 @@ class Carrier(AbstractGefyraBridgeProvider):
                 ):
                     # this pod/container is already running Carrier
                     self.logger.info(
-                        f"The container {self.container} in Pod {self.pod} is already running Carrier"
+                        f"The container {self.container} in Pod {self.pod} is already"
+                        " running Carrier"
                     )
                 self._store_pod_original_config(container)
                 container.image = f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
@@ -176,11 +180,13 @@ class Carrier(AbstractGefyraBridgeProvider):
                 break
         else:
             raise RuntimeError(
-                f"Could not found container {self.container} in Pod {self.pod}: cannot patch with original state"
+                f"Could not found container {self.container} in Pod {self.pod}: cannot"
+                " patch with original state"
             )
 
         self.logger.info(
-            f"Now patching Pod {self.pod}; container {self.container} with original state"
+            f"Now patching Pod {self.pod}; container {self.container} with original"
+            " state"
         )
         core_v1_api.patch_namespaced_pod(
             name=self.pod, namespace=self.namespace, body=pod

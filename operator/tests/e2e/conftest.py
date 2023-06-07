@@ -8,8 +8,11 @@ from .utils import GefyraDockerClient
 def cargo_image(request):
     name = "cargo:pytest"
     subprocess.run(
-        f"docker build -t {name} -f {(Path(__file__).parent / Path('../../../cargo/Dockerfile')).resolve()}"
-        f" {(Path(__file__).parent / Path('../../../cargo/')).resolve()}",
+        (
+            f"docker build -t {name} -f"
+            f" {(Path(__file__).parent / Path('../../../cargo/Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../../../cargo/')).resolve()}"
+        ),
         shell=True,
     )
     request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
