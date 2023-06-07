@@ -21,7 +21,8 @@ GEFYRA_TEST_ENDPOINT = "123.123.123.123:1234"
 def kubeconfig_incl_gefyra(tmp_path):
     target_output = os.path.join(tmp_path, "config")
     with open(target_output, "w") as f:
-        f.write(f"""
+        f.write(
+            f"""
 ---
 apiVersion: v1
 current-context: test_context
@@ -31,7 +32,8 @@ contexts:
     user: system:kubernetes-admin
   name: test_context
   gefyra: {GEFYRA_TEST_ENDPOINT}
-        """)
+        """
+        )
     return target_output
 
 

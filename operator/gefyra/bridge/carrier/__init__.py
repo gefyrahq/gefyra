@@ -93,8 +93,7 @@ class Carrier(AbstractGefyraBridgeProvider):
         if (
             f"upstream stowaway-{container_port} {{server"
             f" {destination_host}:{destination_port};}} server {{listen"
-            f" {container_port}; proxy_pass stowaway-{container_port};}}"
-            in output
+            f" {container_port}; proxy_pass stowaway-{container_port};}}" in output
         ):
             return True
         else:

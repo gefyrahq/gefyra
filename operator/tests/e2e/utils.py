@@ -14,7 +14,8 @@ def get_dockerfile():
     run_patch = ""
     if sys.platform == "win32" or "microsoft-standard" in platform.release():
         run_patch = "RUN patch /usr/bin/wg-quick /wgquick.patch"
-    return io.BytesIO(f""" 
+    return io.BytesIO(
+        f""" 
 FROM "cargo:pytest"
 {run_patch}
 
@@ -43,7 +44,10 @@ PersistentKeepalive = 21 \\n\
 AllowedIPs = '"$ALLOWED_IPS" > /config/wg0.conf
 
 RUN cat /config/wg0.conf
-""".encode("utf-8"))
+""".encode(
+            "utf-8"
+        )
+    )
 
 
 class GefyraDockerClient:
