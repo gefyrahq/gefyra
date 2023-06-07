@@ -1,6 +1,6 @@
 import logging
 from time import sleep
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 from gefyra.configuration import ClientConfiguration
 
@@ -67,7 +67,6 @@ def bridge(
     ports: dict,
     target: str,
     namespace: str = "default",
-    sync_down_dirs: Optional[List[str]] = None,
     handle_probes: bool = True,
     timeout: int = 0,
     connection_name: str = "",
@@ -132,21 +131,10 @@ def bridge(
     else:
         use_index = False
 
-    # is is required to copy at least the service account
-    # tokens from the bridged container
-    if sync_down_dirs:
-        sync_down_dirs = [
-            "/var/run/secrets/kubernetes.io/serviceaccount"
-        ] + sync_down_dirs
-    else:
-        sync_down_dirs = ["/var/run/secrets/kubernetes.io/serviceaccount"]
-
     from gefyra.local.bridge import (
         get_ireq_body,
         handle_create_interceptrequest,
     )
-
-    from gefyra.local.cargo import add_syncdown_job
 
     ireqs = []
     for idx, pod in enumerate(pods_to_intercept):
@@ -159,20 +147,10 @@ def bridge(
             target_namespace=namespace,
             target_container=container_name,
             port_mappings=port_mappings,
-            sync_down_directories=sync_down_dirs,
             handle_probes=handle_probes,
         )
         ireq = handle_create_interceptrequest(config, ireq_body, target)
         logger.debug(f"Bridge {ireq['metadata']['name']} created")
-        for syncdown_dir in sync_down_dirs:
-            add_syncdown_job(
-                config,
-                ireq["metadata"]["name"],
-                name,
-                pod,
-                container_name,
-                syncdown_dir,
-            )
         ireqs.append(ireq)
     #
     # block until all bridges are in place

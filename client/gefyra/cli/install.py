@@ -11,10 +11,10 @@ from gefyra.misc.uninstall import (
 
 from gefyra.cli.console import error
 from gefyra.cli.utils import installoptions_to_cli_options, multi_options
-from gefyra.cli.__main__ import cli as _cli
+from gefyra.cli.main import cli
 
 
-@_cli.command(
+@cli.command(
     "install",
     help=(
         "Create and print the Kubernetes configs for Gefyra; usage: 'gefyra install"
@@ -42,7 +42,7 @@ def install(ctx, component, preset, **kwargs):
     click.echo(api.install(component, preset, **kwargs))
 
 
-@_cli.command("uninstall", help="Removes the Gefyra installation from the cluster")
+@cli.command("uninstall", help="Removes the Gefyra installation from the cluster")
 @click.option("--force", "-f", help="Delete without promt", is_flag=True)
 @click.option(
     "--namespace",

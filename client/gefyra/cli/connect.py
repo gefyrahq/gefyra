@@ -4,7 +4,7 @@ import click
 from gefyra import api
 
 from gefyra.cli.utils import standard_error_handler
-from gefyra.cli.__main__ import connections
+from gefyra.cli.main import connections
 from tabulate import tabulate
 
 logger = logging.getLogger(__name__)

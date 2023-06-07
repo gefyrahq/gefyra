@@ -84,7 +84,7 @@ def run(
     connection_name: str,
     name: str = "",
     command: str = "",
-    volumes: Optional[Dict] = None,
+    volumes: Optional[List] = None,
     ports: Optional[Dict] = None,
     detach: bool = True,
     auto_remove: bool = False,
@@ -123,7 +123,8 @@ def run(
         logger.error(e)
         return False
 
-    docker_volumes = get_processed_paths(os.getcwd(), volumes)
+    if volumes:
+        volumes = get_processed_paths(os.getcwd(), volumes)
     #
     # 1. get the ENV together a) from a K8s container b) from override
     #
@@ -152,15 +153,15 @@ def run(
     #
     try:
         container = deploy_app_container(
-            config,
-            image,
-            name,
-            command,
-            docker_volumes,
-            ports,
-            env_dict,
-            auto_remove,
-            dns_search,
+            config=config,
+            image=image,
+            name=name,
+            command=command,
+            ports=ports,
+            env=env_dict,
+            dns_search=dns_search,
+            auto_remove=auto_remove,
+            volumes=volumes,
         )
     except APIError as e:
         if e.status_code == 409:

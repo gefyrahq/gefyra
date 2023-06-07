@@ -4,8 +4,7 @@ import os
 import platform
 import sys
 import time
-from typing import Dict, List
-from click import File
+from typing import Dict, List, IO
 from gefyra.api.clients import get_client
 from gefyra.cli import console
 
@@ -26,7 +25,7 @@ from gefyra.types import GefyraClientConfig, GefyraClientState
 logger = logging.getLogger(__name__)
 
 
-def connect(client_config: File, connection_name: str) -> bool:
+def connect(client_config: IO, connection_name: str) -> bool:
     import kubernetes
     import docker
 
@@ -95,6 +94,9 @@ def connect(client_config: File, connection_name: str) -> bool:
     wg_conf = os.path.join(
         get_gefyra_config_location(), f"{config.CONNECTION_NAME}.conf"
     )
+    if not client.provider_config:
+        raise RuntimeError("Could not get provider config for client") from None
+
     if config.CARGO_ENDPOINT is None:
         config.CARGO_ENDPOINT = client.provider_config.pendpoint
 

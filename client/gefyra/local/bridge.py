@@ -1,6 +1,6 @@
 import logging
 from time import sleep
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from docker.models.containers import Container
 
@@ -116,7 +116,6 @@ def get_ireq_body(
     target_namespace,
     target_container,
     port_mappings,
-    sync_down_directories,
     handle_probes,
 ):
     return {
@@ -131,7 +130,6 @@ def get_ireq_body(
         "targetNamespace": target_namespace,
         "targetContainer": target_container,
         "portMappings": port_mappings,
-        "syncDownDirectories": sync_down_directories,
         "handleProbes": handle_probes,
     }
 
@@ -141,7 +139,7 @@ def deploy_app_container(
     image: str,
     name: str = "",
     command: str = "",
-    volumes: Optional[Dict] = None,
+    volumes: Optional[List] = None,
     ports: Optional[Dict] = None,
     env: Optional[Dict] = None,
     auto_remove: bool = False,

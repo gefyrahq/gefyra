@@ -51,7 +51,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 gefyra = "gefyra.__main__:main"
-g = "gefyra.cli.__main__:main"
+g = "gefyra.cli.main:main"
 setversion = "version:set_version"
 
 [tool.poetry.urls]

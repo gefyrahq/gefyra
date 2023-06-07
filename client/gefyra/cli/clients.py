@@ -1,6 +1,6 @@
 import click
 from gefyra import api
-from gefyra.cli.__main__ import clients
+from gefyra.cli.main import clients
 from gefyra.cli import console
 from gefyra.cli.utils import standard_error_handler
 from tabulate import tabulate

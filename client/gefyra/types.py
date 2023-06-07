@@ -1,10 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from enum import Enum
 import json
 import logging
 from typing import Any, Dict, Optional
 
-from attr import fields
 from gefyra.configuration import ClientConfiguration, __VERSION__
 from gefyra.local.clients import handle_get_gefyraclient
 
@@ -67,6 +66,7 @@ class GefyraClientState(Enum):
     ERROR = "ERROR"
 
 
+@dataclass
 class GefyraClient:
     # the id of the client
     client_id: str
@@ -85,7 +85,7 @@ class GefyraClient:
     provider_parameter: Optional[StowawayParameter] = None
     provider_config: Optional[StowawayConfig] = None
     service_account_name: Optional[str] = None
-    service_account: Dict[str, str]
+    service_account: Optional[Dict[str, str]] = None
 
     def __init__(
         self,
@@ -162,7 +162,7 @@ class GefyraClient:
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
-        if bool(self.service_account):
+        if self.service_account:
             return GefyraClientConfig(
                 client_id=self.client_id,
                 kubernetes_server=k8s_server or self._config.get_kubernetes_api_url(),
