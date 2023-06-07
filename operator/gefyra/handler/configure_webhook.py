@@ -2,6 +2,7 @@ import logging
 
 import kopf
 
+
 @kopf.on.startup()
 def configure(settings: kopf.OperatorSettings, **_):
     settings.peering.standalone = True

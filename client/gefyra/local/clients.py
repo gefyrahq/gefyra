@@ -47,7 +47,9 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
     return gclient
 
 
-def handle_delete_gefyraclient(config: ClientConfiguration, client_id: str, force: bool) -> bool:
+def handle_delete_gefyraclient(
+    config: ClientConfiguration, client_id: str, force: bool
+) -> bool:
     from kubernetes.client import ApiException
 
     try:

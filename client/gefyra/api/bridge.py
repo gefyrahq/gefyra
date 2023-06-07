@@ -222,6 +222,7 @@ def bridge(
 
 def wait_for_deletion(ireqs: List):
     from kubernetes.watch import Watch
+
     config = ClientConfiguration()
     w = Watch()
     deleted = []

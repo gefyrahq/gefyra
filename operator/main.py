@@ -25,4 +25,3 @@ elif mode == "webhook":
     logger.info("Gefyra Operator webhook startup")
     from gefyra.handler.configure_webhook import *  # noqa
     from gefyra.handler.validation import *  # noqa
-
