@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 )
 # @standard_error_handler
 def connect_client(client_config, connection_name: str):
-    api.connect(client=client_config, connection_name=connection_name)
+    api.connect(client_config=client_config, connection_name=connection_name)
 
 
 @connections.command(

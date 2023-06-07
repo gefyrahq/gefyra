@@ -60,20 +60,20 @@ class ClientConfiguration(object):
     def __init__(
         self,
         docker_client=None,
-        network_name: str = None,
-        connection_name: str = None,
-        cargo_endpoint_host: str = None,
+        network_name: str = "",
+        connection_name: str = "default",
+        cargo_endpoint_host: str = "",
         cargo_endpoint_port: str = "31820",
-        cargo_container_name: str = None,
-        registry_url: str = None,
-        operator_image_url: str = None,
-        stowaway_image_url: str = None,
-        carrier_image_url: str = None,
-        cargo_image_url: str = None,
-        kube_config_file: str = None,
-        kube_context: str = None,
+        cargo_container_name: str = "",
+        registry_url: str = "",
+        operator_image_url: str = "",
+        stowaway_image_url: str = "",
+        carrier_image_url: str = "",
+        cargo_image_url: str = "",
+        kube_config_file: str = "",
+        kube_context: str = "",
         wireguard_mtu: str = "1340",
-        client_id: str = None,
+        client_id: str = "",
         gefyra_config_root: Optional[Union[str, Path]] = None,
     ):
         if sys.platform == "win32":  # pragma: no cover
@@ -120,7 +120,7 @@ class ClientConfiguration(object):
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
         self.STOWAWAY_IP = "192.168.99.1"
         self.NETWORK_NAME = network_name or "gefyra"
-        self.CONNECTION_NAME = connection_name or "default"
+        self.CONNECTION_NAME = connection_name
         self.BRIDGE_TIMEOUT = 60  # in seconds
         self.CONNECTION_TIMEOUT = 10  # in seconds
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds

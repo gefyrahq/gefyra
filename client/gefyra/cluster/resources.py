@@ -226,7 +226,6 @@ def owner_reference_consistent(
 def get_pods_and_containers_for_workload(
     config: ClientConfiguration, name: str, namespace: str, workload_type: str
 ) -> Dict[str, List[str]]:
-    workload = None
     result = {}
     API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
     NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."

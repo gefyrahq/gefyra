@@ -93,7 +93,7 @@ def connect(client_config: File, connection_name: str) -> bool:
     client.update()
     # place wireguard config to disk, mount it as
     wg_conf = os.path.join(
-        get_gefyra_config_location(config), f"{config.CONNECTION_NAME}.conf"
+        get_gefyra_config_location(), f"{config.CONNECTION_NAME}.conf"
     )
     if config.CARGO_ENDPOINT is None:
         config.CARGO_ENDPOINT = client.provider_config.pendpoint

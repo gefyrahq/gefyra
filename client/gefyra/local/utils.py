@@ -85,7 +85,7 @@ def build_cargo_image(
 
 
 def handle_docker_remove_container(
-    config: ClientConfiguration, container: Container = None, container_id: str = None
+    config: ClientConfiguration, container: Container = None, container_id: str = ""
 ):
     """Stop docker container, either `container` or `container_id` must be specified.
 
@@ -163,11 +163,11 @@ def get_connection_from_kubeconfig(kubeconfig: Optional[str] = None) -> Optional
         from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
         from pathlib import Path
 
-        _file = Path(KUBE_CONFIG_DEFAULT_LOCATION).expanduser()
+        _file = str(Path(KUBE_CONFIG_DEFAULT_LOCATION).expanduser())
 
     try:
-        with open(_file, "r") as kubeconfig:
-            kubecfg = yaml.safe_load(kubeconfig)
+        with open(_file, "r") as kubeconfig_file:
+            kubecfg = yaml.safe_load(kubeconfig_file)
         active_ctx = next(
             filter(
                 lambda x: x["name"] == kubecfg["current-context"], kubecfg["contexts"]

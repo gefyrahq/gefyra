@@ -8,7 +8,7 @@ logger = logging.getLogger("gefyra")
 MINIKUBE_CONFIG = "~/.minikube/profiles/{profile}/config.json"
 
 
-def _read_minikube_config(profile: str = "minikube") -> dict:
+def _read_minikube_config(profile: Optional[str] = "minikube") -> dict:
     config_file = Path(MINIKUBE_CONFIG.format(profile=profile)).expanduser()
     with open(config_file, "r") as f:
         data = json.load(f)

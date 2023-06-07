@@ -1,6 +1,7 @@
 import logging
+from typing import Dict, List, Optional
 
-from gefyra.api import bridge
+from gefyra.api.bridge import bridge
 from gefyra.api.run import retrieve_pod_and_container, run
 from gefyra.api.utils import is_port_free
 from gefyra.cluster.utils import (
@@ -31,13 +32,13 @@ def reflect(
     workload: str,  # deploy/my-deployment
     namespace: str = "default",
     do_bridge: bool = False,
-    env: list = None,
+    env: Optional[List] = None,
     command: str = "",
-    volumes: dict = None,
+    volumes: Optional[Dict] = None,
     auto_remove: bool = False,
     expose_ports: bool = True,
-    image: str = None,
-    ports: dict = None,
+    image: str = "",
+    ports: Optional[Dict] = None,
 ):
     config = ClientConfiguration()
     if expose_ports and ports:

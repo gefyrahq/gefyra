@@ -1,5 +1,6 @@
 import logging
 from time import sleep
+from typing import Dict, Optional
 
 from docker.models.containers import Container
 
@@ -138,12 +139,12 @@ def get_ireq_body(
 def deploy_app_container(
     config: ClientConfiguration,
     image: str,
-    name: str = None,
-    command: str = None,
-    volumes: dict = None,
-    ports: dict = None,
-    env: dict = None,
-    auto_remove: bool = None,
+    name: str = "",
+    command: str = "",
+    volumes: Optional[Dict] = None,
+    ports: Optional[Dict] = None,
+    env: Optional[Dict] = None,
+    auto_remove: bool = False,
     dns_search: str = "default",
 ) -> Container:
     import docker

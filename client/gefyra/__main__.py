@@ -2,6 +2,7 @@
 import argparse
 import logging
 import traceback
+from typing import Optional
 
 from gefyra.api import (
     get_containers_and_print,
@@ -362,9 +363,9 @@ telemetry_parser.add_argument("--off", help="Turn off telemetry", action="store_
 telemetry_parser.add_argument("--on", help="Turn on telemetry", action="store_true")
 
 try:
-    telemetry = CliTelemetry()
+    telemetry: Optional[CliTelemetry] = CliTelemetry()
 except Exception:  # pragma: no cover
-    telemetry = False
+    telemetry = None
 
 
 def version(config, check: bool):

@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 from threading import Thread
+from typing import Dict, List, Optional, Tuple
 
 from gefyra.configuration import (
     ClientConfiguration,
@@ -34,7 +35,7 @@ def pod_ready_and_healthy(
 
 def retrieve_pod_and_container(
     env_from: str, namespace: str, config: ClientConfiguration
-) -> (str, str):
+) -> Tuple[str, str]:
     from gefyra.cluster.resources import (
         get_pods_and_containers_for_workload,
         get_pods_and_containers_for_pod_name,
@@ -81,15 +82,15 @@ def print_logs(container):
 def run(
     image: str,
     connection_name: str,
-    name: str = None,
-    command: str = None,
-    volumes: dict = None,
-    ports: dict = None,
+    name: str = "",
+    command: str = "",
+    volumes: Optional[Dict] = None,
+    ports: Optional[Dict] = None,
     detach: bool = True,
     auto_remove: bool = False,
-    namespace: str = None,
-    env: list = None,
-    env_from: str = None,
+    namespace: str = "",
+    env: Optional[List] = None,
+    env_from: str = "",
 ) -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
@@ -122,7 +123,7 @@ def run(
         logger.error(e)
         return False
 
-    volumes = get_processed_paths(os.getcwd(), volumes)
+    docker_volumes = get_processed_paths(os.getcwd(), volumes)
     #
     # 1. get the ENV together a) from a K8s container b) from override
     #
@@ -155,7 +156,7 @@ def run(
             image,
             name,
             command,
-            volumes,
+            docker_volumes,
             ports,
             env_dict,
             auto_remove,
@@ -187,3 +188,4 @@ def run(
         except KeyboardInterrupt:
             container.stop()
             logger.info(f"Container stopped: {name}")
+    return True

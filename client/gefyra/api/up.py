@@ -4,13 +4,13 @@ import logging
 from gefyra.configuration import ClientConfiguration
 
 
-from . import down
+from .down import down
 
 
 logger = logging.getLogger(__name__)
 
 
-def up(connection_name: str = None) -> bool:
+def up(connection_name: str = "default") -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
     from gefyra.cluster.manager import install_operator

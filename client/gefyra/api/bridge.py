@@ -1,6 +1,6 @@
 import logging
 from time import sleep
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from gefyra.configuration import ClientConfiguration
 
@@ -67,10 +67,10 @@ def bridge(
     ports: dict,
     target: str,
     namespace: str = "default",
-    sync_down_dirs: List[str] = None,
+    sync_down_dirs: Optional[List[str]] = None,
     handle_probes: bool = True,
     timeout: int = 0,
-    connection_name: str = None,
+    connection_name: str = "",
 ) -> bool:
     from docker.errors import NotFound
     from gefyra.local.bridge import get_all_interceptrequests
@@ -83,7 +83,7 @@ def bridge(
         logger.error(f"Could not find target container '{name}'")
         return False
 
-    ports = [f"{key}:{value}" for key, value in ports.items()]
+    port_mappings = [f"{key}:{value}" for key, value in ports.items()]
 
     try:
         local_container_ip = container.attrs["NetworkSettings"]["Networks"][
@@ -158,7 +158,7 @@ def bridge(
             target_pod=pod,
             target_namespace=namespace,
             target_container=container_name,
-            port_mappings=ports,
+            port_mappings=port_mappings,
             sync_down_directories=sync_down_dirs,
             handle_probes=handle_probes,
         )
@@ -222,10 +222,9 @@ def bridge(
     return True
 
 
-def wait_for_deletion(ireqs: List):
+def wait_for_deletion(ireqs: List, config: ClientConfiguration):
     from kubernetes.watch import Watch
 
-    config = ClientConfiguration()
     w = Watch()
     deleted = []
     uids = [ireq["metadata"]["uid"] for ireq in ireqs]
@@ -255,7 +254,7 @@ def unbridge(
     ireq = handle_delete_interceptrequest(config, name)
     if ireq:
         if wait:
-            wait_for_deletion([ireq], config)
+            wait_for_deletion([ireq], config=config)
         logger.info(f"Bridge {name} removed")
     return True
 

@@ -26,7 +26,7 @@ def add_clients(
     config = ClientConfiguration()
     if quantity > 1 and client_id:
         raise RuntimeError("Cannot specify both quantity > 1 and client_id")
-    result = []
+    result: List[GefyraClient] = []
     while len(result) < quantity:
         if not client_id:
             generated_uuid = uuid.uuid4()
@@ -35,18 +35,17 @@ def add_clients(
         logger.info(f"Creating client with id: {client_id}")
         gclient_req = get_gefyraclient_body(config, client_id)
         gclient = handle_create_gefyraclient(config, gclient_req)
-        result.append(GefyraClient(gclient, config))
-        client_id = None
+        result.append(GefyraClient(gclient))
     return result
 
 
-def get_client(client_id: str, connection_name: str = None) -> GefyraClient:
+def get_client(client_id: str, connection_name: str = "") -> GefyraClient:
     """
     Get a GefyraClient object
     """
     config = ClientConfiguration(connection_name=connection_name)
     gclient = handle_get_gefyraclient(config, client_id)
-    return GefyraClient(gclient, config)
+    return GefyraClient(gclient)
 
 
 @stopwatch
@@ -60,13 +59,12 @@ def delete_client(client_id: str, force: bool = False) -> bool:
 
 @stopwatch
 def write_client_file(
-    client_id: str, host: str = None, port: str = None, kube_api: str = None
+    client_id: str, host: str, port: str = "", kube_api: str = ""
 ) -> str:
     """
     Write a client file
     """
     client = get_client(client_id)
-    gefyra_server = None
     if not port:
         port = "31820"
     if host:
@@ -90,7 +88,7 @@ def list_client() -> List[GefyraClient]:
         plural="gefyraclients",
         version="v1",
     )
-    return [GefyraClient(client, config) for client in clients["items"]]
+    return [GefyraClient(client) for client in clients["items"]]
 
 
 # TODO becomes obsolete

@@ -28,11 +28,11 @@ cluster_create_formatters = [
 def last_event_by_timestamp_toolbar(
     events: dict[datetime, dict[str, str]]
 ) -> FormattedText:
-    events = list(events.items())
-    if len(events) == 0:
+    formatted_events = list(events.items())
+    if len(formatted_events) == 0:
         return FormattedText([("class:info", "Waiting for events...")])
     else:
-        timestamp, curr_event = events[-1]
+        timestamp, curr_event = formatted_events[-1]
         reason = curr_event["reason"]
         message = curr_event["message"]
         return FormattedText(

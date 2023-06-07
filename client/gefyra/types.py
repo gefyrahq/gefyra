@@ -98,8 +98,8 @@ class GefyraClient:
     def _init_data(self, _object: dict[str, Any]):
         self.client_id = _object["metadata"]["name"]
         self.uid = _object["metadata"]["uid"]
-        self.provider = _object.get("provider")
-        self._state = _object.get("state")
+        self.provider = _object.get("provider", "")
+        self._state = _object.get("state", "")
         self._state_transitions = _object.get("stateTransitions", {})
         self.service_account_name = _object.get("serviceAccountName")
         self.service_account = _object.get("serviceAccountData", {})
@@ -132,7 +132,7 @@ class GefyraClient:
                     data["providerConfig"] = {
                         "iaddress": _v.iaddress,
                         "idns": _v.idns,
-                        "iport": _v.iport,
+                        "iport": str(_v.iport),
                         "iprivatekey": _v.iprivatekey,
                         "pallowedips": _v.pallowedips,
                         "pendpoint": _v.pendpoint,
@@ -158,7 +158,7 @@ class GefyraClient:
         self._init_data(gclient)
 
     def get_client_config(
-        self, gefyra_server: str, k8s_server: str = None
+        self, gefyra_server: str, k8s_server: str = ""
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
