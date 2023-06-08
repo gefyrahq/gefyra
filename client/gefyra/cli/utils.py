@@ -182,6 +182,7 @@ def multi_options(options):
             if opt_params["type"] == "array":
                 attrs["cls"] = OptionEatAll
                 attrs["nargs"] = -1
+                attrs["multiple"] = True
 
             click.option(*param_decls, **attrs)(f)
         return f

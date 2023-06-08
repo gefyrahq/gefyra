@@ -26,7 +26,7 @@ LB_PRESETS = {
 }
 
 
-def install(component, preset, **kwargs):
+def install(component, preset, **kwargs) -> str:
     if preset:
         presetoptions = LB_PRESETS.get(preset)
         if not presetoptions:
@@ -38,4 +38,4 @@ def install(component, preset, **kwargs):
         options = GefyraInstallOptions(
             **{k: v for k, v in kwargs.items() if v is not None}
         )
-    synthesize_config_as_yaml(options=options, components=component)
+    return synthesize_config_as_yaml(options=options, components=component)

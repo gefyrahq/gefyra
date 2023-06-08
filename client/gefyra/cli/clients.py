@@ -15,10 +15,9 @@ from tabulate import tabulate
     type=int,
     default=1,
 )
-@click.pass_context
-@standard_error_handler
-def create_clients(ctx, client_id, quantity):
-    api.add_clients(client_id, quantity, ctx.obj["config"])
+# @standard_error_handler
+def create_clients(client_id, quantity):
+    api.add_clients(client_id, quantity)
     console.success(f"{quantity} client(s) created successfully")
 
 
@@ -26,20 +25,18 @@ def create_clients(ctx, client_id, quantity):
     "delete", alias=["rm", "remove"], help="Mark a Gefyra client for deletion"
 )
 @click.argument("client_id", nargs=-1, required=True)
-@click.pass_context
 @standard_error_handler
-def delete_client(ctx, client_id):
+def delete_client(client_id):
     for _del in list(client_id):
-        deleted = api.delete_client(_del, ctx.obj["config"])
+        deleted = api.delete_client(_del)
         if deleted:
             console.success(f"Client {_del} marked for deletion")
 
 
 @clients.command("list", alias=["ls"], help="List all Gefyra clients")
-@click.pass_context
 @standard_error_handler
-def list_client(ctx):
-    gefyraclients = api.list_client(ctx.obj["config"])
+def list_client():
+    gefyraclients = api.list_client()
     clients = [
         [
             c.client_id,
@@ -53,10 +50,9 @@ def list_client(ctx):
 
 @clients.command("inspect", alias=["show", "get"], help="Discribe a Gefyra client")
 @click.argument("client_id")
-@click.pass_context
 @standard_error_handler
-def inspect_client(ctx, client_id):
-    client = api.get_client(client_id, ctx.obj["config"])
+def inspect_client(client_id):
+    client = api.get_client(client_id)
     console.heading(client.client_id)
     console.info(f"uid: {client.uid}")
     console.info(f"States: {client.state_transitions}")
@@ -84,9 +80,8 @@ def inspect_client(ctx, client_id):
     help="The output file to write the config to",
     type=click.File("wb"),
 )
-@click.pass_context
 @standard_error_handler
-def get_config(ctx, client_id, host, port, kube_api, output):
+def get_config(client_id, host, port, kube_api, output):
     json_str = api.write_client_file(
         client_id,
         host=host,

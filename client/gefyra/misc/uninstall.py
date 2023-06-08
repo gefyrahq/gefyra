@@ -5,9 +5,9 @@ from gefyra import api
 
 
 def remove_all_clients(config: ClientConfiguration):
-    clients = api.list_client(config=config)
+    clients = api.list_client()
     for client in clients:
-        api.delete_client(client.client_id, force=True, config=config)
+        api.delete_client(client.client_id, force=True)
 
 
 def remove_remainder_bridges(config: ClientConfiguration):

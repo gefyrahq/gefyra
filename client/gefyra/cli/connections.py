@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
     "connect",
     help="Connect this local machine to a Gefyra cluster",
 )
-@click.argument("client_config", type=click.File("r"))
+@click.option("-f", "--client-config", type=click.File("r"))
 @click.option(
     "-n",
     "--connection-name",
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 )
 # @standard_error_handler
 def connect_client(client_config, connection_name: str):
-    api.connect(client_config=client_config, connection_name=connection_name)
+    api.connect(connection_name=connection_name, client_config=client_config)
 
 
 @connections.command(
@@ -41,12 +41,22 @@ def disconnect_client(connection_name):
     alias=["ls"],
     help="List all Gefyra connections",
 )
-@click.pass_context
 def list_connections(ctx):
-    conns = api.list_connections(ctx.obj["config"])
+    conns = api.list_connections()
     data = [conn.values() for conn in conns]
     click.echo(
         tabulate(
             data, headers=["NAME", "VERSION", "CREATED", "STATUS"], tablefmt="plain"
         )
     )
+
+
+@connections.command(
+    "remove",
+    alias=["rm"],
+    help="Remove a Gefyra connection",
+)
+@click.argument("connection_name", type=str)
+@standard_error_handler
+def remove_connection(connection_name):
+    api.remove_connection(connection_name=connection_name)

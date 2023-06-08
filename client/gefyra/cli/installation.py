@@ -1,6 +1,7 @@
 import click
 
 import gefyra.api as api
+from gefyra.configuration import ClientConfiguration
 
 from gefyra.misc.comps import COMPONENTS
 from gefyra.misc.uninstall import (
@@ -44,35 +45,27 @@ def install(ctx, component, preset, **kwargs):
 
 @cli.command("uninstall", help="Removes the Gefyra installation from the cluster")
 @click.option("--force", "-f", help="Delete without promt", is_flag=True)
-@click.option(
-    "--namespace",
-    "-ns",
-    help="The namespace Gefyra was installed to (default: gefyra)",
-    type=str,
-)
-@click.pass_context
-def uninstall(ctx, force, namespace):
+def uninstall(force):
+    config = ClientConfiguration()
     if not force:
         click.confirm(
             "Do you want to remove all Gefyra components from this cluster?",
             abort=True,
         )
-    if namespace:
-        ctx.obj["config"].NAMESPACE = namespace
     click.echo("Removing all Gefyra bridges")
     try:
-        remove_remainder_bridges(config=ctx.obj["config"])
+        remove_remainder_bridges(config)
     except Exception as e:
         error(str(e))
 
     click.echo("Removing remainder Gefyra clients")
     try:
-        remove_all_clients(config=ctx.obj["config"])
+        remove_all_clients(config)
     except Exception as e:
         error(str(e))
 
     click.echo("Removing Gefyra namespace")
     try:
-        remove_gefyra_namespace(config=ctx.obj["config"])
+        remove_gefyra_namespace(config)
     except Exception as e:
         error(str(e))

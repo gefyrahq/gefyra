@@ -2,12 +2,12 @@ import pytest
 from docker.errors import APIError
 
 from gefyra.configuration import default_configuration
-from gefyra.local.networking import create_gefyra_network
+from gefyra.local.networking import get_or_create_gefyra_network
 
 
 def test_cycle_gefyra_network():
     config = default_configuration
-    gefyra_network = create_gefyra_network(config)
+    gefyra_network = get_or_create_gefyra_network(config)
     gefyra_network.remove()
 
 
@@ -21,4 +21,4 @@ def test_gefyra_network_create_failed(monkeypatch):
     )
     config = default_configuration
     with pytest.raises(APIError):
-        create_gefyra_network(config)
+        get_or_create_gefyra_network(config)

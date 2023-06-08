@@ -10,7 +10,9 @@ from gefyra.local import CREATED_BY_LABEL
 logger = logging.getLogger(__name__)
 
 
-def create_gefyra_network(config: ClientConfiguration, suffix: str = "") -> Network:
+def get_or_create_gefyra_network(
+    config: ClientConfiguration, suffix: str = ""
+) -> Network:
     gefyra_network = handle_create_network(config, suffix)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network

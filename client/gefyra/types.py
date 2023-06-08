@@ -158,7 +158,7 @@ class GefyraClient:
         self._init_data(gclient)
 
     def get_client_config(
-        self, gefyra_server: str, k8s_server: str = ""
+        self, gefyra_server: str, k8s_server: str
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
@@ -254,12 +254,14 @@ class GefyraInstallOptions:
     service_labels: Dict[str, str] = field(
         default_factory=lambda: {},
         metadata=dict(
-            help="Additional Kubernetes labels for the Stowaway service (default: [])"
+            help="Additional Kubernetes labels for the Stowaway service (default: [])",
+            type="array",
         ),
     )
     service_annotations: Dict[str, str] = field(
         default_factory=lambda: {},
         metadata=dict(
-            help="Kubernetes annotations for the Stowaway service (default: [])"
+            help="Kubernetes annotations for the Stowaway service (default: [])",
+            type="array",
         ),
     )

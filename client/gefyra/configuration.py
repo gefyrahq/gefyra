@@ -70,8 +70,8 @@ class ClientConfiguration(object):
         stowaway_image_url: str = "",
         carrier_image_url: str = "",
         cargo_image_url: str = "",
-        kube_config_file: str = "",
-        kube_context: str = "",
+        kube_config_file: Optional[Path] = None,
+        kube_context: Optional[str] = None,
         wireguard_mtu: str = "1340",
         client_id: str = "",
         gefyra_config_root: Optional[Union[str, Path]] = None,
@@ -144,7 +144,7 @@ class ClientConfiguration(object):
             self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
 
         if kube_config_file:
-            self.KUBE_CONFIG_FILE = kube_config_file
+            self.KUBE_CONFIG_FILE = str(kube_config_file)
 
         if kube_context:
             self.KUBE_CONTEXT = kube_context
@@ -282,6 +282,48 @@ class ClientConfiguration(object):
 
     def get_kubernetes_api_url(self) -> str:
         return self.K8S_CORE_API.api_client.configuration.host
+
+    def get_stowaway_host(self, port) -> str:
+        """
+        Return the cargo endpoint
+        If the endpoint is not set, it will try to estimate if from the K8s service
+        gefyra-stowaway-wireguard in the cluster and/or public IPs of a node
+        """
+        if hasattr(self, "_cargo_endpoint") and self._cargo_endpoint:
+            return self._cargo_endpoint
+        else:
+            import kubernetes
+
+            try:
+                service = self.K8S_CORE_API.read_namespaced_service(
+                    namespace=self.NAMESPACE, name="gefyra-stowaway-wireguard"
+                )
+                if service.spec.type == "NodePort":
+                    # trying to retrive a public IP for the service
+                    nodes = self.K8S_CORE_API.list_node()
+                    external_ips = list(
+                        filter(
+                            lambda x: x.type == "ExternalIP",
+                            nodes.items[0].status.addresses,
+                        )
+                    )
+                    if external_ips:
+                        _port = port or service.spec.ports["gefyra-wireguard"].node_port
+                        return f"{external_ips[0].address}:{_port}"
+                    else:
+                        raise RuntimeError(
+                            "Could not find a public IP for the NodePort service gefyra-stowaway-wireguard"
+                        )
+                elif service.spec.type == "LoadBalancer":
+                    _port = port or service.spec.ports["gefyra-wireguard"].port
+                    return f"{service.status.load_balancer.ingress[0].ip}:{_port}"
+            except kubernetes.client.ApiException as e:
+                if e.status == 404:
+                    raise RuntimeError(
+                        f"Could not find service gefyra-stowaway-wireguard in {self.NAMESPACE}"
+                    ) from None
+                else:
+                    raise e
 
 
 def get_gefyra_config_location() -> str:
