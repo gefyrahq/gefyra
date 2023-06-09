@@ -72,4 +72,27 @@ def remove_gefyra_crds(config: ClientConfiguration):
         else:
             raise e from None
 
-#TODO uninstall RBAC
+
+def remove_gefyra_rbac(config: ClientConfiguration):
+    try:
+        config.K8S_RBAC_API.delete_cluster_role(name="gefyra-operator-role")
+    except k8s.client.exceptions.ApiException:  # type: ignore
+        pass
+    try:
+        config.K8S_RBAC_API.delete_cluster_role(name="gefyra:operator")
+    except k8s.client.exceptions.ApiException:  # type: ignore
+        pass
+    try:
+        config.K8S_RBAC_API.delete_cluster_role(name="gefyra-client")
+    except k8s.client.exceptions.ApiException:  # type: ignore
+        pass
+    try:
+        config.K8S_RBAC_API.delete_cluster_role_binding(
+            name="gefyra-operator-rolebinding"
+        )
+    except k8s.client.exceptions.ApiException:  # type: ignore
+        pass
+    try:
+        config.K8S_RBAC_API.delete_cluster_role_binding(name="gefyra-operator")
+    except k8s.client.exceptions.ApiException:  # type: ignore
+        pass

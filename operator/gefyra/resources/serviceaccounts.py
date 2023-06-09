@@ -36,8 +36,8 @@ def handle_create_gefyraclient_serviceaccount(
                         ),
                         k8s.client.V1PolicyRule(
                             api_groups=[""],
-                            resources=["pods/exec"],
-                            verbs=["create"],
+                            resources=["pods/exec", "pods/status"],
+                            verbs=["create", "get"],
                         ),
                         k8s.client.V1PolicyRule(
                             api_groups=["", "apps"],

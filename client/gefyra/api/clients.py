@@ -37,7 +37,7 @@ def add_clients(
         logger.info(f"Creating client with id: {client_id}")
         gclient_req = get_gefyraclient_body(config, client_id)
         gclient = handle_create_gefyraclient(config, gclient_req)
-        result.append(GefyraClient(gclient))
+        result.append(GefyraClient(gclient, config))
     return result
 
 
@@ -57,7 +57,7 @@ def get_client(
         kube_context=kubecontext,
     )
     gclient = handle_get_gefyraclient(config, client_id)
-    return GefyraClient(gclient)
+    return GefyraClient(gclient, config)
 
 
 @stopwatch
@@ -114,4 +114,4 @@ def list_client(
         plural="gefyraclients",
         version="v1",
     )
-    return [GefyraClient(client) for client in clients["items"]]
+    return [GefyraClient(client, config) for client in clients["items"]]

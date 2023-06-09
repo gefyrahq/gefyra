@@ -311,7 +311,7 @@ class ClientConfiguration(object):
                 if service.spec.type == "LoadBalancer":
                     _port = port or service.spec.ports["gefyra-wireguard"].port
                     return f"{service.status.load_balancer.ingress[0].ip}:{_port}"
-                else: # NodePort
+                else:  # NodePort
                     # trying to retrive a public IP for the service
                     nodes = self.K8S_CORE_API.list_node()
                     external_ips = list(

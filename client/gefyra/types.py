@@ -87,11 +87,7 @@ class GefyraClient:
     service_account_name: Optional[str] = None
     service_account: Optional[Dict[str, str]] = None
 
-    def __init__(
-        self,
-        gclient: dict[str, Any],
-    ):
-        config = ClientConfiguration()
+    def __init__(self, gclient: dict[str, Any], config: ClientConfiguration):
         self._init_data(gclient)
         self._config = config
 

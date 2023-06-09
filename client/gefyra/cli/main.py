@@ -78,7 +78,7 @@ def version(ctx):
     multiple=True,
 )  # TODO IpPortMappingParser
 @click.option(
-    "--env_from",
+    "--env-from",
     help="Copy the environment from the container in the notation 'Pod/Container'",
     type=str,
 )
@@ -131,7 +131,6 @@ def run(
     image,
     connection_name,
 ):
-    configuration = ClientConfiguration()
     api.run(
         image=image,
         name=name,
@@ -142,7 +141,6 @@ def run(
         ports=expose,
         auto_remove=auto_remove,
         volumes=volume,
-        config=configuration,
         detach=detach,
         connection_name=connection_name,
     )

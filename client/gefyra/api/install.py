@@ -10,6 +10,7 @@ from gefyra.misc.uninstall import (
     remove_all_clients,
     remove_gefyra_crds,
     remove_gefyra_namespace,
+    remove_gefyra_rbac,
     remove_remainder_bridges,
 )
 from gefyra.types import GefyraInstallOptions
@@ -116,5 +117,10 @@ def uninstall(
     logger.info("Removing Gefyra API extensions")
     try:
         remove_gefyra_crds(config)
+    except Exception:
+        pass
+    logger.info("Removing Gefyra RBAC resources")
+    try:
+        remove_gefyra_rbac(config)
     except Exception:
         pass
