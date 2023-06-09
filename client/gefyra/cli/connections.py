@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 
 import click
@@ -5,6 +6,7 @@ from gefyra import api
 
 from gefyra.cli.utils import standard_error_handler
 from gefyra.cli.main import connections
+from gefyra.cli import console
 from tabulate import tabulate
 
 logger = logging.getLogger(__name__)
@@ -41,14 +43,17 @@ def disconnect_client(connection_name):
     alias=["ls"],
     help="List all Gefyra connections",
 )
-def list_connections(ctx):
+def list_connections():
     conns = api.list_connections()
-    data = [conn.values() for conn in conns]
-    click.echo(
-        tabulate(
-            data, headers=["NAME", "VERSION", "CREATED", "STATUS"], tablefmt="plain"
+    data = [dataclasses.asdict(conn).values() for conn in conns]
+    if data:
+        click.echo(
+            tabulate(
+                data, headers=["NAME", "VERSION", "CREATED", "STATUS"], tablefmt="plain"
+            )
         )
-    )
+    else:
+        console.info("No Gefyra connection found")
 
 
 @connections.command(

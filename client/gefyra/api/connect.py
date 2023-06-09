@@ -5,7 +5,7 @@ from pathlib import Path
 import platform
 import sys
 import time
-from typing import Dict, List, IO
+from typing import Dict, List, IO, Optional
 from gefyra.api.clients import get_client
 from gefyra.cli import console
 
@@ -20,23 +20,27 @@ from gefyra.local.utils import (
     compose_kubeconfig_for_serviceaccount,
     handle_docker_get_or_create_container,
 )
-from gefyra.types import GefyraClientConfig, GefyraClientState
+from gefyra.types import GefyraClientConfig, GefyraClientState, GefyraConnectionList
 
 
 logger = logging.getLogger(__name__)
 
 
-def connect(connection_name: str, client_config: IO) -> bool:
+def connect(connection_name: str, client_config: Optional[IO]) -> bool:
     import kubernetes
     import docker
 
     cargo_container = None
-    if connection_name in [conns["name"] for conns in list_connections()]:
+    # if this connection already exists, just restore it
+    if connection_name in [conns.name for conns in list_connections()]:
         logger.debug(f"Restoring exinsting connection {connection_name}")
         config = ClientConfiguration(connection_name=connection_name)
         cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
         client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)
     else:
+        # connection does not exist, so create it
+        if client_config is None:
+            raise RuntimeError("Connection is not yet created and no client configuration has been provided")
         logger.debug(f"Creating new connection {connection_name}")
         file_str = client_config.read()
         client_config.close()
@@ -46,6 +50,7 @@ def connect(connection_name: str, client_config: IO) -> bool:
             get_gefyra_config_location(),
             f"{connection_name}.yaml",
         )
+        # this kubeconfig is being used by the client to operate in the cluster
         kubeconfig_str = compose_kubeconfig_for_serviceaccount(
             gclient_conf.kubernetes_server,
             gclient_conf.ca_crt,
@@ -65,13 +70,6 @@ def connect(connection_name: str, client_config: IO) -> bool:
             cargo_container_name=f"gefyra-cargo-{connection_name}",
         )
 
-    # 1. get or create a dedicated gefyra network with suffix (from connection name)
-    # 2. try activate the GeyfraClient in the cluster by submitting the subnet
-    # (see: operator/tests/e2e/test_connect_clients.py)
-    # -> feature to add to the GefyraClient type (see: client/gefyra/types.py)
-    # 3. get the wireguard config from the GefyraClient
-    # 4. Deploy Cargo with the wireguard config
-    # (see code from here: operator/tests/e2e/utils.py)
     _retry = 0
     while _retry < 5:
         gefyra_network = get_or_create_gefyra_network(
@@ -102,42 +100,35 @@ def connect(connection_name: str, client_config: IO) -> bool:
     else:
         raise RuntimeError("Could not activate connection") from None
     client.update()
-    if cargo_container is None:
-        # place wireguard config to disk, mount it as
-        wg_conf = os.path.join(
-            get_gefyra_config_location(), f"{config.CONNECTION_NAME}.conf"
-        )
-        if not client.provider_config:
-            raise RuntimeError("Could not get provider config for client") from None
+    
+    # since this connection was (re)activated, save the current wireguard config (again)
+    wg_conf = os.path.join(
+        get_gefyra_config_location(), f"{config.CONNECTION_NAME}.conf"
+    )
+    if not client.provider_config:
+        raise RuntimeError("Could not get provider config for client") from None
 
-        if config.CARGO_ENDPOINT is None:
-            config.CARGO_ENDPOINT = client.provider_config.pendpoint
+    if config.CARGO_ENDPOINT is None:
+        config.CARGO_ENDPOINT = client.provider_config.pendpoint
 
-        with open(wg_conf, "w") as f:
-            f.write(
-                create_wireguard_config(
-                    client.provider_config, config.CARGO_ENDPOINT, config.WIREGUARD_MTU
-                )
+    with open(wg_conf, "w") as f:
+        f.write(
+            create_wireguard_config(
+                client.provider_config, config.CARGO_ENDPOINT, config.WIREGUARD_MTU
             )
-
-        if sys.platform == "win32" or "microsoft" in platform.release().lower():
-            image_name_and_tag = f"{config.CARGO_IMAGE}-win32"
-        else:
-            image_name_and_tag = config.CARGO_IMAGE
-
-        # "user specified IP address is supported only when connecting to networks with user configured subnets"
-        cargo_ip_address = get_cargo_ip_from_netaddress(
-            gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
         )
+
+    cargo_ip_address = get_cargo_ip_from_netaddress(
+        gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
+    )
 
     try:
         if not cargo_container:
             cargo_container = handle_docker_get_or_create_container(
                 config,
                 f"{config.CARGO_CONTAINER_NAME}",
-                image_name_and_tag,
+                config.CARGO_IMAGE,
                 detach=True,
-                # auto_remove=True,
                 cap_add=["NET_ADMIN"],
                 privileged=True,
                 volumes=[
@@ -158,7 +149,7 @@ def connect(connection_name: str, client_config: IO) -> bool:
         raise RuntimeError(f"Could not start Cargo container: {e}") from None
 
     # Confirm the wireguard connection working
-
+    
     probe_wireguard_connection(config)
     return True
 
@@ -180,7 +171,7 @@ def disconnect(connection_name: str) -> bool:
     return True
 
 
-def list_connections() -> List[Dict[str, str]]:
+def list_connections() -> GefyraConnectionList:
     from gefyra.local import CARGO_LABEL, CONNECTION_NAME_LABEL, VERSION_LABEL
 
     config = ClientConfiguration()
@@ -189,13 +180,21 @@ def list_connections() -> List[Dict[str, str]]:
         all=True, filters={"label": f"{CARGO_LABEL[0]}={CARGO_LABEL[1]}"}
     )
     for cargo_container in containers:
+        if cargo_container.status == "running":
+            try:
+                probe_wireguard_connection(ClientConfiguration(cargo_container_name=cargo_container.name))
+                established = True
+            except RuntimeError:
+                established = False
+        else:
+            established = False
         result.append(
-            {
+            GefyraConnectionList(**{
                 "name": cargo_container.labels.get(CONNECTION_NAME_LABEL, "unknown"),
                 "version": cargo_container.labels.get(VERSION_LABEL, "unknown"),
                 "created": cargo_container.attrs.get("Created", "unknown"),
-                "status": cargo_container.status,
-            }
+                "status": cargo_container.status if established else "error",
+            })
         )
     return result
 
@@ -215,13 +214,12 @@ def remove_connection(connection_name: str):
             f"{config.CARGO_CONTAINER_NAME}",
         )
         cargo_container.remove(force=True)
+        gefyra_network = config.DOCKER.networks.get(config.NETWORK_NAME)
+        gefyra_network.remove()
     except docker.errors.NotFound:
         pass
     try:
-        gefyra_network = get_or_create_gefyra_network(
-            config, suffix=config.CONNECTION_NAME
-        )
-        gefyra_network.remove()
+        config.DOCKER.networks.get(f"{config.NETWORK_NAME}-{connection_name}").remove()
     except docker.errors.NotFound:
         pass
     try:

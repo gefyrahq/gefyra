@@ -109,7 +109,10 @@ class ClientConfiguration(object):
             logger.debug(
                 f"Using Carrier image (other than default): {carrier_image_url}"
             )
-        self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
+        if sys.platform == "win32" or "microsoft" in platform.release().lower():
+            self.CARGO_IMAGE =  cargo_image_url or f"{self.REGISTRY_URL}/cargo-win:{__VERSION__}"
+        else:
+            self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
         if cargo_image_url:
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:

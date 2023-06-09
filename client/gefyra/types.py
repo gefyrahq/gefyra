@@ -215,6 +215,13 @@ class GefyraClient:
                 f" {self.state}"
             )
 
+@dataclass
+class GefyraConnectionList:
+    name: str
+    version: str
+    created: str
+    status: str
+    
 
 @dataclass
 class GefyraInstallOptions:
