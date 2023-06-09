@@ -1,16 +1,10 @@
+import logging
 import click
 
 import gefyra.api as api
-from gefyra.configuration import ClientConfiguration
 
 from gefyra.misc.comps import COMPONENTS
-from gefyra.misc.uninstall import (
-    remove_all_clients,
-    remove_gefyra_namespace,
-    remove_remainder_bridges,
-)
 
-from gefyra.cli.console import error
 from gefyra.cli.utils import installoptions_to_cli_options, multi_options
 from gefyra.cli.main import cli
 
@@ -37,35 +31,41 @@ from gefyra.cli.main import cli
     help=f"Set configs from a preset (available: {','.join(api.LB_PRESETS.keys())})",
     type=str,
 )
+@click.option(
+    "--apply",
+    is_flag=True,
+)
+@click.option(
+    "--wait",
+    is_flag=True,
+)
 @click.pass_context
 @multi_options(installoptions_to_cli_options())
-def install(ctx, component, preset, **kwargs):
-    click.echo(api.install(component, preset, **kwargs))
+def install(ctx, component, preset, apply, wait, **kwargs):
+    if wait and not apply:
+        raise click.BadOptionUsage(
+            option_name="wait", message="Cannot wait without '--apply'"
+        )
+    if wait:
+        logger = logging.getLogger("gefyra")
+        logger.setLevel(logging.INFO)
+        formatter = logging.Formatter("%(message)s")
+        logger.handlers[0].setFormatter(formatter)
+    ouput = api.install(component, preset, apply, wait, **kwargs)
+    if not apply:
+        click.echo(ouput)
 
 
 @cli.command("uninstall", help="Removes the Gefyra installation from the cluster")
 @click.option("--force", "-f", help="Delete without promt", is_flag=True)
 def uninstall(force):
-    config = ClientConfiguration()
     if not force:
         click.confirm(
             "Do you want to remove all Gefyra components from this cluster?",
             abort=True,
         )
-    click.echo("Removing all Gefyra bridges")
-    try:
-        remove_remainder_bridges(config)
-    except Exception as e:
-        error(str(e))
-
-    click.echo("Removing remainder Gefyra clients")
-    try:
-        remove_all_clients(config)
-    except Exception as e:
-        error(str(e))
-
-    click.echo("Removing Gefyra namespace")
-    try:
-        remove_gefyra_namespace(config)
-    except Exception as e:
-        error(str(e))
+    logger = logging.getLogger("gefyra")
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(message)s")
+    logger.handlers[0].setFormatter(formatter)
+    api.uninstall()

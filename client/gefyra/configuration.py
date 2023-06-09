@@ -110,9 +110,13 @@ class ClientConfiguration(object):
                 f"Using Carrier image (other than default): {carrier_image_url}"
             )
         if sys.platform == "win32" or "microsoft" in platform.release().lower():
-            self.CARGO_IMAGE =  cargo_image_url or f"{self.REGISTRY_URL}/cargo-win:{__VERSION__}"
+            self.CARGO_IMAGE = (
+                cargo_image_url or f"{self.REGISTRY_URL}/cargo-win:{__VERSION__}"
+            )
         else:
-            self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
+            self.CARGO_IMAGE = (
+                cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
+            )
         if cargo_image_url:
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:
@@ -249,6 +253,7 @@ class ClientConfiguration(object):
             RbacAuthorizationV1Api,
             AppsV1Api,
             CustomObjectsApi,
+            ApiextensionsV1Api,
         )
         from kubernetes.config import load_kube_config
 
@@ -257,6 +262,7 @@ class ClientConfiguration(object):
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
+        self.K8S_EXTENSION_API = ApiextensionsV1Api()
 
     def __getattr__(self, item):
         if item in [
@@ -264,6 +270,7 @@ class ClientConfiguration(object):
             "K8S_RBAC_API",
             "K8S_APP_API",
             "K8S_CUSTOM_OBJECT_API",
+            "K8S_EXTENSION_API",
         ]:
             try:
                 return self.__getattribute__(item)
@@ -301,7 +308,10 @@ class ClientConfiguration(object):
                 service = self.K8S_CORE_API.read_namespaced_service(
                     namespace=self.NAMESPACE, name="gefyra-stowaway-wireguard"
                 )
-                if service.spec.type == "NodePort":
+                if service.spec.type == "LoadBalancer":
+                    _port = port or service.spec.ports["gefyra-wireguard"].port
+                    return f"{service.status.load_balancer.ingress[0].ip}:{_port}"
+                else: # NodePort
                     # trying to retrive a public IP for the service
                     nodes = self.K8S_CORE_API.list_node()
                     external_ips = list(
@@ -317,9 +327,6 @@ class ClientConfiguration(object):
                         raise RuntimeError(
                             "Could not find a public IP for the NodePort service gefyra-stowaway-wireguard"
                         )
-                elif service.spec.type == "LoadBalancer":
-                    _port = port or service.spec.ports["gefyra-wireguard"].port
-                    return f"{service.status.load_balancer.ingress[0].ip}:{_port}"
             except kubernetes.client.ApiException as e:
                 if e.status == 404:
                     raise RuntimeError(

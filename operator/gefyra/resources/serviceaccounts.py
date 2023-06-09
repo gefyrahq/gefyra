@@ -18,23 +18,31 @@ def handle_create_gefyraclient_serviceaccount(
     :type namespace: str
     """
     try:
-        role = rbac_v1_api.read_namespaced_role(
-            namespace=namespace,
+        role = rbac_v1_api.read_cluster_role(
             name="gefyra-client",
         )
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            role = rbac_v1_api.create_namespaced_role(
-                namespace=namespace,
-                body=k8s.client.V1Role(
+            role = rbac_v1_api.create_cluster_role(
+                body=k8s.client.V1ClusterRole(
                     metadata=k8s.client.V1ObjectMeta(
-                        name="gefyra-client", namespace=namespace
+                        name="gefyra-client"
                     ),
                     rules=[
                         k8s.client.V1PolicyRule(
                             api_groups=["gefyra.dev"],
                             resources=["gefyraclients"],
-                            verbs=["LIST", "PATCH", "GET"],
+                            verbs=["list", "patch", "get"],
+                        ),
+                        k8s.client.V1PolicyRule(
+                            api_groups=[""],
+                            resources=["pods/exec"],
+                            verbs=["create"],
+                        ),
+                        k8s.client.V1PolicyRule(
+                            api_groups=["", "apps"],
+                            resources=["pods", "deployments", "statefulsets"],
+                            verbs=["list", "get"],
                         ),
                     ],
                 ),
@@ -48,17 +56,16 @@ def handle_create_gefyraclient_serviceaccount(
                 metadata=k8s.client.V1ObjectMeta(name=name, namespace=namespace)
             ),
         )
-        rbac_v1_api.create_namespaced_role_binding(
-            namespace=namespace,
-            body=k8s.client.V1RoleBinding(
+        rbac_v1_api.create_cluster_role_binding(
+            body=k8s.client.V1ClusterRoleBinding(
                 metadata=k8s.client.V1ObjectMeta(
-                    name=f"gefyra-rolebinding-{sa.metadata.name}", namespace=namespace
+                    name=f"gefyra-rolebinding-{sa.metadata.name}"
                 ),
                 subjects=[
-                    k8s.client.V1Subject(kind="ServiceAccount", name=sa.metadata.name)
+                    k8s.client.V1Subject(kind="ServiceAccount", name=sa.metadata.name, namespace=namespace)
                 ],
                 role_ref=k8s.client.V1RoleRef(
-                    kind="Role",
+                    kind="ClusterRole",
                     name=role.metadata.name,
                     api_group="rbac.authorization.k8s.io",
                 ),

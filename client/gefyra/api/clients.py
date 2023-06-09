@@ -1,4 +1,3 @@
-from argparse import Namespace
 import logging
 from pathlib import Path
 from typing import Iterable, List, Optional
@@ -20,7 +19,8 @@ logger = logging.getLogger(__name__)
 def add_clients(
     client_id: str,
     quantity: int = 1,
-    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
 ) -> Iterable[GefyraClient]:
     """
     Add a new client to the connection provider
@@ -40,18 +40,33 @@ def add_clients(
         result.append(GefyraClient(gclient))
     return result
 
+
 @stopwatch
-def get_client(client_id: str, connection_name: str = "", kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None) -> GefyraClient:
+def get_client(
+    client_id: str,
+    connection_name: str = "",
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+) -> GefyraClient:
     """
     Get a GefyraClient object
     """
-    config = ClientConfiguration(connection_name=connection_name, kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        connection_name=connection_name,
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+    )
     gclient = handle_get_gefyraclient(config, client_id)
     return GefyraClient(gclient)
 
 
 @stopwatch
-def delete_client(client_id: str, force: bool = False, kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None) -> bool:
+def delete_client(
+    client_id: str,
+    force: bool = False,
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+) -> bool:
     """
     Delete a GefyraClient configuration
     """
@@ -61,7 +76,12 @@ def delete_client(client_id: str, force: bool = False, kubeconfig: Optional[Path
 
 @stopwatch
 def write_client_file(
-    client_id: str, host: str, port: str, kube_api: str, kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
+    client_id: str,
+    host: str,
+    port: str,
+    kube_api: str,
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
 ) -> str:
     """
     Write a client file
@@ -81,7 +101,9 @@ def write_client_file(
 
 
 @stopwatch
-def list_client(kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None) -> List[GefyraClient]:
+def list_client(
+    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
+) -> List[GefyraClient]:
     """
     List all GefyraClient objects
     """

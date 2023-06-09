@@ -2,10 +2,8 @@ import base64
 import logging
 import os
 from pathlib import Path
-import platform
-import sys
 import time
-from typing import Dict, List, IO, Optional
+from typing import IO, List, Optional
 from gefyra.api.clients import get_client
 from gefyra.cli import console
 
@@ -20,7 +18,7 @@ from gefyra.local.utils import (
     compose_kubeconfig_for_serviceaccount,
     handle_docker_get_or_create_container,
 )
-from gefyra.types import GefyraClientConfig, GefyraClientState, GefyraConnectionList
+from gefyra.types import GefyraClientConfig, GefyraClientState, GefyraConnectionItem
 
 
 logger = logging.getLogger(__name__)
@@ -40,7 +38,9 @@ def connect(connection_name: str, client_config: Optional[IO]) -> bool:
     else:
         # connection does not exist, so create it
         if client_config is None:
-            raise RuntimeError("Connection is not yet created and no client configuration has been provided")
+            raise RuntimeError(
+                "Connection is not yet created and no client configuration has been provided"
+            )
         logger.debug(f"Creating new connection {connection_name}")
         file_str = client_config.read()
         client_config.close()
@@ -100,7 +100,7 @@ def connect(connection_name: str, client_config: Optional[IO]) -> bool:
     else:
         raise RuntimeError("Could not activate connection") from None
     client.update()
-    
+
     # since this connection was (re)activated, save the current wireguard config (again)
     wg_conf = os.path.join(
         get_gefyra_config_location(), f"{config.CONNECTION_NAME}.conf"
@@ -149,7 +149,7 @@ def connect(connection_name: str, client_config: Optional[IO]) -> bool:
         raise RuntimeError(f"Could not start Cargo container: {e}") from None
 
     # Confirm the wireguard connection working
-    
+
     probe_wireguard_connection(config)
     return True
 
@@ -171,7 +171,7 @@ def disconnect(connection_name: str) -> bool:
     return True
 
 
-def list_connections() -> GefyraConnectionList:
+def list_connections() -> List[GefyraConnectionItem]:
     from gefyra.local import CARGO_LABEL, CONNECTION_NAME_LABEL, VERSION_LABEL
 
     config = ClientConfiguration()
@@ -182,19 +182,25 @@ def list_connections() -> GefyraConnectionList:
     for cargo_container in containers:
         if cargo_container.status == "running":
             try:
-                probe_wireguard_connection(ClientConfiguration(cargo_container_name=cargo_container.name))
+                probe_wireguard_connection(
+                    ClientConfiguration(cargo_container_name=cargo_container.name)
+                )
                 established = True
             except RuntimeError:
                 established = False
         else:
             established = False
         result.append(
-            GefyraConnectionList(**{
-                "name": cargo_container.labels.get(CONNECTION_NAME_LABEL, "unknown"),
-                "version": cargo_container.labels.get(VERSION_LABEL, "unknown"),
-                "created": cargo_container.attrs.get("Created", "unknown"),
-                "status": cargo_container.status if established else "error",
-            })
+            GefyraConnectionItem(
+                **{
+                    "name": cargo_container.labels.get(
+                        CONNECTION_NAME_LABEL, "unknown"
+                    ),
+                    "version": cargo_container.labels.get(VERSION_LABEL, "unknown"),
+                    "created": cargo_container.attrs.get("Created", "unknown"),
+                    "status": cargo_container.status if established else "error",
+                }
+            )
         )
     return result
 

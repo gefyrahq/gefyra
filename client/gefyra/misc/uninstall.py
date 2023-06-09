@@ -50,3 +50,26 @@ def remove_gefyra_namespace(config: ClientConfiguration):
             return
         else:
             raise e from None
+
+
+def remove_gefyra_crds(config: ClientConfiguration):
+    try:
+        config.K8S_EXTENSION_API.delete_custom_resource_definition(
+            name="gefyrabridges.gefyra.dev"
+        )
+    except k8s.client.exceptions.ApiException as e:  # type: ignore
+        if e.status == 404:
+            return
+        else:
+            raise e from None
+    try:
+        config.K8S_EXTENSION_API.delete_custom_resource_definition(
+            name="gefyraclients.gefyra.dev"
+        )
+    except k8s.client.exceptions.ApiException as e:  # type: ignore
+        if e.status == 404:
+            return
+        else:
+            raise e from None
+
+#TODO uninstall RBAC
