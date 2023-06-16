@@ -12,7 +12,7 @@ from .utils import handle_docker_run_container
 logger = logging.getLogger(__name__)
 
 
-def handle_create_interceptrequest(config: ClientConfiguration, body, target: str):
+def handle_create_gefyrabridge(config: ClientConfiguration, body, target: str):
     from kubernetes.client import ApiException
 
     try:
@@ -20,7 +20,7 @@ def handle_create_interceptrequest(config: ClientConfiguration, body, target: st
             namespace=config.NAMESPACE,
             body=body,
             group="gefyra.dev",
-            plural="interceptrequests",
+            plural="gefyrabridges",
             version="v1",
         )
     except ApiException as e:
@@ -33,7 +33,7 @@ def handle_create_interceptrequest(config: ClientConfiguration, body, target: st
     return ireq
 
 
-def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bool:
+def handle_delete_gefyrabridge(config: ClientConfiguration, name: str) -> bool:
     from kubernetes.client import ApiException
 
     try:
@@ -41,7 +41,7 @@ def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bo
             namespace=config.NAMESPACE,
             name=name,
             group="gefyra.dev",
-            plural="interceptrequests",
+            plural="gefyrabridges",
             version="v1",
         )
         return ireq
@@ -53,14 +53,14 @@ def handle_delete_interceptrequest(config: ClientConfiguration, name: str) -> bo
         return False
 
 
-def get_all_interceptrequests(config: ClientConfiguration) -> list:
+def get_all_gefyrabridges(config: ClientConfiguration) -> list:
     from kubernetes.client import ApiException
 
     try:
         ireq_list = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             namespace=config.NAMESPACE,
             group="gefyra.dev",
-            plural="interceptrequests",
+            plural="gefyrabridges",
             version="v1",
         )
         if ireq_list:
@@ -69,7 +69,7 @@ def get_all_interceptrequests(config: ClientConfiguration) -> list:
             return []
     except ApiException as e:
         if e.status != 404:
-            logger.error("Error getting InterceptRequests: " + str(e))
+            logger.error("Error getting GefyraBridges: " + str(e))
             raise e
         return []
 
@@ -80,7 +80,7 @@ def get_all_containers(config: ClientConfiguration) -> list:
     containers = gefyra_net.containers
     # filter out gefyra-cargo container as well as fields other than name and ip
     for container in containers:
-        if container.name != "gefyra-cargo":
+        if not container.name.startswith("gefyra-cargo"):
             container_information.append(
                 (
                     container.name,
@@ -93,22 +93,22 @@ def get_all_containers(config: ClientConfiguration) -> list:
     return container_information
 
 
-def remove_interceptrequest_remainder(config: ClientConfiguration):
+def remove_gefyrabridge_remainder(config: ClientConfiguration):
     from kubernetes.client import ApiException
 
     try:
-        ireq_list = get_all_interceptrequests(config)
+        ireq_list = get_all_gefyrabridges(config)
         if ireq_list:
-            logger.debug(f"Removing {len(ireq_list)} InterceptRequests remainder")
+            logger.debug(f"Removing {len(ireq_list)} GefyraBridges remainder")
             # if there are running intercept requests clean them up
             for ireq in ireq_list:
-                handle_delete_interceptrequest(config, ireq["metadata"]["name"])
+                handle_delete_gefyrabridge(config, ireq["metadata"]["name"])
                 sleep(1)
     except ApiException as e:
-        logger.error("Error removing remainder InterceptRequests: " + str(e))
+        logger.error("Error removing remainder GefyraBridges: " + str(e))
 
 
-def get_ireq_body(
+def get_gbridge_body(
     config: ClientConfiguration,
     name: str,
     destination_ip,
@@ -120,11 +120,14 @@ def get_ireq_body(
 ):
     return {
         "apiVersion": "gefyra.dev/v1",
-        "kind": "InterceptRequest",
+        "kind": "GefyraBridge",
         "metadata": {
             "name": name,
             "namspace": config.NAMESPACE,
         },
+        "provider": "carrier",
+        "connectionProvider": "stowaway",
+        "client": config.CLIENT_ID,
         "destinationIP": destination_ip,
         "targetPod": target_pod,
         "targetNamespace": target_namespace,

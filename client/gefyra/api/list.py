@@ -38,13 +38,13 @@ def get_bridges_and_print():
 
 @stopwatch
 def list_interceptrequests() -> List[str]:
-    from gefyra.local.bridge import get_all_interceptrequests
+    from gefyra.local.bridge import get_all_gefyrabridges
 
     config = ClientConfiguration()
 
     # Check if kubeconfig is available through running Cargo
     ireqs = []
-    for ireq in get_all_interceptrequests(config):
+    for ireq in get_all_gefyrabridges(config):
         ireqs.append(ireq["metadata"]["name"])
     return ireqs
 

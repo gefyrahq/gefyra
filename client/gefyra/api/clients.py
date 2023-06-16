@@ -77,9 +77,9 @@ def delete_client(
 @stopwatch
 def write_client_file(
     client_id: str,
-    host: str,
-    port: str,
-    kube_api: str,
+    host: Optional[str] = None,
+    port: Optional[str] = None,
+    kube_api: Optional[str] = None,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
 ) -> str:

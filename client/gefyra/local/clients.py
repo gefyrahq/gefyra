@@ -1,5 +1,6 @@
 import logging
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import GefyraClientAlreadyExists, GefyraClientNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,9 @@ def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
         )
     except ApiException as e:
         if e.status == 409:
-            raise RuntimeError(f"Client {body['metadata']['name']} already exists.")
+            raise GefyraClientAlreadyExists(
+                f"Client {body['metadata']['name']} already exists."
+            )
         logger.error(
             f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
         )
@@ -37,8 +40,8 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
             version="v1",
         )
     except ApiException as e:
-        if e.status == 404:
-            raise RuntimeError(f"Client {client_id} does not exists.")
+        if e.status in [404, 403]:
+            raise GefyraClientNotFound(f"Client {client_id} does not exists.")
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
@@ -53,13 +56,6 @@ def handle_delete_gefyraclient(
     from kubernetes.client import ApiException
 
     try:
-        config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object(
-            namespace=config.NAMESPACE,
-            name=client_id,
-            group="gefyra.dev",
-            plural="gefyraclients",
-            version="v1",
-        )
         if force:
             config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
                 namespace=config.NAMESPACE,
@@ -69,9 +65,16 @@ def handle_delete_gefyraclient(
                 version="v1",
                 body={"metadata": {"finalizers": None}},
             )
+        config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object(
+            namespace=config.NAMESPACE,
+            name=client_id,
+            group="gefyra.dev",
+            plural="gefyraclients",
+            version="v1",
+        )
         return True
     except ApiException as e:
-        if e.status == 404:
+        if e.status in [404, 403]:
             return False
         else:
             logger.error(

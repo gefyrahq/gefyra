@@ -1,5 +1,6 @@
 import logging
 from typing import List, Dict, Union
+from gefyra.exceptions import PodNotFoundError
 
 from kubernetes.client import (
     V1ServiceAccount,
@@ -275,8 +276,8 @@ def get_pods_and_containers_for_pod_name(
     except ApiException as e:
         if e.status == 404:
             API_EXCEPTION_MSG = f"Pod {name} not found."
-        raise RuntimeError(API_EXCEPTION_MSG.format(e))
+        raise PodNotFoundError(API_EXCEPTION_MSG.format(e))
     if not pod.spec:  # `.spec` is optional in python kubernetes client
-        raise RuntimeError(f"Could not retrieve spec for pod - {name}.")
+        raise PodNotFoundError(f"Could not retrieve spec for pod - {name}.")
     result[pod.metadata.name] = [container.name for container in pod.spec.containers]
     return result

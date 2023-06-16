@@ -4,57 +4,14 @@ from enum import Enum
 
 from gefyra.api import stopwatch
 from gefyra.configuration import ClientConfiguration
+from gefyra.types import (
+    GefyraClientStatus,
+    GefyraClusterStatus,
+    GefyraStatus,
+    StatusSummary,
+)
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class GefyraClusterStatus:
-    # is a kubernetes cluster reachable
-    connected: bool
-    # is the operator running
-    operator: bool
-    operator_image: str
-    # is stowaway running
-    stowaway: bool
-    stowaway_image: str
-    # the gefyra namespace is available
-    namespace: bool
-
-
-@dataclass
-class GefyraClientStatus:
-    version: str
-    # is cargo running
-    cargo: bool
-    cargo_image: str
-    # is gefyra network available
-    network: bool
-    # is gefyra client connected with gefyra cluster
-    connection: bool
-    # amount of containers running in gefyra
-    containers: int
-    # amount of active bridges
-    bridges: int
-    # current kubeconfig file
-    kubeconfig: str
-    # current kubeconfig context
-    context: str
-    # wireguard endpoint
-    cargo_endpoint: str
-
-
-class StatusSummary(str, Enum):
-    UP = "Gefyra is up and connected"
-    DOWN = "Gefyra is not running"
-    INCOMPLETE = "Gefyra is not running properly"
-
-
-@dataclass
-class GefyraStatus:
-    summary: StatusSummary
-    cluster: GefyraClusterStatus
-    client: GefyraClientStatus
 
 
 def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
@@ -110,10 +67,10 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
     except RuntimeError:
         return _status
 
-    from gefyra.local.bridge import get_all_interceptrequests
+    from gefyra.local.bridge import get_all_gefyrabridges
 
     logger.debug("Counting all active bridges")
-    _status.bridges = len(get_all_interceptrequests(config))
+    _status.bridges = len(get_all_gefyrabridges(config))
     return _status
 
 

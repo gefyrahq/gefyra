@@ -5,6 +5,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from gefyra.configuration import ClientConfiguration, __VERSION__
+from gefyra.exceptions import ClientConfigurationError
 from gefyra.local.clients import handle_get_gefyraclient
 
 logger = logging.getLogger(__name__)
@@ -169,7 +170,9 @@ class GefyraClient:
                 gefyra_server=gefyra_server,
             )
         else:
-            raise RuntimeError("Cannot get client config, no service account found.")
+            raise ClientConfigurationError(
+                "Cannot get client config, no service account found."
+            )
 
     def activate_connection(self, subnet: str):
         _state = self.state
@@ -269,3 +272,52 @@ class GefyraInstallOptions:
             type="array",
         ),
     )
+
+
+@dataclass
+class GefyraClusterStatus:
+    # is a kubernetes cluster reachable
+    connected: bool
+    # is the operator running
+    operator: bool
+    operator_image: str
+    # is stowaway running
+    stowaway: bool
+    stowaway_image: str
+    # the gefyra namespace is available
+    namespace: bool
+
+
+@dataclass
+class GefyraClientStatus:
+    version: str
+    # is cargo running
+    cargo: bool
+    cargo_image: str
+    # is gefyra network available
+    network: bool
+    # is gefyra client connected with gefyra cluster
+    connection: bool
+    # amount of containers running in gefyra
+    containers: int
+    # amount of active bridges
+    bridges: int
+    # current kubeconfig file
+    kubeconfig: str
+    # current kubeconfig context
+    context: str
+    # wireguard endpoint
+    cargo_endpoint: str
+
+
+class StatusSummary(str, Enum):
+    UP = "Gefyra is up and connected"
+    DOWN = "Gefyra is not running"
+    INCOMPLETE = "Gefyra is not running properly"
+
+
+@dataclass
+class GefyraStatus:
+    summary: StatusSummary
+    cluster: GefyraClusterStatus
+    client: GefyraClientStatus

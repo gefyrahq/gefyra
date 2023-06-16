@@ -8,6 +8,7 @@ import logging
 from typing import Optional, Union
 
 from pathlib import Path
+from gefyra.exceptions import ClientConfigurationError
 
 
 from gefyra.local import (
@@ -61,7 +62,7 @@ class ClientConfiguration(object):
         self,
         docker_client=None,
         network_name: str = "",
-        connection_name: str = "default",
+        connection_name: Optional[str] = None,
         cargo_endpoint_host: str = "",
         cargo_endpoint_port: str = "31820",
         cargo_container_name: str = "",
@@ -133,19 +134,22 @@ class ClientConfiguration(object):
         self.CARGO_PROBE_TIMEOUT = 10  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
-        containers = self.DOCKER.containers.list(
-            all=True,
-            filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
-        )
-        if containers:
-            cargo_container = containers[0]
-            self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
-            self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
-            self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
-            self.NETWORK_NAME = (  # TODO set base network name
-                f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"
+        if self.CONNECTION_NAME:
+            containers = self.DOCKER.containers.list(
+                all=True,
+                filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
             )
-            self.CARGO_CONTAINER_NAME = cargo_container.name
+            if containers:
+                cargo_container = containers[0]
+                self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
+                self.KUBE_CONFIG_FILE = cargo_container.labels.get(
+                    ACTIVE_KUBECONFIG_LABEL
+                )
+                self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
+                self.NETWORK_NAME = (  # TODO set base network name
+                    f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"
+                )
+                self.CARGO_CONTAINER_NAME = cargo_container.name
 
         if cargo_endpoint_host:
             self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
@@ -324,12 +328,12 @@ class ClientConfiguration(object):
                         _port = port or service.spec.ports["gefyra-wireguard"].node_port
                         return f"{external_ips[0].address}:{_port}"
                     else:
-                        raise RuntimeError(
+                        raise ClientConfigurationError(
                             "Could not find a public IP for the NodePort service gefyra-stowaway-wireguard"
                         )
             except kubernetes.client.ApiException as e:
                 if e.status == 404:
-                    raise RuntimeError(
+                    raise ClientConfigurationError(
                         f"Could not find service gefyra-stowaway-wireguard in {self.NAMESPACE}"
                     ) from None
                 else:

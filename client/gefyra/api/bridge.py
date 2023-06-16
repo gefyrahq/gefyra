@@ -72,7 +72,7 @@ def bridge(
     connection_name: str = "",
 ) -> bool:
     from docker.errors import NotFound
-    from gefyra.local.bridge import get_all_interceptrequests
+    from gefyra.local.bridge import get_all_gefyrabridges
 
     config = ClientConfiguration(connection_name=connection_name)
 
@@ -132,14 +132,14 @@ def bridge(
         use_index = False
 
     from gefyra.local.bridge import (
-        get_ireq_body,
-        handle_create_interceptrequest,
+        get_gbridge_body,
+        handle_create_gefyrabridge,
     )
 
     ireqs = []
     for idx, pod in enumerate(pods_to_intercept):
         logger.info(f"Creating bridge for Pod {pod}")
-        ireq_body = get_ireq_body(
+        ireq_body = get_gbridge_body(
             config,
             name=f"{ireq_base_name}-{idx}" if use_index else ireq_base_name,
             destination_ip=local_container_ip,
@@ -149,7 +149,7 @@ def bridge(
             port_mappings=port_mappings,
             handle_probes=handle_probes,
         )
-        ireq = handle_create_interceptrequest(config, ireq_body, target)
+        ireq = handle_create_gefyrabridge(config, ireq_body, target)
         logger.debug(f"Bridge {ireq['metadata']['name']} created")
         ireqs.append(ireq)
     #
@@ -164,7 +164,7 @@ def bridge(
         waiting_time = timeout
     while True:
         # watch whether all relevant bridges have been established
-        kube_ireqs = get_all_interceptrequests(config)
+        kube_ireqs = get_all_gefyrabridges(config)
         for kube_ireq in kube_ireqs:
             if kube_ireq["metadata"]["uid"] in bridges.keys() and kube_ireq.get(
                 "established", False
@@ -225,11 +225,11 @@ def unbridge(
     name: str,
     wait: bool = False,
 ) -> bool:
-    from gefyra.local.bridge import handle_delete_interceptrequest
+    from gefyra.local.bridge import handle_delete_gefyrabridge
 
     config = ClientConfiguration()
 
-    ireq = handle_delete_interceptrequest(config, name)
+    ireq = handle_delete_gefyrabridge(config, name)
     if ireq:
         if wait:
             wait_for_deletion([ireq], config=config)
@@ -242,17 +242,17 @@ def unbridge_all(
     wait: bool = False,
 ) -> bool:
     from gefyra.local.bridge import (
-        handle_delete_interceptrequest,
-        get_all_interceptrequests,
+        handle_delete_gefyrabridge,
+        get_all_gefyrabridges,
     )
 
     config = ClientConfiguration()
 
-    ireqs = get_all_interceptrequests(config)
+    ireqs = get_all_gefyrabridges(config)
     for ireq in ireqs:
         name = ireq["metadata"]["name"]
         logger.info(f"Removing Bridge {name}")
-        handle_delete_interceptrequest(config, name)
+        handle_delete_gefyrabridge(config, name)
     if wait:
         wait_for_deletion(config=config, ireqs=ireqs)
     return True

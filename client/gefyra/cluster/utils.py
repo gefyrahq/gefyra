@@ -107,3 +107,15 @@ def get_v1pod(
         else:
             raise e
     return pod
+
+
+def is_operator_running(config: ClientConfiguration) -> bool:
+    from kubernetes.client import ApiException
+
+    try:
+        deploy = config.K8S_APP_API.read_namespaced_deployment(
+            name="gefyra-operator", namespace=config.NAMESPACE
+        )
+        return deploy.status.ready_replicas == 1
+    except ApiException as e:
+        return False

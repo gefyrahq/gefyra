@@ -1,6 +1,4 @@
 from .bridge import *  # noqa
-from .down import *  # noqa
-from .up import *  # noqa
 from .install import *  # noqa
 from .list import *  # noqa
 from .reflect import *  # noqa

@@ -6,7 +6,7 @@ from gefyra.cluster.utils import (
     get_container_ports,
     get_v1pod,
 )
-from gefyra.local.bridge import handle_delete_interceptrequest
+from gefyra.local.bridge import handle_delete_gefyrabridge
 from gefyra.local.check import probe_docker, probe_kubernetes
 import requests
 import subprocess
@@ -560,7 +560,7 @@ class GefyraBaseTest:
 
     def test_h_run_gefyra_unbridge_with_name_not_exists(self):
         self.caplog.set_level("DEBUG")
-        res = handle_delete_interceptrequest(
+        res = handle_delete_gefyrabridge(
             name="mypyserver-to-default.deploy.hello-nginxdemo-not",
             config=default_configuration,
         )

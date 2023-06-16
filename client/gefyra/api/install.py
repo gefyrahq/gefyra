@@ -3,7 +3,9 @@ import logging
 from pathlib import Path
 import time
 from typing import Dict, List, Optional
-from gefyra.configuration import ClientConfiguration
+from gefyra.cluster.utils import is_operator_running
+from gefyra.exceptions import ClusterError
+
 
 from gefyra.misc.install import synthesize_config_as_dict, synthesize_config_as_yaml
 from gefyra.misc.uninstall import (
@@ -42,14 +44,16 @@ LB_PRESETS = {
 
 @stopwatch
 def install(
-    component: List[str],
-    preset: Dict,
+    component: Optional[List[str]] = None,
+    preset: Optional[str] = None,
     apply: bool = False,
     wait: bool = False,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
     **kwargs,
 ) -> str:
+    from gefyra.configuration import ClientConfiguration
+
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
     if preset:
         presetoptions = LB_PRESETS.get(preset)  # type: ignore
@@ -66,16 +70,33 @@ def install(
     if apply:
         import kubernetes
 
+        try:
+            ns = config.K8S_CORE_API.read_namespaced_namespace(name=config.NAMESPACE)
+            if ns.status.phase.lower() != "active":
+                raise ClusterError(
+                    f"Cannot apply Gefyra: namespace {config.NAMESPACE} is in {ns.status.phase} state"
+                )
+        except:  # noqa
+            pass
+
         objects = synthesize_config_as_dict(options=options, components=component)
         for objs in objects:
             try:
+                if (
+                    objs["kind"] == "Deployment"
+                    and objs["metadata"]["name"] == "gefyra-operator"
+                ):
+                    # if this is the operator and the operator is already running, skip the waiting below
+                    # as the Gefyra-Ready event will never be emitted
+                    wait = not is_operator_running(config)
                 kubernetes.utils.create_from_dict(
                     config.K8S_CORE_API.api_client, data=objs
                 )
             except kubernetes.utils.FailToCreateError as e:
-                if e.api_exceptions[0].status != 409:
+                if e.api_exceptions[0].status not in [409, 422]:
                     logger.error(e)
     if apply and wait:
+        logger.debug("Waiting for Gefyra to become ready")
         tic = time.perf_counter()
         from kubernetes.watch import Watch
 
@@ -91,6 +112,20 @@ def install(
                 toc = time.perf_counter()
                 logger.info(f"Gefyra became ready in {toc - tic:0.4f} seconds")
                 break
+        # busywait for the operator webhook to become ready
+        _i = 0
+        while _i < 10:
+            webhook_deploy = config.K8S_APP_API.read_namespaced_deployment(
+                name="gefyra-operator-webhook", namespace=config.NAMESPACE
+            )
+            if webhook_deploy.status.ready_replicas == 1:
+                break
+            else:
+                logger.debug("Waiting for the operator webhook to become ready")
+                time.sleep(1)
+                _i += 1
+        else:
+            raise ClusterError("Operator webhook did not become ready")
     return ouput
 
 
@@ -98,6 +133,8 @@ def install(
 def uninstall(
     kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None, **kwargs
 ):
+    from gefyra.configuration import ClientConfiguration
+
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
     logger.info("Removing all Gefyra bridges")
     try:

@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 from typing import IO, List, Optional
 from gefyra.api.clients import get_client
-from gefyra.cli import console
+from .utils import stopwatch
 
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.local.cargo import (
@@ -24,6 +24,7 @@ from gefyra.types import GefyraClientConfig, GefyraClientState, GefyraConnection
 logger = logging.getLogger(__name__)
 
 
+@stopwatch
 def connect(connection_name: str, client_config: Optional[IO]) -> bool:
     import kubernetes
     import docker
@@ -59,7 +60,7 @@ def connect(connection_name: str, client_config: Optional[IO]) -> bool:
         )
         with open(loc, "w") as f:
             f.write(kubeconfig_str)
-            console.info(f"Client kubeconfig saved to {loc}")
+            logger.info(f"Client kubeconfig saved to {loc}")
 
         config = ClientConfiguration(
             connection_name=connection_name,
@@ -154,6 +155,7 @@ def connect(connection_name: str, client_config: Optional[IO]) -> bool:
     return True
 
 
+@stopwatch
 def disconnect(connection_name: str) -> bool:
     import docker
 
@@ -171,6 +173,7 @@ def disconnect(connection_name: str) -> bool:
     return True
 
 
+@stopwatch
 def list_connections() -> List[GefyraConnectionItem]:
     from gefyra.local import CARGO_LABEL, CONNECTION_NAME_LABEL, VERSION_LABEL
 
@@ -205,6 +208,7 @@ def list_connections() -> List[GefyraConnectionItem]:
     return result
 
 
+@stopwatch
 def remove_connection(connection_name: str):
     import docker
 
