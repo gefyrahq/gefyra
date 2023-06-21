@@ -1,4 +1,6 @@
 from copy import deepcopy
+from unittest import mock
+
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
 from gefyra.cli.updown import cluster_up, cluster_down
 from gefyra.cluster.utils import (
@@ -50,7 +52,7 @@ default_configuration = ClientConfiguration()
 
 
 def up():
-    ctx = object()
+    ctx = mock.Mock()
     ctx.obj = dict()
     ctx.obj["kubeconfig"] = "~/.kube/config"
     cluster_up(ctx)
