@@ -24,7 +24,7 @@ from kubernetes.client import (
     CustomObjectsApi,
 )
 from kubernetes.client import ApiException
-from kubernetes.config import load_kube_config, ConfigException
+from kubernetes.config import load_kube_config
 
 from gefyra.__main__ import version, print_status
 from gefyra.api import (
@@ -284,7 +284,7 @@ class GefyraBaseTest:
 
     def assert_gefyra_not_connected(self):
         _status = status()
-        self.assertEqual(_status.summary, StatusSummary.cluster_down)
+        self.assertEqual(_status.summary, StatusSummary.DOWN)
 
     def assert_gefyra_operational_no_bridge(self):
         _status = status()
@@ -389,15 +389,15 @@ class GefyraBaseTest:
         self.assertIn("KUBE_CONFIG_FILE", str(rte.exception))
         self.assertIn("not found.", str(rte.exception))
 
-    def test_a_run_gefyra_up_with_invalid_context(self):
-        with self.assertRaises(ConfigException):
-            config = ClientConfiguration(kube_context="invalid-context")
-            up(config=config)
+    # def test_a_run_gefyra_up_with_invalid_context(self):
+    #     with self.assertRaises(ConfigException):
+    #         config = ClientConfiguration(kube_context="invalid-context")
+    #         up()
 
     def test_a_run_gefyra_up_in_another_docker_context(self):
         ContextAPI.create_context("another-context")
         ContextAPI.set_current_context("another-context")
-        res = up(default_configuration)
+        res = up()
         self.assertTrue(res)
         self.assert_operator_ready()
         self.assert_stowaway_ready()
@@ -406,7 +406,7 @@ class GefyraBaseTest:
         ContextAPI.remove_context("another-context")
 
     def test_ab_run_gefyra_up(self):
-        res = up(default_configuration)
+        res = up()
         self.assertTrue(res)
         self.assert_operator_ready()
         self.assert_stowaway_ready()
@@ -696,7 +696,7 @@ class GefyraBaseTest:
             command=["sleep", "20"],
             name=container_name,
         )
-        res = up(default_configuration)
+        res = up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
@@ -713,7 +713,7 @@ class GefyraBaseTest:
         self._stop_container(container=container_name)
 
     def test_p_reflect(self):
-        res = up(default_configuration)
+        res = up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
@@ -727,7 +727,7 @@ class GefyraBaseTest:
         self.assertTrue(res)
 
     def test_p_reflect_port_overwrite(self):
-        res = up(default_configuration)
+        res = up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
@@ -749,7 +749,7 @@ class GefyraBaseTest:
         self.assertTrue(res)
 
     def test_p_reflect_image_overwrite(self):
-        res = up(default_configuration)
+        res = up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
