@@ -1,5 +1,6 @@
 from copy import deepcopy
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
+from gefyra.cli.updown import cluster_up, cluster_down
 from gefyra.cluster.utils import (
     get_container_command,
     get_container_image,
@@ -28,11 +29,9 @@ from kubernetes.config import load_kube_config, ConfigException
 from gefyra.__main__ import version, print_status
 from gefyra.api import (
     bridge,
-    down,
     reflect,
     run,
     status,
-    up,
     unbridge_all,
     unbridge,
     list_containers,
@@ -48,6 +47,13 @@ from gefyra.configuration import ClientConfiguration
 import gefyra.configuration as config_package
 
 default_configuration = ClientConfiguration()
+
+
+def up():
+    ctx = object()
+    ctx.obj = dict()
+    ctx.obj["kubeconfig"] = "~/.kube/config"
+    cluster_up(ctx)
 
 
 class GefyraBaseTest:
@@ -278,7 +284,7 @@ class GefyraBaseTest:
 
     def assert_gefyra_not_connected(self):
         _status = status(default_configuration)
-        self.assertEqual(_status.summary, StatusSummary.DOWN)
+        self.assertEqual(_status.summary, StatusSummary.cluster_down)
 
     def assert_gefyra_operational_no_bridge(self):
         _status = status(default_configuration)
@@ -395,7 +401,7 @@ class GefyraBaseTest:
         self.assertTrue(res)
         self.assert_operator_ready()
         self.assert_stowaway_ready()
-        down()
+        cluster_down()
         ContextAPI.set_current_context("default")
         ContextAPI.remove_context("another-context")
 
@@ -664,8 +670,8 @@ class GefyraBaseTest:
             owner_reference_consistent(right_pod, deployment, default_configuration)
         )
 
-    def test_n_run_gefyra_down(self):
-        res = down(default_configuration)
+    def test_n_run_gefyra_cluster_down(self):
+        res = cluster_down()
         self.assertTrue(res)
         _status = status(default_configuration)
         self.assertEqual(_status.summary, StatusSummary.DOWN)
@@ -678,7 +684,7 @@ class GefyraBaseTest:
         self.assert_namespace_not_found("gefyra")
 
     def test_n_run_gefyra_down_again_without_errors(self):
-        self.test_n_run_gefyra_down()
+        self.test_n_run_gefyra_cluster_down()
 
     def test_o_reflect_occupied_port(self):
         container_name = "busybox"
@@ -717,7 +723,7 @@ class GefyraBaseTest:
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
         )
-        res = down(default_configuration)
+        res = cluster_down()
         self.assertTrue(res)
 
     def test_p_reflect_port_overwrite(self):
@@ -739,7 +745,7 @@ class GefyraBaseTest:
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
         )
-        res = down(default_configuration)
+        res = cluster_down()
         self.assertTrue(res)
 
     def test_p_reflect_image_overwrite(self):
@@ -767,7 +773,7 @@ class GefyraBaseTest:
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
         )
-        res = down(default_configuration)
+        res = cluster_down()
         self.assertTrue(res)
 
     def test_util_for_pod_not_found(self):
