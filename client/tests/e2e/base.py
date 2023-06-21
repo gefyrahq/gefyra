@@ -54,11 +54,13 @@ default_configuration = ClientConfiguration()
 def up():
     runner = CliRunner()
     runner.invoke(cluster_up)
+    return True
 
 
 def down():
     runner = CliRunner()
     runner.invoke(cluster_down)
+    return True
 
 
 class GefyraBaseTest:
