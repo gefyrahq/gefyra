@@ -275,7 +275,7 @@ class GefyraBaseTest:
 
     def assert_gefyra_connected(self, _status=None):
         if not _status:
-            _status = status(default_configuration)
+            _status = status()
         self.assertEqual(_status.summary, StatusSummary.UP)
         self.assertEqual(_status.client.cargo, True)
         self.assertEqual(_status.client.network, True)
@@ -283,11 +283,11 @@ class GefyraBaseTest:
         self.assertEqual(_status.cluster.stowaway, True)
 
     def assert_gefyra_not_connected(self):
-        _status = status(default_configuration)
+        _status = status()
         self.assertEqual(_status.summary, StatusSummary.cluster_down)
 
     def assert_gefyra_operational_no_bridge(self):
-        _status = status(default_configuration)
+        _status = status()
         self.assert_gefyra_connected(_status)
         self.assertEqual(_status.client.bridges, 0)
         self.assertEqual(_status.client.containers, 1)
@@ -528,7 +528,7 @@ class GefyraBaseTest:
         self.assertTrue(res)
 
     def test_e_run_gefyra_status_check_containers_and_bridge(self):
-        _status = status(default_configuration)
+        _status = status()
         self.assertEqual(_status.summary, StatusSummary.UP)
         self.assertEqual(_status.client.cargo, True)
         self.assertEqual(_status.client.network, True)
@@ -650,7 +650,7 @@ class GefyraBaseTest:
         self.assertIn(self.default_run_params["name"], captured.out)
 
     def test_m_run_gefyra_status_print(self):
-        _status = status(default_configuration)
+        _status = status()
         print_status(_status)
         captured = self.capsys.readouterr()
         self.assertIn(StatusSummary.UP, captured.out)
@@ -673,7 +673,7 @@ class GefyraBaseTest:
     def test_n_run_gefyra_cluster_down(self):
         res = cluster_down()
         self.assertTrue(res)
-        _status = status(default_configuration)
+        _status = status()
         self.assertEqual(_status.summary, StatusSummary.DOWN)
         self.assertEqual(_status.client.cargo, False)
         self.assertEqual(_status.client.network, False)
