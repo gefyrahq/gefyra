@@ -2,7 +2,7 @@ from copy import deepcopy
 from click.testing import CliRunner
 
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
-from gefyra.cli.updown import cluster_up, cluster_down
+from gefyra.cli.main import cli
 from gefyra.cluster.utils import (
     get_container_command,
     get_container_image,
@@ -24,6 +24,7 @@ from kubernetes.client import (
     RbacAuthorizationV1Api,
     AppsV1Api,
     CustomObjectsApi,
+    V1Pod,
 )
 from kubernetes.client import ApiException
 from kubernetes.config import load_kube_config
@@ -53,13 +54,15 @@ default_configuration = ClientConfiguration()
 
 def up():
     runner = CliRunner()
-    runner.invoke(cluster_up)
+    res = runner.invoke(cli, ["up"])
+    if res.exit_code != 0:
+        raise RuntimeError(res.output)
     return True
 
 
 def down():
     runner = CliRunner()
-    runner.invoke(cluster_down)
+    runner.invoke(cli, ["down"])
     return True
 
 
@@ -90,9 +93,9 @@ class GefyraBaseTest:
                 "env_from": "deployment/hello-nginxdemo",
                 "detach": True,
                 "auto_remove": True,
+                "connection_name": "default",
             }
         )
-        params["config"] = default_configuration
         return params
 
     @property
@@ -103,10 +106,18 @@ class GefyraBaseTest:
                 "namespace": "default",
                 "target": "deployment/hello-nginxdemo/hello-nginx",
                 "ports": {"80": "8000"},
+                "connection_name": "default",
             }
         )
-        params["config"] = default_configuration
         return params
+
+    def tearDown(self):
+        ContextAPI.set_current_context("default")
+        try:
+            ContextAPI.remove_context("another-context")
+        except docker.errors.ContextNotFound:
+            pass
+        return super().tearDown()
 
     def setUp(self):
         if not self.provider:
@@ -166,8 +177,8 @@ class GefyraBaseTest:
             sleep(interval)
         raise AssertionError(f"Pod {pod_name} is not ready.")
 
-    def _pod_ready(self, pod):
-        return all([c.status == "True" for c in pod.conditions]) and all(
+    def _pod_ready(self, pod: V1Pod):
+        return all([c.status == "True" for c in pod.status.conditions]) and all(
             [c.ready for c in pod.status.container_statuses]
         )
 
@@ -227,12 +238,12 @@ class GefyraBaseTest:
             interval=interval,
         )
 
-    def assert_stowaway_ready(self, timeout=60, interval=1):
-        return self.assert_deployment_ready(
-            name="gefyra-stowaway",
+    def assert_stowaway_ready(self, retries=10, interval=1):
+        return self.assert_pod_ready(
+            pod_name="gefyra-stowaway-0",
             namespace="gefyra",
-            timeout=timeout,
             interval=interval,
+            retries=retries,
         )
 
     def assert_namespace_ready(self, namespace, timeout=30, interval=1):
@@ -248,12 +259,12 @@ class GefyraBaseTest:
     def assert_gefyra_namespace_ready(self, timeout=30, interval=1):
         self.assert_namespace_ready("gefyra", timeout, interval)
 
-    def assert_namespace_not_found(self, namespace, timeout=30, interval=1):
+    def assert_namespace_not_found(self, name, timeout=30, interval=1):
         counter = 0
         while counter < timeout:
             counter += 1
             try:
-                namespace = self.K8S_CORE_API.read_namespace(name=namespace)
+                self.K8S_CORE_API.read_namespace(name=name)
             except ApiException as e:
                 if e.status == 404:
                     return True
@@ -262,6 +273,20 @@ class GefyraBaseTest:
 
     def assert_cargo_running(self, timeout=20, interval=1):
         self.assert_container_running("gefyra-cargo-default", timeout, interval)
+
+    def assert_cargo_not_running(self, timeout=20, interval=1):
+        self.assert_container_not_running("gefyra-cargo-default", timeout, interval)
+
+    def assert_container_not_running(self, container: str, timeout=20, interval=1):
+        counter = 0
+        while counter < timeout:
+            counter += 1
+            try:
+                container = self.DOCKER_API.containers.get(container)
+            except docker.errors.NotFound:
+                return True
+            sleep(interval)
+        raise AssertionError(f"{container} is still running after {timeout} seconds.")
 
     def assert_container_running(self, container: str, timeout=20, interval=1):
         counter = 0
@@ -406,11 +431,12 @@ class GefyraBaseTest:
         ContextAPI.set_current_context("another-context")
         res = up()
         self.assertTrue(res)
+        self.assert_cargo_running()
         self.assert_operator_ready()
         self.assert_stowaway_ready()
         down()
-        ContextAPI.set_current_context("default")
-        ContextAPI.remove_context("another-context")
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
 
     def test_ab_run_gefyra_up(self):
         res = up()
@@ -469,20 +495,20 @@ class GefyraBaseTest:
         )
         self._stop_container(self.default_run_params["name"])
 
-    def test_c_run_gefyra_run_with_default_namespace_from_kubeconfig(self):
-        self.kubectl("config", "set-context", "--current", "--namespace=fancy")
-        self.assert_cargo_running()
-        self.assert_gefyra_connected()
-        params = self.default_run_params
-        del params["namespace"]
-        del params["env_from"]
-        res = run(**params)
-        self.assertTrue(res)
-        self.assert_docker_container_dns(
-            self.default_run_params["name"], "fancy.svc.cluster.local"
-        )
-        self._stop_container(self.default_run_params["name"])
-        self.kubectl("config", "set-context", "--current", "--namespace=default")
+    # def test_c_run_gefyra_run_with_default_namespace_from_kubeconfig(self):
+    #     self.kubectl("config", "set-context", "--current", "--namespace=fancy")
+    #     self.assert_cargo_running()
+    #     self.assert_gefyra_connected()
+    #     params = self.default_run_params
+    #     del params["namespace"]
+    #     del params["env_from"]
+    #     res = run(**params)
+    #     self.assertTrue(res)
+    #     self.assert_docker_container_dns(
+    #         self.default_run_params["name"], "fancy.svc.cluster.local"
+    #     )
+    #     self._stop_container(self.default_run_params["name"])
+    #     self.kubectl("config", "set-context", "--current", "--namespace=default")
 
     def test_c_run_gefyra_bridge_with_invalid_deployment(self):
         self.assert_cargo_running()

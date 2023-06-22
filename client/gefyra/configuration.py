@@ -125,13 +125,13 @@ class ClientConfiguration(object):
 
         self.cargo_endpoint_port = cargo_endpoint_port
 
-        self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
+        self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo-default"
         self.STOWAWAY_IP = "192.168.99.1"
-        self.NETWORK_NAME = network_name or "gefyra"
+        self.NETWORK_NAME = network_name or "gefyra-default"
         self.CONNECTION_NAME = connection_name
         self.BRIDGE_TIMEOUT = 60  # in seconds
-        self.CONNECTION_TIMEOUT = 10  # in seconds
-        self.CARGO_PROBE_TIMEOUT = 10  # in seconds
+        self.CONNECTION_TIMEOUT = 20  # in seconds
+        self.CARGO_PROBE_TIMEOUT = 20  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
         if self.CONNECTION_NAME:

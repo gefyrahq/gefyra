@@ -1,6 +1,4 @@
 import logging
-from dataclasses import dataclass
-from enum import Enum
 
 from gefyra.api import stopwatch
 from gefyra.configuration import ClientConfiguration
@@ -75,7 +73,7 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
 
 
 def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
-    from kubernetes.client import ApiException
+    from kubernetes.client import ApiException, V1Pod
     from kubernetes.config import ConfigException
     from urllib3.exceptions import MaxRetryError
 
@@ -123,19 +121,17 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
 
     # check if the Gefyra operator is running and ready
     try:
-        logger.debug("Checking Stowaway deployment")
-        stowaway_deploy = config.K8S_APP_API.read_namespaced_deployment(
-            name="gefyra-stowaway", namespace=config.NAMESPACE, _request_timeout=(1, 5)
+        logger.debug("Checking Stowaway endpoint")
+        stowaway_pod: V1Pod = config.K8S_CORE_API.read_namespaced_pod(
+            name="gefyra-stowaway-0",
+            namespace=config.NAMESPACE,
+            _request_timeout=(1, 5),
         )
-        if (
-            stowaway_deploy.status.ready_replicas
-            and stowaway_deploy.status.ready_replicas >= 1
-        ):
+        if stowaway_pod.status.container_statuses[0].ready:
             _status.stowaway = True
-            _status.stowaway_image = stowaway_deploy.spec.template.spec.containers[
-                0
-            ].image
-    except ApiException:
+            _status.stowaway_image = stowaway_pod.spec.containers[0].image
+    except ApiException as e:
+        print(e)
         pass
 
     return _status

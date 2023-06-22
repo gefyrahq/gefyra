@@ -1,15 +1,14 @@
 import ast
-from click import pass_context
 from gefyra import api
 from .console import info
 from .utils import AliasedGroup, OptionEatAll
 
 import click
-from prompt_toolkit import print_formatted_text
 
-from alive_progress import config_handler, alive_bar
+from alive_progress import config_handler
 
 config_handler.set_global(bar="smooth", spinner="classic", stats=False, dual_line=True)
+
 
 def _check_connection_name(selected) -> str:
     conn_list = api.list_connections()
@@ -20,7 +19,9 @@ def _check_connection_name(selected) -> str:
     if selected and selected in [conn.name for conn in conn_list]:
         return selected
     elif selected:
-        raise click.BadParameter(message=f"The connection name {selected} does not exist.")
+        raise click.BadParameter(
+            message=f"The connection name {selected} does not exist."
+        )
     else:
         conn_names = [conn.name for conn in conn_list]
         if "default" in conn_names and len(conn_names) == 1:
@@ -31,6 +32,7 @@ def _check_connection_name(selected) -> str:
                 param="connection-name",
             )
         return connection_name
+
 
 @click.group(cls=AliasedGroup)
 @click.option(
@@ -212,9 +214,7 @@ def run(
     )
 
 
-@cli.command(
-    "bridge", help="Establish a Gefyra bridge to a container in the cluster"
-)
+@cli.command("bridge", help="Establish a Gefyra bridge to a container in the cluster")
 @click.option(
     "-N", "--name", help="The name of the container running in Gefyra", required=True
 )
@@ -272,3 +272,4 @@ from .connections import *  # noqa
 from .installation import *  # noqa
 from .clients import *  # noqa
 from .updown import *  # noqa
+from .status import *  # noqa

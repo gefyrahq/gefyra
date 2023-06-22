@@ -120,7 +120,7 @@ def get_gbridge_body(
 ):
     return {
         "apiVersion": "gefyra.dev/v1",
-        "kind": "GefyraBridge",
+        "kind": "gefyrabridge",
         "metadata": {
             "name": name,
             "namspace": config.NAMESPACE,

@@ -25,14 +25,17 @@ def handle_create_gefyraclient_serviceaccount(
         if e.status == 404:
             role = rbac_v1_api.create_cluster_role(
                 body=k8s.client.V1ClusterRole(
-                    metadata=k8s.client.V1ObjectMeta(
-                        name="gefyra-client"
-                    ),
+                    metadata=k8s.client.V1ObjectMeta(name="gefyra-client"),
                     rules=[
                         k8s.client.V1PolicyRule(
                             api_groups=["gefyra.dev"],
                             resources=["gefyraclients"],
                             verbs=["list", "patch", "get"],
+                        ),
+                        k8s.client.V1PolicyRule(
+                            api_groups=["gefyra.dev"],
+                            resources=["gefyrabridges"],
+                            verbs=["list", "get", "create", "patch", "delete"],
                         ),
                         k8s.client.V1PolicyRule(
                             api_groups=[""],
@@ -41,7 +44,12 @@ def handle_create_gefyraclient_serviceaccount(
                         ),
                         k8s.client.V1PolicyRule(
                             api_groups=["", "apps"],
-                            resources=["pods", "deployments", "statefulsets"],
+                            resources=[
+                                "pods",
+                                "deployments",
+                                "statefulsets",
+                                "replicasets",
+                            ],
                             verbs=["list", "get"],
                         ),
                     ],
@@ -62,7 +70,11 @@ def handle_create_gefyraclient_serviceaccount(
                     name=f"gefyra-rolebinding-{sa.metadata.name}"
                 ),
                 subjects=[
-                    k8s.client.V1Subject(kind="ServiceAccount", name=sa.metadata.name, namespace=namespace)
+                    k8s.client.V1Subject(
+                        kind="ServiceAccount",
+                        name=sa.metadata.name,
+                        namespace=namespace,
+                    )
                 ],
                 role_ref=k8s.client.V1RoleRef(
                     kind="ClusterRole",
