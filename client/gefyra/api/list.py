@@ -10,12 +10,10 @@ from .utils import stopwatch
 logger = logging.getLogger(__name__)
 
 
-def get_containers_and_print():
+def get_containers_and_print(connection_name=""):
     from gefyra.api import list_containers
 
-    config = ClientConfiguration()
-
-    containers = list_containers(config=config)
+    containers = list_containers(connection_name=connection_name)
     print(
         tabulate(
             containers, headers=["NAME", "IP ADDRESS", "NAMESPACE"], tablefmt="plain"
@@ -23,24 +21,22 @@ def get_containers_and_print():
     )
 
 
-def get_bridges_and_print():
-    from gefyra.api import list_interceptrequests
+def get_bridges_and_print(connection_name=""):
+    from gefyra.api import list_gefyra_bridges
 
-    config = ClientConfiguration()
-
-    ireqs = list_interceptrequests(config=config)
-    if ireqs:
-        for ireq in ireqs:
-            print(ireq)
+    gefyra_bridges = list_gefyra_bridges(connection_name=connection_name)
+    if gefyra_bridges:
+        for gefyra_bridge in gefyra_bridges:
+            print(gefyra_bridge)
     else:
         logger.info("No active bridges found")
 
 
 @stopwatch
-def list_interceptrequests() -> List[str]:
+def list_gefyra_bridges(connection_name="") -> List[str]:
     from gefyra.local.bridge import get_all_gefyrabridges
 
-    config = ClientConfiguration()
+    config = ClientConfiguration(connection_name=connection_name)
 
     # Check if kubeconfig is available through running Cargo
     ireqs = []
@@ -50,9 +46,9 @@ def list_interceptrequests() -> List[str]:
 
 
 @stopwatch
-def list_containers() -> List[str]:
+def list_containers(connection_name="") -> List[str]:
     from gefyra.local.bridge import get_all_containers
 
-    config = ClientConfiguration()
+    config = ClientConfiguration(connection_name=connection_name)
 
     return get_all_containers(config)

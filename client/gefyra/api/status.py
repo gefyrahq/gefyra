@@ -138,9 +138,9 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
 
 
 @stopwatch
-def status() -> GefyraStatus:
+def status(connection_name: str = "") -> GefyraStatus:
     # Check if kubeconfig is available through running Cargo
-    config = ClientConfiguration()
+    config = ClientConfiguration(connection_name=connection_name)
 
     cluster = _get_cluster_status(config)
     client = _get_client_status(config)

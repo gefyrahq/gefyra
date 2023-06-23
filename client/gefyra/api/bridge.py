@@ -164,14 +164,15 @@ def bridge(
         waiting_time = timeout
     while True:
         # watch whether all relevant bridges have been established
-        kube_ireqs = get_all_gefyrabridges(config)
-        for kube_ireq in kube_ireqs:
-            if kube_ireq["metadata"]["uid"] in bridges.keys() and kube_ireq.get(
-                "established", False
+        gefyra_bridges = get_all_gefyrabridges(config)
+        for gefyra_bridge in gefyra_bridges:
+            if (
+                gefyra_bridge["metadata"]["uid"] in bridges.keys()
+                and gefyra_bridge.get("state", "") == "ACTIVE"
             ):
-                bridges[str(kube_ireq["metadata"]["uid"])] = True
+                bridges[str(gefyra_bridge["metadata"]["uid"])] = True
                 logger.info(
-                    f"Bridge {kube_ireq['metadata']['name']} "
+                    f"Bridge {gefyra_bridge['metadata']['name']} "
                     f"({sum(bridges.values())}/{len(ireqs)}) established."
                 )
         if all(bridges.values()):
@@ -182,14 +183,14 @@ def bridge(
         if timeout and waiting_time <= 0:
             raise RuntimeError("Timeout for bridging operation exceeded")
     logger.info("Following bridges have been established:")
-    for ki in kube_ireqs:
-        for port in ports:
+    for gefyra_bridge in gefyra_bridges:
+        for port in port_mappings:
             (
                 pod_name,
                 ns,
             ) = (
-                ki["targetPod"],
-                ki["targetNamespace"],
+                gefyra_bridge["targetPod"],
+                gefyra_bridge["targetNamespace"],
             )
             bridge_ports = port.split(":")
             container_port, pod_port = bridge_ports[0], bridge_ports[1]
@@ -200,18 +201,18 @@ def bridge(
     return True
 
 
-def wait_for_deletion(ireqs: List, config: ClientConfiguration):
+def wait_for_deletion(gefyra_bridges: List, config: ClientConfiguration):
     from kubernetes.watch import Watch
 
     w = Watch()
     deleted = []
-    uids = [ireq["metadata"]["uid"] for ireq in ireqs]
+    uids = [gefyra_bridge["metadata"]["uid"] for gefyra_bridge in gefyra_bridges]
     for event in w.stream(
         config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object,
         namespace=config.NAMESPACE,
         group="gefyra.dev",
         version="v1",
-        plural="interceptrequests",
+        plural="gefyrabridges",
     ):
         if event["type"] == "DELETED":
             if event["object"]["metadata"]["uid"] in uids:
@@ -229,10 +230,10 @@ def unbridge(
 
     config = ClientConfiguration()
 
-    ireq = handle_delete_gefyrabridge(config, name)
-    if ireq:
+    gefyra_bridge = handle_delete_gefyrabridge(config, name)
+    if gefyra_bridge:
         if wait:
-            wait_for_deletion([ireq], config=config)
+            wait_for_deletion([gefyra_bridge], config=config)
         logger.info(f"Bridge {name} removed")
     return True
 
@@ -240,19 +241,20 @@ def unbridge(
 @stopwatch
 def unbridge_all(
     wait: bool = False,
+    connection_name: str = "",
 ) -> bool:
     from gefyra.local.bridge import (
         handle_delete_gefyrabridge,
         get_all_gefyrabridges,
     )
 
-    config = ClientConfiguration()
+    config = ClientConfiguration(connection_name=connection_name)
 
-    ireqs = get_all_gefyrabridges(config)
-    for ireq in ireqs:
-        name = ireq["metadata"]["name"]
+    gefyra_bridges = get_all_gefyrabridges(config)
+    for gefyra_bridge in gefyra_bridges:
+        name = gefyra_bridge["metadata"]["name"]
         logger.info(f"Removing Bridge {name}")
         handle_delete_gefyrabridge(config, name)
     if wait:
-        wait_for_deletion(config=config, ireqs=ireqs)
+        wait_for_deletion(config=config, gefyra_bridges=gefyra_bridges)
     return True

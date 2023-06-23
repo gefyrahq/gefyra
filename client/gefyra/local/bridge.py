@@ -84,7 +84,7 @@ def get_all_containers(config: ClientConfiguration) -> list:
             container_information.append(
                 (
                     container.name,
-                    container.attrs["NetworkSettings"]["Networks"]["gefyra"][
+                    container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME][
                         "IPAddress"
                     ].split("/")[0],
                     container.attrs["HostConfig"]["DnsSearch"][0].split(".")[0],

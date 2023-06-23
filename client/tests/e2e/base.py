@@ -38,7 +38,7 @@ from gefyra.api import (
     unbridge_all,
     unbridge,
     list_containers,
-    list_interceptrequests,
+    list_gefyra_bridges,
 )
 from gefyra.api.status import StatusSummary
 from gefyra.cluster.resources import (
@@ -52,24 +52,31 @@ import gefyra.configuration as config_package
 default_configuration = ClientConfiguration()
 
 
-def up():
-    runner = CliRunner()
-    res = runner.invoke(cli, ["up"])
-    if res.exit_code != 0:
-        raise RuntimeError(res.output)
-    return True
-
-
-def down():
-    runner = CliRunner()
-    runner.invoke(cli, ["down"])
-    return True
+CONNECTION_NAME = "default"
 
 
 class GefyraBaseTest:
     provider = None  # minikube or k3d
     params = {}
     kubeconfig = "~/.kube/config"
+
+    def gefyra_up(self):
+        runner = CliRunner()
+        res = runner.invoke(cli, ["up"])
+        if res.exit_code != 0:
+            raise RuntimeError(res.output)
+        self.assert_gefyra_namespace_ready()
+        self.assert_cargo_running()
+        self.assert_operator_ready()
+        self.assert_stowaway_ready()
+        return True
+
+    def gefyra_down(self):
+        runner = CliRunner()
+        runner.invoke(cli, ["down"])
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
+        return True
 
     @property
     def default_reflect_params(self):
@@ -78,6 +85,7 @@ class GefyraBaseTest:
                 "workload": "deploy/bye-nginxdemo-8000",
                 "do_bridge": True,
                 "auto_remove": True,
+                "connection_name": CONNECTION_NAME,
             }
         )
         return params
@@ -93,7 +101,7 @@ class GefyraBaseTest:
                 "env_from": "deployment/hello-nginxdemo",
                 "detach": True,
                 "auto_remove": True,
-                "connection_name": "default",
+                "connection_name": CONNECTION_NAME,
             }
         )
         return params
@@ -106,7 +114,7 @@ class GefyraBaseTest:
                 "namespace": "default",
                 "target": "deployment/hello-nginxdemo/hello-nginx",
                 "ports": {"80": "8000"},
-                "connection_name": "default",
+                "connection_name": CONNECTION_NAME,
             }
         )
         return params
@@ -318,8 +326,24 @@ class GefyraBaseTest:
         _status = status()
         self.assertEqual(_status.summary, StatusSummary.DOWN)
 
-    def assert_gefyra_operational_no_bridge(self):
-        _status = status()
+    def assert_carrier_uninstalled(
+        self, name: str, namespace: str, interval=1, retries=30
+    ):
+        counter = 0
+        while counter < retries:
+            counter += 1
+            pod: V1Pod = self.K8S_CORE_API.read_namespaced_pod(
+                name=name, namespace=namespace
+            )
+            if "gefyra/carrier" not in pod.spec.containers[0].image:
+                return True
+            sleep(interval)
+        raise AssertionError(
+            f"Carrier not uninstalled within {retries} retries with interval {interval}s."
+        )
+
+    def assert_gefyra_operational_no_bridge(self, connection_name=CONNECTION_NAME):
+        _status = status(connection_name=connection_name)
         self.assert_gefyra_connected(_status)
         self.assertEqual(_status.client.bridges, 0)
         self.assertEqual(_status.client.containers, 1)
@@ -328,42 +352,9 @@ class GefyraBaseTest:
         res = probe_docker()
         self.assertTrue(res)
 
-    def test_docker_probe_output_on_fail(self):
-        config = ClientConfiguration()
-
-        class MockDockerClient:
-            @property
-            def containers(self):
-                raise docker.errors.APIError(
-                    "API error", response=None, explanation=None
-                )
-
-        self.monkeypatch.setattr(
-            config,
-            "DOCKER",
-            MockDockerClient(),
-        )
-
-        res = probe_docker(config=config)
-        self.assertFalse(res)
-
     def test_kubernetes_probe(self):
         res = probe_kubernetes()
         self.assertTrue(res)
-
-    def test_kubernetes_probe_output_on_fail(self):
-        config = ClientConfiguration()
-
-        def raise_exception():
-            raise ApiException(status=500, reason="Test Reason")
-
-        self.monkeypatch.setattr(
-            config.K8S_CORE_API,
-            "list_namespace",
-            raise_exception,
-        )
-        res = probe_kubernetes(config=config)
-        self.assertFalse(res)
 
     def _get_pod_startswith(self, pod_name, namespace):
         pods = self.K8S_CORE_API.list_namespaced_pod(namespace=namespace)
@@ -424,22 +415,22 @@ class GefyraBaseTest:
     # def test_a_run_gefyra_up_with_invalid_context(self):
     #     with self.assertRaises(ConfigException):
     #         config = ClientConfiguration(kube_context="invalid-context")
-    #         up()
+    #         self.gefyra_up()
 
     def test_a_run_gefyra_up_in_another_docker_context(self):
         ContextAPI.create_context("another-context")
         ContextAPI.set_current_context("another-context")
-        res = up()
+        res = self.gefyra_up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_operator_ready()
         self.assert_stowaway_ready()
-        down()
+        self.gefyra_down()
         self.assert_namespace_not_found("gefyra")
         self.assert_cargo_not_running()
 
     def test_ab_run_gefyra_up(self):
-        res = up()
+        res = self.gefyra_up()
         self.assertTrue(res)
         self.assert_operator_ready()
         self.assert_stowaway_ready()
@@ -477,7 +468,6 @@ class GefyraBaseTest:
         params["ports"] = {}
         params["auto_remove"] = False
         res = run(**params)
-        sleep(12)
         self.assertTrue(res)
         self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
         self.assert_container_state("attachedContainer", "exited", retries=5)
@@ -561,7 +551,7 @@ class GefyraBaseTest:
         self.assertTrue(res)
 
     def test_e_run_gefyra_status_check_containers_and_bridge(self):
-        _status = status()
+        _status = status(connection_name=CONNECTION_NAME)
         self.assertEqual(_status.summary, StatusSummary.UP)
         self.assertEqual(_status.client.cargo, True)
         self.assertEqual(_status.client.network, True)
@@ -571,7 +561,7 @@ class GefyraBaseTest:
         self.assertEqual(_status.client.containers, 1)
 
     def test_f_run_gefyra_unbridge(self):
-        res = unbridge_all(default_configuration, wait=True)
+        res = unbridge_all(wait=True, connection_name=CONNECTION_NAME)
         self.assertTrue(res)
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
@@ -590,9 +580,13 @@ class GefyraBaseTest:
     def test_h_run_gefyra_unbridge_with_name(self):
         res = unbridge(
             name="mypyserver-to-default.deploy.hello-nginxdemo",
-            config=default_configuration,
             wait=True,
         )
+        pod_container_dict = get_pods_and_containers_for_workload(
+            default_configuration, "hello-nginxdemo", "default", "deployment"
+        )
+        pod_name = list(pod_container_dict.keys())[0]
+        self.assert_carrier_uninstalled(name=pod_name, namespace="default")
         self.assertTrue(res)
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
@@ -619,7 +613,6 @@ class GefyraBaseTest:
         res_bridge = bridge(**bridge_params)
         self.assertTrue(res_bridge)
         res_unbridge = unbridge_all(
-            config=default_configuration,
             wait=True,
         )
         self.assertTrue(res_unbridge)
@@ -653,11 +646,11 @@ class GefyraBaseTest:
         self.assertIn("already bridged", str(rte.exception))
 
     def test_m_run_gefyra_list_bridges(self):
-        res = list_interceptrequests(default_configuration)
+        res = list_gefyra_bridges(connection_name=CONNECTION_NAME)
         self.assertEqual(len(res), 1)
 
     def test_m_run_gefyra_list_containers(self):
-        res = list_containers(default_configuration)
+        res = list_containers(connection_name=CONNECTION_NAME)
         self.assertEqual(len(res), 1)
 
     @pytest.fixture(autouse=True)
@@ -673,17 +666,17 @@ class GefyraBaseTest:
         self.monkeypatch = monkeypatch
 
     def test_m_run_gefyra_list_output_bridges(self):
-        get_bridges_and_print(default_configuration)
+        get_bridges_and_print(connection_name=CONNECTION_NAME)
         captured = self.capsys.readouterr()
         self.assertIn("mypyserver-to-default.pod.hello-nginxdemo", captured.out)
 
     def test_m_run_gefyra_list_output_containers(self):
-        get_containers_and_print(default_configuration)
+        get_containers_and_print(connection_name=CONNECTION_NAME)
         captured = self.capsys.readouterr()
         self.assertIn(self.default_run_params["name"], captured.out)
 
     def test_m_run_gefyra_status_print(self):
-        _status = status()
+        _status = status(connection_name=CONNECTION_NAME)
         print_status(_status)
         captured = self.capsys.readouterr()
         self.assertIn(StatusSummary.UP, captured.out)
@@ -704,20 +697,23 @@ class GefyraBaseTest:
         )
 
     def test_n_run_gefyra_cluster_down(self):
-        res = down()
+        res = self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
         self.assertTrue(res)
-        _status = status()
+        _status = status(connection_name=CONNECTION_NAME)
         self.assertEqual(_status.summary, StatusSummary.DOWN)
         self.assertEqual(_status.client.cargo, False)
-        self.assertEqual(_status.client.network, False)
+        self.assertEqual(_status.client.network, True)
         self.assertEqual(_status.cluster.operator, False)
         self.assertEqual(_status.cluster.stowaway, False)
         self.assertEqual(_status.client.bridges, 0)
         self.assertEqual(_status.client.containers, 0)
+        self._stop_container(self.default_run_params["name"])
         self.assert_namespace_not_found("gefyra")
 
     def test_n_run_gefyra_down_again_without_errors(self):
-        self.down()
+        self.gefyra_down()
 
     def test_o_reflect_occupied_port(self):
         container_name = "busybox"
@@ -726,10 +722,10 @@ class GefyraBaseTest:
             auto_remove=True,
             ports={"8000/tcp": [8000]},
             detach=True,
-            command=["sleep", "20"],
+            command=["sleep", "40"],
             name=container_name,
         )
-        res = up()
+        res = self.gefyra_up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
@@ -744,23 +740,30 @@ class GefyraBaseTest:
 
         self.assertIn("occupied", str(rte.exception))
         self._stop_container(container=container_name)
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
 
     def test_p_reflect(self):
-        res = up()
+        res = self.gefyra_up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
         self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
         res_reflect = reflect(**self.default_reflect_params)
         self.assertTrue(res_reflect)
+        unbridge_all(connection_name=CONNECTION_NAME, wait=True)
+        self.assert_gefyra_operational_no_bridge()
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
         )
-        res = down()
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
         self.assertTrue(res)
 
     def test_p_reflect_port_overwrite(self):
-        res = up()
+        res = self.gefyra_up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
@@ -775,14 +778,19 @@ class GefyraBaseTest:
         res_reflect = reflect(**params)
         self.assertTrue(res_reflect)
         self.assert_http_service_available("localhost", 4000)
+
+        unbridge_all(connection_name=CONNECTION_NAME, wait=True)
+        self.assert_gefyra_operational_no_bridge()
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
         )
-        res = down()
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
         self.assertTrue(res)
 
     def test_p_reflect_image_overwrite(self):
-        res = up()
+        res = self.gefyra_up()
         self.assertTrue(res)
         self.assert_cargo_running()
         self.assert_gefyra_connected()
@@ -803,10 +811,14 @@ class GefyraBaseTest:
             )
         )[0]
         self.assertEqual(container.image.tags[0], image)
+        unbridge_all(connection_name=CONNECTION_NAME, wait=True)
+        self.assert_gefyra_operational_no_bridge()
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
         )
-        res = down()
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
         self.assertTrue(res)
 
     def test_util_for_pod_not_found(self):

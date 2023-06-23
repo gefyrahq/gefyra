@@ -1,7 +1,8 @@
+from docker.models.containers import Container
 import logging
 import os
 import sys
-from threading import Thread
+from threading import Thread, Event
 from typing import Dict, List, Optional, Tuple
 
 from gefyra.configuration import (
@@ -11,6 +12,8 @@ from .utils import generate_env_dict_from_strings, stopwatch, get_workload_type
 
 
 logger = logging.getLogger(__name__)
+
+stop_thread = Event()
 
 
 def pod_ready_and_healthy(
@@ -73,9 +76,15 @@ def retrieve_pod_and_container(
     )
 
 
-def print_logs(container):
+def print_logs(container: Container):
     for logline in container.logs(stream=True):
         print(logline.decode("utf-8"), end="")
+
+
+def check_input():
+    line = sys.stdin.readline()
+    if not line:
+        stop_thread.set()
 
 
 @stopwatch
@@ -104,7 +113,7 @@ def run(
     config = ClientConfiguration(connection_name=connection_name)
 
     # #125: Fallback to namespace in kube config
-    if namespace is None:
+    if not namespace:
         from kubernetes.config import kube_config
 
         _, active_context = kube_config.list_kube_config_contexts()
@@ -182,9 +191,10 @@ def run(
             logger.debug("Now printing out logs")
             t = Thread(target=print_logs, args=[container], daemon=True)
             t.start()
-            while True:
-                line = sys.stdin.readline()
-                if not line:
+            input_thread = Thread(target=check_input, daemon=True)
+            input_thread.start()
+            while t.is_alive():
+                if stop_thread.is_set():
                     logger.info(f"Detached from container: {name}")
                     return True
         except KeyboardInterrupt:

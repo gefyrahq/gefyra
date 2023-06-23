@@ -39,8 +39,9 @@ def reflect(
     expose_ports: bool = True,
     image: str = "",
     ports: Optional[Dict] = None,
+    connection_name: str = "",
 ):
-    config = ClientConfiguration()
+    config = ClientConfiguration(connection_name=connection_name)
     if expose_ports and ports:
         raise RuntimeError(
             "You cannot specify ports and expose_ports at the same time."
@@ -76,7 +77,7 @@ def reflect(
         volumes=volumes,
         auto_remove=auto_remove,
         namespace=namespace,
-        config=config,
+        connection_name=connection_name,
         env_from=workload,
         env=env,
         detach=True,
@@ -85,6 +86,10 @@ def reflect(
 
     if do_bridge:
         res = bridge(
-            name=name, namespace=namespace, config=config, target=workload, ports=ports
+            name=name,
+            namespace=namespace,
+            target=workload,
+            ports=ports,
+            connection_name=connection_name,
         )
     return res
