@@ -73,7 +73,7 @@ jobs:
         flavor: |
           latest=false
         images: |
-          gefyra/operator
+          quay.io/gefyra/operator
         tags: |
           type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
           type=raw,value=2.0.0-alpha,enable=${{ github.event.pull_request.number == 404 }}
