@@ -2,7 +2,7 @@ import dataclasses
 import logging
 from pathlib import Path
 import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 from gefyra.cluster.utils import is_operator_running
 from gefyra.exceptions import ClusterError
 
@@ -81,6 +81,7 @@ def install(
 
         objects = synthesize_config_as_dict(options=options, components=component)
         for objs in objects:
+            logger.debug(objs)
             try:
                 if (
                     objs["kind"] == "Deployment"
@@ -93,6 +94,7 @@ def install(
                     config.K8S_CORE_API.api_client, data=objs
                 )
             except kubernetes.utils.FailToCreateError as e:
+                logger.debug(e)
                 if e.api_exceptions[0].status not in [409, 422]:
                     logger.error(e)
     if apply and wait:
