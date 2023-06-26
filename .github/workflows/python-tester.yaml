@@ -313,7 +313,7 @@ jobs:
       - name: Run Gefyra K3D Tests
         working-directory: ./client
         run: |
-          timeout 240 -s SIGTERM poetry run coverage run -m pytest -vvv -s --full-trace tests/e2e/
+          timeout -s SIGTERM 240 poetry run coverage run -m pytest -vvv -s --full-trace tests/e2e/
 
       - name: Show coverage report
         working-directory: ./client
