@@ -241,7 +241,7 @@ jobs:
       - build_operator
       - build_test_image
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v3
