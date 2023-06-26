@@ -86,7 +86,7 @@ jobs:
         context: operator/
         platforms: linux/amd64
         push: true
-        load: true
+        load: false
         tags: ${{ steps.operator_meta.outputs.tags }}
         labels: ${{ steps.operator_meta.outputs.labels }}
         cache-from: type=registry,ref=quay.io/gefyra/operator:latest
