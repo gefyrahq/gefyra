@@ -313,7 +313,7 @@ jobs:
       - name: Run Gefyra K3D Tests
         working-directory: ./client
         run: |
-          poetry run coverage run -m pytest -vvv -s tests/e2e/
+          poetry run coverage run -m pytest -vvv -s --full-trace tests/e2e/
 
       - name: Show coverage report
         working-directory: ./client
