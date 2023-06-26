@@ -298,7 +298,6 @@ jobs:
           path: /tmp
       - name: Load Operator image
         run: |
-          docker load --input /tmp/operator/operator.tar
           docker load --input /tmp/pyserver/pyserver.tar
           docker image ls -a
       - name: Import Operator to k3d
