@@ -316,6 +316,11 @@ jobs:
         working-directory: ./client
         run: |
           poetry run coverage run -m pytest -vvv -s --log-cli-level DEBUG --full-trace --timeout=300 tests/e2e/
+      - name: Show gefyra-operator logs
+        working-directory: ./client
+        run: |
+          kubectl logs -n gefyra deployment/gefyra-operator
+          kubectl logs -n gefyra pod/gefyra-stowaway-0
       - name: Show coverage report
         working-directory: ./client
         run: |
