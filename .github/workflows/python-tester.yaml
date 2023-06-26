@@ -318,6 +318,7 @@ jobs:
           poetry run coverage run -m pytest -vvv -s -x --log-cli-level DEBUG --full-trace --timeout=240 tests/e2e/
       - name: Show gefyra-operator logs
         working-directory: ./client
+        if: ${{ failure() }}
         run: |
           kubectl logs -n gefyra deployment/gefyra-operator
           kubectl logs -n gefyra pod/gefyra-stowaway-0
