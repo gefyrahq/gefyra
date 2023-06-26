@@ -58,7 +58,7 @@ CONNECTION_NAME = "default"
 class GefyraBaseTest:
     provider = None  # minikube or k3d
     params = {}
-    kubeconfig = "~/.kube/config"
+    kubeconfig = "/Users/robertstein/.k3d/kubeconfig-testing.yaml"
 
     def gefyra_up(self):
         runner = CliRunner()
