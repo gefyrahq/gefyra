@@ -300,9 +300,9 @@ jobs:
         run: |
           docker load --input /tmp/pyserver/pyserver.tar
           docker image ls -a
-      - name: Import Operator to k3d
-        run: |
-          k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
+      # - name: Import Operator to k3d
+      #   run: |
+      #     k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
