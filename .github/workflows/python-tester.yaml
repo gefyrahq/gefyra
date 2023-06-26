@@ -283,6 +283,8 @@ jobs:
             --agents 1
             -p "31820:31820/UDP@agent:0"
             --image docker.io/rancher/k3s:${{ matrix.k3d }}
+            --kubeconfig-update-default
+            --kubeconfig-switch-context
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
