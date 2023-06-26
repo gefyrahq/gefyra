@@ -329,6 +329,7 @@ jobs:
           kubectl get pods -n gefyra
           kubectl describe deployment -n gefyra gefyra-operator
           kubectl logs -n gefyra deployment/gefyra-operator
+          kubectl logs -n gefyra deployment/gefyra-operator-webhook
       - name: Show coverage report
         working-directory: ./client
         run: |
