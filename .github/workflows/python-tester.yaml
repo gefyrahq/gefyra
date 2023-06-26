@@ -314,7 +314,6 @@ jobs:
         working-directory: ./client
         run: |
           poetry run coverage run -m pytest -vvv -s --full-trace --timeout=240 tests/e2e/
-
       - name: Show coverage report
         working-directory: ./client
         run: |
