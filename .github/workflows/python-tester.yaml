@@ -315,7 +315,7 @@ jobs:
       - name: Run Gefyra K3D Tests
         working-directory: ./client
         run: |
-          poetry run coverage run -m pytest -vvv -s --log-cli-level DEBUG --full-trace --timeout=240 tests/e2e/
+          poetry run coverage run -m pytest -vvv -s -x --log-cli-level DEBUG --full-trace --timeout=240 tests/e2e/
       - name: Show gefyra-operator logs
         working-directory: ./client
         run: |
