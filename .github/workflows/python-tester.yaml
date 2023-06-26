@@ -77,6 +77,7 @@ jobs:
         tags: |
           type=ref,event=pr,enable=${{ !!github.event.pull_request }}
           type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
+          type=raw,value=2.0.0-alpha,enable=${{ github.event.pull_request.number == 404 }}
         labels: |
           quay.expires-after=24h
     - name: Build and push
