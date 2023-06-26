@@ -85,7 +85,7 @@ jobs:
       with:
         context: operator/
         platforms: linux/amd64
-        push: false
+        push: true
         load: true
         tags: ${{ steps.operator_meta.outputs.tags }}
         labels: ${{ steps.operator_meta.outputs.labels }}
@@ -297,7 +297,7 @@ jobs:
           docker image ls -a
       - name: Import Operator to k3d
         run: |
-          k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
+          k3d image import /tmp/pyserver/operator.tar -c mycluster --verbose
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
