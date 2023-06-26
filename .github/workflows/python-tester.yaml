@@ -321,6 +321,7 @@ jobs:
         working-directory: ./client
         if: ${{ failure() }}
         run: |
+          kubectl get pods -n gefyra
           kubectl logs -n gefyra deployment/gefyra-operator
       - name: Show coverage report
         working-directory: ./client
