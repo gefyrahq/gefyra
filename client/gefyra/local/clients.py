@@ -91,7 +91,7 @@ def get_gefyraclient_body(
         "kind": "gefyraclient",
         "metadata": {
             "name": client_id,
-            "namspace": config.NAMESPACE,
+            "namespace": config.NAMESPACE,
         },
         "provider": provider,
     }

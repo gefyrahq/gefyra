@@ -313,7 +313,7 @@ class GefyraBaseTest:
 
     def assert_gefyra_connected(self, _status=None):
         if not _status:
-            _status = status()
+            _status = status(connection_name=CONNECTION_NAME)
         self.assertEqual(_status.summary, StatusSummary.UP)
         self.assertEqual(_status.client.cargo, True)
         self.assertEqual(_status.client.network, True)
