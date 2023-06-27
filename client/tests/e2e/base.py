@@ -62,7 +62,7 @@ class GefyraBaseTest:
 
     def gefyra_up(self):
         runner = CliRunner()
-        res = runner.invoke(cli, ["up"])
+        res = runner.invoke(cli, ["up"], catch_exceptions=False)
         if res.exit_code != 0:
             print("Unexpected exit!")
             print(res.output)
