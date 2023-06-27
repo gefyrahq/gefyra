@@ -466,6 +466,7 @@ class GefyraBaseTest:
         params["ports"] = {}
         params["auto_remove"] = False
         res = run(**params)
+        sleep(12)
         self.assertTrue(res)
         self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
         self.assert_container_state("attachedContainer", "exited", retries=15)
