@@ -1,7 +1,6 @@
 import logging
 from alive_progress import alive_bar
 from click import pass_context
-from gefyra.api.connect import disconnect
 from .main import cli
 
 logger = logging.getLogger("gefyra")
@@ -97,7 +96,7 @@ def cluster_down():
         api.uninstall()
         bar()
         bar.title = "Removing running Gefyra containers"
-        disconnect(connection_name=connection_name)
+        api.disconnect(connection_name=connection_name)
         bar()
         bar.title = "Removing Gefyra from the local machine"
         api.remove_connection(connection_name=connection_name)
