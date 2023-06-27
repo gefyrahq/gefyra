@@ -704,7 +704,7 @@ class GefyraBaseTest:
         _status = status(connection_name=CONNECTION_NAME)
         self.assertEqual(_status.summary, StatusSummary.DOWN)
         self.assertEqual(_status.client.cargo, False)
-        self.assertEqual(_status.client.network, True)
+        self.assertEqual(_status.client.network, False)
         self.assertEqual(_status.cluster.operator, False)
         self.assertEqual(_status.cluster.stowaway, False)
         self.assertEqual(_status.client.bridges, 0)
