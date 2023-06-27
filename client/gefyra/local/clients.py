@@ -1,3 +1,5 @@
+import time
+
 import logging
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import GefyraClientAlreadyExists, GefyraClientNotFound
@@ -8,23 +10,33 @@ logger = logging.getLogger(__name__)
 def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
     from kubernetes.client import ApiException
 
-    try:
-        gclient = config.K8S_CUSTOM_OBJECT_API.create_namespaced_custom_object(
-            namespace=config.NAMESPACE,
-            body=body,
-            group="gefyra.dev",
-            plural="gefyraclients",
-            version="v1",
-        )
-    except ApiException as e:
-        if e.status == 409:
-            raise GefyraClientAlreadyExists(
-                f"Client {body['metadata']['name']} already exists."
+    retries = 5
+    counter = 0
+    success = False
+    gclient = None
+    while not success:
+        try:
+            gclient = config.K8S_CUSTOM_OBJECT_API.create_namespaced_custom_object(
+                namespace=config.NAMESPACE,
+                body=body,
+                group="gefyra.dev",
+                plural="gefyraclients",
+                version="v1",
             )
-        logger.error(
-            f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
-        )
-        raise e
+            success = True
+        except ApiException as e:
+            if e.status == 409:
+                raise GefyraClientAlreadyExists(
+                    f"Client {body['metadata']['name']} already exists."
+                )
+            logger.error(
+                f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
+            )
+            if counter < retries:
+                counter += 1
+                time.sleep(1)
+            else:
+                raise e
     return gclient
 
 
