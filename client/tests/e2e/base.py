@@ -696,6 +696,7 @@ class GefyraBaseTest:
         )
 
     def test_n_run_gefyra_cluster_down(self):
+        self._stop_container(self.default_run_params["name"])
         res = self.gefyra_down()
         self.assert_namespace_not_found("gefyra")
         self.assert_cargo_not_running()
@@ -708,7 +709,6 @@ class GefyraBaseTest:
         self.assertEqual(_status.cluster.stowaway, False)
         self.assertEqual(_status.client.bridges, 0)
         self.assertEqual(_status.client.containers, 0)
-        self._stop_container(self.default_run_params["name"])
         self.assert_namespace_not_found("gefyra")
 
     def test_n_run_gefyra_down_again_without_errors(self):

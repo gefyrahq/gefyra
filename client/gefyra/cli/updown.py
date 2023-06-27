@@ -95,9 +95,6 @@ def cluster_down():
     with alive_bar(2, title="Removing Gefyra from the cluster") as bar:
         api.uninstall()
         bar()
-        bar.title = "Removing running Gefyra containers"
-        api.disconnect(connection_name=connection_name)
-        bar()
         bar.title = "Removing Gefyra from the local machine"
         api.remove_connection(connection_name=connection_name)
         bar()
