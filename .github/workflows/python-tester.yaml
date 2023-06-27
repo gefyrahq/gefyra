@@ -380,6 +380,7 @@ jobs:
         run: |
           kubectl get pods -n gefyra
           kubectl describe deployment -n gefyra gefyra-operator
+          kubectl describe deployment -n gefyra gefyra-operator-webhook
           kubectl logs -n gefyra deployment/gefyra-operator
           kubectl logs -n gefyra deployment/gefyra-operator-webhook
           kubectl get -A ValidatingWebhookConfiguration
