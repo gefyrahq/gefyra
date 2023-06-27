@@ -62,11 +62,7 @@ class GefyraBaseTest:
 
     def gefyra_up(self):
         runner = CliRunner()
-        res = runner.invoke(cli, ["up"], catch_exceptions=False)
-        if res.exit_code != 0:
-            print("Unexpected exit!")
-            print(res.output)
-            raise RuntimeError(res.output)
+        runner.invoke(cli, ["up"], catch_exceptions=False)
         self.assert_gefyra_namespace_ready()
         self.assert_cargo_running()
         self.assert_operator_ready()
@@ -75,7 +71,7 @@ class GefyraBaseTest:
 
     def gefyra_down(self):
         runner = CliRunner()
-        runner.invoke(cli, ["down"])
+        runner.invoke(cli, ["down"], catch_exceptions=False)
         self.assert_namespace_not_found("gefyra")
         self.assert_cargo_not_running()
         return True

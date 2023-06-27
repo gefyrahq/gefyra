@@ -103,6 +103,56 @@ jobs:
         name: operator
         path: /tmp/operator.tar
 
+  
+
+  build_cargo:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.cargo_meta.outputs.tags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    # https://github.com/docker/setup-qemu-action
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    # https://github.com/docker/setup-buildx-action
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+    #
+    # Gefyra Cargo
+    #
+    - name: Cargo Image meta
+      id: cargo_meta
+      uses: docker/metadata-action@v4
+      with:
+        flavor: |
+          latest=false
+        images: |
+          quay.io/gefyra/cargo
+        tags: |
+          type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
+          type=raw,value=2.0.0-alpha,enable=${{ github.event.pull_request.number == 404 }}
+#           type=ref,event=pr,enable=${{ !!github.event.pull_request }}
+        labels: |
+          quay.expires-after=24h
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: cargo/
+        platforms: linux/amd64
+        push: false
+        target: cargo
+        tags: ${{ steps.cargo_meta.outputs.tags }}
+        labels: ${{ steps.cargo_meta.outputs.labels }}
+        cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
+        # Goutputs: type=docker,dest=/tmp/operator.tar
+    - name: Upload cargo image
+      uses: actions/upload-artifact@v3
+      with:
+        name: cargo
+        path: /tmp/cargo.tar
+
   test_python:
     runs-on: ubuntu-latest
     steps:
@@ -245,6 +295,7 @@ jobs:
       matrix:
         k3d: [v1.23.16-k3s1, v1.24.10-k3s1, v1.25.6-k3s1, v1.26.1-k3s1]
     needs:
+      - build_cargo
       - build_operator
       - build_test_image
     runs-on: ubuntu-latest
@@ -299,6 +350,7 @@ jobs:
       - name: Load Operator image
         run: |
           docker load --input /tmp/pyserver/pyserver.tar
+          docker load --input /tmp/cargo/cargo.tar
           docker image ls -a
       # - name: Import Operator to k3d
       #   run: |
