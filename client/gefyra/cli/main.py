@@ -7,12 +7,6 @@ import click
 
 from alive_progress import config_handler
 
-from .connections import *  # noqa
-from .installation import *  # noqa
-from .clients import *  # noqa
-from .updown import *  # noqa
-from .status import *  # noqa
-
 config_handler.set_global(bar="smooth", spinner="classic", stats=False, dual_line=True)
 
 
@@ -265,6 +259,13 @@ def create_bridge(name, ports, target, namespace, no_probe_handling, connection_
         timeout=10,
         connection_name=connection_name,
     )
+
+
+from .connections import *  # noqa
+from .installation import *  # noqa
+from .clients import *  # noqa
+from .updown import *  # noqa
+from .status import *  # noqa
 
 
 def main():
