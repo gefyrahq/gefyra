@@ -64,6 +64,8 @@ class GefyraBaseTest:
         runner = CliRunner()
         res = runner.invoke(cli, ["up"])
         if res.exit_code != 0:
+            print("Unexpected exit!")
+            print(res.output)
             raise RuntimeError(res.output)
         self.assert_gefyra_namespace_ready()
         self.assert_cargo_running()
