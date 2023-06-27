@@ -146,7 +146,7 @@ jobs:
         tags: ${{ steps.cargo_meta.outputs.tags }}
         labels: ${{ steps.cargo_meta.outputs.labels }}
         cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
-        # Goutputs: type=docker,dest=/tmp/operator.tar
+        outputs: type=docker,dest=/tmp/cargo.tar
     - name: Upload cargo image
       uses: actions/upload-artifact@v3
       with:
