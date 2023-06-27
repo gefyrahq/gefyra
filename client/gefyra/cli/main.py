@@ -7,6 +7,12 @@ import click
 
 from alive_progress import config_handler
 
+from .connections import *  # noqa
+from .installation import *  # noqa
+from .clients import *  # noqa
+from .updown import *  # noqa
+from .status import *  # noqa
+
 config_handler.set_global(bar="smooth", spinner="classic", stats=False, dual_line=True)
 
 
@@ -267,9 +273,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-from .connections import *  # noqa
-from .installation import *  # noqa
-from .clients import *  # noqa
-from .updown import *  # noqa
-from .status import *  # noqa
