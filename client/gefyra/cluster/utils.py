@@ -117,5 +117,5 @@ def is_operator_running(config: ClientConfiguration) -> bool:
             name="gefyra-operator", namespace=config.NAMESPACE
         )
         return deploy.status.ready_replicas == 1
-    except ApiException as e:
+    except ApiException:
         return False

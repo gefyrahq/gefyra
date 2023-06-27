@@ -38,7 +38,7 @@ def cluster_up(ctx):
                 kubeconfig=config.KUBE_CONFIG_FILE,
                 kubecontext=config.KUBE_CONTEXT,
             )[0]
-        except GefyraClientAlreadyExists as e:
+        except GefyraClientAlreadyExists:
             client = api.get_client(
                 client_id,
                 kubeconfig=config.KUBE_CONFIG_FILE,
@@ -47,7 +47,7 @@ def cluster_up(ctx):
         # write config with specific connection data (for minikube)
         host = config.CARGO_ENDPOINT.split(":")[0]
         bar()
-        bar.title = f"Waiting for the Gefyra client to enter 'waiting' state"
+        bar.title = "Waiting for the Gefyra client to enter 'waiting' state"
         # busy wait for the client to enter the waiting state
         _i = 0
         while _i < 5:

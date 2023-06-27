@@ -1,8 +1,5 @@
-from datetime import datetime
-
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
-from prompt_toolkit.shortcuts.progress_bar import formatters
 from prompt_toolkit.styles import Style
 
 styles = Style.from_dict({"error": "#FF1820", "success": "#31F565", "bold": "bold"})
