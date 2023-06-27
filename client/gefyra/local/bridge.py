@@ -123,7 +123,7 @@ def get_gbridge_body(
         "kind": "gefyrabridge",
         "metadata": {
             "name": name,
-            "namspace": config.NAMESPACE,
+            "namespace": config.NAMESPACE,
         },
         "provider": "carrier",
         "connectionProvider": "stowaway",

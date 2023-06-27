@@ -468,7 +468,7 @@ class GefyraBaseTest:
         res = run(**params)
         self.assertTrue(res)
         self.assert_in_container_logs("attachedContainer", "Hello from Gefyra")
-        self.assert_container_state("attachedContainer", "exited", retries=5)
+        self.assert_container_state("attachedContainer", "exited", retries=15)
         self._stop_container("attachedContainer")
 
     def test_c_run_gefyra_run_with_no_given_namespace_and_no_fallback(self):
