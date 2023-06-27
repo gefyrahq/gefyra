@@ -274,7 +274,7 @@ jobs:
         timeout-minutes: 8
         working-directory: ./client
         run: |
-          poetry run coverage run -a -m poetry run g up --minikube
+          poetry run coverage run -a -m gefyra.cli.main up --minikube
       - name: Show coverage report
         working-directory: ./client
         run: |
