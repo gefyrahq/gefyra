@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
     from kubernetes.client import ApiException
 
-    retries = 5
+    retries = 15
     counter = 0
     success = False
     gclient = None
