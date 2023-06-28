@@ -28,7 +28,7 @@ def make_exe():
     policy.resources_location_fallback = "filesystem-relative:prefix"
     python_config = dist.make_python_interpreter_config()
 
-    python_config.run_command = "from gefyra.__main__ import main; main()"
+    python_config.run_command = "from gefyra.cli.main import main; main()"
 
     exe = dist.to_python_executable(
         name="gefyra",
@@ -62,7 +62,7 @@ def make_win_exe():
     python_config = dist.make_python_interpreter_config()
     python_config.module_search_paths = ["$ORIGIN", "$ORIGIN/lib"]
 
-    python_config.run_command = "from gefyra.__main__ import main; main()"
+    python_config.run_command = "from gefyra.cli.main import main; main()"
 
     exe = dist.to_python_executable(
         name="gefyra",
