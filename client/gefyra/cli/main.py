@@ -101,9 +101,9 @@ def connections(ctx):
 @click.pass_context
 def version(ctx, no_check):
     import requests
-    import gefyra
+    import gefyra.configuration as config
 
-    info(f"Gefyra client version: {gefyra.configuration.__VERSION__}")
+    info(f"Gefyra client version: {config.__VERSION__}")
     if not no_check:
         release = requests.get(
             "https://api.github.com/repos/gefyrahq/gefyra/releases/latest"
@@ -112,11 +112,9 @@ def version(ctx, no_check):
             info("Versions cannot be compared, as API rate limit was exceeded")
             return None
         latest_release_version = release.json()["tag_name"].replace("-", ".")
-        if (
-            gefyra.configuration.__VERSION__ != latest_release_version
-        ):  # pragma: no cover
+        if config.__VERSION__ != latest_release_version:  # pragma: no cover
             info(
-                f"You are using gefyra version {gefyra.configuration.__VERSION__}; however, version"
+                f"You are using gefyra version {config.__VERSION__}; however, version"
                 f" {latest_release_version} is available."
             )
     return True

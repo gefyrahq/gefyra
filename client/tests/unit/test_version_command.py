@@ -1,18 +1,17 @@
-import logging
+from click.testing import CliRunner
 
-from gefyra.__main__ import parser, version
-from gefyra import configuration
-
-
-def test_version_command(caplog):
-    with caplog.at_level(logging.INFO):
-        args = parser.parse_args(["version"])
-        version(configuration, not args.no_check)
-    assert "Gefyra client version" in caplog.text
+from gefyra.cli.main import cli
 
 
-def test_version_command_no_check(caplog):
-    with caplog.at_level(logging.INFO):
-        args = parser.parse_args(["version", "-n"])
-        version(configuration, not args.no_check)
-    assert "Gefyra client version" in caplog.text
+def test_version_command():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["version"], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert "Gefyra client version" in result.output
+
+
+def test_version_command_no_check():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["version", "-n"], catch_exceptions=False)
+    assert result.exit_code == 0
+    assert "Gefyra client version" in result.output
