@@ -8,7 +8,7 @@ def test_a_create_client(operator: AClusterManager):
     k3d = operator
     from gefyra.api.clients import add_clients
 
-    gclient = add_clients("client-a")
+    gclient = add_clients("client-a", kubeconfig=operator.kubeconfig)
     client_a = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
     )
@@ -28,7 +28,7 @@ def test_b_get_client(operator: AClusterManager):
     k3d = operator
     from gefyra.api.clients import get_client
 
-    gclient = get_client("client-a")
+    gclient = get_client("client-a", kubeconfig=operator.kubeconfig)
     assert gclient.state is GefyraClientState.WAITING
     assert gclient.provider_parameter is None
     assert gclient.provider_config is None
@@ -46,14 +46,14 @@ def test_c_create_clients(operator: AClusterManager):
     from gefyra.api.clients import add_clients
 
     for client in ["client-b", "client-c", "client-d", "client-e", "client-f"]:
-        add_clients(client)
+        add_clients(client, kubeconfig=operator.kubeconfig)
 
 
 def test_d_delete_client(operator: AClusterManager):
     k3d = operator
     from gefyra.api.clients import delete_client
 
-    delete_client("client-f")
+    delete_client("client-f", kubeconfig=operator.kubeconfig)
     sleep(2)
     with pytest.raises(RuntimeError):
         k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-f"])
