@@ -34,7 +34,7 @@ def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
             )
             if counter < retries:
                 counter += 1
-                time.sleep(1)
+                time.sleep(4)
             else:
                 raise e
     return gclient

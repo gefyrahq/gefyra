@@ -12,7 +12,7 @@ from gefyra.connection.factory import (
 @kopf.on.validate("gefyraclients.gefyra.dev", id="client-parameters")  # type: ignore
 def check_validate_provider_parameters(body, diff, logger, operation, **_):
     name = body["metadata"]["name"]
-    logger.info(f"Validating provider parameters for GefyrClient {name}")
+    logger.info(f"Validating provider parameters for GefyraClient {name}")
     provider_parameter = body["provider"]
     provider = connection_provider_factory.get(
         ConnectionProviderType(provider_parameter),
