@@ -13,7 +13,7 @@ def resource_callback(policy, resource):
             resource.add_location = "filesystem-relative:lib"
             resource.add_include = True
     elif type(resource) in ("PythonModuleSource", "PythonPackageResource", "PythonPackageDistributionResource"):
-        if resource.name in ["pywin32_bootstrap", "pythoncom", "pypiwin32", "pywin32", "pythonwin", "win32", "win32com", "win32comext", "git+https://github.com/gefyrahq/grapheme"]:
+        if resource.name in ["pywin32_bootstrap", "pythoncom", "pypiwin32", "pywin32", "pythonwin", "win32", "win32com", "win32comext"]:
             resource.add_location = "filesystem-relative:lib"
             resource.add_include = True
 
@@ -74,7 +74,7 @@ def make_win_exe():
     exe.add_python_resources(exe.read_package_root(CWD, ["gefyra"]))
     exe.add_python_resources(exe.pip_install(["--no-deps", "docker==6.0.1"]))
     # certifi from version 2022.06.15.1 does not work
-    exe.add_python_resources(exe.pip_install(["chardet", "certifi==2022.06.15", "pywin32", "kubernetes", "packaging==21.3", "tabulate", "cli-tracker", "prompt_toolkit", "alive-progress", "grapheme", "click"]))
+    exe.add_python_resources(exe.pip_install(["chardet", "certifi==2022.06.15", "pywin32", "kubernetes", "packaging==21.3", "tabulate", "cli-tracker", "prompt_toolkit", "alive-progress", "git+https://github.com/gefyrahq/grapheme", "click"]))
     exe.windows_runtime_dlls_mode = "always"
     return exe
 
