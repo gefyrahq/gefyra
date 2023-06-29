@@ -3,8 +3,13 @@ import configparser
 import uuid
 from pathlib import Path
 
+import click
 from cli_tracker.sdk import CliTracker
+
 from gefyra.configuration import __VERSION__
+from gefyra.cli.main import telemetry
+from gefyra.cli.utils import standard_error_handler
+
 
 logger = logging.getLogger("gefyra")
 
@@ -15,7 +20,7 @@ logger = logging.getLogger("gefyra")
 # This data is supposed to help us develop Gefyra and make it a better tool, prioritize
 # issues and work on bugs, features and review of pull requests.
 # If you do not which to send telemetry data this is totally fine.
-# Just opt out via `gefyra telemetry --off`.
+# Just opt out via `gefyra telemetry off`.
 ########################################################################################
 
 SENTRY_DSN = (
@@ -111,3 +116,27 @@ class CliTelemetry:
         if not test:
             self.tracker.report_opt_in()
         logger.info("Enabled telemetry.")
+
+
+@telemetry.command("on", help="Turn on Gefyra's CLI telemetry")
+@standard_error_handler
+@click.pass_context
+def on(ctx: click.Context):
+    ctx.obj["telemetry"].on()
+
+
+@telemetry.command("off", help="Turn off Gefyra's CLI telemetry")
+@standard_error_handler
+@click.pass_context
+def off(ctx: click.Context):
+    ctx.obj["telemetry"].off()
+
+
+@telemetry.command("show", help="Shows Gefyra's current telemetry settings")
+@standard_error_handler
+@click.pass_context
+def show(ctx: click.Context):
+    if ctx.obj["telemetry"] and getattr(ctx.obj["telemetry"], "tracker", None):
+        click.echo("Telemetry is enabled.")
+    else:
+        click.echo("Telemetry is disabled.")

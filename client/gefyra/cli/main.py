@@ -60,8 +60,16 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
     else:
         logging.getLogger("gefyra").setLevel(logging.ERROR)
     ctx.ensure_object(dict)
+
+    from gefyra.cli.telemetry import CliTelemetry
+
+    try:
+        telemetry = CliTelemetry()
+    except Exception:  # pragma: no cover
+        telemetry = False
     ctx.obj["kubeconfig"] = kubeconfig
     ctx.obj["context"] = context
+    ctx.obj["telemetry"] = telemetry
 
 
 @cli.group(
@@ -259,6 +267,12 @@ def create_bridge(name, ports, target, namespace, no_probe_handling, connection_
         timeout=10,
         connection_name=connection_name,
     )
+
+
+@cli.group("telemetry", cls=AliasedGroup, help="Manage Gefyra's CLI telemetry settings")
+@click.pass_context
+def telemetry(ctx):
+    pass
 
 
 from .connections import *  # noqa
