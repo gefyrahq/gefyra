@@ -73,11 +73,13 @@ jobs:
         with:
           name: gefyra-${{ env.APP_VERSION }}-windows-x86_64
           path: gefyra
-      - name: Sanity run Gefyra
+      - name: Print info
         run: |
           ls
           docker info
-          ./gefyra/gefyra --debug version
+      - name: Sanity run Gefyra
+        shell: cmd
+        run: .\gefyra\gefyra.exe --debug version
 
   linux_build:
     uses: ./.github/workflows/dist-build-linux.yaml
