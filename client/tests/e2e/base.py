@@ -29,7 +29,6 @@ from kubernetes.client import (
 from kubernetes.client import ApiException
 from kubernetes.config import load_kube_config
 
-from gefyra.__main__ import version, print_status
 from gefyra.api import (
     bridge,
     reflect,
@@ -47,7 +46,6 @@ from gefyra.cluster.resources import (
     owner_reference_consistent,
 )
 from gefyra.configuration import ClientConfiguration
-import gefyra.configuration as config_package
 
 default_configuration = ClientConfiguration()
 
@@ -397,10 +395,6 @@ class GefyraBaseTest:
             get_container_ports(pod=pod, container_name="UnknownContainer")
         self.assertIn("Container UnknownContainer not found", str(rte.exception))
 
-    def test_a_run_gefyra_version(self):
-        res = version(config_package, False)
-        self.assertTrue(res)
-
     def test_a_run_gefyra_down_status(self):
         self.assert_gefyra_not_connected()
 
@@ -673,14 +667,6 @@ class GefyraBaseTest:
         get_containers_and_print(connection_name=CONNECTION_NAME)
         captured = self.capsys.readouterr()
         self.assertIn(self.default_run_params["name"], captured.out)
-
-    def test_m_run_gefyra_status_print(self):
-        _status = status(connection_name=CONNECTION_NAME)
-        print_status(_status)
-        captured = self.capsys.readouterr()
-        self.assertIn(StatusSummary.UP, captured.out)
-        self.assertIn('"containers": 1', captured.out)
-        self.assertIn('"bridges": 1', captured.out)
 
     def test_m_ownership_reference_check(self):
         wrong_pod = self._get_pod_startswith("gefyra-stowaway", "gefyra")
