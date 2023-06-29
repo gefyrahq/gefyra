@@ -1,5 +1,5 @@
 from time import sleep
-from gefyra.types import GefyraClientState
+from gefyra.types import GefyraClient, GefyraClientState
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
@@ -8,8 +8,8 @@ def test_a_create_client(operator: AClusterManager):
     k3d = operator
     from gefyra.api.clients import add_clients
 
-    gclient = add_clients("client-a", kubeconfig=operator.kubeconfig)
-    client_a = k3d.kubectl(
+    gclient = add_clients("client-a", kubeconfig=operator.kubeconfig)[0]
+    client_a: GefyraClient = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
     )
     assert client_a["state"] is not None

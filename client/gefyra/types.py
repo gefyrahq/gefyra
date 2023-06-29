@@ -155,7 +155,7 @@ class GefyraClient:
         self._init_data(gclient)
 
     def get_client_config(
-        self, gefyra_server: str, k8s_server: str
+        self, gefyra_server: str, k8s_server: str = ""
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
