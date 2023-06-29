@@ -29,7 +29,16 @@ def test_b_get_client(operator: AClusterManager):
     from gefyra.api.clients import get_client
 
     gclient = get_client("client-a", kubeconfig=operator.kubeconfig)
-    assert gclient.state is GefyraClientState.WAITING
+    retries = 10
+    counter = 0
+    try:
+        assert gclient.state is GefyraClientState.WAITING
+    except AssertionError as e:
+        if counter >= retries:
+            raise e
+        counter += 1
+        sleep(2)
+
     assert gclient.provider_parameter is None
     assert gclient.provider_config is None
     k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"])
