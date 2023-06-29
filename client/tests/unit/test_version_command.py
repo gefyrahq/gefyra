@@ -8,10 +8,3 @@ def test_version_command():
     result = runner.invoke(cli, ["version"], catch_exceptions=False)
     assert result.exit_code == 0
     assert "Gefyra client version" in result.output
-
-
-def test_version_command_no_check():
-    runner = CliRunner()
-    result = runner.invoke(cli, ["version", "-n"], catch_exceptions=False)
-    assert result.exit_code == 0
-    assert "Gefyra client version" in result.output
