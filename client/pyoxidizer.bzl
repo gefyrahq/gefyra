@@ -4,7 +4,6 @@
 # configuration file format.
 
 def resource_callback(policy, resource):
-    print(resource.name, resource.path, type(resource))
     if type(resource) in ("File"):
         if "pywin" in resource.path or "pypiwin" in resource.path:
             resource.add_location = "filesystem-relative:lib"

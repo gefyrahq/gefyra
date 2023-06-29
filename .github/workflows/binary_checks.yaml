@@ -75,9 +75,8 @@ jobs:
           path: gefyra
       - name: Sanity run Gefyra
         run: |
-          ls ./gefyra
           docker info
-          ./gefyra/gefyra --debug version
+          ./gefyra --debug version
 
   linux_build:
     uses: ./.github/workflows/dist-build-linux.yaml
