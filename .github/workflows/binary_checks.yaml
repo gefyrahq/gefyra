@@ -75,7 +75,7 @@ jobs:
           path: gefyra
       - name: Sanity run Gefyra
         run: |
-          ls
+          ls ./gefyra
           docker info
           ./gefyra/gefyra --debug version
 
