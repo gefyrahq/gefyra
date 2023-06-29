@@ -13,7 +13,7 @@ def resource_callback(policy, resource):
             resource.add_location = "filesystem-relative:lib"
             resource.add_include = True
     elif type(resource) in ("PythonModuleSource", "PythonPackageResource", "PythonPackageDistributionResource"):
-        if resource.name in ["pywin32_bootstrap", "pythoncom", "pypiwin32", "pywin32", "pythonwin", "win32", "win32com", "win32comext"]:
+        if resource.name in ["pywin32_bootstrap", "pythoncom", "pypiwin32", "pywin32", "pythonwin", "win32", "win32com", "win32comext", "grapheme"]:
             resource.add_location = "filesystem-relative:lib"
             resource.add_include = True
 
