@@ -285,6 +285,12 @@ jobs:
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra.cli.main --debug up --minikube
+      - name: Show cargo logs
+        working-directory: ./client
+        if: ${{ failure() }}
+        run: |
+          docker logs gefyra-cargo-default
+          kubectl logs -n gefyra gefyra-stowaway-0
       - name: Show coverage report
         working-directory: ./client
         run: |
