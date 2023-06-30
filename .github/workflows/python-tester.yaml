@@ -299,7 +299,6 @@ jobs:
         run: |
           poetry run coveralls --service=github
 
-
   test:
     strategy:
       fail-fast: false
