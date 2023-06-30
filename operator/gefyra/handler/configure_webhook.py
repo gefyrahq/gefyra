@@ -32,6 +32,8 @@ def configure(settings: kopf.OperatorSettings, **_):
 
 @kopf.on.validate("gefyraclients.gefyra.dev", id="client-parameters")  # type: ignore
 def check_validate_provider_parameters(body, diff, logger, operation, **_):
+    if body.get("check", False):
+        return True
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraClient {name}")
     provider_parameter = body["provider"]
