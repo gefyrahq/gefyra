@@ -384,6 +384,9 @@ jobs:
           kubectl logs -n gefyra deployment/gefyra-operator
           kubectl logs -n gefyra deployment/gefyra-operator-webhook
           kubectl get -A ValidatingWebhookConfiguration
+          kubectl get cm -n gefyra
+          kubectl describe cm -n gefyra gefyra-stowaway-proxyroutes
+          kubectl describe cm -n gefyra gefyra-stowaway-config
           kubectl describe pod -n gefyra gefyra-stowaway-0
           kubectl logs -n gefyra pod/gefyra-stowaway-0
       - name: Show coverage report
