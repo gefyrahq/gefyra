@@ -270,7 +270,6 @@ jobs:
         with:
           driver: ${{ matrix.driver }}
           start-args: --ports 127.0.0.1:31820:31820/udp
-
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
