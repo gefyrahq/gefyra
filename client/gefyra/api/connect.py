@@ -5,6 +5,7 @@ from pathlib import Path
 import time
 from typing import IO, List, Optional
 from gefyra.api.clients import get_client
+from gefyra.local.minikube import detect_minikube_config
 from .utils import stopwatch
 
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
@@ -141,6 +142,7 @@ def connect(
                 pid_mode="host",
             )
             if minikube:
+                logger.debug(detect_minikube_config())
                 logger.debug("Joining minikube network")
                 minikube_net = config.DOCKER.networks.get("minikube")
                 minikube_net.connect(cargo_container)
