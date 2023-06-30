@@ -291,6 +291,8 @@ jobs:
         run: |
           docker logs gefyra-cargo-default
           kubectl logs -n gefyra gefyra-stowaway-0
+          docker inspect minikube
+          docker inspect gefyra-cargo-default
       - name: Show coverage report
         working-directory: ./client
         run: |
