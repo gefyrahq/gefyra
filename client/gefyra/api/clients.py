@@ -94,7 +94,7 @@ def write_client_file(
         gefyra_server = f"{host}:{port}"
     else:
         gefyra_server = config.get_stowaway_host(port)
-
+    logger.debug(f"gefyra_server: {gefyra_server}")
     return client.get_client_config(
         gefyra_server=gefyra_server, k8s_server=kube_api
     ).json

@@ -25,7 +25,9 @@ logger = logging.getLogger(__name__)
 
 
 @stopwatch
-def connect(connection_name: str, client_config: Optional[IO]) -> bool:
+def connect(
+    connection_name: str, client_config: Optional[IO], minikube: bool = False
+) -> bool:
     import kubernetes
     import docker
 
@@ -138,6 +140,10 @@ def connect(connection_name: str, client_config: Optional[IO]) -> bool:
                 ],
                 pid_mode="host",
             )
+            if minikube:
+                logger.debug("Joining minikube network")
+                minikube_net = config.DOCKER.networks.get("minikube")
+                minikube_net.connect(cargo_container)
             logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
             gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)
         cargo_container.start()
@@ -150,7 +156,7 @@ def connect(connection_name: str, client_config: Optional[IO]) -> bool:
         raise RuntimeError(f"Could not start Cargo container: {e}") from None
 
     # Confirm the wireguard connection working
-
+    logger.debug("Checking wireguard connection")
     probe_wireguard_connection(config)
     return True
 

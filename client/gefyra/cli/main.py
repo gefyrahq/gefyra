@@ -1,4 +1,5 @@
 import ast
+from typing import Tuple
 from gefyra import api
 from .console import info
 from .utils import AliasedGroup, OptionEatAll
@@ -120,6 +121,25 @@ def version(ctx, no_check):
     return True
 
 
+def parse_ip_port_map(ctx, param, ports: Tuple[str]):
+    def v(p: str):
+        if not p.isnumeric():
+            raise RuntimeError(f"Invalid port {p}. Please use integer numbers as port.")
+        return p
+
+    # port - port
+    res = {}
+    for value in ports:
+        value = value.split(":")
+        if len(value) == 2:
+            res[v(value[1])] = v(value[0])
+        elif len(value) == 3:
+            res[v(value[2])] = (value[0], v(value[1]))
+        else:
+            raise ValueError("Invalid value for port mapping.")
+    return res
+
+
 @cli.command()
 @click.option(
     "-d",
@@ -143,6 +163,7 @@ def version(ctx, no_check):
     help="Add port mapping in form of <container_port>:<host_port>",
     type=str,
     multiple=True,
+    callback=parse_ip_port_map,
 )  # TODO IpPortMappingParser
 @click.option(
     "--env-from",
@@ -204,7 +225,7 @@ def run(
 ):
     if command:
         command = ast.literal_eval(command)[0]
-    connection_name = _check_connection_name()
+    connection_name = _check_connection_name(selected=connection_name)
     api.run(
         image=image,
         name=name,

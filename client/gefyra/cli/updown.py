@@ -1,3 +1,5 @@
+import click
+
 import logging
 from alive_progress import alive_bar
 from click import pass_context
@@ -7,8 +9,15 @@ logger = logging.getLogger("gefyra")
 
 
 @cli.command("up", help="Install Gefyra on a cluster and directly connect to it")
+@click.option(
+    "--minikube",
+    help="Connect Gefyra to a Minikube cluster",
+    type=bool,
+    is_flag=True,
+    default=False,
+)
 @pass_context
-def cluster_up(ctx):
+def cluster_up(ctx, minikube: bool):
     from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
     from gefyra import api

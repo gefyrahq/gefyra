@@ -23,7 +23,12 @@ logger = logging.getLogger(__name__)
     help="Assign a local name to this client connection",
     type=str,
 )
-# @standard_error_handler
+@click.option(
+    "--minikube",
+    help="Connect Gefyra to a Minikube cluster",
+    type=str,
+)
+@standard_error_handler
 def connect_client(client_config, connection_name: str):
     api.connect(connection_name=connection_name, client_config=client_config)
 

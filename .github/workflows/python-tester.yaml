@@ -269,6 +269,8 @@ jobs:
         uses: medyagh/setup-minikube@latest
         with:
           driver: ${{ matrix.driver }}
+          start-args: --ports 127.0.0.1:31820:31820/udp
+
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
@@ -283,7 +285,7 @@ jobs:
         timeout-minutes: 8
         working-directory: ./client
         run: |
-          poetry run coverage run -a -m gefyra.cli.main up
+          poetry run coverage run -a -m gefyra.cli.main up --minikube
       - name: Show coverage report
         working-directory: ./client
         run: |

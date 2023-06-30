@@ -193,6 +193,7 @@ class ClientConfiguration(object):
                         "alpine", "getent hosts host.docker.internal", remove=True
                     )
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
+                    logger.debug(f"Found host.docker.internal IP: {_ip}")
                     return f"{_ip}:{self.cargo_endpoint_port}"
                 except Exception as e:
                     logger.error("Could not create a valid configuration: " + str(e))
