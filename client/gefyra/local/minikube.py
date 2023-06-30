@@ -23,7 +23,7 @@ def _get_a_worker_ip(config: dict):
     raise RuntimeError("This Minikube cluster does not have a worker node.")
 
 
-def detect_minikube_config(profile: Optional[str] = None) -> dict:
+def detect_minikube_config(profile: Optional[str] = "minikube") -> dict:
     """
     Read the config for a local Minikube cluster from its configuration
     file and set Gefyra accordingly.
