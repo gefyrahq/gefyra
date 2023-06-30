@@ -79,6 +79,16 @@ def data(params: GefyraInstallOptions) -> list[dict]:
                                 "imagePullPolicy": "Always",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [{"name": "OP_MODE", "value": "webhook"}],
+                                "livenessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "python",
+                                            "gefyra/healthcheck.py",
+                                        ]
+                                    },
+                                    "initialDelaySeconds": 5,
+                                    "periodSeconds": 5,
+                                },
                             }
                         ],
                     },
