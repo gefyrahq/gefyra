@@ -3,6 +3,7 @@ import logging
 import os
 from pathlib import Path
 import time
+from docker.models.networks import Network
 from typing import IO, List, Optional
 from gefyra.api.clients import get_client
 from gefyra.local.minikube import detect_minikube_config
@@ -142,10 +143,14 @@ def connect(
                 pid_mode="host",
             )
             if minikube:
-                logger.debug(detect_minikube_config())
-                logger.debug("Joining minikube network")
-                minikube_net = config.DOCKER.networks.get("minikube")
-                minikube_net.connect(cargo_container)
+                minikube_config = detect_minikube_config()
+                logger.debug(minikube_config)
+                if minikube_config["network_name"]:
+                    logger.debug("Joining minikube network")
+                    minikube_net: Network = config.DOCKER.networks.get(
+                        minikube_config["network_name"]
+                    )
+                    minikube_net.connect(cargo_container)
             logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
             gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)
         cargo_container.start()
