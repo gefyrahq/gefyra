@@ -66,6 +66,13 @@ def connect(
             f.write(kubeconfig_str)
             logger.info(f"Client kubeconfig saved to {loc}")
 
+        if minikube:
+            mini_conf = detect_minikube_config()
+            logger.debug(mini_conf)
+            gclient_conf.gefyra_server = (
+                f"{mini_conf['cargo_endpoint_host']}:{mini_conf['cargo_endpoint_port']}"
+            )
+
         config = ClientConfiguration(
             connection_name=connection_name,
             kube_config_file=Path(loc),
@@ -142,16 +149,14 @@ def connect(
                 ],
                 pid_mode="host",
             )
+
             if minikube:
-                minikube_config = detect_minikube_config()
-                logger.debug(minikube_config)
-                if minikube_config["network_name"]:
-                    logger.debug("Joining minikube network")
-                    minikube_net: Network = config.DOCKER.networks.get(
-                        minikube_config["network_name"]
-                    )
-                    minikube_net.connect(cargo_container)
-                    cargo_ip_address = minikube_config["cargo_endpoint_host"]
+                mini_conf = detect_minikube_config()
+                logger.debug("Joining minikube network")
+                minikube_net: Network = config.DOCKER.networks.get(
+                    mini_conf["network_name"]
+                )
+                minikube_net.connect(cargo_container)
             logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
             gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)
         cargo_container.start()
