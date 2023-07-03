@@ -1,3 +1,4 @@
+import sys
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.styles import Style
@@ -7,10 +8,13 @@ styles = Style.from_dict({"error": "#FF1820", "success": "#31F565", "bold": "bol
 
 
 def print_text(formatted_text: FormattedText, text: str):
-    try:
+    if sys.platform == "win32":
+        try:
+            print_formatted_text(formatted_text, styles)
+        except NoConsoleScreenBufferError:
+            print(text)
+    else:
         print_formatted_text(formatted_text, styles)
-    except NoConsoleScreenBufferError:
-        print(text)
 
 
 def heading(text: str):
