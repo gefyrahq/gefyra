@@ -45,7 +45,7 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
         pass
     try:
         logger.debug("Checking gefyra network available")
-        gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
+        gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
         _status.network = True
         _status.containers = (
             len(gefyra_net.containers) - 1

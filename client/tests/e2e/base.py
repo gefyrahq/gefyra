@@ -60,7 +60,7 @@ class GefyraBaseTest:
 
     def gefyra_up(self):
         runner = CliRunner()
-        runner.invoke(cli, ["up"], catch_exceptions=False)
+        runner.invoke(cli, ["up", "--minikube"], catch_exceptions=False)
         self.assert_gefyra_namespace_ready()
         self.assert_cargo_running()
         self.assert_operator_ready()

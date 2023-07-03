@@ -10,17 +10,15 @@ from gefyra.local import CREATED_BY_LABEL
 logger = logging.getLogger(__name__)
 
 
-def get_or_create_gefyra_network(
-    config: ClientConfiguration, suffix: str = ""
-) -> Network:
-    gefyra_network = handle_create_network(config, suffix)
+def get_or_create_gefyra_network(config: ClientConfiguration) -> Network:
+    gefyra_network = handle_create_network(config)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
 
-def handle_create_network(config: ClientConfiguration, suffix: str = "") -> Network:
+def handle_create_network(config: ClientConfiguration) -> Network:
     DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
-    network_name = f"{config.NETWORK_NAME}-{suffix}"  # TODO set base network name
+    network_name = f"{config.NETWORK_NAME}"
     try:
         network = config.DOCKER.networks.get(network_name)
         logger.info("Gefyra network already exists")
@@ -73,12 +71,13 @@ def handle_create_network(config: ClientConfiguration, suffix: str = "") -> Netw
     return network
 
 
-def handle_remove_network(config: ClientConfiguration, suffix: str = "") -> None:
+def handle_remove_network(config: ClientConfiguration) -> None:
     """Removes all docker networks with the given name."""
     # we would need the id to identify the network unambiguously, so we just remove all networks that can be found with
     # the given name, under the assumption that no other docker network inadvertently uses the same name
+    kill_remainder_container_in_network(config=config)
     try:
-        gefyra_network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}{suffix}")
+        gefyra_network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
         if (
             CREATED_BY_LABEL[0] in gefyra_network.attrs["Labels"]
             and gefyra_network.attrs["Labels"][CREATED_BY_LABEL[0]] == "true"
@@ -95,12 +94,10 @@ def handle_remove_network(config: ClientConfiguration, suffix: str = "") -> None
         logger.error(f"Could not remove network due to the following error: {e}")
 
 
-def kill_remainder_container_in_network(
-    config: ClientConfiguration, network_name
-) -> None:
+def kill_remainder_container_in_network(config: ClientConfiguration) -> None:
     """Kills all containers from this network"""
     try:
-        network = config.DOCKER.networks.get(network_name)
+        network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
         containers = network.attrs["Containers"].keys()
         for container in containers:
             c = config.DOCKER.containers.get(container)

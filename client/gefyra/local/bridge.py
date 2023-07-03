@@ -76,7 +76,7 @@ def get_all_gefyrabridges(config: ClientConfiguration) -> list:
 
 def get_all_containers(config: ClientConfiguration) -> list:
     container_information = []
-    gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
+    gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
     containers = gefyra_net.containers
     # filter out gefyra-cargo container as well as fields other than name and ip
     for container in containers:
@@ -150,7 +150,7 @@ def deploy_app_container(
 ) -> Container:
     import docker
 
-    gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
+    gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
 
     net_add = gefyra_net.attrs["IPAM"]["Config"][0]["Subnet"].split("/")[0]
     cargo_ip = get_cargo_ip_from_netaddress(net_add)

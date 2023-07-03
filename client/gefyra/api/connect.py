@@ -15,7 +15,7 @@ from gefyra.local.cargo import (
     get_cargo_ip_from_netaddress,
     probe_wireguard_connection,
 )
-from gefyra.local.networking import get_or_create_gefyra_network
+from gefyra.local.networking import get_or_create_gefyra_network, handle_remove_network
 from gefyra.local.utils import (
     compose_kubeconfig_for_serviceaccount,
     handle_docker_get_or_create_container,
@@ -84,9 +84,7 @@ def connect(
 
     _retry = 0
     while _retry < 5:
-        gefyra_network = get_or_create_gefyra_network(
-            config, suffix=config.CONNECTION_NAME
-        )
+        gefyra_network = get_or_create_gefyra_network(config)
         try:
             client.activate_connection(
                 gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
@@ -181,7 +179,7 @@ def disconnect(connection_name: str) -> bool:
 
     config = ClientConfiguration(connection_name=connection_name)
     client = get_client(config.CLIENT_ID, connection_name=connection_name)
-    get_or_create_gefyra_network(config, suffix=config.CONNECTION_NAME)
+    get_or_create_gefyra_network(config)
     try:
         cargo_container = config.DOCKER.containers.get(
             f"{config.CARGO_CONTAINER_NAME}",
@@ -244,14 +242,9 @@ def remove_connection(connection_name: str):
             f"{config.CARGO_CONTAINER_NAME}",
         )
         cargo_container.remove(force=True)
-        gefyra_network = config.DOCKER.networks.get(config.NETWORK_NAME)
-        gefyra_network.remove()
     except docker.errors.NotFound:
         pass
-    try:
-        config.DOCKER.networks.get(f"{config.NETWORK_NAME}-{connection_name}").remove()
-    except docker.errors.NotFound:
-        pass
+    handle_remove_network(config)
     try:
         # remove kubeconfig file
         os.remove(os.path.join(get_gefyra_config_location(), f"{connection_name}.yaml"))
