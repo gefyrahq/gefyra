@@ -141,25 +141,25 @@ def uninstall(
     logger.info("Removing all Gefyra bridges")
     try:
         remove_remainder_bridges(config)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(e)
     logger.info("Removing remainder Gefyra clients")
     try:
-        remove_all_clients(config)
-    except Exception:
-        pass
+        remove_all_clients()
+    except Exception as e:
+        logger.debug(e)
     logger.info("Removing Gefyra namespace")
     try:
         remove_gefyra_namespace(config)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(e)
     logger.info("Removing Gefyra API extensions")
     try:
         remove_gefyra_crds(config)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(e)
     logger.info("Removing Gefyra RBAC resources")
     try:
         remove_gefyra_rbac(config)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(e)

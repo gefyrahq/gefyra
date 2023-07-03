@@ -6,7 +6,7 @@ core_v1_api = k8s.client.CoreV1Api()
 
 
 def handle_create_gefyraclient_serviceaccount(
-    logger, name: str, namespace: str
+    logger, name: str, namespace: str, client_name: str
 ) -> None:
     """
     It creates a service account, a role, and a role binding to allow
@@ -27,6 +27,12 @@ def handle_create_gefyraclient_serviceaccount(
                 body=k8s.client.V1ClusterRole(
                     metadata=k8s.client.V1ObjectMeta(name="gefyra-client"),
                     rules=[
+                        k8s.client.V1PolicyRule(
+                            api_groups=["gefyra.dev"],
+                            resources=["gefyraclients"],
+                            verbs=["delete"],
+                            resource_names=[client_name],
+                        ),
                         k8s.client.V1PolicyRule(
                             api_groups=["gefyra.dev"],
                             resources=["gefyraclients"],
@@ -52,6 +58,14 @@ def handle_create_gefyraclient_serviceaccount(
                                 "namespaces",
                             ],
                             verbs=["list", "get"],
+                        ),
+                        k8s.client.V1PolicyRule(
+                            api_groups=[""],
+                            resources=[
+                                "namespaces",
+                            ],
+                            verbs=["delete"],
+                            resource_names=["gefyra"],
                         ),
                     ],
                 ),

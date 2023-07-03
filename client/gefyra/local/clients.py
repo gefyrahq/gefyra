@@ -63,7 +63,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
 
 
 def handle_delete_gefyraclient(
-    config: ClientConfiguration, client_id: str, force: bool
+    config: ClientConfiguration, client_id: str, force: bool, wait: bool = False
 ) -> bool:
     from kubernetes.client import ApiException
 
@@ -84,8 +84,21 @@ def handle_delete_gefyraclient(
             plural="gefyraclients",
             version="v1",
         )
+        if wait:
+            timeout = 30
+            counter = 0
+            while counter < timeout:
+                print(f"waiting {counter}")
+                try:
+                    handle_get_gefyraclient(config=config, client_id=client_id)
+                except GefyraClientNotFound:
+                    return True
+                time.sleep(1)
+                counter += 1
+            return False
         return True
     except ApiException as e:
+        logger.debug(e)
         if e.status in [404, 403]:
             return False
         else:

@@ -11,11 +11,11 @@ def print_text(formatted_text: FormattedText, text: str):
         from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
 
         try:
-            print_formatted_text(formatted_text, styles)
+            print_formatted_text(formatted_text, style=styles)
         except NoConsoleScreenBufferError:
             print(text)
     else:
-        print_formatted_text(formatted_text, styles)
+        print_formatted_text(formatted_text, style=styles)
 
 
 def heading(text: str):

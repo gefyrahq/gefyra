@@ -123,7 +123,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
         )
         sa_name = f"gefyra-client-{self.object_name}"
         handle_create_gefyraclient_serviceaccount(
-            self.logger, sa_name, self.configuration.NAMESPACE
+            self.logger, sa_name, self.configuration.NAMESPACE, self.object_name
         )
         token_data = get_serviceaccount_data(sa_name, self.configuration.NAMESPACE)
         self._patch_object(

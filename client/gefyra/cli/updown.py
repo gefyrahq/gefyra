@@ -5,6 +5,8 @@ from alive_progress import alive_bar
 from click import pass_context
 from .main import cli
 
+from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+
 logger = logging.getLogger("gefyra")
 
 
@@ -18,7 +20,6 @@ logger = logging.getLogger("gefyra")
 )
 @pass_context
 def cluster_up(ctx, minikube: bool):
-    from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
     from gefyra import api
     from time import sleep
@@ -27,7 +28,7 @@ def cluster_up(ctx, minikube: bool):
     client_id = "default"
     connection_name = "default"
     kubeconfig = ctx.obj["kubeconfig"]
-    kubecontext = ctx.obj["kubeconfig"]
+    kubecontext = ctx.obj["context"]
 
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
     with alive_bar(4, title="Installing Gefyra to the cluster") as bar:
@@ -96,13 +97,20 @@ def cluster_up(ctx, minikube: bool):
 
 
 @cli.command("down", help="Remove Gefyra locally and on the cluster")
-def cluster_down():
+@pass_context
+def cluster_down(ctx):
     from gefyra import api
 
     connection_name = "default"
+    kubeconfig = ctx.obj["kubeconfig"]
+    kubecontext = ctx.obj["context"]
+    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
 
     with alive_bar(2, title="Removing Gefyra from the cluster") as bar:
-        api.uninstall()
+        api.uninstall(
+            kubeconfig=config.KUBE_CONFIG_FILE,
+            kubecontext=config.KUBE_CONTEXT,
+        )
         bar()
         bar.title = "Removing Gefyra from the local machine"
         api.remove_connection(connection_name=connection_name)

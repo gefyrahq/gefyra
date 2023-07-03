@@ -66,12 +66,13 @@ def delete_client(
     force: bool = False,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
+    wait: Optional[bool] = False,
 ) -> bool:
     """
     Delete a GefyraClient configuration
     """
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
-    return handle_delete_gefyraclient(config, client_id, force)
+    return handle_delete_gefyraclient(config, client_id, force, wait=wait)
 
 
 @stopwatch

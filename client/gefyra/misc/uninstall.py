@@ -4,10 +4,10 @@ from gefyra.configuration import ClientConfiguration
 from gefyra import api
 
 
-def remove_all_clients(config: ClientConfiguration):
+def remove_all_clients():
     clients = api.list_client()
     for client in clients:
-        api.delete_client(client.client_id, force=True)
+        api.delete_client(client.client_id, force=True, wait=True)
 
 
 def remove_remainder_bridges(config: ClientConfiguration):
