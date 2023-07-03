@@ -2,13 +2,14 @@ import sys
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import FormattedText
 from prompt_toolkit.styles import Style
-from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
 
 styles = Style.from_dict({"error": "#FF1820", "success": "#31F565", "bold": "bold"})
 
 
 def print_text(formatted_text: FormattedText, text: str):
     if sys.platform == "win32":
+        from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
+
         try:
             print_formatted_text(formatted_text, styles)
         except NoConsoleScreenBufferError:
