@@ -36,7 +36,7 @@ def handle_create_gefyraclient_serviceaccount(
                         k8s.client.V1PolicyRule(
                             api_groups=["gefyra.dev"],
                             resources=["gefyraclients"],
-                            verbs=["list", "patch", "get"],
+                            verbs=["list", "patch", "get", "create"],
                         ),
                         k8s.client.V1PolicyRule(
                             api_groups=["gefyra.dev"],
