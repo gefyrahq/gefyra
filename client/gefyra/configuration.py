@@ -134,23 +134,18 @@ class ClientConfiguration(object):
         self.CARGO_PROBE_TIMEOUT = 20  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
-        if self.CONNECTION_NAME:
-            containers = self.DOCKER.containers.list(
-                all=True,
-                filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
-            )
-            if containers:
-                cargo_container = containers[0]
-                self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
-                self.KUBE_CONFIG_FILE = cargo_container.labels.get(
-                    ACTIVE_KUBECONFIG_LABEL
-                )
-                self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
-                self.NETWORK_NAME = (  # TODO set base network name
-                    f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"
-                )
-                self.CARGO_CONTAINER_NAME = cargo_container.name
+        containers = self.DOCKER.containers.list(
+            all=True,
+            filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
+        )
+        if containers:
+            cargo_container = containers[0]
+            self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
+            self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
+            self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
+            self.CARGO_CONTAINER_NAME = cargo_container.name
 
+        self.NETWORK_NAME = f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"
         if cargo_endpoint_host:
             self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
 
