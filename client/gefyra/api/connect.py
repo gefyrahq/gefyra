@@ -151,6 +151,7 @@ def connect(
                         minikube_config["network_name"]
                     )
                     minikube_net.connect(cargo_container)
+                    cargo_ip_address = minikube_config["cargo_endpoint_host"]
             logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
             gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)
         cargo_container.start()
