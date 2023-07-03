@@ -1,22 +1,11 @@
 import logging
 
-from docker.errors import NotFound
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.utils import (
-    handle_docker_remove_container,
-)
 from gefyra.types import StowawayConfig
 
 logger = logging.getLogger(__name__)
-
-
-def remove_cargo_container(config: ClientConfiguration):
-    try:
-        handle_docker_remove_container(config, container_id=config.CARGO_CONTAINER_NAME)
-    except NotFound:
-        pass
 
 
 def get_cargo_ip_from_netaddress(network_address: str) -> str:
