@@ -152,11 +152,12 @@ def connect(
 
             if minikube:
                 mini_conf = detect_minikube_config()
-                logger.debug("Joining minikube network")
-                minikube_net: Network = config.DOCKER.networks.get(
-                    mini_conf["network_name"]
-                )
-                minikube_net.connect(cargo_container)
+                if mini_conf["network_name"]:
+                    logger.debug("Joining minikube network")
+                    minikube_net: Network = config.DOCKER.networks.get(
+                        mini_conf["network_name"]
+                    )
+                    minikube_net.connect(cargo_container)
             logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
             gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)
         cargo_container.start()
