@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+from typing import Optional
 
 import click
 from gefyra import api
@@ -29,8 +30,10 @@ logger = logging.getLogger(__name__)
     type=str,
 )
 @standard_error_handler
-def connect_client(client_config, connection_name: str):
-    api.connect(connection_name=connection_name, client_config=client_config)
+def connect_client(client_config, connection_name: str, minikube: Optional[str] = None):
+    api.connect(
+        connection_name=connection_name, client_config=client_config, minikube=minikube
+    )
 
 
 @connections.command(

@@ -1,6 +1,7 @@
 from copy import deepcopy
+import os
 from click.testing import CliRunner
-from gefyra.api.clients import list_client
+from gefyra.api.clients import list_client, write_client_file
 
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
 from gefyra.cli.main import cli
@@ -12,6 +13,7 @@ from gefyra.cluster.utils import (
 )
 from gefyra.local.bridge import handle_delete_gefyrabridge
 from gefyra.local.check import probe_docker, probe_kubernetes
+from gefyra.types import GefyraClientState
 import requests
 import subprocess
 from time import sleep
@@ -46,7 +48,7 @@ from gefyra.cluster.resources import (
     get_pods_and_containers_for_workload,
     owner_reference_consistent,
 )
-from gefyra.configuration import ClientConfiguration
+from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 
 default_configuration = ClientConfiguration()
 
@@ -313,7 +315,9 @@ class GefyraBaseTest:
         while counter < timeout:
             counter += 1
             try:
-                container = self.DOCKER_API.containers.get(container)
+                container_obj = self.DOCKER_API.containers.get(container)
+                if container_obj.status != "running":
+                    return True
             except docker.errors.NotFound:
                 return True
             sleep(interval)
@@ -323,8 +327,8 @@ class GefyraBaseTest:
         counter = 0
         while counter < timeout:
             counter += 1
-            container = self.DOCKER_API.containers.get(container)
-            if container.status == "running":
+            container_obj = self.DOCKER_API.containers.get(container)
+            if container_obj.status == "running":
                 return True
             sleep(interval)
         raise AssertionError(f"{container} not running within {timeout} seconds.")
@@ -370,6 +374,29 @@ class GefyraBaseTest:
         self.assert_gefyra_connected(_status)
         self.assertEqual(_status.client.bridges, 0)
         self.assertEqual(_status.client.containers, 1)
+
+    def assert_gefyra_client_state(
+        self, client_id: str, state: GefyraClientState, timeout=20, interval=1
+    ):
+        counter = 0
+        while counter < timeout:
+            counter += 1
+            try:
+                client = self.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(
+                    group="gefyra.dev",
+                    plural="gefyraclients",
+                    version="v1",
+                    name=client_id,
+                    namespace="gefyra",
+                )
+                self.assertEqual(client["state"], str(state.value))
+            except AssertionError:
+                sleep(interval)
+                continue
+            return True
+        raise AssertionError(
+            f"Client state is {client['state']} expected {state.value}."
+        )
 
     def test_docker_probe(self):
         res = probe_docker()
@@ -877,6 +904,45 @@ class GefyraBaseTest:
         self.assert_gefyra_namespace_ready()
         self.assert_operator_ready()
         self.assert_stowaway_ready()
+        res = runner.invoke(cli, ["uninstall", "--force"], catch_exceptions=False)
+        self.assertEqual(res.exit_code, 0)
+        self.assert_namespace_not_found("gefyra")
+
+    def test_o_reconnect(self):
+        runner = CliRunner()
+        self.gefyra_up()
+        res = runner.invoke(
+            cli, ["connections", "disconnect", CONNECTION_NAME], catch_exceptions=False
+        )
+        self.assertEqual(res.exit_code, 0)
+        self.assert_cargo_not_running()
+        self.assert_gefyra_client_state(
+            client_id=CONNECTION_NAME, state=GefyraClientState.WAITING
+        )
+
+        c_file = write_client_file(
+            client_id=CONNECTION_NAME,
+            host="127.0.0.1",
+        )
+
+        file_loc = os.path.join(
+            get_gefyra_config_location(),
+            f"{CONNECTION_NAME}_client.json",
+        )
+        fh = open(file_loc, "w+")
+        fh.write(c_file)
+        fh.seek(0)
+        fh.close()
+        sleep(10)
+        res = runner.invoke(
+            cli,
+            ["connections", "connect", "-n", CONNECTION_NAME, "-f", file_loc],
+            catch_exceptions=False,
+        )
+        print(res.output)
+        self.assertEqual(res.exit_code, 0)
+        self.assert_cargo_running()
+
         res = runner.invoke(cli, ["uninstall", "--force"], catch_exceptions=False)
         self.assertEqual(res.exit_code, 0)
         self.assert_namespace_not_found("gefyra")
