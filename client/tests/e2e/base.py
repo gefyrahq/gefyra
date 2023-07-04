@@ -895,7 +895,7 @@ class GefyraBaseTest:
         self.assert_cargo_not_running()
         self.assertTrue(res)
 
-    def test_o_install_uninstall_command(self):
+    def test_r_install_uninstall_command(self):
         runner = CliRunner()
         res = runner.invoke(
             cli, ["install", "--apply", "--wait"], catch_exceptions=False
@@ -908,7 +908,7 @@ class GefyraBaseTest:
         self.assertEqual(res.exit_code, 0)
         self.assert_namespace_not_found("gefyra")
 
-    def test_o_reconnect(self):
+    def test_r_reconnect(self):
         runner = CliRunner()
         self.gefyra_up()
         res = runner.invoke(
