@@ -868,6 +868,19 @@ class GefyraBaseTest:
         self.assert_cargo_not_running()
         self.assertTrue(res)
 
+    def test_o_install_uninstall_command(self):
+        runner = CliRunner()
+        res = runner.invoke(
+            cli, ["install", "--apply", "--wait"], catch_exceptions=False
+        )
+        self.assertEqual(res.exit_code, 0)
+        self.assert_gefyra_namespace_ready()
+        self.assert_operator_ready()
+        self.assert_stowaway_ready()
+        res = runner.invoke(cli, ["uninstall", "--force"], catch_exceptions=False)
+        self.assertEqual(res.exit_code, 0)
+        self.assert_namespace_not_found("gefyra")
+
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
             get_pods_and_containers_for_pod_name(
