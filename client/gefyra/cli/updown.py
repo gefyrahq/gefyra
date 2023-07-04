@@ -64,8 +64,8 @@ def cluster_up(ctx, minikube: bool):
             try:
                 json_str = api.write_client_file(
                     client_id=client.client_id,
-                    kubeconfig=kubeconfig,
-                    kubecontext=kubecontext,
+                    kubeconfig=config.KUBE_CONFIG_FILE,
+                    kubecontext=config.KUBE_CONTEXT,
                     host=host,
                 )
                 break
@@ -88,7 +88,9 @@ def cluster_up(ctx, minikube: bool):
         fh.write(json_str)
         fh.seek(0)
         bar()
-        bar.title = f"Connecting local container network '{config.NETWORK_NAME}-{connection_name}' to the cluster"
+        bar.title = (
+            f"Connecting local container network '{config.NETWORK_NAME}' to the cluster"
+        )
         api.connect(connection_name, client_config=fh, minikube=minikube)
         fh.close()
         os.remove(loc)

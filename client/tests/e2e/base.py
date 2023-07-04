@@ -1,5 +1,6 @@
 from copy import deepcopy
 from click.testing import CliRunner
+from gefyra.api.clients import list_client
 
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
 from gefyra.cli.main import cli
@@ -60,7 +61,7 @@ class GefyraBaseTest:
 
     def gefyra_up(self):
         runner = CliRunner()
-        runner.invoke(cli, ["up"], catch_exceptions=False)
+        runner.invoke(cli, ["up"], catch_exceptions=True)
         self.assert_gefyra_namespace_ready()
         self.assert_cargo_running()
         self.assert_operator_ready()
@@ -139,6 +140,7 @@ class GefyraBaseTest:
 
     def _init_kube_api(self):
         load_kube_config(self.kubeconfig)
+        print(self.kubeconfig)
         self.K8S_CORE_API = CoreV1Api()
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()
@@ -280,6 +282,31 @@ class GefyraBaseTest:
 
     def assert_cargo_not_running(self, timeout=20, interval=1):
         self.assert_container_not_running("gefyra-cargo-default", timeout, interval)
+
+    def assert_custom_object_quantity(
+        self,
+        group: str,
+        plural: str,
+        quantity: int,
+        version: str,
+        timeout=20,
+        interval=1,
+    ):
+        counter = 0
+        while counter < timeout:
+            counter += 1
+            try:
+                resources = self.K8S_CUSTOM_OBJECT_API.list_cluster_custom_object(
+                    group=group, plural=plural, version=version
+                )
+                self.assertEqual(len(resources["items"]), quantity)
+            except AssertionError:
+                sleep(interval)
+                continue
+            return True
+        raise AssertionError(
+            f"Quantity {quantity} for {plural} does not match {len(resources)}"
+        )
 
     def assert_container_not_running(self, container: str, timeout=20, interval=1):
         counter = 0
@@ -801,6 +828,41 @@ class GefyraBaseTest:
         self._stop_container(
             container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
         )
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
+        self.assertTrue(res)
+
+    def test_o_client_commands(self):
+        res = self.gefyra_up()
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+
+        self.assert_custom_object_quantity(
+            group="gefyra.dev", plural="gefyraclients", version="v1", quantity=1
+        )
+
+        runner = CliRunner()
+        res = runner.invoke(
+            cli, ["client", "create", "-n", "2"], catch_exceptions=False
+        )
+
+        self.assertEqual(res.exit_code, 0)
+
+        clients = list_client()
+        self.assert_custom_object_quantity(
+            group="gefyra.dev", plural="gefyraclients", version="v1", quantity=3
+        )
+
+        res = runner.invoke(
+            cli, ["client", "rm", clients[0].client_id], catch_exceptions=False
+        )
+        self.assertEqual(res.exit_code, 0)
+        self.assert_custom_object_quantity(
+            group="gefyra.dev", plural="gefyraclients", version="v1", quantity=2
+        )
+
         self.gefyra_down()
         self.assert_namespace_not_found("gefyra")
         self.assert_cargo_not_running()

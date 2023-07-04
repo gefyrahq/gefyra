@@ -76,6 +76,7 @@ class ClientConfiguration(object):
         wireguard_mtu: str = "1340",
         client_id: str = "",
         gefyra_config_root: Optional[Union[str, Path]] = None,
+        ignore_connection: bool = False,  # work with kubeconfig not connection
     ):
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
@@ -127,7 +128,7 @@ class ClientConfiguration(object):
 
         self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo-default"
         self.STOWAWAY_IP = "192.168.99.1"
-        self.NETWORK_NAME = network_name or "gefyra-default"
+        self.NETWORK_NAME = network_name or "gefyra-network"
         self.CONNECTION_NAME = connection_name or "default"
         self.BRIDGE_TIMEOUT = 60  # in seconds
         self.CONNECTION_TIMEOUT = 20  # in seconds
@@ -138,7 +139,7 @@ class ClientConfiguration(object):
             all=True,
             filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
         )
-        if containers:
+        if containers and not ignore_connection:
             cargo_container = containers[0]
             self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
             self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)

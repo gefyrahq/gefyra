@@ -25,7 +25,9 @@ def add_clients(
     """
     Add a new client to the connection provider
     """
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig, kube_context=kubecontext, ignore_connection=True
+    )
     if quantity > 1 and client_id:
         raise RuntimeError("Cannot specify both quantity > 1 and client_id")
     result: List[GefyraClient] = []
@@ -38,6 +40,7 @@ def add_clients(
         gclient_req = get_gefyraclient_body(config, client_id)
         gclient = handle_create_gefyraclient(config, gclient_req)
         result.append(GefyraClient(gclient, config))
+        client_id = None
     return result
 
 
@@ -51,11 +54,13 @@ def get_client(
     """
     Get a GefyraClient object
     """
-    config = ClientConfiguration(
-        connection_name=connection_name,
-        kube_config_file=kubeconfig,
-        kube_context=kubecontext,
-    )
+    config_params = {"connection_name": connection_name}
+    if kubeconfig:
+        config_params.update({"kube_config_file": kubeconfig})
+
+    if kubecontext:
+        config_params.update({"kube_context": kubecontext})
+    config = ClientConfiguration(**config_params)
     gclient = handle_get_gefyraclient(config, client_id)
     return GefyraClient(gclient, config)
 
@@ -66,12 +71,18 @@ def delete_client(
     force: bool = False,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
+    connection_name: Optional[str] = None,
     wait: Optional[bool] = False,
 ) -> bool:
     """
     Delete a GefyraClient configuration
     """
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        connection_name=connection_name if connection_name else "no-connection-name"
+        # use no-connection-name to make sure you use admin access to the cluster
+    )
     return handle_delete_gefyraclient(config, client_id, force, wait=wait)
 
 
@@ -88,7 +99,9 @@ def write_client_file(
     Write a client file
     """
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
-    client = get_client(client_id)
+    client = get_client(
+        client_id, kubeconfig=config.KUBE_CONFIG_FILE, kubecontext=config.KUBE_CONTEXT
+    )
     if not port:
         port = "31820"
     if host:

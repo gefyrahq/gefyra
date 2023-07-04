@@ -88,7 +88,6 @@ def handle_delete_gefyraclient(
             timeout = 30
             counter = 0
             while counter < timeout:
-                print(f"waiting {counter}")
                 try:
                     handle_get_gefyraclient(config=config, client_id=client_id)
                 except GefyraClientNotFound:
