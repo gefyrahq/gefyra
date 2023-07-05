@@ -946,14 +946,50 @@ class GefyraBaseTest:
         res = runner.invoke(cli, ["uninstall", "--force"], catch_exceptions=False)
         self.assertEqual(res.exit_code, 0)
         self.assert_namespace_not_found("gefyra")
+        self.gefyra_down()
+        self.assert_cargo_not_running()
 
     def test_s_command_alias_help(self):
         runner = CliRunner()
-
         res = runner.invoke(cli, ["client", "--help"], catch_exceptions=False)
         print(res.output)
         self.assertIn("rm,remove", res.output)
         self.assertEqual(res.exit_code, 0)
+
+    def test_s_run_via_cli(self):
+        res = self.gefyra_up()
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        runner = CliRunner()
+        res = runner.invoke(
+            cli,
+            [
+                "run",
+                "--image",
+                "pyserver",
+                "--name",
+                "mypyserver",
+                "--namespace",
+                "default",
+                "--expose",
+                "8000:8000",
+                "--detach",
+                "--rm",
+                "--connection-name",
+                CONNECTION_NAME,
+                "--command",
+                "python3 local.py",
+            ],
+            catch_exceptions=False,
+        )
+        print(res.output)
+
+        self.assertEqual(res.exit_code, 0)
+        self.assert_http_service_available("localhost", 8000)
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
 
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
