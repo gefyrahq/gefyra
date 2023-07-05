@@ -151,7 +151,6 @@ def run(
             raw_env_vars = raw_env.split("\n")
             env_dict = generate_env_dict_from_strings(raw_env_vars)
     except ApiException as e:
-        raise e
         logger.error(f"Cannot copy environment from Pod: {e.reason} ({e.status}).")
         return False
     if env:

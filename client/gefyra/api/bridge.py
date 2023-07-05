@@ -104,7 +104,6 @@ def bridge(
             "Invalid --target notation. Use"
             " <workload_type>/<workload_name>(/<container_name>)."
         )
-        return False
 
     pods_to_intercept = get_pods_to_intercept(
         workload_name=workload_name,

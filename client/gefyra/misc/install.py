@@ -29,13 +29,13 @@ def synthesize_config_as_dict(
     return data
 
 
-def synthesize_config_as_json(
-    options: GefyraInstallOptions, components: list[str] = []  # noqa: B006
-) -> str:
-    import json
+# def synthesize_config_as_json(
+#     options: GefyraInstallOptions, components: list[str] = []  # noqa: B006
+# ) -> str:
+#     import json
 
-    data = synthesize_config_as_dict(options, components)
-    return json.dumps(data)
+#     data = synthesize_config_as_dict(options, components)
+#     return json.dumps(data)
 
 
 def synthesize_config_as_yaml(

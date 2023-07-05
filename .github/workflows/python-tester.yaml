@@ -311,7 +311,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k3d: [v1.23.16-k3s1, v1.24.10-k3s1, v1.25.6-k3s1, v1.26.1-k3s1]
+        k3d: [v1.23.17-k3s1, v1.24.15-k3s1, v1.25.11-k3s1, v1.26.6-k3s1, v1.27.3-k3s1]
     needs:
       - build_cargo
       - build_operator
@@ -355,6 +355,7 @@ jobs:
         name: Create Single Cluster
         with:
           cluster-name: "mycluster"
+          k3d-version: v5.5.1
           args: >-
             --agents 1
             -p "31820:31820/UDP@agent:0"

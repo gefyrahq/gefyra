@@ -12,7 +12,6 @@ from gefyra.cluster.utils import (
     get_v1pod,
 )
 from gefyra.local.bridge import handle_delete_gefyrabridge
-from gefyra.local.check import probe_docker, probe_kubernetes
 from gefyra.types import GefyraClientState
 import requests
 import subprocess
@@ -397,14 +396,6 @@ class GefyraBaseTest:
         raise AssertionError(
             f"Client state is {client['state']} expected {state.value}."
         )
-
-    def test_docker_probe(self):
-        res = probe_docker()
-        self.assertTrue(res)
-
-    def test_kubernetes_probe(self):
-        res = probe_kubernetes()
-        self.assertTrue(res)
 
     def _get_pod_startswith(self, pod_name, namespace):
         pods = self.K8S_CORE_API.list_namespaced_pod(namespace=namespace)

@@ -5,5 +5,5 @@ from gefyra.cli.utils import standard_error_handler
 
 @cli.command("status", help="Get Gefyra's status")
 @standard_error_handler
-def inspect_client():
+def status_command():
     print(status())
