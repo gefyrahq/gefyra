@@ -408,6 +408,8 @@ jobs:
           kubectl describe cm -n gefyra gefyra-stowaway-config
           kubectl describe pod -n gefyra gefyra-stowaway-0
           kubectl logs -n gefyra pod/gefyra-stowaway-0
+          kubectl get pvc -A
+          kubectl describe -n gefyra pvc stowaway-config-gefyra-stowaway-0
       - name: Show coverage report
         working-directory: ./client
         run: |
