@@ -1,22 +1,11 @@
-import base64
 import logging
-from collections.abc import Mapping
 from time import sleep
+from kubernetes.client.models import V1Pod
 
 from gefyra.configuration import ClientConfiguration
 
 
 logger = logging.getLogger(__name__)
-
-
-def decode_secret(u):
-    n = {}
-    for k, v in u.items():
-        if isinstance(v, Mapping):
-            n[k] = decode_secret(v)
-        else:
-            n[k] = (base64.b64decode(v.encode("utf-8"))).decode("utf-8")
-    return n
 
 
 def get_env_from_pod_container(
@@ -94,7 +83,7 @@ def get_v1pod(
     config: ClientConfiguration,
     pod_name: str,
     namespace: str,
-):
+) -> V1Pod:
     from kubernetes.client import ApiException
 
     try:

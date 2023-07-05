@@ -97,6 +97,7 @@ class GefyraBaseTest:
                 "namespace": "default",
                 "ports": {"8000": "8000"},
                 "env_from": "deployment/hello-nginxdemo",
+                "env": ["SOME=ENVVAR"],
                 "detach": True,
                 "auto_remove": True,
                 "connection_name": CONNECTION_NAME,
@@ -503,6 +504,7 @@ class GefyraBaseTest:
         params["command"] = 'sh -c "echo Hello from Gefyra; sleep 10;"'
         params["name"] = "attachedContainer"
         params["ports"] = {}
+        del params["env"]
         params["auto_remove"] = False
         res = run(**params)
         sleep(12)

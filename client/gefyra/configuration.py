@@ -294,7 +294,7 @@ class ClientConfiguration(object):
     def get_kubernetes_api_url(self) -> str:
         return self.K8S_CORE_API.api_client.configuration.host
 
-    def get_stowaway_host(self, port) -> str:
+    def get_stowaway_host(self, port: Optional[str]) -> str:
         """
         Return the cargo endpoint
         If the endpoint is not set, it will try to estimate if from the K8s service
