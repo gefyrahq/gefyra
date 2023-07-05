@@ -64,9 +64,9 @@ class GefyraBaseTest:
         runner = CliRunner()
         runner.invoke(cli, ["up"], catch_exceptions=True)
         self.assert_gefyra_namespace_ready()
-        self.assert_cargo_running()
         self.assert_operator_ready()
         self.assert_stowaway_ready()
+        self.assert_cargo_running()
         return True
 
     def gefyra_down(self):
