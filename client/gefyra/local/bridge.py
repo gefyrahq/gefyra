@@ -93,21 +93,6 @@ def get_all_containers(config: ClientConfiguration) -> list:
     return container_information
 
 
-def remove_gefyrabridge_remainder(config: ClientConfiguration):
-    from kubernetes.client import ApiException
-
-    try:
-        ireq_list = get_all_gefyrabridges(config)
-        if ireq_list:
-            logger.debug(f"Removing {len(ireq_list)} GefyraBridges remainder")
-            # if there are running intercept requests clean them up
-            for ireq in ireq_list:
-                handle_delete_gefyrabridge(config, ireq["metadata"]["name"])
-                sleep(1)
-    except ApiException as e:
-        logger.error("Error removing remainder GefyraBridges: " + str(e))
-
-
 def get_gbridge_body(
     config: ClientConfiguration,
     name: str,
