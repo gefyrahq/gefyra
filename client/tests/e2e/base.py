@@ -945,7 +945,6 @@ class GefyraBaseTest:
     def test_s_command_alias_help(self):
         runner = CliRunner()
         res = runner.invoke(cli, ["client", "--help"], catch_exceptions=False)
-        print(res.output)
         self.assertIn("rm,remove", res.output)
         self.assertEqual(res.exit_code, 0)
 
