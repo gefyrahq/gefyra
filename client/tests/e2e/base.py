@@ -969,10 +969,11 @@ class GefyraBaseTest:
                 "8000:8000",
                 "--detach",
                 "--rm",
+                "--command",
+                "python3",
+                "local.py",
                 "--connection-name",
                 CONNECTION_NAME,
-                "--command",
-                "python3 local.py",
             ],
             catch_exceptions=False,
         )
