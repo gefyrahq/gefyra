@@ -327,10 +327,13 @@ class GefyraBaseTest:
         counter = 0
         while counter < timeout:
             counter += 1
-            container_obj = self.DOCKER_API.containers.get(container)
+            sleep(interval)
+            try:
+                container_obj = self.DOCKER_API.containers.get(container)
+            except docker.errors.NotFound:
+                continue
             if container_obj.status == "running":
                 return True
-            sleep(interval)
         raise AssertionError(f"{container} not running within {timeout} seconds.")
 
     def assert_in_container_logs(self, container: str, message: str):
