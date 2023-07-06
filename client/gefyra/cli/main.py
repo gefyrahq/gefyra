@@ -1,8 +1,7 @@
 import ast
-from typing import Tuple
 from gefyra import api
 from .console import info
-from .utils import AliasedGroup, OptionEatAll
+from .utils import AliasedGroup, OptionEatAll, parse_ip_port_map
 
 import click
 
@@ -121,25 +120,6 @@ def version(ctx, no_check):
     return True
 
 
-def parse_ip_port_map(ctx, param, ports: Tuple[str]):
-    def v(p: str):
-        if not p.isnumeric():
-            raise RuntimeError(f"Invalid port {p}. Please use integer numbers as port.")
-        return p
-
-    # port - port
-    res = {}
-    for value in ports:
-        value = value.split(":")
-        if len(value) == 2:
-            res[v(value[1])] = v(value[0])
-        elif len(value) == 3:
-            res[v(value[2])] = (value[0], v(value[1]))
-        else:
-            raise ValueError("Invalid value for port mapping.")
-    return res
-
-
 @cli.command()
 @click.option(
     "-d",
@@ -164,7 +144,7 @@ def parse_ip_port_map(ctx, param, ports: Tuple[str]):
     type=str,
     multiple=True,
     callback=parse_ip_port_map,
-)  # TODO IpPortMappingParser
+)
 @click.option(
     "--env-from",
     help="Copy the environment from the container in the notation 'Pod/Container'",

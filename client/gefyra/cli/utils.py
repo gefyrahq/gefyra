@@ -1,5 +1,5 @@
 from dataclasses import fields
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from gefyra.cli import console
 from gefyra.types import GefyraInstallOptions
 import click
@@ -203,3 +203,22 @@ def installoptions_to_cli_options() -> List[Dict[str, Union[bool, str, Any, None
         )
         result.append(_data)
     return result
+
+
+def parse_ip_port_map(ctx, param, ports: Tuple[str]):
+    def v(p: str):
+        if not p.isnumeric():
+            raise RuntimeError(f"Invalid port {p}. Please use integer numbers as port.")
+        return p
+
+    # port - port
+    res = {}
+    for value in ports:
+        value = value.split(":")
+        if len(value) == 2:
+            res[v(value[1])] = v(value[0])
+        elif len(value) == 3:
+            res[v(value[2])] = (value[0], v(value[1]))
+        else:
+            raise ValueError("Invalid value for port mapping.")
+    return res
