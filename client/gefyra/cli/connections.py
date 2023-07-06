@@ -5,12 +5,21 @@ from typing import Optional
 import click
 from gefyra import api
 
-from gefyra.cli.utils import standard_error_handler
-from gefyra.cli.main import connections
+from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from gefyra.cli import console
 from tabulate import tabulate
 
 logger = logging.getLogger(__name__)
+
+
+@click.group(
+    "connections",
+    cls=AliasedGroup,
+    help="Manage connections to clusters for this Gefyra installation",
+)
+@click.pass_context
+def connections(ctx):
+    pass
 
 
 @connections.command(

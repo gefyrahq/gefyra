@@ -7,8 +7,7 @@ import click
 from cli_tracker.sdk import CliTracker
 
 from gefyra.configuration import __VERSION__
-from gefyra.cli.main import telemetry
-from gefyra.cli.utils import standard_error_handler
+from gefyra.cli.utils import AliasedGroup, standard_error_handler
 
 
 logger = logging.getLogger("gefyra")
@@ -116,6 +115,14 @@ class CliTelemetry:
         if not test:
             self.tracker.report_opt_in()
         logger.info("Enabled telemetry.")
+
+
+@click.group(
+    name="telemetry", cls=AliasedGroup, help="Manage Gefyra's CLI telemetry settings"
+)
+@click.pass_context
+def telemetry(ctx):
+    pass
 
 
 @telemetry.command("on", help="Turn on Gefyra's CLI telemetry")

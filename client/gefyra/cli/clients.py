@@ -1,9 +1,16 @@
 import click
 from gefyra import api
-from gefyra.cli.main import clients
 from gefyra.cli import console
-from gefyra.cli.utils import standard_error_handler
+from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from tabulate import tabulate
+
+
+@click.group(
+    "clients", cls=AliasedGroup, help="Manage clients for this Gefyra installation"
+)
+@click.pass_context
+def clients(ctx):
+    pass
 
 
 @clients.command("create", help="Create a new Gefyra client")
@@ -15,7 +22,7 @@ from tabulate import tabulate
     type=int,
     default=1,
 )
-# @standard_error_handler
+@standard_error_handler
 def create_clients(client_id, quantity):
     api.add_clients(client_id, quantity)
     console.success(f"{quantity} client(s) created successfully")

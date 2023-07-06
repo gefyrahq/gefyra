@@ -6,10 +6,9 @@ import gefyra.api as api
 from gefyra.misc.comps import COMPONENTS
 
 from gefyra.cli.utils import installoptions_to_cli_options, multi_options
-from gefyra.cli.main import cli
 
 
-@cli.command(
+@click.command(
     "install",
     help=(
         "Create and print the Kubernetes configs for Gefyra; usage: 'gefyra install"
@@ -56,7 +55,7 @@ def install(ctx, component, preset, apply, wait, **kwargs):
         click.echo(ouput)
 
 
-@cli.command("uninstall", help="Removes the Gefyra installation from the cluster")
+@click.command("uninstall", help="Removes the Gefyra installation from the cluster")
 @click.option("--force", "-f", help="Delete without promt", is_flag=True)
 def uninstall(force):
     if not force:

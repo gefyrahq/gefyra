@@ -3,14 +3,13 @@ import click
 import logging
 from alive_progress import alive_bar
 from click import pass_context
-from .main import cli
 
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 
 logger = logging.getLogger("gefyra")
 
 
-@cli.command("up", help="Install Gefyra on a cluster and directly connect to it")
+@click.command("up", help="Install Gefyra on a cluster and directly connect to it")
 @click.option(
     "--minikube",
     help="Connect Gefyra to a Minikube cluster",
@@ -98,7 +97,7 @@ def cluster_up(ctx, minikube: bool):
         bar.title = "Gefyra is ready"
 
 
-@cli.command("down", help="Remove Gefyra locally and on the cluster")
+@click.command("down", help="Remove Gefyra locally and on the cluster")
 @pass_context
 def cluster_down(ctx):
     from gefyra import api

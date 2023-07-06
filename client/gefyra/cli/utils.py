@@ -1,5 +1,6 @@
 from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from gefyra import api
 from gefyra.cli import console
 from gefyra.types import GefyraInstallOptions
 import click
@@ -222,3 +223,27 @@ def parse_ip_port_map(ctx, param, ports: Tuple[str]):
         else:
             raise ValueError("Invalid value for port mapping.")
     return res
+
+
+def _check_connection_name(selected) -> str:
+    conn_list = api.list_connections()
+    if not conn_list:
+        raise click.UsageError(
+            message="No Gefyra connection found. Please connect to a cluster first or run 'gefyra up'."
+        )
+    if selected and selected in [conn.name for conn in conn_list]:
+        return selected
+    elif selected:
+        raise click.BadParameter(
+            message=f"The connection name {selected} does not exist."
+        )
+    else:
+        conn_names = [conn.name for conn in conn_list]
+        if "default" in conn_names and len(conn_names) == 1:
+            connection_name = "default"
+        else:
+            raise click.MissingParameter(
+                message="Please provide a connection name from: {conn_names}",
+                param="connection-name",
+            )
+        return connection_name
