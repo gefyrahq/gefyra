@@ -210,6 +210,10 @@ jobs:
           COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
         run: poetry run coveralls --service=github
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage_data
+          path: .client/.coverage*
 
   test_minikube:
     strategy:
@@ -306,6 +310,10 @@ jobs:
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage_data
+          path: .client/.coverage*
 
   test:
     strategy:
@@ -423,6 +431,10 @@ jobs:
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage_data
+          path: .client/.coverage*
   coveralls:
     name: Indicate completion to coveralls.io
     if: github.repository == 'gefyrahq/gefyra'
@@ -437,6 +449,6 @@ jobs:
       - name: Finished
         run: |
           pip3 install --upgrade coveralls
-          coveralls --finish
+          coveralls --service=github --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
