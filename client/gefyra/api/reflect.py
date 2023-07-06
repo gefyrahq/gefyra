@@ -2,13 +2,14 @@ import logging
 from typing import Dict, List, Optional
 
 from gefyra.api.bridge import bridge
-from gefyra.api.run import retrieve_pod_and_container, run
+from gefyra.api.run import run
 from gefyra.api.utils import is_port_free
 from gefyra.cluster.utils import (
     get_container_command,
     get_container_image,
     get_container_ports,
     get_v1pod,
+    retrieve_pod_and_container,
 )
 from gefyra.configuration import ClientConfiguration
 

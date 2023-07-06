@@ -3,12 +3,13 @@ import logging
 import os
 import sys
 from threading import Thread, Event
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
+from gefyra.cluster.utils import retrieve_pod_and_container
 
 from gefyra.configuration import (
     ClientConfiguration,
 )
-from .utils import generate_env_dict_from_strings, stopwatch, get_workload_type
+from .utils import generate_env_dict_from_strings, stopwatch
 
 
 logger = logging.getLogger(__name__)
@@ -33,46 +34,6 @@ def pod_ready_and_healthy(
         and pod.status.container_statuses[container_idx].started
         and pod.status.container_statuses[container_idx].state.running
         and pod.status.container_statuses[container_idx].state.running.started_at
-    )
-
-
-def retrieve_pod_and_container(
-    env_from: str, namespace: str, config: ClientConfiguration
-) -> Tuple[str, str]:
-    from gefyra.cluster.resources import (
-        get_pods_and_containers_for_workload,
-        get_pods_and_containers_for_pod_name,
-    )
-
-    container_name = ""
-    workload_type, workload_name = env_from.split("/", 1)
-
-    workload_type = get_workload_type(workload_type)
-
-    if "/" in workload_name:
-        workload_name, container_name = workload_name.split("/")
-
-    if workload_type != "pod":
-        pods = get_pods_and_containers_for_workload(
-            config, name=workload_name, namespace=namespace, workload_type=workload_type
-        )
-    else:
-        pods = get_pods_and_containers_for_pod_name(
-            config=config, name=workload_name, namespace=namespace
-        )
-
-    while len(pods):
-        pod_name, containers = pods.popitem()
-        if container_name and container_name not in containers:
-            raise RuntimeError(
-                f"{container_name} was not found for {workload_type}/{workload_name}"
-            )
-        actual_container_name = container_name or containers[0]
-        if pod_ready_and_healthy(config, pod_name, namespace, actual_container_name):
-            return pod_name, actual_container_name
-
-    raise RuntimeError(
-        f"Could not find a ready pod for {workload_type}/{workload_name}"
     )
 
 

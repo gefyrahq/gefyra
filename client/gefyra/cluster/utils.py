@@ -1,5 +1,8 @@
 import logging
 from time import sleep
+from typing import Tuple
+from gefyra.api.run import pod_ready_and_healthy
+from gefyra.api.utils import get_workload_type
 from kubernetes.client.models import V1Pod
 
 from gefyra.configuration import ClientConfiguration
@@ -108,3 +111,43 @@ def is_operator_running(config: ClientConfiguration) -> bool:
         return deploy.status.ready_replicas == 1
     except ApiException:
         return False
+
+
+def retrieve_pod_and_container(
+    workload: str, namespace: str, config: ClientConfiguration
+) -> Tuple[str, str]:
+    from gefyra.cluster.resources import (
+        get_pods_and_containers_for_workload,
+        get_pods_and_containers_for_pod_name,
+    )
+
+    container_name = ""
+    workload_type, workload_name = workload.split("/", 1)
+
+    workload_type = get_workload_type(workload_type)
+
+    if "/" in workload_name:
+        workload_name, container_name = workload_name.split("/")
+
+    if workload_type != "pod":
+        pods = get_pods_and_containers_for_workload(
+            config, name=workload_name, namespace=namespace, workload_type=workload_type
+        )
+    else:
+        pods = get_pods_and_containers_for_pod_name(
+            config=config, name=workload_name, namespace=namespace
+        )
+
+    while len(pods):
+        pod_name, containers = pods.popitem()
+        if container_name and container_name not in containers:
+            raise RuntimeError(
+                f"{container_name} was not found for {workload_type}/{workload_name}"
+            )
+        actual_container_name = container_name or containers[0]
+        if pod_ready_and_healthy(config, pod_name, namespace, actual_container_name):
+            return pod_name, actual_container_name
+
+    raise RuntimeError(
+        f"Could not find a ready pod for {workload_type}/{workload_name}"
+    )
