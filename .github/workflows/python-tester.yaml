@@ -213,7 +213,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: coverage_data
-          path: .client/.coverage*
+          path: ./client/.coverage*
 
   test_minikube:
     strategy:
@@ -315,7 +315,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: coverage_data
-          path: .client/.coverage*
+          path: ./client/.coverage*
 
   test:
     strategy:
@@ -436,7 +436,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         with:
           name: coverage_data
-          path: .client/.coverage*
+          path: ./client/.coverage*
   coveralls:
     name: Indicate completion to coveralls.io
     if: github.repository == 'gefyrahq/gefyra'
