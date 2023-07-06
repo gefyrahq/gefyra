@@ -224,7 +224,9 @@ jobs:
             driver: ''
           - os: macos-12
             driver: virtualbox
-    needs: build_operator
+    needs:
+      - build_operator
+      - build_cargo
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
