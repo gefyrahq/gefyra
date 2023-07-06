@@ -2,6 +2,7 @@ from copy import deepcopy
 import os
 from click.testing import CliRunner
 from gefyra.api.clients import list_client, write_client_file
+from gefyra.api.install import LB_PRESETS
 
 from gefyra.api.list import get_bridges_and_print, get_containers_and_print
 from gefyra.cli.main import cli
@@ -27,6 +28,7 @@ from kubernetes.client import (
     AppsV1Api,
     CustomObjectsApi,
     V1Pod,
+    V1Service,
 )
 from kubernetes.client import ApiException
 from kubernetes.config import load_kube_config
@@ -189,6 +191,36 @@ class GefyraBaseTest:
         return all([c.status == "True" for c in pod.status.conditions]) and all(
             [c.ready for c in pod.status.container_statuses]
         )
+
+    def assert_service_available(
+        self, name: str, namespace: str, retries=30, interval=1
+    ):
+        counter = 0
+        while counter < retries:
+            counter += 1
+            try:
+                self.K8S_CORE_API.read_namespaced_service(
+                    name=name, namespace=namespace
+                )
+            except ApiException as e:
+                if e.status == 404:
+                    sleep(interval)
+                    continue
+                else:
+                    raise e
+            return True
+        raise AssertionError(f"Service {name} not available within {retries} retries.")
+
+    def assert_service_has_annotations(
+        self, name: str, namespace: str, annotations: dict
+    ):
+        service: V1Service = self.K8S_CORE_API.read_namespaced_service(
+            name=name, namespace=namespace
+        )
+        for key in annotations.keys():
+            self.assertIn(key, service.metadata["annotations"])
+            self.assertEqual(annotations[key], service.metadata["annotations"][key])
+        return True
 
     def _deployment_ready(self, deployment):
         return (
@@ -985,6 +1017,18 @@ class GefyraBaseTest:
         self.gefyra_down()
         self.assert_namespace_not_found("gefyra")
         self.assert_cargo_not_running()
+
+    def test_t_install_presets(self):
+        runner = CliRunner()
+        res = runner.invoke(
+            cli, ["install", "--preset", "aws", "--apply"], catch_exceptions=False
+        )
+        self.assertEqual(res.exit_code, 0)
+        self.assert_pod_ready("gefyra-stowaway-0", "gefyra", 30)
+        self.assert_service_available("gefyra-stowaway-wireguard", "gefyra")
+        self.assert_service_has_annotations(
+            "gefyra-stowaway-wireguard", "gefyra", LB_PRESETS["aws"].service_annotations
+        )
 
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:
