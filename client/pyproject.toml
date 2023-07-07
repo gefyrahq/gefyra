@@ -64,6 +64,12 @@ issues = "https://github.com/gefyrahq/gefyra/issues"
 branch = true
 source = ["gefyra"]
 
+[tool.coverage.report]
+exclude_also = [
+    "def __str__",
+    "logger.debug.*",
+]
+
 [tool.mypy]
 warn_return_any = false
 warn_unused_configs = false
