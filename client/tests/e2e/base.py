@@ -13,6 +13,7 @@ from kubernetes.client import (
     CustomObjectsApi,
     V1Pod,
     V1Service,
+    V1ObjectMeta,
 )
 from kubernetes.client import ApiException
 from kubernetes.config import load_kube_config
@@ -217,9 +218,10 @@ class GefyraBaseTest:
         service: V1Service = self.K8S_CORE_API.read_namespaced_service(
             name=name, namespace=namespace
         )
+        metadata: V1ObjectMeta = service.metadata
         for key in annotations.keys():
-            self.assertIn(key, service.metadata["annotations"])
-            self.assertEqual(annotations[key], service.metadata["annotations"][key])
+            self.assertIn(key, metadata.annotations)
+            self.assertEqual(annotations[key], metadata.annotations[key])
         return True
 
     def _deployment_ready(self, deployment):
