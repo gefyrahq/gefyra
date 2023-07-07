@@ -33,7 +33,9 @@ def test_retrieve_pod_and_container(k3d: AClusterManager):
     )
 
     try:
-        retrieve_pod_and_container("pod/backend/random")
+        retrieve_pod_and_container(
+            "pod/backend/random", namespace="demo", config=config
+        )
     except Exception as e:
         assert "was not found for" in str(e)
     k3d.kubectl(["delete", "namespace", "demo"])
