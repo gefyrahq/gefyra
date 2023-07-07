@@ -38,4 +38,3 @@ def test_retrieve_pod_and_container(k3d: AClusterManager):
         )
     except Exception as e:
         assert "was not found for" in str(e)
-    k3d.kubectl(["delete", "namespace", "demo"])
