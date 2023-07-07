@@ -12,28 +12,15 @@ def data(params: GefyraInstallOptions) -> list[dict]:
     stowaway_labels = STOWAWAY_LABELS.copy()
     stowaway_annotations = {}
     if params.service_labels:
-        from ast import literal_eval as make_tuple
-
         try:
-            labels = [make_tuple(k)[0] for k in params.service_labels]
-            stowaway_labels.update(
-                {label.split("=")[0]: label.split("=")[1] for label in labels}
-            )
+            stowaway_labels.update(params.service_labels)
         except IndexError:
             raise ValueError(
                 f"Invalid service-labels format. Please use the form key=value."
             )
     if params.service_annotations:
-        from ast import literal_eval as make_tuple
-
         try:
-            annotations = [make_tuple(k)[0] for k in params.service_annotations]
-            stowaway_annotations.update(
-                {
-                    annotation.split("=")[0]: annotation.split("=")[1]
-                    for annotation in annotations
-                }
-            )
+            stowaway_annotations.update(params.service_annotations)
         except IndexError:
             raise ValueError(
                 f"Invalid service-annotations format. Please use the form key=value."
