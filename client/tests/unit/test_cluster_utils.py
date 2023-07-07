@@ -25,7 +25,12 @@ def test_get_v1_pod(k3d: AClusterManager):
 
 
 def test_retrieve_pod_and_container(k3d: AClusterManager):
-    assert ("backend", "backend") == retrieve_pod_and_container("pod/backend/backend")
+    config = ClientConfiguration(
+        kube_config_file=k3d.kubeconfig, kube_context=k3d.context
+    )
+    assert ("backend", "backend") == retrieve_pod_and_container(
+        "pod/backend/backend", namespace="demo", config=config
+    )
 
     try:
         retrieve_pod_and_container("pod/backend/random")
