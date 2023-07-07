@@ -3,9 +3,11 @@ import os
 import subprocess
 from time import sleep
 
+from click import BadParameter
 from click.testing import CliRunner
 import docker
 from docker.context import ContextAPI
+from gefyra.cli.utils import check_connection_name
 from kubernetes.client import (
     CoreV1Api,
     RbacAuthorizationV1Api,
@@ -1033,6 +1035,26 @@ class GefyraBaseTest:
         self.assert_service_has_annotations(
             "gefyra-stowaway-wireguard", "gefyra", LB_PRESETS["aws"].service_annotations
         )
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
+
+    def test_util_for_connection_check(self):
+        res = self.gefyra_up()
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+
+        assert check_connection_name(None, None, CONNECTION_NAME) == CONNECTION_NAME
+
+        with self.assertRaises(BadParameter) as rte:
+            check_connection_name(None, None, "something")
+        self.assertIn("does not exist", str(rte.exception))
+
+        assert check_connection_name(None, None) == CONNECTION_NAME
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
 
     def test_util_for_pod_not_found(self):
         with self.assertRaises(RuntimeError) as rte:

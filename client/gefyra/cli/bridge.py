@@ -1,6 +1,6 @@
 import click
 from gefyra import api
-from gefyra.cli.utils import _check_connection_name
+from gefyra.cli.utils import check_connection_name
 
 
 @click.command("bridge", help="Establish a Gefyra bridge to a container in the cluster")
@@ -36,9 +36,8 @@ from gefyra.cli.utils import _check_connection_name
     ),
     required=True,
 )
-@click.option("--connection-name", type=str)
+@click.option("--connection-name", type=str, callback=check_connection_name)
 def create_bridge(name, ports, target, namespace, no_probe_handling, connection_name):
-    connection_name = _check_connection_name(connection_name)
     api.bridge(
         name=name,
         ports=ports,

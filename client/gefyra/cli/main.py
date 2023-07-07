@@ -31,6 +31,7 @@ config_handler.set_global(bar="smooth", spinner="classic", stats=False, dual_lin
 @click.pass_context
 def cli(ctx: click.Context, kubeconfig, context, debug):
     import logging
+    from gefyra.cli.telemetry import CliTelemetry
 
     if debug:
         logger = logging.getLogger()
@@ -44,8 +45,6 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
     else:
         logging.getLogger("gefyra").setLevel(logging.ERROR)
     ctx.ensure_object(dict)
-
-    from gefyra.cli.telemetry import CliTelemetry
 
     try:
         telemetry = CliTelemetry()

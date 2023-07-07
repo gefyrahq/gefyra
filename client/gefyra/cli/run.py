@@ -1,7 +1,7 @@
 import ast
 import click
 from gefyra import api
-from gefyra.cli.utils import OptionEatAll, _check_connection_name, parse_ip_port_map
+from gefyra.cli.utils import OptionEatAll, check_connection_name, parse_ip_port_map
 
 
 @click.command()
@@ -73,7 +73,7 @@ from gefyra.cli.utils import OptionEatAll, _check_connection_name, parse_ip_port
 @click.option(
     "-i", "--image", help="The docker image to run in Gefyra", type=str, required=True
 )
-@click.option("--connection-name", type=str)
+@click.option("--connection-name", type=str, callback=check_connection_name)
 def run(
     detach,
     auto_remove,
@@ -89,7 +89,6 @@ def run(
 ):
     if command:
         command = ast.literal_eval(command)[0]
-    connection_name = _check_connection_name(selected=connection_name)
     api.run(
         image=image,
         name=name,
