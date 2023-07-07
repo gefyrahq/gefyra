@@ -17,26 +17,6 @@ logger = logging.getLogger(__name__)
 stop_thread = Event()
 
 
-def pod_ready_and_healthy(
-    config: ClientConfiguration, pod_name: str, namespace: str, container_name: str
-):
-    pod = config.K8S_CORE_API.read_namespaced_pod_status(pod_name, namespace=namespace)
-
-    container_idx = next(
-        i
-        for i, container_status in enumerate(pod.status.container_statuses)
-        if container_status.name == container_name
-    )
-
-    return (
-        pod.status.phase == "Running"
-        and pod.status.container_statuses[container_idx].ready
-        and pod.status.container_statuses[container_idx].started
-        and pod.status.container_statuses[container_idx].state.running
-        and pod.status.container_statuses[container_idx].state.running.started_at
-    )
-
-
 def print_logs(container: Container):
     for logline in container.logs(stream=True):
         print(logline.decode("utf-8"), end="")
