@@ -22,20 +22,9 @@ def test_get_v1_pod(k3d: AClusterManager):
         get_v1pod(config=config, pod_name="blah", namespace="demo")
     except RuntimeError as rte:
         assert "does not exist" in str(rte)
-    k3d.kubectl(["delete", "namespace", "demo"])
 
 
 def test_retrieve_pod_and_container(k3d: AClusterManager):
-    k3d.kubectl(["create", "namespace", "demo"])
-    k3d.wait("ns/demo", "jsonpath='{.status.phase}'=Active")
-    k3d.apply("tests/fixtures/demo_pods.yaml")
-    k3d.wait(
-        "pod/backend",
-        "condition=ready",
-        namespace="demo",
-        timeout=60,
-    )
-
     assert ("backend", "backend") == retrieve_pod_and_container("pod/backend/backend")
 
     try:
