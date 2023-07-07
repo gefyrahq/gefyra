@@ -1023,7 +1023,9 @@ class GefyraBaseTest:
     def test_t_install_presets(self):
         runner = CliRunner()
         res = runner.invoke(
-            cli, ["install", "--preset", "aws", "--apply"], catch_exceptions=False
+            cli,
+            ["install", "--preset", "aws", "--apply", "--wait"],
+            catch_exceptions=False,
         )
         self.assertEqual(res.exit_code, 0)
         self.assert_pod_ready("gefyra-stowaway-0", "gefyra", 30)

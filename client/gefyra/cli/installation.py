@@ -41,6 +41,8 @@ from gefyra.cli.utils import installoptions_to_cli_options, multi_options
 @click.pass_context
 @multi_options(installoptions_to_cli_options())
 def install(ctx, component, preset, apply, wait, **kwargs):
+    if not all(kwargs.values()):
+        kwargs = {}
     if wait and not apply:
         raise click.BadOptionUsage(
             option_name="wait", message="Cannot wait without '--apply'"

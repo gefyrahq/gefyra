@@ -66,7 +66,7 @@ def install(
         options = GefyraInstallOptions(
             **{k: v for k, v in kwargs.items() if v is not None}
         )
-    ouput = synthesize_config_as_yaml(options=options, components=component)
+    output = synthesize_config_as_yaml(options=options, components=component)
     if apply:
         import kubernetes
 
@@ -128,7 +128,7 @@ def install(
                 _i += 1
         else:
             raise ClusterError("Operator webhook did not become ready")
-    return ouput
+    return output
 
 
 @stopwatch
