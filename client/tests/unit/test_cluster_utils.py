@@ -22,6 +22,7 @@ def test_get_v1_pod(k3d: AClusterManager):
         get_v1pod(config=config, pod_name="blah", namespace="demo")
     except RuntimeError as rte:
         assert "does not exist" in str(rte)
+    k3d.kubectl(["delete", "namespace", "demo"])
 
 
 def test_retrieve_pod_and_container(k3d: AClusterManager):
@@ -41,3 +42,4 @@ def test_retrieve_pod_and_container(k3d: AClusterManager):
         retrieve_pod_and_container("pod/backend/random")
     except Exception as e:
         assert "was not found for" in str(e)
+    k3d.kubectl(["delete", "namespace", "demo"])
