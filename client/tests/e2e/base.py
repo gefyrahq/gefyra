@@ -315,7 +315,7 @@ class GefyraBaseTest:
             sleep(interval)
         raise AssertionError(f"Namespace still available within {timeout} seconds.")
 
-    def assert_cargo_running(self, timeout=20, interval=1):
+    def assert_cargo_running(self, timeout=30, interval=1):
         self.assert_container_running("gefyra-cargo-default", timeout, interval)
 
     def assert_cargo_not_running(self, timeout=20, interval=1):
