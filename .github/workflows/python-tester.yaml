@@ -207,7 +207,7 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_FLAG_NAME: client-${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
         run: poetry run coveralls --service=github
       - uses: actions/upload-artifact@v3
@@ -308,7 +308,7 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_FLAG_NAME: client-${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
@@ -429,7 +429,7 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_FLAG_NAME: client-${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
