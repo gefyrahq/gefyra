@@ -7,7 +7,7 @@ from pytest_kubernetes.providers import AClusterManager
 
 def test_a_gefyraclients_validator(operator: AClusterManager):
     import kopf
-    from gefyra.handler.validation import check_validate_provider_parameters
+    from gefyra.handler.configure_webhook import check_validate_provider_parameters
 
     logger = logging.getLogger()
     operation = "CREATE"

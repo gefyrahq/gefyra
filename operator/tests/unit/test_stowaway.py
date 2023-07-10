@@ -295,19 +295,40 @@ class TestStowaway:
         )
 
         stowaway.validate({})
-        stowaway.validate({"providerParameter": {"subnet": "192.168.200.1/24"}})
+        stowaway.validate(
+            {"providerParameter": {"subnet": "192.168.200.1/24"}},
+            {"added": "providerParameter"},
+        )
         with pytest.raises(kopf.AdmissionError):
-            stowaway.validate({"providerParameter": {"subnet": "192.168.200.1"}})
+            stowaway.validate(
+                {"providerParameter": {"subnet": "192.168.200.1"}},
+                {"added": "providerParameter"},
+            )
         stowaway.add_peer("test1", {"subnet": "192.168.200.0/24"})
         with pytest.raises(kopf.AdmissionError):
-            stowaway.validate({"providerParameter": {"subnet": "192.168.200.0/24"}})
-            stowaway.validate({"providerParameter": {"subnet": "192.168.200.0/25"}})
-        stowaway.validate({"providerParameter": {"subnet": "192.168.201.0/24"}})
+            stowaway.validate(
+                {"providerParameter": {"subnet": "192.168.200.0/24"}},
+                {"added": "providerParameter"},
+            )
+            stowaway.validate(
+                {"providerParameter": {"subnet": "192.168.200.0/25"}},
+                {"added": "providerParameter"},
+            )
+        stowaway.validate(
+            {"providerParameter": {"subnet": "192.168.201.0/24"}},
+            {"added": "providerParameter"},
+        )
         stowaway.add_peer("test2", {"subnet": "192.168.201.0/24"})
         with pytest.raises(kopf.AdmissionError):
-            stowaway.validate({"providerParameter": {"subnet": "192.168.200.0/24"}})
-            stowaway.validate({"providerParameter": {"subnet": "192.168.201.0/24"}})
-        stowaway.validate({"providerParameter": {}})
+            stowaway.validate(
+                {"providerParameter": {"subnet": "192.168.200.0/24"}},
+                {"added": "providerParameter"},
+            )
+            stowaway.validate(
+                {"providerParameter": {"subnet": "192.168.201.0/24"}},
+                {"added": "providerParameter"},
+            )
+        stowaway.validate({"providerParameter": {}}, {"added": "providerParameter"})
 
     def test_y_provider_notexists(self, k3d: AClusterManager):
         import kubernetes
