@@ -47,7 +47,9 @@ pythonpath = [
 
 [tool.coverage.run]
 branch = true
-omit = gefyra/healthcheck.py
+omit = [
+	"gefyra/healthcheck.py"
+]
 
 [tool.mypy]
 warn_return_any = false
