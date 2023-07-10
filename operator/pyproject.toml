@@ -45,6 +45,10 @@ pythonpath = [
   "."
 ]
 
+[tool.coverage.run]
+branch = true
+omit = gefyra/healthcheck.py
+
 [tool.mypy]
 warn_return_any = false
 warn_unused_configs = false
