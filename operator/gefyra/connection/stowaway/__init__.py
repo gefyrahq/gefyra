@@ -243,13 +243,23 @@ class Stowaway(AbstractGefyraConnectionProvider):
         if stowaway_pod is None:
             raise RuntimeError("No Stowaway Pod found for destination removal")
         self._notify_stowaway_pod(stowaway_pod.metadata.name)
-        exec_command_pod(
-            core_v1_api,
-            stowaway_pod.metadata.name,
-            self.configuration.NAMESPACE,
-            "stowaway",
-            PROXY_RELOAD_COMMAND,
-        )
+        retries = 0
+        while retries < 5:
+            try:
+                exec_command_pod(
+                    core_v1_api,
+                    stowaway_pod.metadata.name,
+                    self.configuration.NAMESPACE,
+                    "stowaway",
+                    PROXY_RELOAD_COMMAND,
+                )
+                self.logger.info("Successfully reloaded proxy services.")
+                return
+            except k8s.client.exceptions.ApiException:
+                retries += 1
+                sleep(1)
+                continue
+        self.logger.error("Could not reload proxy services.")
 
     def destination_exists(
         self, peer_id: str, destination_ip: str, destination_port: int

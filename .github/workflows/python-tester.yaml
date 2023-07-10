@@ -486,6 +486,7 @@ jobs:
       - test
       - test_minikube
       - test_python
+      - test_operator
     runs-on: ubuntu-latest
     container: python:3-slim
     steps:
