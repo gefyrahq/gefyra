@@ -441,6 +441,8 @@ jobs:
     name: Test Gefyra Operator
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
