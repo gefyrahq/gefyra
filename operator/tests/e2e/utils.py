@@ -28,6 +28,9 @@ ARG ENDPOINT
 ARG ALLOWED_IPS
 ARG PRESHAREDKEY
 
+RUN mkdir /config/
+RUN touch /config/wg0.conf
+
 RUN echo -e '[Interface] \\n\
 Address = '"$ADDRESS"' \\n\
 PrivateKey = '"$PRIVATE_KEY"' \\n\
