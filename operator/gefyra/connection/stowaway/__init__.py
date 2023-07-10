@@ -272,7 +272,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             return False
 
-    def validate(self, gclient: dict, hints: Optional[Dict[Any, Any]] = None):
+    def validate(self, gclient: dict, hints: Dict[Any, Any] = {}):
         if wireguard_parameter := gclient.get("providerParameter"):
             if subnet := wireguard_parameter.get("subnet"):
                 if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
