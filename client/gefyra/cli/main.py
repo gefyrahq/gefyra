@@ -4,7 +4,7 @@ from alive_progress import config_handler
 
 from gefyra.cli.version import version
 from gefyra.cli.run import run
-from gefyra.cli.bridge import create_bridge
+from gefyra.cli.bridge import create_bridge, unbridge
 from gefyra.cli.clients import clients
 from gefyra.cli.connections import connections
 from gefyra.cli.installation import install, uninstall
@@ -64,6 +64,7 @@ cli.add_command(cmd=cluster_up, name="up")
 cli.add_command(cmd=cluster_down, name="down")
 cli.add_command(cmd=status_command, name="status")
 cli.add_command(cmd=create_bridge, name="bridge")
+cli.add_command(cmd=unbridge, name="unbridge")
 cli.add_command(cmd=run, name="run")
 cli.add_command(cmd=version, name="version")
 
