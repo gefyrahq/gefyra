@@ -42,7 +42,6 @@ from gefyra.api import (
     run,
     status,
     unbridge_all,
-    unbridge,
     list_containers,
     list_gefyra_bridges,
 )
@@ -640,8 +639,8 @@ class GefyraBaseTest:
         self.assertEqual(_status.client.containers, 1)
 
     def test_f_run_gefyra_unbridge(self):
-        res = unbridge_all(wait=True, connection_name=CONNECTION_NAME)
-        self.assertTrue(res)
+        runner = CliRunner()
+        runner.invoke(cli, ["unbridge", "--all"], catch_exceptions=False)
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
 
@@ -657,16 +656,17 @@ class GefyraBaseTest:
         self.assertTrue(res)
 
     def test_h_run_gefyra_unbridge_with_name(self):
-        res = unbridge(
-            name="mypyserver-to-default.deploy.hello-nginxdemo",
-            wait=True,
+        runner = CliRunner()
+        runner.invoke(
+            cli,
+            ["unbridge", "--name", "mypyserver-to-default.deploy.hello-nginxdemo"],
+            catch_exceptions=False,
         )
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
         pod_name = list(pod_container_dict.keys())[0]
         self.assert_carrier_uninstalled(name=pod_name, namespace="default")
-        self.assertTrue(res)
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
 

@@ -47,3 +47,23 @@ def create_bridge(name, ports, target, namespace, no_probe_handling, connection_
         timeout=10,
         connection_name=connection_name,
     )
+
+
+@click.command("unbridge", help="Remove a Gefyra bridge")
+@click.option(
+    "-N", "--name", help="The name of the container running in Gefyra", required=True
+)
+@click.option(
+    "-A",
+    "--all",
+    help="Unbridge all bridges",
+    required=True,
+    is_flag=True,
+    default=False,
+)
+@click.option("--connection-name", type=str, callback=check_connection_name)
+def unbridge(name: str, connection_name: str, all: bool = False):
+    if all:
+        api.unbridge_all(connection_name=connection_name, wait=True)
+    else:
+        api.unbridge(connection_name=connection_name, name=name, wait=True)

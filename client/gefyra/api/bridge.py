@@ -223,11 +223,12 @@ def wait_for_deletion(gefyra_bridges: List, config: ClientConfiguration):
 @stopwatch
 def unbridge(
     name: str,
+    connection_name: str = "",
     wait: bool = False,
 ) -> bool:
     from gefyra.local.bridge import handle_delete_gefyrabridge
 
-    config = ClientConfiguration()
+    config = ClientConfiguration(connection_name=connection_name)
 
     gefyra_bridge = handle_delete_gefyrabridge(config, name)
     if gefyra_bridge:
