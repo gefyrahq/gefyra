@@ -640,7 +640,9 @@ class GefyraBaseTest:
 
     def test_f_run_gefyra_unbridge(self):
         runner = CliRunner()
-        runner.invoke(cli, ["unbridge", "--all"], catch_exceptions=False)
+        res = runner.invoke(cli, ["unbridge", "--all"], catch_exceptions=False)
+        print(res.output)
+        self.assertEqual(res.exit_code, 0)
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
 
@@ -657,11 +659,13 @@ class GefyraBaseTest:
 
     def test_h_run_gefyra_unbridge_with_name(self):
         runner = CliRunner()
-        runner.invoke(
+        res = runner.invoke(
             cli,
             ["unbridge", "--name", "mypyserver-to-default.deploy.hello-nginxdemo"],
             catch_exceptions=False,
         )
+        print(res.output)
+        self.assertEqual(res.exit_code, 0)
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
