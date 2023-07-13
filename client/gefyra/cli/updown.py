@@ -3,10 +3,33 @@ import click
 import logging
 from alive_progress import alive_bar
 from click import pass_context
-
+from gefyra import api
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+from gefyra.types import StatusSummary
 
 logger = logging.getLogger("gefyra")
+
+
+def _check_and_install(
+    config: ClientConfiguration, connection_name: str = "", bar=None
+) -> bool:
+    status = api.status(connection_name=connection_name)
+
+    if status.summary == StatusSummary.UP:
+        bar()
+        bar.title = "Gefyra is already installed"
+        return True
+    elif status.summary == StatusSummary.INCOMPLETE:
+        logger.error("Gefyra is not installed, but operating properly. Aborting.")
+        return False
+    else:  # status.summary == StatusSummary.DOWN:
+        api.install(
+            kubeconfig=config.KUBE_CONFIG_FILE,
+            kubecontext=config.KUBE_CONTEXT,
+            apply=True,
+            wait=True,
+        )
+        return True
 
 
 @click.command("up", help="Install Gefyra on a cluster and directly connect to it")
@@ -20,7 +43,6 @@ logger = logging.getLogger("gefyra")
 @pass_context
 def cluster_up(ctx, minikube: bool):
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
-    from gefyra import api
     from time import sleep
     import os
 
@@ -32,12 +54,11 @@ def cluster_up(ctx, minikube: bool):
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
     with alive_bar(4, title="Installing Gefyra to the cluster") as bar:
         # run a default install
-        api.install(
-            kubeconfig=config.KUBE_CONFIG_FILE,
-            kubecontext=config.KUBE_CONTEXT,
-            apply=True,
-            wait=True,
+        install_success = _check_and_install(
+            config=config, connection_name=connection_name, bar=bar
         )
+        if not install_success:
+            return
         bar()
         bar.title = f"Creating a Gefyra client: {client_id}"
         # create a client
