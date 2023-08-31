@@ -1,3 +1,4 @@
+import os
 import click
 from gefyra import api
 from gefyra.cli import console
@@ -6,11 +7,15 @@ from tabulate import tabulate
 
 
 @click.group(
-    "clients", cls=AliasedGroup, help="Manage clients for this Gefyra installation"
+    "clients", cls=AliasedGroup, help="Manage clients for a Gefyra installation"
 )
 @click.pass_context
 def clients(ctx):
-    pass
+    # for management of clients we always sourcing the kubeconfig and context from env if not passed
+    if ctx.obj["kubeconfig"] is None:
+        ctx.obj["kubeconfig"] = os.environ.get("KUBECONFIG") or os.path.expanduser(
+            "~/.kube/config"
+        )
 
 
 @clients.command("create", help="Create a new Gefyra client")
@@ -22,9 +27,15 @@ def clients(ctx):
     type=int,
     default=1,
 )
+@click.pass_context
 @standard_error_handler
-def create_clients(client_id, quantity):
-    api.add_clients(client_id, quantity)
+def create_clients(ctx, client_id, quantity):
+    api.add_clients(
+        client_id,
+        quantity,
+        kubeconfig=ctx.obj["kubeconfig"],
+        kubecontext=ctx.obj["context"],
+    )
     console.success(f"{quantity} client(s) created successfully")
 
 
@@ -32,18 +43,24 @@ def create_clients(client_id, quantity):
     "delete", alias=["rm", "remove"], help="Mark a Gefyra client for deletion"
 )
 @click.argument("client_id", nargs=-1, required=True)
+@click.pass_context
 @standard_error_handler
-def delete_client(client_id):
+def delete_client(ctx, client_id):
     for _del in list(client_id):
-        deleted = api.delete_client(_del)
+        deleted = api.delete_client(
+            _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+        )
         if deleted:
             console.success(f"Client {_del} marked for deletion")
 
 
 @clients.command("list", alias=["ls"], help="List all Gefyra clients")
+@click.pass_context
 @standard_error_handler
-def list_client():
-    gefyraclients = api.list_client()
+def list_client(ctx):
+    gefyraclients = api.list_client(
+        kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+    )
     clients = [
         [
             c.client_id,
@@ -57,9 +74,12 @@ def list_client():
 
 @clients.command("inspect", alias=["show", "get"], help="Discribe a Gefyra client")
 @click.argument("client_id")
+@click.pass_context
 @standard_error_handler
-def inspect_client(client_id):
-    client = api.get_client(client_id)
+def inspect_client(ctx, client_id):
+    client = api.get_client(
+        client_id, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+    )
     console.heading(client.client_id)
     console.info(f"uid: {client.uid}")
     console.info(f"States: {client.state_transitions}")
@@ -87,13 +107,16 @@ def inspect_client(client_id):
     help="The output file to write the config to",
     type=click.File("wb"),
 )
+@click.pass_context
 @standard_error_handler
-def get_config(client_id, host, port, kube_api, output):
+def get_config(ctx, client_id, host, port, kube_api, output):
     json_str = api.write_client_file(
         client_id,
         host=host,
         port=port,
         kube_api=kube_api,
+        kubeconfig=ctx.obj["kubeconfig"],
+        kubecontext=ctx.obj["context"],
     )
     if output:
         output.write(json_str.encode("utf-8"))

@@ -6,6 +6,7 @@ from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
+from gefyra.types import GefyraLocalContainer
 
 from .utils import handle_docker_run_container
 
@@ -64,7 +65,12 @@ def get_all_gefyrabridges(config: ClientConfiguration) -> list:
             version="v1",
         )
         if ireq_list:
-            return list(ireq_list.get("items"))
+            # filter bridges for this client
+            return list(
+                item
+                for item in ireq_list.get("items")
+                if item["client"] == config.CLIENT_ID
+            )
         else:
             return []
     except ApiException as e:
@@ -74,7 +80,7 @@ def get_all_gefyrabridges(config: ClientConfiguration) -> list:
         return []
 
 
-def get_all_containers(config: ClientConfiguration) -> list:
+def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer]:
     container_information = []
     gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
     containers = gefyra_net.containers
@@ -82,12 +88,14 @@ def get_all_containers(config: ClientConfiguration) -> list:
     for container in containers:
         if not container.name.startswith("gefyra-cargo"):
             container_information.append(
-                (
-                    container.name,
-                    container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME][
-                        "IPAddress"
-                    ].split("/")[0],
-                    container.attrs["HostConfig"]["DnsSearch"][0].split(".")[0],
+                GefyraLocalContainer(
+                    name=container.name,
+                    address=container.attrs["NetworkSettings"]["Networks"][
+                        config.NETWORK_NAME
+                    ]["IPAddress"].split("/")[0],
+                    namespace=container.attrs["HostConfig"]["DnsSearch"][0].split(".")[
+                        0
+                    ],
                 )
             )
     return container_information

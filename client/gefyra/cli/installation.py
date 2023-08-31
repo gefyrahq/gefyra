@@ -5,7 +5,11 @@ import gefyra.api as api
 
 from gefyra.misc.comps import COMPONENTS
 
-from gefyra.cli.utils import installoptions_to_cli_options, multi_options
+from gefyra.cli.utils import (
+    installoptions_to_cli_options,
+    multi_options,
+    standard_error_handler,
+)
 
 
 @click.command(
@@ -40,6 +44,7 @@ from gefyra.cli.utils import installoptions_to_cli_options, multi_options
 )
 @click.pass_context
 @multi_options(installoptions_to_cli_options())
+@standard_error_handler
 def install(ctx, component, preset, apply, wait, **kwargs):
     if not all(kwargs.values()):
         kwargs = {}
@@ -64,6 +69,7 @@ def install(ctx, component, preset, apply, wait, **kwargs):
 
 @click.command("uninstall", help="Removes the Gefyra installation from the cluster")
 @click.option("--force", "-f", help="Delete without promt", is_flag=True)
+@standard_error_handler
 def uninstall(force):
     if not force:
         click.confirm(

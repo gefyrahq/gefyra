@@ -11,6 +11,7 @@ from gefyra.cli.installation import install, uninstall
 from gefyra.cli.status import status_command
 from gefyra.cli.telemetry import telemetry
 from gefyra.cli.updown import cluster_down, cluster_up
+from gefyra.cli.list import list
 from gefyra.cli.utils import AliasedGroup
 
 config_handler.set_global(bar="smooth", spinner="classic", stats=False, dual_line=True)
@@ -66,6 +67,7 @@ cli.add_command(cmd=create_bridge, name="bridge")
 cli.add_command(cmd=unbridge, name="unbridge")
 cli.add_command(cmd=run, name="run")
 cli.add_command(cmd=version, name="version")
+cli.add_command(cmd=list, name="list")
 
 
 def main():

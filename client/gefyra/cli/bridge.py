@@ -1,3 +1,6 @@
+import dataclasses
+from time import sleep
+from alive_progress import alive_bar
 import click
 from gefyra import api
 from gefyra.cli import console
@@ -6,6 +9,7 @@ from gefyra.cli.utils import (
     parse_ip_port_map,
     standard_error_handler,
 )
+from tabulate import tabulate
 
 
 @click.command("bridge", help="Establish a Gefyra bridge to a container in the cluster")
@@ -42,18 +46,73 @@ from gefyra.cli.utils import (
     ),
     required=True,
 )
-@click.option("--connection-name", type=str, callback=check_connection_name)
+@click.option(
+    "--connection-name", type=str, default="default", callback=check_connection_name
+)
+@click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
-def create_bridge(name, ports, target, namespace, no_probe_handling, connection_name):
-    api.bridge(
+def create_bridge(
+    name, ports, target, namespace, no_probe_handling, connection_name, timeout
+):
+    print_keys = {
+        "name": "NAME",
+        "port_mappings": "PORTS",
+        "local_container_ip": "LOCAL ADDRESS",
+        "target_container": "TARGET CONTAINER",
+        "target_pod": "TARGET POD",
+        "target_namespace": "NAMESPACE",
+    }
+    # we are not blocking this call
+    _created_bridges = api.bridge(
         name=name,
         ports=ports,
         target=target,
         namespace=namespace,
         handle_probes=no_probe_handling,
-        timeout=10,
+        wait=False,
         connection_name=connection_name,
     )
+    with alive_bar(
+        total=None,
+        length=20,
+        title=f"Creating the requested bridge(s) (timeout={timeout}))",
+        dual_line=True,
+    ) as bar:
+        for _i in range(timeout):
+            all_bridges = api.list_gefyra_bridges(connection_name=connection_name)[0][1]
+            _created_bridges = [
+                bridge
+                for bridge in all_bridges
+                if bridge.name in [_bridge.name for _bridge in _created_bridges]
+            ]
+            bar.text(
+                "\n".join(
+                    [f"{bridge.name}: {bridge.state}" for bridge in _created_bridges]
+                )
+            )
+            if all(bridge.state == "ACTIVE" for bridge in _created_bridges):
+                break
+            else:
+                sleep(1)
+        bar.text(f"{len(_created_bridges)} bridge(s) active")
+
+    if _created_bridges:
+        bridges_print = [
+            {
+                k: v
+                for k, v in dataclasses.asdict(bridge).items()
+                if k in print_keys.keys()
+            }
+            for bridge in _created_bridges
+        ]
+        console.info("The following bridges have been created:")
+        click.echo(
+            tabulate(
+                bridges_print,
+                headers=print_keys,
+                tablefmt="plain",
+            )
+        )
 
 
 @click.command("unbridge", help="Remove a Gefyra bridge")
@@ -68,7 +127,10 @@ def create_bridge(name, ports, target, namespace, no_probe_handling, connection_
     is_flag=True,
     default=False,
 )
-@click.option("--connection-name", type=str, callback=check_connection_name)
+@click.option(
+    "--connection-name", type=str, default="default", callback=check_connection_name
+)
+@standard_error_handler
 def unbridge(name: str, connection_name: str, all: bool = False):
     if not all and not name:
         console.error("Provide a name or use --all flag to unbridge.")

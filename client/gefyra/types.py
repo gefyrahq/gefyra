@@ -2,7 +2,7 @@ from dataclasses import dataclass, field, fields
 from enum import Enum
 import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration, __VERSION__
 from gefyra.exceptions import ClientConfigurationError
@@ -321,3 +321,31 @@ class GefyraStatus:
     summary: StatusSummary
     cluster: GefyraClusterStatus
     client: GefyraClientStatus
+
+
+@dataclass
+class GefyraLocalContainer:
+    """
+    A container managed(/started) by Gefyra
+    """
+
+    name: str
+    address: str
+    namespace: str
+
+
+@dataclass
+class GefyraBridge:
+    """
+    A GefyraBridge object
+    """
+
+    name: str
+    client_id: str
+    local_container_ip: str
+    port_mappings: List[str]
+    target_container: str
+    target_namespace: str
+    target_pod: str
+    provider: str
+    state: str

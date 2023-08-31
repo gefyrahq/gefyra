@@ -14,6 +14,13 @@ class MinikubeError(RuntimeError):
     pass
 
 
+class GefyraBridgeError(RuntimeError):
+    pass
+
+class CommandTimeoutError(RuntimeError):
+    pass
+
+
 class GefyraConnectionError(RuntimeError):
     pass
 

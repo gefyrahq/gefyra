@@ -3,8 +3,10 @@ from time import sleep
 from typing import List, Dict
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import CommandTimeoutError, GefyraBridgeError
+from gefyra.types import GefyraBridge
 
-from .utils import stopwatch
+from .utils import stopwatch, wrap_bridge
 
 logger = logging.getLogger(__name__)
 
@@ -69,8 +71,9 @@ def bridge(
     namespace: str = "default",
     handle_probes: bool = True,
     timeout: int = 0,
+    wait: bool = False,
     connection_name: str = "",
-) -> bool:
+) -> List[GefyraBridge]:
     from docker.errors import NotFound
     from gefyra.local.bridge import get_all_gefyrabridges
 
@@ -79,8 +82,7 @@ def bridge(
     try:
         container = config.DOCKER.containers.get(name)
     except NotFound:
-        logger.error(f"Could not find target container '{name}'")
-        return False
+        raise GefyraBridgeError(f"Could not find target container '{name}'")
 
     port_mappings = [f"{key}:{value}" for key, value in ports.items()]
 
@@ -89,21 +91,20 @@ def bridge(
             config.NETWORK_NAME
         ]["IPAddress"]
     except KeyError:
-        logger.error(
+        raise GefyraBridgeError(
             f"The target container '{name}' is not in Gefyra's network"
             f" {config.NETWORK_NAME}. Did you run 'gefyra up'?"
-        )
-        return False
+        ) from None
 
     try:
         _bits = list(filter(None, target.split("/")))
         workload_type, workload_name = _bits[0:2]
         container_name = _bits[2] if _bits[2:] else None
     except IndexError:
-        raise RuntimeError(
+        raise GefyraBridgeError(
             "Invalid --target notation. Use"
             " <workload_type>/<workload_name>(/<container_name>)."
-        )
+        ) from None
 
     pods_to_intercept = get_pods_to_intercept(
         workload_name=workload_name,
@@ -161,7 +162,7 @@ def bridge(
     # timeout = 0  means no timeout
     if timeout:
         waiting_time = timeout
-    while True:
+    while True and wait:
         # watch whether all relevant bridges have been established
         gefyra_bridges = get_all_gefyrabridges(config)
         for gefyra_bridge in gefyra_bridges:
@@ -180,24 +181,29 @@ def bridge(
         # Raise exception in case timeout is reached
         waiting_time -= 1
         if timeout and waiting_time <= 0:
-            raise RuntimeError("Timeout for bridging operation exceeded")
-    logger.info("Following bridges have been established:")
-    for gefyra_bridge in gefyra_bridges:
-        for port in port_mappings:
-            (
-                pod_name,
-                ns,
-            ) = (
-                gefyra_bridge["targetPod"],
-                gefyra_bridge["targetNamespace"],
-            )
-            bridge_ports = port.split(":")
-            container_port, pod_port = bridge_ports[0], bridge_ports[1]
-            logger.info(
-                f"Bridge for pod {pod_name} in namespace {ns} on port {pod_port} "
-                f"to local container {container_name} on port {container_port}"
-            )
-    return True
+            raise CommandTimeoutError("Timeout for bridging operation exceeded")
+    if not wait:
+        gefyra_bridges = get_all_gefyrabridges(config)
+        return list(map(wrap_bridge, gefyra_bridges))
+    else:
+        logger.info("Following bridges have been established:")
+        _bridges = list(map(wrap_bridge, gefyra_bridges))
+        for gefyra_bridge in gefyra_bridges:
+            for port in port_mappings:
+                (
+                    pod_name,
+                    ns,
+                ) = (
+                    gefyra_bridge["targetPod"],
+                    gefyra_bridge["targetNamespace"],
+                )
+                bridge_ports = port.split(":")
+                container_port, pod_port = bridge_ports[0], bridge_ports[1]
+                logger.info(
+                    f"Bridge for pod {pod_name} in namespace {ns} on port {pod_port} "
+                    f"to local container {container_name} on port {container_port}"
+                )
+        return _bridges
 
 
 def wait_for_deletion(gefyra_bridges: List, config: ClientConfiguration):
