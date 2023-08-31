@@ -237,7 +237,7 @@ jobs:
           python-version: '3.9'
       - run: |
            brew install docker
-           brew install --reinstall qemu
+           brew install --force qemu
         if: ${{ matrix.os == 'macos-12' }}
       - run: colima start
         if: ${{ matrix.os == 'macos-12' }}
