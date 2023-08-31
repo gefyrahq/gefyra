@@ -51,7 +51,12 @@ def install(ctx, component, preset, apply, wait, **kwargs):
         logger = logging.getLogger("gefyra")
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter("%(message)s")
-        logger.handlers[0].setFormatter(formatter)
+        if len(logger.handlers) > 0:
+            logger.handlers[0].setFormatter(formatter)
+        else:
+            handler = logging.StreamHandler()
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
     ouput = api.install(component, preset, apply, wait, **kwargs)
     if not apply:
         click.echo(ouput)
@@ -68,7 +73,7 @@ def uninstall(force):
     logger = logging.getLogger("gefyra")
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter("%(message)s")
-    if logger.handlers:
+    if len(logger.handlers) > 0:
         logger.handlers[0].setFormatter(formatter)
     else:
         handler = logging.StreamHandler()
