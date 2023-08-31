@@ -68,5 +68,10 @@ def uninstall(force):
     logger = logging.getLogger("gefyra")
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter("%(message)s")
-    logger.handlers[0].setFormatter(formatter)
+    if logger.handlers:
+        logger.handlers[0].setFormatter(formatter)
+    else:
+        handler = logging.StreamHandler()
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
     api.uninstall()
