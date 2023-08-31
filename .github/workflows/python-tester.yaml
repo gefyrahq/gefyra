@@ -235,7 +235,9 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - run: brew install docker
+      - run: |
+           brew install docker
+           brew install --reinstall qemu
         if: ${{ matrix.os == 'macos-12' }}
       - run: colima start
         if: ${{ matrix.os == 'macos-12' }}
