@@ -18,12 +18,7 @@ from gefyra.local import (
     CLIENT_ID_LABEL,
 )
 
-console = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("[%(levelname)s] %(message)s")
-console.setFormatter(formatter)
-
 logger = logging.getLogger("gefyra")
-logger.addHandler(console)
 
 __VERSION__ = "2.0.0-alpha"
 USER_HOME = os.path.expanduser("~")

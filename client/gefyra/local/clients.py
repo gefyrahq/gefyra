@@ -2,7 +2,12 @@ import time
 
 import logging
 from gefyra.configuration import ClientConfiguration
-from gefyra.exceptions import GefyraClientAlreadyExists, GefyraClientNotFound
+from gefyra.exceptions import (
+    GefyraClientAlreadyExists,
+    GefyraClientNotFound,
+    GefyraConnectionError,
+)
+import urllib3
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +18,6 @@ def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
     retries = 15
     counter = 0
     success = False
-    gclient = None
     while not success:
         try:
             gclient = config.K8S_CUSTOM_OBJECT_API.create_namespaced_custom_object(
@@ -59,6 +63,14 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
             )
             raise e
+    except urllib3.exceptions.MaxRetryError as e:
+        # this connection does not work (at the moment)
+        raise GefyraConnectionError(
+            f"This connection does not work. Is the cluster at {e.pool.host}:{e.pool.port} reachable? "
+            f"Is the client '{client_id}' stale (e.g. from an old connection)? "
+            f"Remove it with 'gefyra connection remove {client_id}' and try again."
+        )
+
     return gclient
 
 

@@ -59,9 +59,9 @@ def install(
         presetoptions = LB_PRESETS.get(preset)  # type: ignore
         if not presetoptions:
             raise RuntimeError(f"Preset {preset} not available.")
-        presetoptions = dataclasses.asdict(presetoptions)
-        presetoptions.update({k: v for k, v in kwargs.items() if v is not None})
-        options = GefyraInstallOptions(**presetoptions)
+        _presetoptions = dataclasses.asdict(presetoptions)  # type: ignore
+        _presetoptions.update({k: v for k, v in kwargs.items() if v is not None})
+        options = GefyraInstallOptions(**_presetoptions)
     else:
         options = GefyraInstallOptions(
             **{k: v for k, v in kwargs.items() if v is not None}
@@ -97,6 +97,7 @@ def install(
                 logger.debug(e)
                 if e.api_exceptions[0].status not in [409, 422]:
                     logger.error(e)
+                    raise ClusterError(f"Could not install Gefyra: {e}")
     if apply and wait:
         logger.debug("Waiting for Gefyra to become ready")
         tic = time.perf_counter()

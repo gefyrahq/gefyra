@@ -37,7 +37,7 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
         logger = logging.getLogger()
         handler = logging.StreamHandler()
         formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s %(name)s - %(message)s"
+            "%(levelname)s %(name)s %(filename)s:%(lineno)d - %(message)s"
         )
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -47,12 +47,11 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
     ctx.ensure_object(dict)
 
     try:
-        telemetry = CliTelemetry()
+        ctx.obj["telemetry"] = CliTelemetry()
     except Exception:  # pragma: no cover
-        telemetry = False
+        ctx.obj["telemetry"] = False
     ctx.obj["kubeconfig"] = kubeconfig
     ctx.obj["context"] = context
-    ctx.obj["telemetry"] = telemetry
 
 
 cli.add_command(cmd=telemetry, name="telemetry")

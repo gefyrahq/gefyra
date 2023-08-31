@@ -1,9 +1,11 @@
+from typing import Optional
 import click
 
 import logging
 from alive_progress import alive_bar
 from click import pass_context
 from gefyra import api
+from gefyra.cli.utils import standard_error_handler
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.types import StatusSummary
 
@@ -20,7 +22,7 @@ def _check_and_install(
         bar.title = "Gefyra is already installed"
         return True
     elif status.summary == StatusSummary.INCOMPLETE:
-        logger.error("Gefyra is not installed, but operating properly. Aborting.")
+        logger.warning("Gefyra is not installed, but operating properly. Aborting.")
         return False
     else:  # status.summary == StatusSummary.DOWN:
         api.install(
@@ -35,13 +37,15 @@ def _check_and_install(
 @click.command("up", help="Install Gefyra on a cluster and directly connect to it")
 @click.option(
     "--minikube",
-    help="Connect Gefyra to a Minikube cluster",
-    type=bool,
-    is_flag=True,
-    default=False,
+    help="Connect Gefyra to a Minikube cluster (accepts minikube profile name, default is 'minikube'))",
+    type=str,
+    is_flag=False,
+    flag_value="minikube",  # if --minikube is used as flag, we default to profile 'minikube'
+    required=False,
 )
 @pass_context
-def cluster_up(ctx, minikube: bool):
+@standard_error_handler
+def cluster_up(ctx, minikube: Optional[str] = None):
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
     from time import sleep
     import os
@@ -57,23 +61,29 @@ def cluster_up(ctx, minikube: bool):
         install_success = _check_and_install(
             config=config, connection_name=connection_name, bar=bar
         )
-        if not install_success:
-            return
-        bar()
-        bar.title = f"Creating a Gefyra client: {client_id}"
-        # create a client
-        try:
-            client = api.add_clients(
-                client_id,
-                kubeconfig=config.KUBE_CONFIG_FILE,
-                kubecontext=config.KUBE_CONTEXT,
-            )[0]
-        except GefyraClientAlreadyExists:
+        if install_success:
+            bar()
+            bar.title = f"Creating a Gefyra client: {client_id}"
+            # create a client
+            try:
+                client = api.add_clients(
+                    client_id,
+                    kubeconfig=config.KUBE_CONFIG_FILE,
+                    kubecontext=config.KUBE_CONTEXT,
+                )[0]
+            except GefyraClientAlreadyExists:
+                client = api.get_client(
+                    client_id,
+                    kubeconfig=config.KUBE_CONFIG_FILE,
+                    kubecontext=config.KUBE_CONTEXT,
+                )
+        else:
             client = api.get_client(
                 client_id,
                 kubeconfig=config.KUBE_CONFIG_FILE,
                 kubecontext=config.KUBE_CONTEXT,
             )
+            bar()
         # write config with specific connection data (for minikube)
         host = config.CARGO_ENDPOINT.split(":")[0]
         bar()
@@ -111,7 +121,8 @@ def cluster_up(ctx, minikube: bool):
         bar.title = (
             f"Connecting local container network '{config.NETWORK_NAME}' to the cluster"
         )
-        api.connect(connection_name, client_config=fh, minikube=minikube)
+        logger.debug(f"Minikube profile {minikube}")
+        api.connect(connection_name, client_config=fh, minikube_profile=minikube)
         fh.close()
         os.remove(loc)
         bar()
@@ -120,6 +131,7 @@ def cluster_up(ctx, minikube: bool):
 
 @click.command("down", help="Remove Gefyra locally and on the cluster")
 @pass_context
+@standard_error_handler
 def cluster_down(ctx):
     from gefyra import api
 

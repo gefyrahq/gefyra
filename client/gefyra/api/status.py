@@ -2,12 +2,14 @@ import logging
 
 from gefyra.api import stopwatch
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import ClientConfigurationError
 from gefyra.types import (
     GefyraClientStatus,
     GefyraClusterStatus,
     GefyraStatus,
     StatusSummary,
 )
+import urllib3
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +145,12 @@ def status(connection_name: str = "") -> GefyraStatus:
     config = ClientConfiguration(connection_name=connection_name)
 
     cluster = _get_cluster_status(config)
-    client = _get_client_status(config)
+    try:
+        client = _get_client_status(config)
+    except urllib3.exceptions.MaxRetryError as e:
+        print(dir(e))
+        raise ClientConfigurationError("Cannot reach cluster on")
+
     if client.connection:
         summary = StatusSummary.UP
     else:

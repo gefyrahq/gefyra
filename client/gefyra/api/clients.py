@@ -32,7 +32,7 @@ def add_clients(
         raise RuntimeError("Cannot specify both quantity > 1 and client_id")
     result: List[GefyraClient] = []
     while len(result) < quantity:
-        if not client_id:
+        if not bool(client_id):
             generated_uuid = uuid.uuid4()
             client_id = str(generated_uuid).replace("-", "")
 
@@ -40,7 +40,7 @@ def add_clients(
         gclient_req = get_gefyraclient_body(config, client_id)
         gclient = handle_create_gefyraclient(config, gclient_req)
         result.append(GefyraClient(gclient, config))
-        client_id = None
+        client_id = ""
     return result
 
 
@@ -56,11 +56,11 @@ def get_client(
     """
     config_params = {"connection_name": connection_name}
     if kubeconfig:
-        config_params.update({"kube_config_file": kubeconfig})
+        config_params.update({"kube_config_file": str(kubeconfig)})
 
     if kubecontext:
         config_params.update({"kube_context": kubecontext})
-    config = ClientConfiguration(**config_params)
+    config = ClientConfiguration(**config_params)  # type: ignore
     gclient = handle_get_gefyraclient(config, client_id)
     return GefyraClient(gclient, config)
 
@@ -72,7 +72,7 @@ def delete_client(
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
     connection_name: Optional[str] = None,
-    wait: Optional[bool] = False,
+    wait: bool = False,
 ) -> bool:
     """
     Delete a GefyraClient configuration

@@ -35,13 +35,18 @@ def connections(ctx):
 )
 @click.option(
     "--minikube",
-    help="Connect Gefyra to a Minikube cluster",
+    help="Connect Gefyra to a Minikube cluster (accepts minikube profile name, default is 'minikube'))",
     type=str,
+    is_flag=False,
+    flag_value="minikube",  # if --minikube is used as flag, we default to profile 'minikube'
+    required=False,
 )
 @standard_error_handler
 def connect_client(client_config, connection_name: str, minikube: Optional[str] = None):
     api.connect(
-        connection_name=connection_name, client_config=client_config, minikube=minikube
+        connection_name=connection_name,
+        client_config=client_config,
+        minikube_profile=minikube,
     )
 
 
@@ -60,6 +65,7 @@ def disconnect_client(connection_name):
     alias=["ls"],
     help="List all Gefyra connections",
 )
+@standard_error_handler
 def list_connections():
     conns = api.list_connections()
     data = [dataclasses.asdict(conn).values() for conn in conns]

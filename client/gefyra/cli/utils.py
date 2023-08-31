@@ -206,7 +206,7 @@ def installoptions_to_cli_options() -> List[Dict[str, Union[bool, str, Any, None
     return result
 
 
-def parse_ip_port_map(ctx, param, ports: Tuple[str]):
+def parse_ip_port_map(ctx, param, ports: Tuple[str]) -> dict:
     def v(p: str):
         if not p.isnumeric():
             raise RuntimeError(f"Invalid port {p}. Please use integer numbers as port.")
@@ -215,11 +215,11 @@ def parse_ip_port_map(ctx, param, ports: Tuple[str]):
     # port - port
     res = {}
     for value in ports:
-        value = value.split(":")
-        if len(value) == 2:
-            res[v(value[1])] = v(value[0])
-        elif len(value) == 3:
-            res[v(value[2])] = (value[0], v(value[1]))
+        _value = value.split(":")
+        if len(_value) == 2:
+            res[v(_value[1])] = v(_value[0])
+        elif len(_value) == 3:
+            res[v(_value[2])] = (_value[0], v(_value[1]))
         else:
             raise ValueError("Invalid value for port mapping.")
     return res
@@ -244,6 +244,6 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
         else:
             raise click.MissingParameter(
                 message="Please provide a connection name from: {conn_names}",
-                param="connection-name",
+                param="connection-name",  # type: ignore
             )
         return connection_name

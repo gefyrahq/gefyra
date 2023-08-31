@@ -6,6 +6,7 @@ import time
 from docker.models.networks import Network
 from typing import IO, List, Optional
 from gefyra.api.clients import get_client
+from gefyra.exceptions import GefyraConnectionError
 from gefyra.local.minikube import detect_minikube_config
 from .utils import stopwatch
 
@@ -28,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 @stopwatch
 def connect(
-    connection_name: str, client_config: Optional[IO], minikube: bool = False
+    connection_name: str,
+    client_config: Optional[IO],
+    minikube_profile: Optional[str] = None,
 ) -> bool:
     import kubernetes
     import docker
@@ -66,8 +69,9 @@ def connect(
             f.write(kubeconfig_str)
             logger.info(f"Client kubeconfig saved to {loc}")
 
-        if minikube:
-            mini_conf = detect_minikube_config()
+        if minikube_profile:
+            logger.debug(f"Minikube profile detected: {minikube_profile}")
+            mini_conf = detect_minikube_config(minikube_profile)
             logger.debug(mini_conf)
             gclient_conf.gefyra_server = (
                 f"{mini_conf['cargo_endpoint_host']}:{mini_conf['cargo_endpoint_port']}"
@@ -148,8 +152,8 @@ def connect(
                 pid_mode="host",
             )
 
-            if minikube:
-                mini_conf = detect_minikube_config()
+            if minikube_profile:
+                mini_conf = detect_minikube_config(minikube_profile)
                 if mini_conf["network_name"]:
                     logger.debug("Joining minikube network")
                     minikube_net: Network = config.DOCKER.networks.get(
@@ -206,11 +210,11 @@ def list_connections() -> List[GefyraConnectionItem]:
                 probe_wireguard_connection(
                     ClientConfiguration(cargo_container_name=cargo_container.name)
                 )
-                established = True
-            except RuntimeError:
-                established = False
+                state = "running"
+            except GefyraConnectionError:
+                state = "error"
         else:
-            established = False
+            state = "stopped"
         result.append(
             GefyraConnectionItem(
                 **{
@@ -219,7 +223,7 @@ def list_connections() -> List[GefyraConnectionItem]:
                     ),
                     "version": cargo_container.labels.get(VERSION_LABEL, "unknown"),
                     "created": cargo_container.attrs.get("Created", "unknown"),
-                    "status": cargo_container.status if established else "error",
+                    "status": state,
                 }
             )
         )

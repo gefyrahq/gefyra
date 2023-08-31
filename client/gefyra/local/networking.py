@@ -45,7 +45,7 @@ def handle_create_network(config: ClientConfiguration) -> Network:
                 f" from the --wireguard-mtu parameter (={config.WIREGUARD_MTU}) or"
                 " default. You may experience bad network connections. Consider"
                 f" removing the network '{network_name}' with 'docker network rm"
-                " gefyra' before running 'gefyra up'."
+                f" {network_name}' before running setting up Gefyra."
             )
         return network
     except NotFound:

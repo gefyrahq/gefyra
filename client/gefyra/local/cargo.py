@@ -3,9 +3,10 @@ import logging
 from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import GefyraConnectionError
 from gefyra.types import StowawayConfig
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("gefyra.cargo")
 
 
 def get_cargo_ip_from_netaddress(network_address: str) -> str:
@@ -22,7 +23,7 @@ def probe_wireguard_connection(config: ClientConfiguration):
         else:
             break
     else:
-        raise RuntimeError(
+        raise GefyraConnectionError(
             "Gefyra could not successfully confirm the connection working."
         )
 

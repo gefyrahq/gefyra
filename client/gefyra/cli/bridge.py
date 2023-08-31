@@ -1,7 +1,11 @@
 import click
 from gefyra import api
 from gefyra.cli import console
-from gefyra.cli.utils import check_connection_name
+from gefyra.cli.utils import (
+    check_connection_name,
+    parse_ip_port_map,
+    standard_error_handler,
+)
 
 
 @click.command("bridge", help="Establish a Gefyra bridge to a container in the cluster")
@@ -11,9 +15,10 @@ from gefyra.cli.utils import check_connection_name
 @click.option(
     "-p",
     "--ports",
-    # help=port_mapping_help_text,
+    help="Add forward port mapping in form of <remote_container_port>:<local_container_port>",
     required=True,
-    # action=PortMappingParser,
+    multiple=True,
+    callback=parse_ip_port_map,
 )
 @click.option(
     "-n",
@@ -38,6 +43,7 @@ from gefyra.cli.utils import check_connection_name
     required=True,
 )
 @click.option("--connection-name", type=str, callback=check_connection_name)
+@standard_error_handler
 def create_bridge(name, ports, target, namespace, no_probe_handling, connection_name):
     api.bridge(
         name=name,

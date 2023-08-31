@@ -1,6 +1,6 @@
 import logging
 from typing import List, Dict, Union
-from gefyra.exceptions import PodNotFoundError
+from gefyra.exceptions import PodNotFoundError, WorkloadNotFoundError
 
 from kubernetes.client import (
     V1Deployment,
@@ -83,8 +83,8 @@ def get_pods_and_containers_for_workload(
 ) -> Dict[str, List[str]]:
     result = {}
     API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
-    NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."
     workload_type = get_workload_type(workload_type)
+    NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."
     try:
         if workload_type == "deployment":
             workload = config.K8S_APP_API.read_namespaced_deployment(
@@ -96,7 +96,7 @@ def get_pods_and_containers_for_workload(
             )
     except ApiException as e:
         if e.status == 404:
-            raise RuntimeError(NOT_FOUND_MSG)
+            raise WorkloadNotFoundError(NOT_FOUND_MSG)
         raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
     # use workloads metadata uuid for owner references with field selector to get pods
@@ -107,7 +107,9 @@ def get_pods_and_containers_for_workload(
     )
 
     if not label_selector:
-        raise RuntimeError(f"No label selector set for {workload_type} - {name}.")
+        raise WorkloadNotFoundError(
+            f"No label selector set for {workload_type} - {name}."
+        )
 
     pods = config.K8S_CORE_API.list_namespaced_pod(
         namespace=namespace, label_selector=label_selector
