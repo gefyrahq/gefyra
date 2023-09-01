@@ -39,6 +39,10 @@ LB_PRESETS = {
             "service.beta.kubernetes.io/aws-load-balancer-scheme": "internet-facing",
         },
     ),
+    "gke": GefyraInstallOptions(
+        service_type="LoadBalancer",
+        service_annotations={},
+    ),
 }
 
 

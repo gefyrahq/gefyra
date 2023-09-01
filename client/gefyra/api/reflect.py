@@ -92,5 +92,6 @@ def reflect(
             target=workload,
             ports=ports,
             connection_name=connection_name,
+            wait=True,
         )
     return res
