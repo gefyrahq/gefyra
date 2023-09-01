@@ -24,18 +24,8 @@ LB_PRESETS = {
     "aws": GefyraInstallOptions(
         service_type="LoadBalancer",
         service_annotations={
-            "service.beta.kubernetes.io/aws-load-balancer-type": "external",
+            "service.beta.kubernetes.io/aws-load-balancer-type": "nlb",
             "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type": "ip",
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-port": "80",
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol": "TCP",
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-healthy-threshold": (
-                "3"
-            ),
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-unhealthy-threshold": (
-                "3"
-            ),
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-timeout": "10",
-            "service.beta.kubernetes.io/aws-load-balancer-healthcheck-interval": "10",
             "service.beta.kubernetes.io/aws-load-balancer-scheme": "internet-facing",
         },
     ),
@@ -62,7 +52,9 @@ def install(
     if preset:
         presetoptions = LB_PRESETS.get(preset)  # type: ignore
         if not presetoptions:
-            raise RuntimeError(f"Preset {preset} not available.")
+            raise RuntimeError(
+                f"Preset {preset} not available. Available presets are: {', '.join(LB_PRESETS.keys())}"
+            )
         _presetoptions = dataclasses.asdict(presetoptions)  # type: ignore
         _presetoptions.update({k: v for k, v in kwargs.items() if v is not None})
         options = GefyraInstallOptions(**_presetoptions)

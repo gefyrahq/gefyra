@@ -1,6 +1,7 @@
 import dataclasses
 import logging
 from typing import Optional
+from alive_progress import alive_bar
 
 import click
 from gefyra import api
@@ -60,9 +61,9 @@ def connections(ctx):
 @click.option(
     "-n",
     "--connection-name",
+    default="default",
     help="Assign a local name to this client connection",
     type=str,
-    callback=check_connection_name,
 )
 @click.option(
     "--minikube",
@@ -74,11 +75,26 @@ def connections(ctx):
 )
 @standard_error_handler
 def connect_client(client_config, connection_name: str, minikube: Optional[str] = None):
-    # TODO improve feedback
-    api.connect(
-        connection_name=connection_name,
-        client_config=client_config,
-        minikube_profile=minikube,
+    conn_list = api.list_connections()
+    if conn_list and connection_name in [conn.name for conn in conn_list]:
+        raise click.BadArgumentUsage(
+            message=f"The connection name '{connection_name}' already exists. Run 'gefyra connections list' to "
+            "see all connections."
+        )
+    with alive_bar(
+        total=None,
+        length=20,
+        title=f"Creating the cluster connection '{connection_name}'",
+        dual_line=True,
+    ):
+        api.connect(
+            connection_name=connection_name,
+            client_config=client_config,
+            minikube_profile=minikube,
+        )
+    console.success(
+        f"Connection established with connection name '{connection_name}'. "
+        "Run 'gefyra connections list' to see all connections."
     )
 
 

@@ -46,8 +46,8 @@ def connect(
     else:
         # connection does not exist, so create it
         if client_config is None:
-            raise RuntimeError(
-                "Connection is not yet created and no client configuration has been provided"
+            raise GefyraConnectionError(
+                "Connection is not yet created and no client configuration has been provided."
             )
         logger.debug(f"Creating new connection {connection_name}")
         file_str = client_config.read()
@@ -101,7 +101,7 @@ def connect(
                 # hopefully the IPAM config will give a new subnet
                 gefyra_network.remove()
     else:
-        raise RuntimeError("Could not activate connection") from None
+        raise GefyraConnectionError("Could not activate connection") from None
 
     # busy wait for the client to enter the ACTIVE state
     _i = 0
@@ -112,7 +112,7 @@ def connect(
             _i += 1
             time.sleep(0.5)
     else:
-        raise RuntimeError("Could not activate connection") from None
+        raise GefyraConnectionError("Could not activate connection") from None
     client.update()
 
     # since this connection was (re)activated, save the current wireguard config (again)
@@ -120,7 +120,9 @@ def connect(
         get_gefyra_config_location(), f"{config.CONNECTION_NAME}.conf"
     )
     if not client.provider_config:
-        raise RuntimeError("Could not get provider config for client") from None
+        raise GefyraConnectionError(
+            "Could not get provider config for client"
+        ) from None
 
     if config.CARGO_ENDPOINT is None:
         config.CARGO_ENDPOINT = client.provider_config.pendpoint
@@ -169,7 +171,7 @@ def connect(
             cargo_container and cargo_container.remove()
         except docker.errors.APIError:
             pass
-        raise RuntimeError(f"Could not start Cargo container: {e}") from None
+        raise GefyraConnectionError(f"Could not start Cargo container: {e}") from None
 
     # Confirm the wireguard connection working
     logger.debug("Checking wireguard connection")
@@ -200,6 +202,7 @@ def list_connections() -> List[GefyraConnectionItem]:
     from gefyra.local import CARGO_LABEL, CONNECTION_NAME_LABEL, VERSION_LABEL
 
     config = ClientConfiguration()
+    config.CARGO_PROBE_TIMEOUT = 1  # don't wait too long for the probe
     result = []
     containers = config.DOCKER.containers.list(
         all=True, filters={"label": f"{CARGO_LABEL[0]}={CARGO_LABEL[1]}"}
@@ -239,7 +242,8 @@ def remove_connection(connection_name: str):
         get_client(
             config.CLIENT_ID, connection_name=connection_name
         ).deactivate_connection()
-    except:  # noqa E722
+    except Exception as e:  # noqa E722
+        logger.debug(e)
         pass
     try:
         cargo_container = config.DOCKER.containers.get(

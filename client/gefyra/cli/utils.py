@@ -229,14 +229,15 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
     conn_list = api.list_connections()
     if not conn_list:
         raise click.UsageError(
-            message="No Gefyra connection found. Please connect to a cluster first or run 'gefyra up'."
+            message="No Gefyra connection found. Please connect to a cluster first or run by "
+            "providing a connection file or run 'gefyra up'."
         )
     conn_names = [conn.name for conn in conn_list]
     if selected and selected in conn_names:
         return selected
     elif selected:
         raise click.BadParameter(
-            message=f"The connection name {selected} does not exist."
+            message=f"The connection name '{selected}' does not exist."
         )
     else:
         if "default" in conn_names and len(conn_names) == 1:

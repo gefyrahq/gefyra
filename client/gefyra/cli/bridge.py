@@ -105,7 +105,9 @@ def create_bridge(
             }
             for bridge in _created_bridges
         ]
-        console.info("The following bridges have been created:")
+        console.success(
+            "The following bridges have been created. Run 'gefyra list --bridges' to see all bridges."
+        )
         click.echo(
             tabulate(
                 bridges_print,
