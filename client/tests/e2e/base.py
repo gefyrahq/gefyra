@@ -118,6 +118,7 @@ class GefyraBaseTest:
                 "target": "deployment/hello-nginxdemo/hello-nginx",
                 "ports": {"80": "8000"},
                 "connection_name": CONNECTION_NAME,
+                "wait": True
             }
         )
         return params
