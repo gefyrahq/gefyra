@@ -1,8 +1,6 @@
 import dataclasses
 from time import sleep
-from alive_progress import alive_bar
 import click
-from gefyra import api
 from gefyra.cli import console
 from gefyra.cli.utils import (
     check_connection_name,
@@ -54,6 +52,9 @@ from tabulate import tabulate
 def create_bridge(
     name, ports, target, namespace, no_probe_handling, connection_name, timeout
 ):
+    from alive_progress import alive_bar
+    from gefyra import api
+
     print_keys = {
         "name": "NAME",
         "port_mappings": "PORTS",
@@ -76,6 +77,9 @@ def create_bridge(
         total=None,
         length=20,
         title=f"Creating the requested bridge(s) (timeout={timeout}))",
+        bar="smooth",
+        spinner="classic",
+        stats=False,
         dual_line=True,
     ) as bar:
         for _i in range(timeout):
@@ -117,10 +121,8 @@ def create_bridge(
         )
 
 
-@click.command("unbridge", help="Remove a Gefyra bridge")
-@click.option(
-    "-N", "--name", help="The name of the container running in Gefyra", required=False
-)
+@click.command("unbridge", help="Remove a Gefyra bridge (from 'gefyra list --bridges')")
+@click.argument("name", required=False)
 @click.option(
     "-A",
     "--all",
@@ -134,6 +136,8 @@ def create_bridge(
 )
 @standard_error_handler
 def unbridge(name: str, connection_name: str, all: bool = False):
+    from gefyra import api
+
     if not all and not name:
         console.error("Provide a name or use --all flag to unbridge.")
     if all:

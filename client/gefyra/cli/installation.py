@@ -1,9 +1,8 @@
 import logging
 import click
 
-import gefyra.api as api
-
 from gefyra.misc.comps import COMPONENTS
+from gefyra.api.install import LB_PRESETS
 
 from gefyra.cli.utils import (
     installoptions_to_cli_options,
@@ -31,7 +30,7 @@ from gefyra.cli.utils import (
 )
 @click.option(
     "--preset",
-    help=f"Set configs from a preset (available: {','.join(api.LB_PRESETS.keys())})",
+    help=f"Set configs from a preset (available: {','.join(LB_PRESETS.keys())})",
     type=str,
 )
 @click.option(
@@ -46,6 +45,9 @@ from gefyra.cli.utils import (
 @multi_options(installoptions_to_cli_options())
 @standard_error_handler
 def install(ctx, component, preset, apply, wait, **kwargs):
+    from alive_progress import alive_bar
+    from gefyra import api
+
     if not all(kwargs.values()):
         kwargs = {}
     if wait and not apply:
@@ -62,7 +64,19 @@ def install(ctx, component, preset, apply, wait, **kwargs):
             handler = logging.StreamHandler()
             handler.setFormatter(formatter)
             logger.addHandler(handler)
-    ouput = api.install(component, preset, apply, wait, **kwargs)
+    if apply:
+        with alive_bar(
+            total=None,
+            length=20,
+            title="Installing Gefyra",
+            bar="smooth",
+            spinner="classic",
+            stats=False,
+            dual_line=True,
+        ):
+            ouput = api.install(component, preset, apply, wait, **kwargs)
+    else:
+        ouput = api.install(component, preset, apply, wait, **kwargs)
     if not apply:
         click.echo(ouput)
 
@@ -71,18 +85,21 @@ def install(ctx, component, preset, apply, wait, **kwargs):
 @click.option("--force", "-f", help="Delete without promt", is_flag=True)
 @standard_error_handler
 def uninstall(force):
+    from alive_progress import alive_bar
+    from gefyra import api
+
     if not force:
         click.confirm(
             "Do you want to remove all Gefyra components from this cluster?",
             abort=True,
         )
-    logger = logging.getLogger("gefyra")
-    logger.setLevel(logging.INFO)
-    formatter = logging.Formatter("%(message)s")
-    if len(logger.handlers) > 0:
-        logger.handlers[0].setFormatter(formatter)
-    else:
-        handler = logging.StreamHandler()
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-    api.uninstall()
+    with alive_bar(
+        total=None,
+        length=20,
+        title="Uninstalling all Gefyra components from the cluster",
+        bar="smooth",
+        spinner="classic",
+        stats=False,
+        dual_line=True,
+    ):
+        api.uninstall()

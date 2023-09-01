@@ -30,7 +30,7 @@ def handle_create_gefyrabridge(config: ClientConfiguration, body, target: str):
         logger.error(
             f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
         )
-        raise e
+        raise e from None
     return ireq
 
 
@@ -75,8 +75,8 @@ def get_all_gefyrabridges(config: ClientConfiguration) -> list:
             return []
     except ApiException as e:
         if e.status != 404:
-            logger.error("Error getting GefyraBridges: " + str(e))
-            raise e
+            logger.warning("Error getting GefyraBridges: " + str(e))
+            raise e from None
         return []
 
 

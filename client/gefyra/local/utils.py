@@ -1,8 +1,6 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 import uuid
-
-from docker.models.containers import Container
 
 from gefyra.configuration import ClientConfiguration, logger
 from gefyra.local import (
@@ -16,6 +14,9 @@ from gefyra.local import (
     VERSION_LABEL,
     CARGO_LABEL,
 )
+
+if TYPE_CHECKING:
+    from docker.models.containers import Container
 
 
 def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str]]:
@@ -32,7 +33,7 @@ def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str
 
 def handle_docker_get_or_create_container(
     config: ClientConfiguration, name: str, image: str, **kwargs
-) -> Container:
+) -> "Container":
     import docker
 
     try:
@@ -43,7 +44,7 @@ def handle_docker_get_or_create_container(
 
 def handle_docker_create_container(
     config: ClientConfiguration, image: str, **kwargs
-) -> Container:
+) -> "Container":
     import gefyra.configuration
 
     return config.DOCKER.containers.create(
@@ -64,7 +65,7 @@ def handle_docker_create_container(
 
 def handle_docker_run_container(
     config: ClientConfiguration, image: str, **kwargs
-) -> Container:
+) -> "Container":
     # if detach=True is in kwargs, this will return a container; otherwise the container logs (see
     # https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run)
     # TODO: handle exception(s):

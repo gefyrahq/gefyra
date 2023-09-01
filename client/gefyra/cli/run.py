@@ -1,6 +1,5 @@
 import ast
 import click
-from gefyra import api
 from gefyra.cli.utils import OptionEatAll, check_connection_name, parse_ip_port_map
 
 
@@ -87,6 +86,8 @@ def run(
     image,
     connection_name,
 ):
+    from gefyra import api
+
     if command:
         command = ast.literal_eval(command)[0]
     api.run(

@@ -1,8 +1,10 @@
 import logging
 from time import sleep
-from typing import Tuple
+from typing import Tuple, TYPE_CHECKING
 from gefyra.api.utils import get_workload_type
-from kubernetes.client.models import V1Pod
+
+if TYPE_CHECKING:
+    from kubernetes.client.models import V1Pod
 
 from gefyra.configuration import ClientConfiguration
 
@@ -85,7 +87,7 @@ def get_v1pod(
     config: ClientConfiguration,
     pod_name: str,
     namespace: str,
-) -> V1Pod:
+) -> "V1Pod":
     from kubernetes.client import ApiException
 
     try:

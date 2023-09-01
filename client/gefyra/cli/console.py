@@ -1,34 +1,17 @@
-import sys
-from prompt_toolkit import print_formatted_text
-from prompt_toolkit.formatted_text import FormattedText
-from prompt_toolkit.styles import Style
-
-styles = Style.from_dict({"error": "#FF1820", "success": "#31F565", "bold": "bold"})
-
-
-def print_text(formatted_text: FormattedText, text: str):
-    if sys.platform == "win32":
-        from prompt_toolkit.output.win32 import NoConsoleScreenBufferError
-
-        try:
-            print_formatted_text(formatted_text, style=styles)
-        except NoConsoleScreenBufferError:
-            print(text)
-    else:
-        print_formatted_text(formatted_text, style=styles)
+import click
 
 
 def heading(text: str):
-    print_text(FormattedText([("class:bold", f"{text}")]), text)
+    click.echo(click.style(text, bold=True))
 
 
 def error(text: str):
-    print_text(FormattedText([("class:error", f"Error: {text}")]), text)
+    click.echo(click.style(text, fg="red"))
 
 
 def info(text: str):
-    print_text(FormattedText([("class:info", f"{text}")]), text)
+    click.echo(text)
 
 
 def success(text: str):
-    print_text(FormattedText([("class:success", f"{text}")]), text)
+    click.echo(click.style(text, fg="green"))

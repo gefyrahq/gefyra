@@ -1,22 +1,27 @@
 import logging
+from typing import TYPE_CHECKING
 
-from docker.errors import NotFound, APIError
-from docker.models.networks import Network
-from docker.types import IPAMConfig, IPAMPool
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local import CREATED_BY_LABEL
 
+if TYPE_CHECKING:
+    from docker.models.networks import Network
+
+
 logger = logging.getLogger(__name__)
 
 
-def get_or_create_gefyra_network(config: ClientConfiguration) -> Network:
+def get_or_create_gefyra_network(config: ClientConfiguration) -> "Network":
     gefyra_network = handle_create_network(config)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
 
-def handle_create_network(config: ClientConfiguration) -> Network:
+def handle_create_network(config: ClientConfiguration) -> "Network":
+    from docker.errors import NotFound
+    from docker.types import IPAMConfig, IPAMPool
+
     DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
     network_name = f"{config.NETWORK_NAME}"
     try:
@@ -75,6 +80,8 @@ def handle_remove_network(config: ClientConfiguration) -> None:
     """Removes all docker networks with the given name."""
     # we would need the id to identify the network unambiguously, so we just remove all networks that can be found with
     # the given name, under the assumption that no other docker network inadvertently uses the same name
+    from docker.errors import NotFound, APIError
+
     kill_remainder_container_in_network(config=config)
     try:
         gefyra_network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
@@ -96,6 +103,8 @@ def handle_remove_network(config: ClientConfiguration) -> None:
 
 def kill_remainder_container_in_network(config: ClientConfiguration) -> None:
     """Kills all containers from this network"""
+    from docker.errors import NotFound
+
     try:
         network = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
         containers = network.attrs["Containers"].keys()

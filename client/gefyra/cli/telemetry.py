@@ -4,7 +4,6 @@ import uuid
 from pathlib import Path
 
 import click
-from cli_tracker.sdk import CliTracker
 
 from gefyra.configuration import __VERSION__
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
@@ -54,6 +53,8 @@ class CliTelemetry:
             self._init_tracker(user_id=user_id)
 
     def _init_tracker(self, user_id):
+        from cli_tracker.sdk import CliTracker
+
         self.tracker = CliTracker(
             application="gefyra",
             dsn=SENTRY_DSN,

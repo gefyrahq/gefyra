@@ -51,7 +51,7 @@ def list(
 
         if container_print:
             if show_bridges:
-                console.info("Gefyra Containers:")
+                console.heading("Gefyra Containers:")
             click.echo(
                 tabulate(
                     container_print,
@@ -76,7 +76,7 @@ def list(
 
         if bridges_print:
             if show_containers:
-                console.info("Gefyra Bridges:")
+                console.heading("Gefyra Bridges:")
             click.echo(
                 tabulate(
                     bridges_print,

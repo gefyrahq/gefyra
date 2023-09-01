@@ -1,6 +1,5 @@
 from os import path
 import os
-import platform
 import struct
 import socket
 import sys
@@ -73,6 +72,8 @@ class ClientConfiguration(object):
         gefyra_config_root: Optional[Union[str, Path]] = None,
         ignore_connection: bool = False,  # work with kubeconfig not connection
     ):
+        import platform
+
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
@@ -126,7 +127,7 @@ class ClientConfiguration(object):
         self.NETWORK_NAME = network_name or "gefyra-network"
         self.CONNECTION_NAME = connection_name or "default"
         self.BRIDGE_TIMEOUT = 60  # in seconds
-        self.CONNECTION_TIMEOUT = 20  # in seconds
+        self.CONNECTION_TIMEOUT = 60  # in seconds
         self.CARGO_PROBE_TIMEOUT = 20  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
@@ -159,6 +160,8 @@ class ClientConfiguration(object):
 
     @property
     def CARGO_ENDPOINT(self):
+        import platform
+
         if hasattr(self, "_cargo_endpoint") and self._cargo_endpoint:
             return self._cargo_endpoint
         else:
@@ -250,6 +253,7 @@ class ClientConfiguration(object):
             AppsV1Api,
             CustomObjectsApi,
             ApiextensionsV1Api,
+            AdmissionregistrationV1Api,
         )
         from kubernetes.config import load_kube_config
 
@@ -259,6 +263,7 @@ class ClientConfiguration(object):
         self.K8S_APP_API = AppsV1Api()
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
         self.K8S_EXTENSION_API = ApiextensionsV1Api()
+        self.K8S_ADMISSION_API = AdmissionregistrationV1Api()
 
     def __getattr__(self, item):
         if item in [
@@ -267,6 +272,7 @@ class ClientConfiguration(object):
             "K8S_APP_API",
             "K8S_CUSTOM_OBJECT_API",
             "K8S_EXTENSION_API",
+            "K8S_ADMISSION_API",
         ]:
             try:
                 return self.__getattribute__(item)

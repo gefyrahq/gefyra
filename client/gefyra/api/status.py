@@ -9,7 +9,7 @@ from gefyra.types import (
     GefyraStatus,
     StatusSummary,
 )
-import urllib3
+
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +133,7 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
             _status.stowaway = True
             _status.stowaway_image = stowaway_pod.spec.containers[0].image
     except ApiException as e:
-        print(e)
+        logger.warning(e)
         pass
 
     return _status
@@ -141,6 +141,8 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
 
 @stopwatch
 def status(connection_name: str = "") -> GefyraStatus:
+    import urllib3
+
     # Check if kubeconfig is available through running Cargo
     config = ClientConfiguration(connection_name=connection_name)
 
@@ -148,8 +150,9 @@ def status(connection_name: str = "") -> GefyraStatus:
     try:
         client = _get_client_status(config)
     except urllib3.exceptions.MaxRetryError as e:
-        print(dir(e))
-        raise ClientConfigurationError("Cannot reach cluster on")
+        raise ClientConfigurationError(
+            f"Cannot reach cluster on {e.pool.host}:{e.pool.port}"
+        )
 
     if client.connection:
         summary = StatusSummary.UP

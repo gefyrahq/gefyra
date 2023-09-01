@@ -1,10 +1,13 @@
 import logging
 from time import sleep
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 
-from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import CommandTimeoutError, GefyraBridgeError
-from gefyra.types import GefyraBridge
+
+if TYPE_CHECKING:
+    from gefyra.configuration import ClientConfiguration
+    from gefyra.types import GefyraBridge
+
 
 from .utils import stopwatch, wrap_bridge
 
@@ -73,9 +76,10 @@ def bridge(
     timeout: int = 0,
     wait: bool = False,
     connection_name: str = "",
-) -> List[GefyraBridge]:
+) -> List["GefyraBridge"]:
     from docker.errors import NotFound
     from gefyra.local.bridge import get_all_gefyrabridges
+    from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(connection_name=connection_name)
 
@@ -206,7 +210,7 @@ def bridge(
         return _bridges
 
 
-def wait_for_deletion(gefyra_bridges: List, config: ClientConfiguration):
+def wait_for_deletion(gefyra_bridges: List, config: "ClientConfiguration"):
     from kubernetes.watch import Watch
 
     w = Watch()
@@ -233,6 +237,7 @@ def unbridge(
     wait: bool = False,
 ) -> bool:
     from gefyra.local.bridge import handle_delete_gefyrabridge
+    from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(connection_name=connection_name)
 
@@ -249,6 +254,7 @@ def unbridge_all(
     wait: bool = False,
     connection_name: str = "",
 ) -> bool:
+    from gefyra.configuration import ClientConfiguration
     from gefyra.local.bridge import (
         handle_delete_gefyrabridge,
         get_all_gefyrabridges,

@@ -1,9 +1,10 @@
 import logging
 import socket
 import time
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, TYPE_CHECKING
 
-from gefyra.types import GefyraBridge
+if TYPE_CHECKING:
+    from gefyra.types import GefyraBridge
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,9 @@ def generate_env_dict_from_strings(env_vars: Iterable[str]) -> dict:
     return {k[0]: k[1] for k in [arg.split("=", 1) for arg in env_vars] if len(k) > 1}
 
 
-def wrap_bridge(bridge: Dict[Any, Any]) -> GefyraBridge:
+def wrap_bridge(bridge: Dict[Any, Any]) -> "GefyraBridge":
+    from gefyra.types import GefyraBridge
+
     return GefyraBridge(
         provider=bridge["provider"],
         name=bridge["metadata"]["name"],

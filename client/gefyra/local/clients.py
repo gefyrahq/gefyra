@@ -7,7 +7,6 @@ from gefyra.exceptions import (
     GefyraClientNotFound,
     GefyraConnectionError,
 )
-import urllib3
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +45,7 @@ def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
 
 def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict:
     from kubernetes.client import ApiException
+    import urllib3
 
     try:
         gclient = config.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(

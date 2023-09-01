@@ -1,8 +1,11 @@
 # flake8: noqa
-from gefyra.types import GefyraInstallOptions
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from gefyra.types import GefyraInstallOptions
 
 
-def data(params: GefyraInstallOptions) -> list[dict]:
+def data(params: "GefyraInstallOptions") -> list[dict]:
     return [
         {
             "apiVersion": "apps/v1",

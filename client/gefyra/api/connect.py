@@ -2,13 +2,18 @@ import base64
 import logging
 import os
 from pathlib import Path
+import socket
 import time
-from docker.models.networks import Network
-from typing import IO, List, Optional
+
+from typing import IO, List, Optional, TYPE_CHECKING
 from gefyra.api.clients import get_client
 from gefyra.exceptions import GefyraConnectionError
 from gefyra.local.minikube import detect_minikube_config
 from .utils import stopwatch
+
+if TYPE_CHECKING:
+    from docker.models.networks import Network
+
 
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.local.cargo import (
@@ -28,10 +33,11 @@ logger = logging.getLogger(__name__)
 
 
 @stopwatch
-def connect(
+def connect(  # noqa: C901
     connection_name: str,
     client_config: Optional[IO],
     minikube_profile: Optional[str] = None,
+    probe_timeout: int = 60,
 ) -> bool:
     import kubernetes
     import docker
@@ -85,6 +91,7 @@ def connect(
             cargo_endpoint_port=gclient_conf.gefyra_server.split(":")[1],
             cargo_container_name=f"gefyra-cargo-{connection_name}",
         )
+        config.CARGO_PROBE_TIMEOUT = probe_timeout
 
     _retry = 0
     while _retry < 5:
@@ -127,6 +134,24 @@ def connect(
     if config.CARGO_ENDPOINT is None:
         config.CARGO_ENDPOINT = client.provider_config.pendpoint
 
+    # busy wait to resolve the cargo endpoint, making sure it's actually resolvable from this host
+    _i = 0
+    while _i < config.CONNECTION_TIMEOUT:
+        try:
+            socket.gethostbyname_ex(config.CARGO_ENDPOINT.split(":")[0])
+            break
+        except (socket.gaierror, socket.herror):  # [Errno -2] Name or service not known
+            logger.debug(
+                f"Could not resolve host '{config.CARGO_ENDPOINT.split(':')[0]}', "
+                f"retrying {_i}/{config.CONNECTION_TIMEOUT}..."
+            )
+            _i += 1
+            time.sleep(1)
+    else:
+        raise GefyraConnectionError(
+            f"Cannot resolve host '{config.CARGO_ENDPOINT.split(':')[0]}'."
+        ) from None
+
     with open(wg_conf, "w") as f:
         f.write(
             create_wireguard_config(
@@ -158,7 +183,7 @@ def connect(
                 mini_conf = detect_minikube_config(minikube_profile)
                 if mini_conf["network_name"]:
                     logger.debug("Joining minikube network")
-                    minikube_net: Network = config.DOCKER.networks.get(
+                    minikube_net: "Network" = config.DOCKER.networks.get(
                         mini_conf["network_name"]
                     )
                     minikube_net.connect(cargo_container)
@@ -202,7 +227,6 @@ def list_connections() -> List[GefyraConnectionItem]:
     from gefyra.local import CARGO_LABEL, CONNECTION_NAME_LABEL, VERSION_LABEL
 
     config = ClientConfiguration()
-    config.CARGO_PROBE_TIMEOUT = 1  # don't wait too long for the probe
     result = []
     containers = config.DOCKER.containers.list(
         all=True, filters={"label": f"{CARGO_LABEL[0]}={CARGO_LABEL[1]}"}
@@ -210,9 +234,9 @@ def list_connections() -> List[GefyraConnectionItem]:
     for cargo_container in containers:
         if cargo_container.status == "running":
             try:
-                probe_wireguard_connection(
-                    ClientConfiguration(cargo_container_name=cargo_container.name)
-                )
+                config = ClientConfiguration(cargo_container_name=cargo_container.name)
+                config.CARGO_PROBE_TIMEOUT = 1  # don't wait too long for the probe
+                probe_wireguard_connection(config)
                 state = "running"
             except GefyraConnectionError:
                 state = "error"

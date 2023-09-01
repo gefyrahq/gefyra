@@ -1,6 +1,5 @@
 import os
 import click
-from gefyra import api
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from tabulate import tabulate
@@ -30,6 +29,8 @@ def clients(ctx):
 @click.pass_context
 @standard_error_handler
 def create_clients(ctx, client_id, quantity):
+    from gefyra import api
+
     api.add_clients(
         client_id,
         quantity,
@@ -46,6 +47,8 @@ def create_clients(ctx, client_id, quantity):
 @click.pass_context
 @standard_error_handler
 def delete_client(ctx, client_id):
+    from gefyra import api
+
     for _del in list(client_id):
         deleted = api.delete_client(
             _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
@@ -58,6 +61,8 @@ def delete_client(ctx, client_id):
 @click.pass_context
 @standard_error_handler
 def list_client(ctx):
+    from gefyra import api
+
     gefyraclients = api.list_client(
         kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
@@ -77,6 +82,8 @@ def list_client(ctx):
 @click.pass_context
 @standard_error_handler
 def inspect_client(ctx, client_id):
+    from gefyra import api
+
     client = api.get_client(
         client_id, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
@@ -110,6 +117,8 @@ def inspect_client(ctx, client_id):
 @click.pass_context
 @standard_error_handler
 def get_config(ctx, client_id, host, port, kube_api, output):
+    from gefyra import api
+
     json_str = api.write_client_file(
         client_id,
         host=host,

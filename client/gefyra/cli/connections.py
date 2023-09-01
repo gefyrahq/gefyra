@@ -1,41 +1,52 @@
 import dataclasses
 import logging
 from typing import Optional
-from alive_progress import alive_bar
-
 import click
-from gefyra import api
 
 from gefyra.cli.utils import AliasedGroup, check_connection_name, standard_error_handler
 from gefyra.cli import console
-from gefyra.configuration import ClientConfiguration
 from tabulate import tabulate
-import urllib3
 
 logger = logging.getLogger(__name__)
 
 
-def _manage_container_and_bridges(connection_name: str):
+def _manage_container_and_bridges(connection_name: str, force: bool = False):
+    import kubernetes
+    import urllib3
+    from gefyra import api
+    from gefyra.configuration import ClientConfiguration
+
     try:
         _bridges = api.list_gefyra_bridges(connection_name)
         if _bridges and len(_bridges[0][1]) > 0:
             console.info(
                 f"There is {len(_bridges[0][1])} Gefyra bridge(s) running with connection '{connection_name}'."
             )
-            if click.confirm("Do you want to remove them?", abort=True):
+            if force:
+                _del = True
+            elif click.confirm("Do you want to remove them?", abort=True):
+                _del = True
+            if _del:
                 for gbridges in _bridges[0][1]:
                     api.unbridge(
                         name=gbridges.name,
                         connection_name=connection_name,
                     )
-    except urllib3.exceptions.MaxRetryError:
+    except (
+        urllib3.exceptions.MaxRetryError,
+        kubernetes.client.exceptions.ApiException,
+    ):
         logger.warning("Cannot detect it there are any Gefyra bridges running")
     _containers = api.list_containers(connection_name)
     if _containers and len(_containers[0][1]) > 0:
         console.info(
             f"There is {len(_containers[0][1])} Gefyra container(s) running with connection '{connection_name}'."
         )
-        if click.confirm("Do you want to remove them?", abort=True):
+        if force:
+            _del = True
+        elif click.confirm("Do you want to remove them?", abort=True):
+            _del = True
+        if _del:
             for gcontainers in _containers[0][1]:
                 container = ClientConfiguration(
                     connection_name=connection_name
@@ -55,6 +66,7 @@ def connections(ctx):
 
 @connections.command(
     "connect",
+    alias=["create"],
     help="Connect this local machine to a Gefyra cluster",
 )
 @click.option("-f", "--client-config", type=click.File("r"))
@@ -75,6 +87,9 @@ def connections(ctx):
 )
 @standard_error_handler
 def connect_client(client_config, connection_name: str, minikube: Optional[str] = None):
+    from alive_progress import alive_bar
+    from gefyra import api
+
     conn_list = api.list_connections()
     if conn_list and connection_name in [conn.name for conn in conn_list]:
         raise click.BadArgumentUsage(
@@ -85,6 +100,9 @@ def connect_client(client_config, connection_name: str, minikube: Optional[str] 
         total=None,
         length=20,
         title=f"Creating the cluster connection '{connection_name}'",
+        bar="smooth",
+        spinner="classic",
+        stats=False,
         dual_line=True,
     ):
         api.connect(
@@ -100,11 +118,16 @@ def connect_client(client_config, connection_name: str, minikube: Optional[str] 
 
 @connections.command(
     "disconnect",
+    alias=["stop", "halt"],
     help="Disconnect this local machine from a Gefyra cluster",
 )
-@click.argument("connection_name", type=str, callback=check_connection_name)
+@click.argument(
+    "connection_name", type=str, default="default", callback=check_connection_name
+)
 @standard_error_handler
-def disconnect_client(connection_name: str = "default"):
+def disconnect_client(connection_name: str):
+    from gefyra import api
+
     _manage_container_and_bridges(connection_name=connection_name)
     api.disconnect(connection_name=connection_name)
 
@@ -116,6 +139,8 @@ def disconnect_client(connection_name: str = "default"):
 )
 @standard_error_handler
 def list_connections():
+    from gefyra import api
+
     conns = api.list_connections()
     data = [dataclasses.asdict(conn).values() for conn in conns]
     if data:
@@ -133,8 +158,12 @@ def list_connections():
     alias=["rm"],
     help="Remove a Gefyra connection",
 )
-@click.argument("connection_name", type=str, callback=check_connection_name)
+@click.argument(
+    "connection_name", type=str, default="default", callback=check_connection_name
+)
 # @standard_error_handler
-def remove_connection(connection_name: str = "default"):
+def remove_connection(connection_name: str):
+    from gefyra import api
+
     _manage_container_and_bridges(connection_name=connection_name)
     api.remove_connection(connection_name=connection_name)

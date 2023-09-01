@@ -1,10 +1,12 @@
-from docker.models.containers import Container
 import logging
 import os
 import sys
 from threading import Thread, Event
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TYPE_CHECKING
 from gefyra.cluster.utils import retrieve_pod_and_container
+
+if TYPE_CHECKING:
+    from docker.models.containers import Container
 
 from gefyra.configuration import (
     ClientConfiguration,
@@ -17,7 +19,7 @@ logger = logging.getLogger(__name__)
 stop_thread = Event()
 
 
-def print_logs(container: Container):
+def print_logs(container: "Container"):
     for logline in container.logs(stream=True):
         print(logline.decode("utf-8"), end="")
 

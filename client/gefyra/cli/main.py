@@ -1,7 +1,5 @@
 import click
 
-from alive_progress import config_handler
-
 from gefyra.cli.version import version
 from gefyra.cli.run import run
 from gefyra.cli.bridge import create_bridge, unbridge
@@ -13,8 +11,6 @@ from gefyra.cli.telemetry import telemetry
 from gefyra.cli.updown import cluster_down, cluster_up
 from gefyra.cli.list import list
 from gefyra.cli.utils import AliasedGroup
-
-config_handler.set_global(bar="smooth", spinner="classic", stats=False, dual_line=True)
 
 
 @click.group(

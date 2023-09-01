@@ -1,7 +1,4 @@
 import logging
-
-from docker.models.containers import Container
-
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import GefyraConnectionError
 from gefyra.types import StowawayConfig
@@ -14,9 +11,13 @@ def get_cargo_ip_from_netaddress(network_address: str) -> str:
 
 
 def probe_wireguard_connection(config: ClientConfiguration):
+    from docker.models.containers import Container
+
     cargo: Container = config.DOCKER.containers.get(f"{config.CARGO_CONTAINER_NAME}")
-    for _attempt in range(0, config.CARGO_PROBE_TIMEOUT):
-        logger.debug(f"Probing connection to {config.STOWAWAY_IP}")
+    for _attempt in range(0, config.CARGO_PROBE_TIMEOUT * 2):
+        logger.debug(
+            f"Probing connection to {config.STOWAWAY_IP} (attempt {_attempt}/{config.CARGO_PROBE_TIMEOUT * 2}))"
+        )
         _r = cargo.exec_run(f"timeout 1 ping -c 1 {config.STOWAWAY_IP}")
         if _r.exit_code != 0:
             continue

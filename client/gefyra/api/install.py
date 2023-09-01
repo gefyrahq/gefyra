@@ -18,7 +18,7 @@ from gefyra.misc.uninstall import (
 from gefyra.types import GefyraInstallOptions
 from .utils import stopwatch
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("gefyra")
 
 LB_PRESETS = {
     "aws": GefyraInstallOptions(
@@ -34,6 +34,8 @@ LB_PRESETS = {
         service_annotations={},
     ),
 }
+
+PRESET_TYPE_MAPPING = {"aws": "remote", "eks": "remote"}
 
 
 @stopwatch
@@ -62,6 +64,7 @@ def install(
         options = GefyraInstallOptions(
             **{k: v for k, v in kwargs.items() if v is not None}
         )
+    logger.debug(f"Using options: {options}")
     output = synthesize_config_as_yaml(options=options, components=component)
     if apply:
         import kubernetes

@@ -1,5 +1,8 @@
 # flake8: noqa
-from gefyra.types import GefyraInstallOptions
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from gefyra.types import GefyraInstallOptions
 
 STOWAWAY_LABELS = {
     "gefyra.dev/app": "stowaway",
@@ -8,7 +11,7 @@ STOWAWAY_LABELS = {
 }
 
 
-def data(params: GefyraInstallOptions) -> list[dict]:
+def data(params: "GefyraInstallOptions") -> list[dict]:
     stowaway_labels = STOWAWAY_LABELS.copy()
     stowaway_annotations = {}
     if params.service_labels:

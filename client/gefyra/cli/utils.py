@@ -1,25 +1,14 @@
 from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
-from gefyra import api
-from gefyra.cli import console
-from gefyra.types import GefyraInstallOptions
 import click
 from click import ClickException
 
 
 def standard_error_handler(func):
-    import kubernetes
-
     def wrapper(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
             return result
-        except kubernetes.client.rest.ApiException as e:
-            print(e.body)
-            if e.status == 404:
-                console.error("Gefyra is probably not installed in this cluster")
-            else:
-                raise ClickException(message=str(e))
         except Exception as e:  # noqa
             ce = ClickException(message=str(e))
             raise ce
@@ -192,6 +181,8 @@ def multi_options(options):
 
 
 def installoptions_to_cli_options() -> List[Dict[str, Union[bool, str, Any, None]]]:
+    from gefyra.types import GefyraInstallOptions
+
     result = []
     for _field in fields(GefyraInstallOptions):
         _data = dict(
@@ -226,6 +217,8 @@ def parse_ip_port_map(ctx, param, ports: Tuple[str]) -> dict:
 
 
 def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
+    from gefyra import api
+
     conn_list = api.list_connections()
     if not conn_list:
         raise click.UsageError(

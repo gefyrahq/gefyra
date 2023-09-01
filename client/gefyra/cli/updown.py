@@ -1,19 +1,25 @@
-from typing import Optional
-import click
-
 import logging
-from alive_progress import alive_bar
+import os
+from typing import Optional
+
+import click
 from click import pass_context
+
 from gefyra import api
+from gefyra.cli.connections import _manage_container_and_bridges
 from gefyra.cli.utils import standard_error_handler
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+from gefyra.exceptions import ClientConfigurationError, GefyraConnectionError
 from gefyra.types import StatusSummary
 
 logger = logging.getLogger("gefyra")
 
 
 def _check_and_install(
-    config: ClientConfiguration, connection_name: str = "", bar=None
+    config: ClientConfiguration,
+    connection_name: str = "",
+    preset: Optional[str] = None,
+    bar=None,
 ) -> bool:
     status = api.status(connection_name=connection_name)
 
@@ -25,11 +31,13 @@ def _check_and_install(
         logger.warning("Gefyra is not installed, but operating properly. Aborting.")
         return False
     else:  # status.summary == StatusSummary.DOWN:
+        logger.debug(f"Preset {preset}")
         api.install(
             kubeconfig=config.KUBE_CONFIG_FILE,
             kubecontext=config.KUBE_CONTEXT,
             apply=True,
             wait=True,
+            preset=preset,
         )
         return True
 
@@ -43,12 +51,24 @@ def _check_and_install(
     flag_value="minikube",  # if --minikube is used as flag, we default to profile 'minikube'
     required=False,
 )
+@click.option(
+    "--preset",
+    help=f"Set configs from a preset (available: {','.join(api.LB_PRESETS.keys())})",
+    type=str,
+)
 @pass_context
 @standard_error_handler
-def cluster_up(ctx, minikube: Optional[str] = None):
+def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None):
+    from alive_progress import alive_bar
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
     from time import sleep
     import os
+
+    if minikube and preset:
+        raise click.BadOptionUsage(
+            option_name="preset",
+            message="Cannot use minikube together with preset flag.",
+        )
 
     client_id = "default"
     connection_name = "default"
@@ -56,10 +76,17 @@ def cluster_up(ctx, minikube: Optional[str] = None):
     kubecontext = ctx.obj["context"]
 
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
-    with alive_bar(4, title="Installing Gefyra to the cluster") as bar:
+    with alive_bar(
+        4,
+        title="Installing Gefyra to the cluster",
+        bar="smooth",
+        spinner="classic",
+        stats=False,
+        dual_line=True,
+    ) as bar:
         # run a default install
         install_success = _check_and_install(
-            config=config, connection_name=connection_name, bar=bar
+            config=config, connection_name=connection_name, preset=preset, bar=bar
         )
         if install_success:
             bar()
@@ -85,12 +112,15 @@ def cluster_up(ctx, minikube: Optional[str] = None):
             )
             bar()
         # write config with specific connection data (for minikube)
-        host = config.CARGO_ENDPOINT.split(":")[0]
+        if not preset or (preset and api.PRESET_TYPE_MAPPING.get(preset) == "local"):
+            host = config.CARGO_ENDPOINT.split(":")[0]
+        else:
+            host = None
         bar()
         bar.title = "Waiting for the Gefyra client to enter 'waiting' state"
         # busy wait for the client to enter the waiting state
         _i = 0
-        while _i < 5:
+        while _i < 10:
             try:
                 json_str = api.write_client_file(
                     client_id=client.client_id,
@@ -103,10 +133,10 @@ def cluster_up(ctx, minikube: Optional[str] = None):
                 logger.warning(e)
                 sleep(1)
                 _i += 1
-
         else:
             raise ClientConfigurationError(
-                "Could not set up the client '{client_id}'. This is most probably a problem of Gefyra operator."
+                f"Could not set up the client '{client_id}'. This is most probably a problem of Gefyra operator. \n"
+                f"Try running 'gefyra up{' --preset '+preset if preset else ''}' again after some time."
             )
 
         # create a temporary file with the client config
@@ -118,11 +148,24 @@ def cluster_up(ctx, minikube: Optional[str] = None):
         fh.write(json_str)
         fh.seek(0)
         bar()
-        bar.title = (
-            f"Connecting local container network '{config.NETWORK_NAME}' to the cluster"
-        )
+        bar.title = f"Connecting local network '{config.NETWORK_NAME}' to the cluster (up to 10 min)"
         logger.debug(f"Minikube profile {minikube}")
-        api.connect(connection_name, client_config=fh, minikube_profile=minikube)
+        try:
+            # setting the probe timeout to a much higher value
+            api.connect(
+                connection_name,
+                client_config=fh,
+                minikube_profile=minikube,
+                probe_timeout=180,
+            )
+        except GefyraConnectionError as e:
+            raise GefyraConnectionError(
+                f"Gefyra could not successfully establish the connection to '{config.CARGO_ENDPOINT.split(':')[0]}'.\n"
+                "If you have run 'gefyra up' with a remote cluster, a newly created route may not be working "
+                "immediately.\n"
+                f"Try running 'gefyra up{' --preset '+preset if preset else ''}' again after some time. "
+                f"Error: {e}"
+            ) from None
         fh.close()
         os.remove(loc)
         bar()
@@ -133,14 +176,31 @@ def cluster_up(ctx, minikube: Optional[str] = None):
 @pass_context
 @standard_error_handler
 def cluster_down(ctx):
+    from alive_progress import alive_bar
     from gefyra import api
 
+    if ctx.obj["kubeconfig"] is None:
+        ctx.obj["kubeconfig"] = os.environ.get("KUBECONFIG") or os.path.expanduser(
+            "~/.kube/config"
+        )
     connection_name = "default"
     kubeconfig = ctx.obj["kubeconfig"]
     kubecontext = ctx.obj["context"]
+
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
 
-    with alive_bar(2, title="Removing Gefyra from the cluster") as bar:
+    with alive_bar(
+        2,
+        title="Removing Gefyra from the cluster",
+        bar="smooth",
+        spinner="classic",
+        stats=False,
+        dual_line=True,
+    ) as bar:
+        try:
+            _manage_container_and_bridges(connection_name=connection_name, force=True)
+        except ClientConfigurationError:
+            pass
         api.uninstall(
             kubeconfig=config.KUBE_CONFIG_FILE,
             kubecontext=config.KUBE_CONTEXT,
