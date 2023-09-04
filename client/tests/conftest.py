@@ -67,7 +67,10 @@ def operator(k3d: AClusterManager, operator_image, stowaway_image):
                 not_found = False
     if not_found:
         print(
-            k3d.kubectl(["describe", "deployment", "-n", "gefyra", "gefyra-operator"], as_dict=False)
+            k3d.kubectl(
+                ["describe", "deployment", "-n", "gefyra", "gefyra-operator"],
+                as_dict=False,
+            )
         )
         print(k3d.kubectl(["logs", "-n", "gefyra", "deployment", "gefyra-operator"]))
         print(
