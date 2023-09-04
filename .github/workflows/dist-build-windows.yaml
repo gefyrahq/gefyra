@@ -33,6 +33,7 @@ jobs:
       run: |
         Invoke-WebRequest 'https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.24.0/pyoxidizer-0.24.0-i686-pc-windows-msvc.zip' -OutFile .\pyoxidizer-0.24.0-i686-pc-windows-msvc.zip
         7z x pyoxidizer-0.24.0-i686-pc-windows-msvc.zip
+        mv pyoxidizer-0.24.0-i686-pc-windows-msvc pyoxidizer.exe
         ls
         mkdir build\x86_64-pc-windows-msvc\release\wininstall\
         ./pyoxidizer.exe build wininstall --release
