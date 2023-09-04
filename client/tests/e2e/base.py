@@ -662,7 +662,7 @@ class GefyraBaseTest:
         runner = CliRunner()
         res = runner.invoke(
             cli,
-            ["unbridge", "--name", "mypyserver-to-default.deploy.hello-nginxdemo"],
+            ["unbridge", "mypyserver-to-default.deploy.hello-nginxdemo"],
             catch_exceptions=False,
         )
         print(res.output)
