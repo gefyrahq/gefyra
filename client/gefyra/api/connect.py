@@ -133,7 +133,7 @@ def connect(  # noqa: C901
 
     if config.CARGO_ENDPOINT is None:
         config.CARGO_ENDPOINT = client.provider_config.pendpoint
-
+    logger.debug(config.CARGO_ENDPOINT)
     # busy wait to resolve the cargo endpoint, making sure it's actually resolvable from this host
     _i = 0
     while _i < config.CONNECTION_TIMEOUT:
