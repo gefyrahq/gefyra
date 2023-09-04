@@ -973,7 +973,7 @@ class GefyraBaseTest:
         sleep(10)
         res = runner.invoke(
             cli,
-            ["connections", "connect", "-n", CONNECTION_NAME, "-f", file_loc],
+            ["connections", "connect", "-n", CONNECTION_NAME],
             catch_exceptions=False,
         )
         print(res.output)

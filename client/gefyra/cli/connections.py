@@ -91,10 +91,10 @@ def connect_client(client_config, connection_name: str, minikube: Optional[str] 
     from gefyra import api
 
     conn_list = api.list_connections()
-    if conn_list and connection_name in [conn.name for conn in conn_list]:
+    if client_config and conn_list and connection_name in [conn.name for conn in conn_list]:
         raise click.BadArgumentUsage(
             message=f"The connection name '{connection_name}' already exists. Run 'gefyra connections list' to "
-            "see all connections."
+            "see all connections. If this is a reconnect, please omit the --client-config option."
         )
     with alive_bar(
         total=None,
