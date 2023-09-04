@@ -3,7 +3,7 @@
 name: Build Windows binary
 
 env:
-  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/pyoxidizer-0.24.0-i686-pc-windows-msvc.zip
+  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
 
 on:
   workflow_dispatch: {}
@@ -31,9 +31,8 @@ jobs:
     - name: Setup PyOxidizer and build
       working-directory: client/
       run: |
-        Invoke-WebRequest 'https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.24.0/pyoxidizer-0.24.0-i686-pc-windows-msvc.zip' -OutFile .\pyoxidizer-0.24.0-i686-pc-windows-msvc.zip
-        7z x pyoxidizer-0.24.0-i686-pc-windows-msvc.zip
-        mv ./pyoxidizer-0.24.0-i686-pc-windows-msvc/pyoxidizer.exe ./pyoxidizer.exe
+        Invoke-WebRequest 'https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip' -OutFile .\PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
+        7z x PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
         ls
         mkdir build\x86_64-pc-windows-msvc\release\wininstall\
         ./pyoxidizer.exe build wininstall --release
