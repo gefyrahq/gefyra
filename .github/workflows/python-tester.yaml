@@ -131,8 +131,7 @@ jobs:
           quay.io/gefyra/cargo
         tags: |
           type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
-          type=raw,value=2.0.0,enable=${{ github.event.pull_request.number == 404 }}
-#           type=ref,event=pr,enable=${{ !!github.event.pull_request }}
+          type=ref,event=pr,enable=${{ !!github.event.pull_request }}
         labels: |
           quay.expires-after=24h
     - name: Build and push
