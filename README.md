@@ -101,6 +101,9 @@ Working with Docker Desktop? We offer an [extension](https://open.docker.com/ext
 
 
 ### Your First Bridge
+Make sure Gefyra is installed on your cluster (`gefyra up`). Some details of the installation depend on your Kubernetes' platform.
+Check out our [docs](https://gefyra.dev) for more details.
+
 Bridge a local container into an existing cluster. For a detailed guide please
 check out this [article](https://gefyra.dev/getting-started/k3d/#running-gefyra).
 1. Run a local available image with Gefyra:
