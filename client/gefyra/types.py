@@ -58,7 +58,6 @@ class StowawayConfig:
     presharedkey: str
 
 
-
 class GefyraClientState(Enum):
     REQUESTED = "REQUESTED"
     CREATING = "CREATING"
