@@ -1,10 +1,11 @@
-import logging
 import os
 from pathlib import Path
 import unittest
 
-from gefyra.local.telemetry import CliTelemetry
-import gefyra.__main__ as _gefyra
+from click.testing import CliRunner
+from gefyra.cli.main import cli
+
+from gefyra.cli.telemetry import CliTelemetry
 
 
 class MockCliTelemetry:
@@ -62,23 +63,21 @@ class TelemetryTest(unittest.TestCase):
         config = self.tracker.load_config(self.config_path)
         self.assertTrue(config["telemetry"].getboolean("track"))
 
-
-def test_telemetry_on(monkeypatch):
-    monkeypatch.setattr(_gefyra, "telemetry", MockCliTelemetry())
-    _gefyra.telemetry_command(True, False)
-
-
-def test_telemetry_off(monkeypatch):
-    monkeypatch.setattr(_gefyra, "telemetry", MockCliTelemetry())
-    _gefyra.telemetry_command(False, True)
-
-
-def test_telemetry_invalid(caplog):
-    INVALID_FLAG_STR = "Invalid flags"
-    caplog.set_level(logging.INFO)
-    _gefyra.telemetry_command(True, True)
-    assert INVALID_FLAG_STR in caplog.text
-    caplog.clear()
-    assert INVALID_FLAG_STR not in caplog.text
-    _gefyra.telemetry_command(False, False)
-    assert INVALID_FLAG_STR in caplog.text
+    def test_telemetry_switch(self):
+        runner = CliRunner()
+        result = runner.invoke(cli, ["telemetry", "on"], catch_exceptions=False, obj="")
+        print(result.stdout)
+        assert result.exit_code == 0
+        self._init_tracker()
+        config = self.tracker.load_config(self.config_path)
+        self.assertTrue(config["telemetry"].getboolean("track"))
+        result = runner.invoke(
+            cli, ["telemetry", "off"], catch_exceptions=False, obj=""
+        )
+        assert result.exit_code == 0
+        config = self.tracker.load_config(self.config_path)
+        self.assertFalse(config["telemetry"].getboolean("track"))
+        result = runner.invoke(cli, ["telemetry", "on"], catch_exceptions=False, obj="")
+        assert result.exit_code == 0
+        config = self.tracker.load_config(self.config_path)
+        self.assertTrue(config["telemetry"].getboolean("track"))

@@ -63,6 +63,12 @@ jobs:
     - name: Set up Docker Buildx
       id: buildx
       uses: docker/setup-buildx-action@v2
+    - name: Login to quay.io
+      uses: docker/login-action@v2
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_ROBOT }}
+        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
     #
     # Gefyra Operator
     #
@@ -73,10 +79,11 @@ jobs:
         flavor: |
           latest=false
         images: |
-          gefyra/operator
+          quay.io/gefyra/operator
         tags: |
-          type=ref,event=pr,enable=${{ !!github.event.pull_request }}
           type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
+          type=raw,value=2.0.0-alpha,enable=${{ github.event.pull_request.number == 404 }}
+#           type=ref,event=pr,enable=${{ !!github.event.pull_request }}
         labels: |
           quay.expires-after=24h
     - name: Build and push
@@ -84,17 +91,67 @@ jobs:
       with:
         context: operator/
         platforms: linux/amd64
-        push: false
-        load: true
+        push: true
+        load: false
         tags: ${{ steps.operator_meta.outputs.tags }}
         labels: ${{ steps.operator_meta.outputs.labels }}
         cache-from: type=registry,ref=quay.io/gefyra/operator:latest
-        outputs: type=docker,dest=/tmp/operator.tar
+        # Goutputs: type=docker,dest=/tmp/operator.tar
     - name: Upload operator image
       uses: actions/upload-artifact@v3
       with:
         name: operator
         path: /tmp/operator.tar
+
+  
+
+  build_cargo:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.cargo_meta.outputs.tags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    # https://github.com/docker/setup-qemu-action
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    # https://github.com/docker/setup-buildx-action
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+    #
+    # Gefyra Cargo
+    #
+    - name: Cargo Image meta
+      id: cargo_meta
+      uses: docker/metadata-action@v4
+      with:
+        flavor: |
+          latest=false
+        images: |
+          quay.io/gefyra/cargo
+        tags: |
+          type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
+          type=raw,value=2.0.0-alpha,enable=${{ github.event.pull_request.number == 404 }}
+#           type=ref,event=pr,enable=${{ !!github.event.pull_request }}
+        labels: |
+          quay.expires-after=24h
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: cargo/
+        platforms: linux/amd64
+        push: false
+        target: cargo
+        tags: ${{ steps.cargo_meta.outputs.tags }}
+        labels: ${{ steps.cargo_meta.outputs.labels }}
+        cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
+        outputs: type=docker,dest=/tmp/cargo.tar
+    - name: Upload cargo image
+      uses: actions/upload-artifact@v3
+      with:
+        name: cargo
+        path: /tmp/cargo.tar
 
   test_python:
     runs-on: ubuntu-latest
@@ -140,6 +197,8 @@ jobs:
         working-directory: ./client
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
+      - name: Install k3d
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
       - name: Run PyTest
         working-directory: ./client
         run: poetry run coverage run -m pytest tests/unit/
@@ -148,9 +207,13 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: poetry run coveralls --service=github
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage_data
+          path: ./client/.coverage*
 
   test_minikube:
     strategy:
@@ -161,7 +224,9 @@ jobs:
             driver: ''
           - os: macos-12
             driver: virtualbox
-    needs: build_operator
+    needs:
+      - build_operator
+      - build_cargo
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -170,7 +235,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      - run: brew install docker
+      # https://github.com/opensafely-core/job-server/issues/3429
+      - run: |
+          brew remove --ignore-dependencies qemu
+          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
+          brew install ./qemu.rb
+          brew install docker
         if: ${{ matrix.os == 'macos-12' }}
       - run: colima start
         if: ${{ matrix.os == 'macos-12' }}
@@ -196,11 +266,21 @@ jobs:
           echo "track = False" >> config.ini
           cd ~/.kube
           touch config
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          path: /tmp
+      - name: Load Gefyra images
+        run: |
+          docker load --input /tmp/pyserver/pyserver.tar
+          docker load --input /tmp/cargo/cargo.tar
+          docker image ls -a
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@latest
         with:
           driver: ${{ matrix.driver }}
+          start-args: --ports 127.0.0.1:31820:31820/udp
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
@@ -215,7 +295,15 @@ jobs:
         timeout-minutes: 8
         working-directory: ./client
         run: |
-          poetry run coverage run -a -m gefyra --debug up --minikube
+          poetry run coverage run -a -m gefyra.cli.main --debug up --minikube
+      - name: Show cargo logs
+        working-directory: ./client
+        if: ${{ failure() }}
+        run: |
+          docker logs gefyra-cargo-default
+          kubectl logs -n gefyra gefyra-stowaway-0
+          docker inspect minikube
+          docker inspect gefyra-cargo-default
       - name: Show coverage report
         working-directory: ./client
         run: |
@@ -225,21 +313,26 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage_data
+          path: ./client/.coverage*
 
   test:
     strategy:
       fail-fast: false
       matrix:
-        k3d: [v1.23.16-k3s1, v1.24.10-k3s1, v1.25.6-k3s1, v1.26.1-k3s1]
+        k3d: [v1.23.17-k3s1, v1.24.15-k3s1, v1.25.11-k3s1, v1.26.6-k3s1, v1.27.3-k3s1]
     needs:
+      - build_cargo
       - build_operator
       - build_test_image
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -277,22 +370,25 @@ jobs:
         name: Create Single Cluster
         with:
           cluster-name: "mycluster"
+          k3d-version: v5.5.1
           args: >-
             --agents 1
             -p "31820:31820/UDP@agent:0"
             --image docker.io/rancher/k3s:${{ matrix.k3d }}
+            --kubeconfig-update-default
+            --kubeconfig-switch-context
       - name: Download artifact
         uses: actions/download-artifact@v3
         with:
           path: /tmp
       - name: Load Operator image
         run: |
-          docker load --input /tmp/operator/operator.tar
           docker load --input /tmp/pyserver/pyserver.tar
+          docker load --input /tmp/cargo/cargo.tar
           docker image ls -a
-      - name: Import Operator to k3d
-        run: |
-          k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
+      # - name: Import Operator to k3d
+      #   run: |
+      #     k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
       - name: Load cached venv
         id: cached-poetry-dependencies
         uses: actions/cache@v3
@@ -311,8 +407,24 @@ jobs:
       - name: Run Gefyra K3D Tests
         working-directory: ./client
         run: |
-          poetry run coverage run -m pytest -s tests/e2e/
-
+          poetry run coverage run -m pytest -vvv -s -x --full-trace --timeout=240 tests/e2e/
+      - name: Show gefyra-operator logs
+        working-directory: ./client
+        if: ${{ failure() }}
+        run: |
+          kubectl get pods -n gefyra
+          kubectl describe deployment -n gefyra gefyra-operator
+          kubectl describe deployment -n gefyra gefyra-operator-webhook
+          kubectl logs -n gefyra deployment/gefyra-operator
+          kubectl logs -n gefyra deployment/gefyra-operator-webhook
+          kubectl get -A ValidatingWebhookConfiguration
+          kubectl get cm -n gefyra
+          kubectl describe cm -n gefyra gefyra-stowaway-proxyroutes
+          kubectl describe cm -n gefyra gefyra-stowaway-config
+          kubectl describe pod -n gefyra gefyra-stowaway-0
+          kubectl logs -n gefyra pod/gefyra-stowaway-0
+          kubectl get pvc -A
+          kubectl describe -n gefyra pvc stowaway-config-gefyra-stowaway-0
       - name: Show coverage report
         working-directory: ./client
         run: |
@@ -322,10 +434,55 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
+      - uses: actions/upload-artifact@v3
+        with:
+          name: coverage_data
+          path: ./client/.coverage*
+  test_operator:
+    name: Test Gefyra Operator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Load cached Poetry installation
+        uses: actions/cache@v3
+        with:
+          path: ~/.local
+          key: poetry-py-1-op
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: ./operator/.venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-py-1
+      - name: Install dependencies
+        working-directory: ./operator
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      - name: Install k3d
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
+      - name: Run PyTest
+        working-directory: ./operator
+        run: poetry run coverage run -m pytest -x
+      - name: Upload coverage data to coveralls.io
+        if: github.repository == 'gefyrahq/gefyra'
+        working-directory: ./operator
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: operator
+          COVERALLS_PARALLEL: true
+        run: poetry run coveralls --service=github
+    
   coveralls:
     name: Indicate completion to coveralls.io
     if: github.repository == 'gefyrahq/gefyra'
@@ -334,12 +491,13 @@ jobs:
       - test
       - test_minikube
       - test_python
+      - test_operator
     runs-on: ubuntu-latest
     container: python:3-slim
     steps:
       - name: Finished
         run: |
           pip3 install --upgrade coveralls
-          coveralls --finish
+          coveralls --service=github --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

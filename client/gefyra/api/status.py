@@ -1,60 +1,17 @@
 import logging
-from dataclasses import dataclass
-from enum import Enum
 
 from gefyra.api import stopwatch
-from gefyra.configuration import default_configuration, ClientConfiguration
+from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import ClientConfigurationError
+from gefyra.types import (
+    GefyraClientStatus,
+    GefyraClusterStatus,
+    GefyraStatus,
+    StatusSummary,
+)
+
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class GefyraClusterStatus:
-    # is a kubernetes cluster reachable
-    connected: bool
-    # is the operator running
-    operator: bool
-    operator_image: str
-    # is stowaway running
-    stowaway: bool
-    stowaway_image: str
-    # the gefyra namespace is available
-    namespace: bool
-
-
-@dataclass
-class GefyraClientStatus:
-    version: str
-    # is cargo running
-    cargo: bool
-    cargo_image: str
-    # is gefyra network available
-    network: bool
-    # is gefyra client connected with gefyra cluster
-    connection: bool
-    # amount of containers running in gefyra
-    containers: int
-    # amount of active bridges
-    bridges: int
-    # current kubeconfig file
-    kubeconfig: str
-    # current kubeconfig context
-    context: str
-    # wireguard endpoint
-    cargo_endpoint: str
-
-
-class StatusSummary(str, Enum):
-    UP = "Gefyra is up and connected"
-    DOWN = "Gefyra is not running"
-    INCOMPLETE = "Gefyra is not running properly"
-
-
-@dataclass
-class GefyraStatus:
-    summary: StatusSummary
-    cluster: GefyraClusterStatus
-    client: GefyraClientStatus
 
 
 def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
@@ -90,7 +47,7 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
         pass
     try:
         logger.debug("Checking gefyra network available")
-        gefyra_net = config.DOCKER.networks.get(config.NETWORK_NAME)
+        gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
         _status.network = True
         _status.containers = (
             len(gefyra_net.containers) - 1
@@ -110,15 +67,15 @@ def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
     except RuntimeError:
         return _status
 
-    from gefyra.local.bridge import get_all_interceptrequests
+    from gefyra.local.bridge import get_all_gefyrabridges
 
     logger.debug("Counting all active bridges")
-    _status.bridges = len(get_all_interceptrequests(config))
+    _status.bridges = len(get_all_gefyrabridges(config))
     return _status
 
 
 def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
-    from kubernetes.client import ApiException
+    from kubernetes.client import ApiException, V1Pod
     from kubernetes.config import ConfigException
     from urllib3.exceptions import MaxRetryError
 
@@ -166,33 +123,37 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
 
     # check if the Gefyra operator is running and ready
     try:
-        logger.debug("Checking Stowaway deployment")
-        stowaway_deploy = config.K8S_APP_API.read_namespaced_deployment(
-            name="gefyra-stowaway", namespace=config.NAMESPACE, _request_timeout=(1, 5)
+        logger.debug("Checking Stowaway endpoint")
+        stowaway_pod: V1Pod = config.K8S_CORE_API.read_namespaced_pod(
+            name="gefyra-stowaway-0",
+            namespace=config.NAMESPACE,
+            _request_timeout=(1, 5),
         )
-        if (
-            stowaway_deploy.status.ready_replicas
-            and stowaway_deploy.status.ready_replicas >= 1
-        ):
+        if stowaway_pod.status.container_statuses[0].ready:
             _status.stowaway = True
-            _status.stowaway_image = stowaway_deploy.spec.template.spec.containers[
-                0
-            ].image
-    except ApiException:
+            _status.stowaway_image = stowaway_pod.spec.containers[0].image
+    except ApiException as e:
+        logger.warning(e)
         pass
 
     return _status
 
 
 @stopwatch
-def status(config=default_configuration) -> GefyraStatus:
-    from gefyra.local.utils import set_kubeconfig_from_cargo
+def status(connection_name: str = "") -> GefyraStatus:
+    import urllib3
 
     # Check if kubeconfig is available through running Cargo
-    config = set_kubeconfig_from_cargo(config)
+    config = ClientConfiguration(connection_name=connection_name)
 
     cluster = _get_cluster_status(config)
-    client = _get_client_status(config)
+    try:
+        client = _get_client_status(config)
+    except urllib3.exceptions.MaxRetryError as e:
+        raise ClientConfigurationError(
+            f"Cannot reach cluster on {e.pool.host}:{e.pool.port}"
+        )
+
     if client.connection:
         summary = StatusSummary.UP
     else:

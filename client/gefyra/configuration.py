@@ -1,18 +1,26 @@
 from os import path
-import platform
+import os
 import struct
 import socket
 import sys
 import logging
+from typing import Optional, Union
 
-console = logging.StreamHandler(sys.stdout)
-formatter = logging.Formatter("[%(levelname)s] %(message)s")
-console.setFormatter(formatter)
+from pathlib import Path
+from gefyra.exceptions import ClientConfigurationError
+
+
+from gefyra.local import (
+    CONNECTION_NAME_LABEL,
+    CARGO_ENDPOINT_LABEL,
+    ACTIVE_KUBECONFIG_LABEL,
+    CLIENT_ID_LABEL,
+)
 
 logger = logging.getLogger("gefyra")
-logger.addHandler(console)
 
-__VERSION__ = "1.1.2"
+__VERSION__ = "2.0.0-alpha"
+USER_HOME = os.path.expanduser("~")
 
 
 def fix_pywin32_in_frozen_build() -> None:  # pragma: no cover
@@ -47,19 +55,25 @@ class ClientConfiguration(object):
     def __init__(
         self,
         docker_client=None,
-        network_name: str = None,
-        cargo_endpoint_host: str = None,
+        network_name: str = "",
+        connection_name: Optional[str] = None,
+        cargo_endpoint_host: str = "",
         cargo_endpoint_port: str = "31820",
-        cargo_container_name: str = None,
-        registry_url: str = None,
-        operator_image_url: str = None,
-        stowaway_image_url: str = None,
-        carrier_image_url: str = None,
-        cargo_image_url: str = None,
-        kube_config_file: str = None,
-        kube_context: str = None,
-        wireguard_mtu: str = None,
+        cargo_container_name: str = "",
+        registry_url: str = "",
+        operator_image_url: str = "",
+        stowaway_image_url: str = "",
+        carrier_image_url: str = "",
+        cargo_image_url: str = "",
+        kube_config_file: Optional[Path] = None,
+        kube_context: Optional[str] = None,
+        wireguard_mtu: str = "1340",
+        client_id: str = "",
+        gefyra_config_root: Optional[Union[str, Path]] = None,
+        ignore_connection: bool = False,  # work with kubeconfig not connection
     ):
+        import platform
+
         if sys.platform == "win32":  # pragma: no cover
             fix_pywin32_in_frozen_build()
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
@@ -93,15 +107,64 @@ class ClientConfiguration(object):
             logger.debug(
                 f"Using Carrier image (other than default): {carrier_image_url}"
             )
-        self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
+        if sys.platform == "win32" or "microsoft" in platform.release().lower():
+            self.CARGO_IMAGE = (
+                cargo_image_url or f"{self.REGISTRY_URL}/cargo-win:{__VERSION__}"
+            )
+        else:
+            self.CARGO_IMAGE = (
+                cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
+            )
         if cargo_image_url:
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:
             self.DOCKER = docker_client
+
+        self.cargo_endpoint_port = cargo_endpoint_port
+
+        self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo-default"
+        self.STOWAWAY_IP = "192.168.99.1"
+        self.NETWORK_NAME = network_name or "gefyra-network"
+        self.CONNECTION_NAME = connection_name or "default"
+        self.BRIDGE_TIMEOUT = 60  # in seconds
+        self.CONNECTION_TIMEOUT = 60  # in seconds
+        self.CARGO_PROBE_TIMEOUT = 20  # in seconds
+        self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
+        self.CLIENT_ID = client_id
+        containers = self.DOCKER.containers.list(
+            all=True,
+            filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
+        )
+        if containers and not ignore_connection:
+            cargo_container = containers[0]
+            self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
+            self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
+            self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
+            self.CARGO_CONTAINER_NAME = cargo_container.name
+
+        self.NETWORK_NAME = f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"
         if cargo_endpoint_host:
-            self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{cargo_endpoint_port}"
+            self.CARGO_ENDPOINT = f"{cargo_endpoint_host}:{self.cargo_endpoint_port}"
+
+        if kube_config_file:
+            self.KUBE_CONFIG_FILE = str(kube_config_file)
+
+        if kube_context:
+            self.KUBE_CONTEXT = kube_context
+
+        self.WIREGUARD_MTU = wireguard_mtu
+        if not gefyra_config_root:
+            self.GEFYRA_LOCATION = Path.home().joinpath(".gefyra")
         else:
-            self.DOCKER.info
+            self.GEFYRA_LOCATION = Path(gefyra_config_root)
+
+    @property
+    def CARGO_ENDPOINT(self):
+        import platform
+
+        if hasattr(self, "_cargo_endpoint") and self._cargo_endpoint:
+            return self._cargo_endpoint
+        else:
             if (
                 platform.system().lower() == "linux"
                 and "microsoft" not in platform.release().lower()
@@ -117,37 +180,21 @@ class ClientConfiguration(object):
                         struct.pack("256s", "docker0".encode("utf-8")[:15]),
                     )[20:24]
                 )
-                self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
+                return f"{_ip}:{self.cargo_endpoint_port}"
             else:
                 try:
                     _ip_output = self.DOCKER.containers.run(
                         "alpine", "getent hosts host.docker.internal", remove=True
                     )
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
-                    self.CARGO_ENDPOINT = f"{_ip}:{cargo_endpoint_port}"
+                    logger.debug(f"Found host.docker.internal IP: {_ip}")
+                    return f"{_ip}:{self.cargo_endpoint_port}"
                 except Exception as e:
                     logger.error("Could not create a valid configuration: " + str(e))
 
-        self.CARGO_CONTAINER_NAME = cargo_container_name or "gefyra-cargo"
-        self.STOWAWAY_IP = "192.168.99.1"
-        self.NETWORK_NAME = network_name or "gefyra"
-        self.BRIDGE_TIMEOUT = 60  # in seconds
-        self.CARGO_PROBE_TIMEOUT = 10  # in seconds
-        self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
-        if kube_config_file:
-            self.KUBE_CONFIG_FILE = kube_config_file
-
-        if kube_context:
-            self.KUBE_CONTEXT = kube_context
-
-        self.WIREGUARD_MTU = wireguard_mtu or "1340"
-
-    def _get_docker_info_by_name(self, name):
-        """Returns lower case docker information value for a given name."""
-        try:
-            return self.DOCKER.info()[name].lower()
-        except Exception:
-            return ""
+    @CARGO_ENDPOINT.setter
+    def CARGO_ENDPOINT(self, value):
+        self._cargo_endpoint = value
 
     @property
     def KUBE_CONTEXT(self):
@@ -197,9 +244,7 @@ class ClientConfiguration(object):
                 self.DOCKER = docker.from_env()
         except docker.errors.DockerException as de:
             logger.fatal(f"Docker init error: {de}")
-            raise docker.errors.DockerException(
-                "Docker init error. Docker host not running?"
-            )
+            raise RuntimeError("Docker init error. Docker host not running?") from None
 
     def _init_kubeapi(self):
         from kubernetes.client import (
@@ -207,6 +252,8 @@ class ClientConfiguration(object):
             RbacAuthorizationV1Api,
             AppsV1Api,
             CustomObjectsApi,
+            ApiextensionsV1Api,
+            AdmissionregistrationV1Api,
         )
         from kubernetes.config import load_kube_config
 
@@ -215,6 +262,8 @@ class ClientConfiguration(object):
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
+        self.K8S_EXTENSION_API = ApiextensionsV1Api()
+        self.K8S_ADMISSION_API = AdmissionregistrationV1Api()
 
     def __getattr__(self, item):
         if item in [
@@ -222,6 +271,8 @@ class ClientConfiguration(object):
             "K8S_RBAC_API",
             "K8S_APP_API",
             "K8S_CUSTOM_OBJECT_API",
+            "K8S_EXTENSION_API",
+            "K8S_ADMISSION_API",
         ]:
             try:
                 return self.__getattribute__(item)
@@ -241,5 +292,66 @@ class ClientConfiguration(object):
     def __str__(self):
         return str(self.to_dict())
 
+    def get_kubernetes_api_url(self) -> str:
+        return self.K8S_CORE_API.api_client.configuration.host
 
-default_configuration = ClientConfiguration()
+    def get_stowaway_host(self, port: Optional[str]) -> str:
+        """
+        Return the cargo endpoint
+        If the endpoint is not set, it will try to estimate if from the K8s service
+        gefyra-stowaway-wireguard in the cluster and/or public IPs of a node
+        """
+        if hasattr(self, "_cargo_endpoint") and self._cargo_endpoint:
+            return self._cargo_endpoint
+        else:
+            import kubernetes
+
+            try:
+                service = self.K8S_CORE_API.read_namespaced_service(
+                    namespace=self.NAMESPACE, name="gefyra-stowaway-wireguard"
+                )
+                if service.spec.type == "LoadBalancer":
+                    _port = port or service.spec.ports["gefyra-wireguard"].port
+                    _host = (
+                        service.status.load_balancer.ingress[0].hostname
+                        or service.status.load_balancer.ingress[0].ip
+                    )
+                    return f"{_host}:{_port}"
+                else:  # NodePort
+                    # trying to retrive a public IP for the service
+                    nodes = self.K8S_CORE_API.list_node()
+                    external_ips = list(
+                        filter(
+                            lambda x: x.type == "ExternalIP",
+                            nodes.items[0].status.addresses,
+                        )
+                    )
+                    if external_ips:
+                        _port = port or service.spec.ports["gefyra-wireguard"].node_port
+                        return f"{external_ips[0].address}:{_port}"
+                    else:
+                        raise ClientConfigurationError(
+                            "Could not find a public IP for the NodePort service gefyra-stowaway-wireguard"
+                        )
+            except kubernetes.client.ApiException as e:
+                if e.status == 404:
+                    raise ClientConfigurationError(
+                        f"Could not find service gefyra-stowaway-wireguard in {self.NAMESPACE}"
+                    ) from None
+                else:
+                    raise e
+
+
+def get_gefyra_config_location() -> str:
+    """
+    It creates a directory for the client config if it doesn't
+    already exist, and returns the path to that directory
+
+    :param config: ClientConfiguration
+    :type config: ClientConfiguration
+    :return: The path to the directory where the files will be stored.
+    """
+    config = ClientConfiguration()
+    config_dir = config.GEFYRA_LOCATION
+    config_dir.mkdir(parents=True, exist_ok=True)
+    return str(config_dir)

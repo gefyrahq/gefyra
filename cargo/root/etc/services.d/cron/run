@@ -1,7 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-if [ ! -f /var/run/crond.pid  ]; then
-  exec cron
-else
-  sleep infinity
-fi

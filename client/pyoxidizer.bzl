@@ -28,7 +28,7 @@ def make_exe():
     policy.resources_location_fallback = "filesystem-relative:prefix"
     python_config = dist.make_python_interpreter_config()
 
-    python_config.run_command = "from gefyra.__main__ import main; main()"
+    python_config.run_command = "from gefyra.cli.main import main; main()"
 
     exe = dist.to_python_executable(
         name="gefyra",
@@ -40,7 +40,7 @@ def make_exe():
     exe.add_python_resources(exe.read_package_root(CWD, ["gefyra"]))
     exe.add_python_resources(exe.pip_install(["--no-deps", "docker==6.0.1"]))
     # certifi from version 2022.06.15.1 does not work
-    exe.add_python_resources(exe.pip_install(["chardet", "certifi==2022.06.15", "kubernetes", "packaging==21.3", "tabulate", "cli-tracker"]))
+    exe.add_python_resources(exe.pip_install(["chardet", "certifi==2022.06.15", "kubernetes", "packaging==21.3", "tabulate", "cli-tracker", "prompt_toolkit", "alive-progress", "git+https://github.com/gefyrahq/grapheme", "click"]))
     return exe
 
 def make_win_exe():
@@ -62,7 +62,7 @@ def make_win_exe():
     python_config = dist.make_python_interpreter_config()
     python_config.module_search_paths = ["$ORIGIN", "$ORIGIN/lib"]
 
-    python_config.run_command = "from gefyra.__main__ import main; main()"
+    python_config.run_command = "from gefyra.cli.main import main; main()"
 
     exe = dist.to_python_executable(
         name="gefyra",
@@ -74,7 +74,7 @@ def make_win_exe():
     exe.add_python_resources(exe.read_package_root(CWD, ["gefyra"]))
     exe.add_python_resources(exe.pip_install(["--no-deps", "docker==6.0.1"]))
     # certifi from version 2022.06.15.1 does not work
-    exe.add_python_resources(exe.pip_install(["chardet", "certifi==2022.06.15", "pywin32", "kubernetes", "packaging==21.3", "tabulate", "cli-tracker"]))
+    exe.add_python_resources(exe.pip_install(["chardet", "certifi==2022.06.15", "pywin32", "kubernetes", "packaging==21.3", "tabulate", "cli-tracker", "prompt_toolkit", "alive-progress", "git+https://github.com/gefyrahq/grapheme", "click"]))
     exe.windows_runtime_dlls_mode = "always"
     return exe
 

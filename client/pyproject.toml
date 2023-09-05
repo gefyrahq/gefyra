@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "Gefyra"
-version = "1.1.2"
+version = "2.0.0-alpha"
 description = "Gefyra runs all developer machine side components of Gefyra's Kubernetes-based development infrastructure"
-authors = ["Michael Schilonka <michael@unikube.io>"]
+authors = ["Michael Schilonka <michael@blueshoe.io>"]
 readme = "README.md"
 homepage = "https://gefyra.dev"
 repository = "https://github.com/gefyrahq/gefyra"
@@ -21,27 +21,39 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = ">=3.8.1,<4.0.0"
 kubernetes = ">=24.2,<27.0"
 docker = "^6.0.0"
+
+[tool.poetry.group.cli.dependencies]
 cli-tracker = ">=0.2.7,<0.4.0"
 tabulate = ">=0.8.10,<0.10.0"
+alive-progress = "^3.1.4"
+click = "^8.1.3"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 flake8-bugbear = "^23.3.12"
 black = "^23.1.0"
-flake8 = "^5.0.4"
+flake8 = "^6.0.0"
 flake8-black = "^0.3.6"
 pytest = "^7.2.2"
 coverage = {extras = ["toml"], version = "^6.5.0"}
 coveralls = "^3.3.1"
+pytest-kubernetes = "^0.2.0"
+mypy = "^1.3.0"
+types-tabulate = "^0.9.0.2"
+types-pyyaml = "^6.0.12.10"
+types-requests = "^2.31.0.1"
+types-click = "^7.1.8"
+pytest-timeout = "^2.1.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-gefyra = "gefyra.__main__:main"
+gefyra = "gefyra.cli.main:main"
+g = "gefyra.cli.main:main"
 setversion = "version:set_version"
 
 [tool.poetry.urls]
@@ -50,3 +62,17 @@ issues = "https://github.com/gefyrahq/gefyra/issues"
 [tool.coverage.run]
 branch = true
 source = ["gefyra"]
+
+[tool.coverage.report]
+exclude_also = [
+    "def __str__",
+    "logger.debug.*",
+]
+
+[tool.mypy]
+warn_return_any = false
+warn_unused_configs = false
+ignore_missing_imports = true
+exclude = [
+    "tests"
+]

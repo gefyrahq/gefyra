@@ -48,7 +48,7 @@ WORKDIR $PYSETUP_PATH
 COPY poetry.lock pyproject.toml ./
 
 # install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
-RUN bash -c 'source $VENV_PATH/bin/activate && poetry install --no-dev'
+RUN bash -c 'source $VENV_PATH/bin/activate && poetry install'
 
 
 FROM gcr.io/distroless/python3

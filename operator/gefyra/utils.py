@@ -1,18 +1,20 @@
 import logging
 import select
 import tarfile
-from collections import defaultdict
-from datetime import datetime
 from tempfile import TemporaryFile
-from time import sleep
 from typing import List
 
 import kubernetes as k8s
+
+
 from websocket import ABNF
 
-from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger("gefyra.utils")
+
+
+def get_label_selector(labels: dict[str, str]) -> str:
+    return ",".join(["{0}={1}".format(*label) for label in list(labels.items())])
 
 
 class WSFileManager:
@@ -112,68 +114,12 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
             raise e
 
 
-def read_wireguard_config(raw: str) -> dict:
-    """
-    :param raw: the wireguard config string; similar to TOML but does not comply with
-    :return: a parsed dict of the configuration
-    """
-    data = defaultdict(dict)
-    _prefix = "none"
-    for line in raw.split("\n"):
-        try:
-            if line.strip() == "":
-                continue
-            elif "[Interface]" in line:
-                _prefix = "Interface"
-                continue
-            elif "[Peer]" in line:
-                _prefix = "Peer"
-                continue
-            key, value = line.split("=", 1)
-            data[f"{_prefix}.{key.strip()}"] = value.strip()
-        except Exception as e:
-            logger.exception(e)
-    return data
-
-
-def notify_stowaway_pod(
-    core_v1_api: k8s.client.CoreV1Api,
-    pod_name: str,
-    configuration: OperatorConfiguration,
-) -> None:
-    """
-    Notify the Stowaway Pod; causes it to instantly reload mounted configmaps
-    :param core_v1_api:
-    :param pod_name:
-    :param configuration:
-    :return:
-    """
-    logger.info(f"Notify {pod_name}")
-    try:
-        core_v1_api.patch_namespaced_pod(
-            name=pod_name,
-            body={
-                "metadata": {
-                    "annotations": {
-                        "operator": f"update-notification-"
-                        f"{datetime.now().strftime('%Y%m%d%H%M%S')}"
-                    }
-                }
-            },
-            namespace=configuration.NAMESPACE,
-        )
-    except k8s.client.exceptions.ApiException as e:
-        logger.exception(e)
-    sleep(1)
-
-
 def exec_command_pod(
     api_instance: k8s.client.CoreV1Api,
     pod_name: str,
     namespace: str,
     container_name: str,
     command: List[str],
-    run_async: bool = False,
 ) -> str:
     """
     Exec a command on a Pod and exit
@@ -182,77 +128,17 @@ def exec_command_pod(
     :param namespace: the namespace this Pod is running in
     :param container_name: the container name of this Pod
     :param command: command as List[str]
-    :param run_async: run this command async
     :return: the result output as str
     """
-    if run_async:
-        resp = api_instance.connect_get_namespaced_pod_exec(
-            pod_name,
-            namespace,
-            container=container_name,
-            command=command,
-            stderr=False,
-            stdin=False,
-            stdout=False,
-            tty=False,
-            async_req=True,
-        )
-    else:
-        resp = k8s.stream.stream(
-            api_instance.connect_get_namespaced_pod_exec,
-            pod_name,
-            namespace,
-            container=container_name,
-            command=command,
-            stderr=True,
-            stdin=False,
-            stdout=True,
-            tty=False,
-        )
-    if not run_async:
-        logger.debug("Response: " + resp)
+    resp = k8s.stream.stream(
+        api_instance.connect_get_namespaced_pod_exec,
+        pod_name,
+        namespace,
+        container=container_name,
+        command=command,
+        stderr=True,
+        stdin=False,
+        stdout=True,
+        tty=False,
+    )
     return resp
-
-
-def get_deployment_of_pod(
-    api_instance: k8s.client.AppsV1Api, pod_name: str, namespace: str
-) -> k8s.client.V1Deployment:
-    """
-    Return a Deployment of a Pod by its name
-    :param api_instance: instance of k8s.client.AppsV1Api
-    :param pod_name: name of the Pod
-    :return: k8s.client.V1Deployment of the Pod
-    """
-    deployment_name = pod_name.rsplit("-", 2)[0]
-    return api_instance.read_namespaced_deployment(deployment_name, namespace=namespace)
-
-
-def get_all_probes(container: k8s.client.V1Container) -> List[k8s.client.V1Probe]:
-    probes = []
-    if container.startup_probe:
-        probes.append(container.startup_probe)
-    if container.readiness_probe:
-        probes.append(container.readiness_probe)
-    if container.liveness_probe:
-        probes.append(container.liveness_probe)
-    return probes
-
-
-def check_probe_compatibility(probe: k8s.client.V1Probe) -> bool:
-    """
-    Check if this type of probe is compatible with Gefyra Carrier
-    :param probe: instance of k8s.client.V1Probe
-    :return: bool if this is compatible
-    """
-    if probe is None:
-        return True
-    elif probe._exec:
-        # exec is not supported
-        return False
-    elif probe.tcp_socket:
-        # tcp sockets are not yet supported
-        return False
-    elif probe.http_get:
-        return True
-    else:
-        return True

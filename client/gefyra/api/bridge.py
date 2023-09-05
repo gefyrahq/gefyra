@@ -1,10 +1,15 @@
 import logging
 from time import sleep
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 
-from gefyra.configuration import default_configuration
+from gefyra.exceptions import CommandTimeoutError, GefyraBridgeError
 
-from .utils import stopwatch
+if TYPE_CHECKING:
+    from gefyra.configuration import ClientConfiguration
+    from gefyra.types import GefyraBridge
+
+
+from .utils import stopwatch, wrap_bridge
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +54,8 @@ def check_workloads(
 
     if workload_type != "pod" and workload_name not in cleaned_names:
         raise RuntimeError(
-            f"Could not find {workload_type}/{workload_name} to bridge. Available {workload_type}:"
-            f" {', '.join(cleaned_names)}"
+            f"Could not find {workload_type}/{workload_name} to bridge. Available"
+            f" {workload_type}: {', '.join(cleaned_names)}"
         )
     if container_name not in [
         container for c_list in pods_to_intercept.values() for container in c_list
@@ -67,50 +72,43 @@ def bridge(
     ports: dict,
     target: str,
     namespace: str = "default",
-    sync_down_dirs: List[str] = None,
     handle_probes: bool = True,
     timeout: int = 0,
-    config=default_configuration,
-) -> bool:
+    wait: bool = False,
+    connection_name: str = "",
+) -> List["GefyraBridge"]:
     from docker.errors import NotFound
-    from gefyra.local.utils import (
-        set_gefyra_network_from_cargo,
-        set_kubeconfig_from_cargo,
-    )
-    from gefyra.local.bridge import get_all_interceptrequests
+    from gefyra.local.bridge import get_all_gefyrabridges
+    from gefyra.configuration import ClientConfiguration
 
-    # Check if kubeconfig is available through running Cargo
-    config = set_kubeconfig_from_cargo(config)
-    config = set_gefyra_network_from_cargo(config)
+    config = ClientConfiguration(connection_name=connection_name)
 
     try:
         container = config.DOCKER.containers.get(name)
     except NotFound:
-        logger.error(f"Could not find target container '{name}'")
-        return False
+        raise GefyraBridgeError(f"Could not find target container '{name}'")
 
-    ports = [f"{key}:{value}" for key, value in ports.items()]
+    port_mappings = [f"{key}:{value}" for key, value in ports.items()]
 
     try:
         local_container_ip = container.attrs["NetworkSettings"]["Networks"][
             config.NETWORK_NAME
         ]["IPAddress"]
     except KeyError:
-        logger.error(
-            f"The target container '{name}' is not in Gefyra's network {config.NETWORK_NAME}."
-            f" Did you run 'gefyra up'?"
-        )
-        return False
+        raise GefyraBridgeError(
+            f"The target container '{name}' is not in Gefyra's network"
+            f" {config.NETWORK_NAME}. Did you run 'gefyra up'?"
+        ) from None
 
     try:
         _bits = list(filter(None, target.split("/")))
         workload_type, workload_name = _bits[0:2]
         container_name = _bits[2] if _bits[2:] else None
     except IndexError:
-        raise RuntimeError(
-            "Invalid --target notation. Use <workload_type>/<workload_name>(/<container_name>)."
-        )
-        return False
+        raise GefyraBridgeError(
+            "Invalid --target notation. Use"
+            " <workload_type>/<workload_name>(/<container_name>)."
+        ) from None
 
     pods_to_intercept = get_pods_to_intercept(
         workload_name=workload_name,
@@ -137,46 +135,26 @@ def bridge(
     else:
         use_index = False
 
-    # is is required to copy at least the service account tokens from the bridged container
-    if sync_down_dirs:
-        sync_down_dirs = [
-            "/var/run/secrets/kubernetes.io/serviceaccount"
-        ] + sync_down_dirs
-    else:
-        sync_down_dirs = ["/var/run/secrets/kubernetes.io/serviceaccount"]
-
     from gefyra.local.bridge import (
-        get_ireq_body,
-        handle_create_interceptrequest,
+        get_gbridge_body,
+        handle_create_gefyrabridge,
     )
-
-    from gefyra.local.cargo import add_syncdown_job
 
     ireqs = []
     for idx, pod in enumerate(pods_to_intercept):
         logger.info(f"Creating bridge for Pod {pod}")
-        ireq_body = get_ireq_body(
+        ireq_body = get_gbridge_body(
             config,
             name=f"{ireq_base_name}-{idx}" if use_index else ireq_base_name,
             destination_ip=local_container_ip,
             target_pod=pod,
             target_namespace=namespace,
             target_container=container_name,
-            port_mappings=ports,
-            sync_down_directories=sync_down_dirs,
+            port_mappings=port_mappings,
             handle_probes=handle_probes,
         )
-        ireq = handle_create_interceptrequest(config, ireq_body, target)
+        ireq = handle_create_gefyrabridge(config, ireq_body, target)
         logger.debug(f"Bridge {ireq['metadata']['name']} created")
-        for syncdown_dir in sync_down_dirs:
-            add_syncdown_job(
-                config,
-                ireq["metadata"]["name"],
-                name,
-                pod,
-                container_name,
-                syncdown_dir,
-            )
         ireqs.append(ireq)
     #
     # block until all bridges are in place
@@ -188,16 +166,18 @@ def bridge(
     # timeout = 0  means no timeout
     if timeout:
         waiting_time = timeout
-    while True:
+    while True and wait:
         # watch whether all relevant bridges have been established
-        kube_ireqs = get_all_interceptrequests(config)
-        for kube_ireq in kube_ireqs:
-            if kube_ireq["metadata"]["uid"] in bridges.keys() and kube_ireq.get(
-                "established", False
+        gefyra_bridges = get_all_gefyrabridges(config)
+        for gefyra_bridge in gefyra_bridges:
+            if (
+                gefyra_bridge["metadata"]["uid"] in bridges.keys()
+                and gefyra_bridge.get("state", "") == "ACTIVE"
             ):
-                bridges[str(kube_ireq["metadata"]["uid"])] = True
+                bridges[str(gefyra_bridge["metadata"]["uid"])] = True
                 logger.info(
-                    f"Bridge {kube_ireq['metadata']['name']} ({sum(bridges.values())}/{len(ireqs)}) established."
+                    f"Bridge {gefyra_bridge['metadata']['name']} "
+                    f"({sum(bridges.values())}/{len(ireqs)}) established."
                 )
         if all(bridges.values()):
             break
@@ -205,38 +185,43 @@ def bridge(
         # Raise exception in case timeout is reached
         waiting_time -= 1
         if timeout and waiting_time <= 0:
-            raise RuntimeError("Timeout for bridging operation exceeded")
-    logger.info("Following bridges have been established:")
-    for ki in kube_ireqs:
-        for port in ports:
-            (
-                pod_name,
-                ns,
-            ) = (
-                ki["targetPod"],
-                ki["targetNamespace"],
-            )
-            bridge_ports = port.split(":")
-            container_port, pod_port = bridge_ports[0], bridge_ports[1]
-            logger.info(
-                f"Bridge for pod {pod_name} in namespace {ns} on port {pod_port} "
-                f"to local container {container_name} on port {container_port}"
-            )
-    return True
+            raise CommandTimeoutError("Timeout for bridging operation exceeded")
+    if not wait:
+        gefyra_bridges = get_all_gefyrabridges(config)
+        return list(map(wrap_bridge, gefyra_bridges))
+    else:
+        logger.info("Following bridges have been established:")
+        _bridges = list(map(wrap_bridge, gefyra_bridges))
+        for gefyra_bridge in gefyra_bridges:
+            for port in port_mappings:
+                (
+                    pod_name,
+                    ns,
+                ) = (
+                    gefyra_bridge["targetPod"],
+                    gefyra_bridge["targetNamespace"],
+                )
+                bridge_ports = port.split(":")
+                container_port, pod_port = bridge_ports[0], bridge_ports[1]
+                logger.info(
+                    f"Bridge for pod {pod_name} in namespace {ns} on port {pod_port} "
+                    f"to local container {container_name} on port {container_port}"
+                )
+        return _bridges
 
 
-def wait_for_deletion(ireqs: List, config=default_configuration):
+def wait_for_deletion(gefyra_bridges: List, config: "ClientConfiguration"):
     from kubernetes.watch import Watch
 
     w = Watch()
     deleted = []
-    uids = [ireq["metadata"]["uid"] for ireq in ireqs]
+    uids = [gefyra_bridge["metadata"]["uid"] for gefyra_bridge in gefyra_bridges]
     for event in w.stream(
         config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object,
         namespace=config.NAMESPACE,
         group="gefyra.dev",
         version="v1",
-        plural="interceptrequests",
+        plural="gefyrabridges",
     ):
         if event["type"] == "DELETED":
             if event["object"]["metadata"]["uid"] in uids:
@@ -248,44 +233,40 @@ def wait_for_deletion(ireqs: List, config=default_configuration):
 @stopwatch
 def unbridge(
     name: str,
-    config=default_configuration,
+    connection_name: str = "",
     wait: bool = False,
 ) -> bool:
-    from gefyra.local.bridge import handle_delete_interceptrequest
-    from gefyra.local.utils import (
-        set_kubeconfig_from_cargo,
-    )
+    from gefyra.local.bridge import handle_delete_gefyrabridge
+    from gefyra.configuration import ClientConfiguration
 
-    config = set_kubeconfig_from_cargo(config)
+    config = ClientConfiguration(connection_name=connection_name)
 
-    ireq = handle_delete_interceptrequest(config, name)
-    if ireq:
+    gefyra_bridge = handle_delete_gefyrabridge(config, name)
+    if gefyra_bridge:
         if wait:
-            wait_for_deletion([ireq], config)
+            wait_for_deletion([gefyra_bridge], config=config)
         logger.info(f"Bridge {name} removed")
     return True
 
 
 @stopwatch
 def unbridge_all(
-    config=default_configuration,
     wait: bool = False,
+    connection_name: str = "",
 ) -> bool:
+    from gefyra.configuration import ClientConfiguration
     from gefyra.local.bridge import (
-        handle_delete_interceptrequest,
-        get_all_interceptrequests,
-    )
-    from gefyra.local.utils import (
-        set_kubeconfig_from_cargo,
+        handle_delete_gefyrabridge,
+        get_all_gefyrabridges,
     )
 
-    config = set_kubeconfig_from_cargo(config)
+    config = ClientConfiguration(connection_name=connection_name)
 
-    ireqs = get_all_interceptrequests(config)
-    for ireq in ireqs:
-        name = ireq["metadata"]["name"]
+    gefyra_bridges = get_all_gefyrabridges(config)
+    for gefyra_bridge in gefyra_bridges:
+        name = gefyra_bridge["metadata"]["name"]
         logger.info(f"Removing Bridge {name}")
-        handle_delete_interceptrequest(config, name)
+        handle_delete_gefyrabridge(config, name)
     if wait:
-        wait_for_deletion(config=config, ireqs=ireqs)
+        wait_for_deletion(config=config, gefyra_bridges=gefyra_bridges)
     return True

@@ -4,7 +4,7 @@ import kubernetes as k8s
 
 
 def _get_now() -> str:
-    return f"{datetime.now().isoformat()}+00:00"
+    return datetime.utcnow().isoformat(timespec="microseconds") + "Z"
 
 
 def create_operator_ready_event(namespace: str) -> k8s.client.EventsV1Event:

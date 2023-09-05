@@ -1,15 +1,17 @@
 import logging
+from typing import Dict, List, Optional
 
-from gefyra.api import bridge
-from gefyra.api.run import retrieve_pod_and_container, run
+from gefyra.api.bridge import bridge
+from gefyra.api.run import run
 from gefyra.api.utils import is_port_free
 from gefyra.cluster.utils import (
     get_container_command,
     get_container_image,
     get_container_ports,
     get_v1pod,
+    retrieve_pod_and_container,
 )
-from gefyra.configuration import default_configuration
+from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -21,25 +23,26 @@ def _check_ports(host_ports):
             ports_not_free.append(str(port))
     if len(ports_not_free):
         raise RuntimeError(
-            f"Following ports are needed for the container to run, but are occupied  \
-            on your host system: {', '.join(ports_not_free)}. \
-            Please provide a port mapping via --port to overwrite these ports."
+            "Following ports are needed for the container to run, but are occupied    "
+            f"          on your host system: {', '.join(ports_not_free)}.            "
+            " Please provide a port mapping via --port to overwrite these ports."
         )
 
 
 def reflect(
     workload: str,  # deploy/my-deployment
     namespace: str = "default",
-    config=default_configuration,
     do_bridge: bool = False,
-    env: list = None,
+    env: Optional[List] = None,
     command: str = "",
-    volumes: dict = None,
+    volumes: Optional[Dict] = None,
     auto_remove: bool = False,
     expose_ports: bool = True,
-    image: str = None,
-    ports: dict = None,
+    image: str = "",
+    ports: Optional[Dict] = None,
+    connection_name: str = "",
 ):
+    config = ClientConfiguration(connection_name=connection_name)
     if expose_ports and ports:
         raise RuntimeError(
             "You cannot specify ports and expose_ports at the same time."
@@ -75,7 +78,7 @@ def reflect(
         volumes=volumes,
         auto_remove=auto_remove,
         namespace=namespace,
-        config=config,
+        connection_name=connection_name,
         env_from=workload,
         env=env,
         detach=True,
@@ -84,6 +87,11 @@ def reflect(
 
     if do_bridge:
         res = bridge(
-            name=name, namespace=namespace, config=config, target=workload, ports=ports
+            name=name,
+            namespace=namespace,
+            target=workload,
+            ports=ports,
+            connection_name=connection_name,
+            wait=True,
         )
     return res
