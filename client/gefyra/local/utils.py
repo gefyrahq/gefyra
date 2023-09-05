@@ -52,6 +52,7 @@ def handle_docker_create_container(
         config.DOCKER.images.get(image)
     except docker.errors.ImageNotFound:
         repo, version = image.split(":")
+        logger.debug("Pulling cargo image.")
         config.DOCKER.images.pull(repository=repo, tag=version)
 
     return config.DOCKER.containers.create(
