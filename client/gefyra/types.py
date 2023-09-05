@@ -52,8 +52,11 @@ class StowawayConfig:
     pallowedips: str
     # Peer.Endpoint: 95.91.248.4:31820
     pendpoint: str
-    # Peer.PublicKey: sy8jXi7S7rUGpqLnqgKnmHFXylqQdvCPCfhBAgSVGEM=
+    # Peer.PublicKey: sy8jXi7...=
     ppublickey: str
+    # Peer.PresharedKey: WCWY20...=
+    presharedkey: str
+
 
 
 class GefyraClientState(Enum):
@@ -117,6 +120,7 @@ class GefyraClient:
                 pallowedips=providerconfig.get("Peer.AllowedIPs"),
                 pendpoint=providerconfig.get("Peer.Endpoint"),
                 ppublickey=providerconfig.get("Peer.PublicKey"),
+                presharedkey=providerconfig.get("Peer.PresharedKey"),
             )
 
     def as_dict(self) -> dict[str, Any]:

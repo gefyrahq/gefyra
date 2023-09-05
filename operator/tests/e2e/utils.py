@@ -11,13 +11,9 @@ import platform
 
 
 def get_dockerfile():
-    run_patch = ""
-    if sys.platform == "win32" or "microsoft-standard" in platform.release():
-        run_patch = "RUN patch /usr/bin/wg-quick /wgquick.patch"
     return io.BytesIO(
-        f""" 
+        """ 
 FROM "cargo:pytest"
-{run_patch}
 
 ARG ADDRESS
 ARG MTU
@@ -146,8 +142,8 @@ class GefyraDockerClient:
     def probe(self):
         cargo = self.container
         for _ in range(0, 10):
-            _r = cargo.exec_run(f"timeout 1 ping -c 1 192.168.99.1")
-            if _r.exit_code != 0:
+            _exit_code, _ = cargo.exec_run(f"timeout 1 ping -c 1 192.168.99.1")
+            if _exit_code != 0:
                 continue
             else:
                 break

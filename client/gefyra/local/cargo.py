@@ -44,6 +44,7 @@ def create_wireguard_config(
         "[Peer]\n"
         f"PublicKey = {params.ppublickey}\n"
         f"Endpoint = {cargo_endpoint}\n"
+        f"PresharedKey = {params.presharedkey}\n"
         "PersistentKeepalive = 21\n"
         "AllowedIPs = 0.0.0.0/0\n"
     )

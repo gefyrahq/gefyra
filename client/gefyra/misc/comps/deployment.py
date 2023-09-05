@@ -41,6 +41,16 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                 "image": f"quay.io/gefyra/operator:{params.version}",
                                 "imagePullPolicy": "Always",
                                 "ports": [{"containerPort": 9443}],
+                                "env": [
+                                    {
+                                        "name": "GEFYRA_STOWAWAY_TAG",
+                                        "value": params.version,
+                                    },
+                                    {
+                                        "name": "GEFYRA_CARRIER_IMAGE_TAG",
+                                        "value": params.version,
+                                    },
+                                ],
                             }
                         ],
                     },
@@ -81,7 +91,17 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                 "image": f"quay.io/gefyra/operator:{params.version}",
                                 "imagePullPolicy": "Always",
                                 "ports": [{"containerPort": 9443}],
-                                "env": [{"name": "OP_MODE", "value": "webhook"}],
+                                "env": [
+                                    {"name": "OP_MODE", "value": "webhook"},
+                                    {
+                                        "name": "GEFYRA_STOWAWAY_TAG",
+                                        "value": params.version,
+                                    },
+                                    {
+                                        "name": "GEFYRA_CARRIER_IMAGE_TAG",
+                                        "value": params.version,
+                                    },
+                                ],
                                 "livenessProbe": {
                                     "exec": {
                                         "command": [
