@@ -77,8 +77,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           target: cargo
           tags: ${{ steps.cargo_meta.outputs.tags }}
-          cache-from: type=registry,ref=${{ steps.cargo_meta.outputs.tags }}
-          cache-to: type=inline
       
       - name: Cargo Windows Image meta
         uses: docker/metadata-action@v4
@@ -99,8 +97,6 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           target: cargo-win
           tags: ${{ steps.cargo_win_meta.outputs.tags }}
-          cache-from: type=registry,ref=${{ steps.cargo_win_meta.outputs.tags }}
-          cache-to: type=inline
       #
       # Gefyra Carrier
       #
