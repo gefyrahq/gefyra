@@ -12,7 +12,7 @@ python-decouple = "^3.8"
 python-statemachine = "^2.0.0"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.2"
+pytest = "^7.4"
 black = "^23.1.0"
 flake8 = "^6.0.0"
 flake8-black = "^0.3.6"
