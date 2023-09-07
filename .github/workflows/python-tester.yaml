@@ -475,6 +475,8 @@ jobs:
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
       - name: Remove-me k3d
         run: k3d cluster create mycluster
+      - name: Remove-me kubectl
+        run: kubectl config current-context
       - name: Run PyTest
         working-directory: ./operator
         run: poetry run coverage run -m pytest -s -x
