@@ -478,7 +478,10 @@ jobs:
       - name: Remove-me k3d
         run: k3d cluster create mycluster
       - name: Remove-me kubectl
-        run: kubectl config current-context
+        run: |
+          kubectl config current-context
+          kubectl get --raw='/readyz?verbose
+          kubectl get sa default
       - name: Run PyTest
         working-directory: ./operator
         run: poetry run coverage run -m pytest -s -x
