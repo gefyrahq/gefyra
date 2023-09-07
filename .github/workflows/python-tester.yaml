@@ -486,10 +486,6 @@ jobs:
           kubectl config current-context
           kubectl config set-context --current --namespace=default
           kubectl get --raw='/readyz?verbose'
-          kubectl get sa default
-          kubectl get sa default
-          kubectl get sa default
-          kubectl get sa default
       - name: Run PyTest
         working-directory: ./operator
         run: poetry run coverage run -m pytest -s -x
