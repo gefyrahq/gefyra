@@ -477,7 +477,7 @@ jobs:
         run: k3d cluster create mycluster
       - name: Run PyTest
         working-directory: ./operator
-        run: poetry run coverage run -m pytest -x
+        run: poetry run coverage run -m pytest -s -x
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./operator
