@@ -484,7 +484,7 @@ jobs:
         run: |
           env
           kubectl config current-context
-          kubectl config set-context --current --namespace=NAMESPACE
+          kubectl config set-context --current --namespace=default
           kubectl get --raw='/readyz?verbose'
           kubectl get sa default
       - name: Run PyTest
