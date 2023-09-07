@@ -444,6 +444,10 @@ jobs:
     name: Test Gefyra Operator
     runs-on: self-hosted
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
       - name: Checkout
         uses: actions/checkout@v3
       - name: Load cached Poetry installation
