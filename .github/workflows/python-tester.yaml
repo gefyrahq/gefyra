@@ -392,7 +392,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./client/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-test-1
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-test-2
       - name: Pytest
         working-directory: ./client
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
