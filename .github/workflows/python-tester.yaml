@@ -483,6 +483,7 @@ jobs:
       - name: Remove-me kubectl
         run: |
           kubectl config current-context
+          kubectl config set-context --current --namespace=NAMESPACE
           kubectl get --raw='/readyz?verbose'
           kubectl get sa default
       - name: Run PyTest
