@@ -113,6 +113,7 @@ register_target("resources", make_embedded_resources, depends=["exe"], default_b
 register_target("wininstall", make_install, depends=["winexe"], default=True)
 register_target("msi_installer", make_msi, depends=["winexe"])
 
+
 # Resolve whatever targets the invoker of this configuration file is requesting
 # be resolved.
 resolve_targets()
