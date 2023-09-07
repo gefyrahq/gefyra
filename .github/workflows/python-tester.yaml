@@ -482,6 +482,7 @@ jobs:
         run: k3d cluster create mycluster
       - name: Remove-me kubectl
         run: |
+          env
           kubectl config current-context
           kubectl config set-context --current --namespace=NAMESPACE
           kubectl get --raw='/readyz?verbose'
