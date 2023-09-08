@@ -180,15 +180,8 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: ./client/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-py-2
       - name: Install dependencies
         working-directory: ./client
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
@@ -269,15 +262,8 @@ jobs:
         with:
           driver: ${{ matrix.driver }}
           start-args: --ports 127.0.0.1:31820:31820/udp
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: ./client/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-2
       - name: Install dependencies
         working-directory: ./client
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --with dev --no-interaction --no-root
       - name: Run gefyra up
         timeout-minutes: 8
@@ -372,15 +358,8 @@ jobs:
       # - name: Import Operator to k3d
       #   run: |
       #     k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: ./client/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-test-2
       - name: Pytest
         working-directory: ./client
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --with dev --no-interaction --no-root
       # Run the 'Try it yourself'
       - name: Apply some workload
@@ -437,15 +416,8 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v3
-        with:
-          path: ./operator/.venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}-py-2
       - name: Install dependencies
         working-directory: ./operator
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
