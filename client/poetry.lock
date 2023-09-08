@@ -721,13 +721,13 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 
 [[package]]
 name = "pytest-kubernetes"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 optional = false
 python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "pytest_kubernetes-0.2.0-py3-none-any.whl", hash = "sha256:4e37a24c2055351d47cf49b11d24c0c84708962263aa8480cd22fdf725b1ef5f"},
-    {file = "pytest_kubernetes-0.2.0.tar.gz", hash = "sha256:6b84ed7190ce0a08e75f47607e3b2d04f581ed784eb3264a6213609ee24e8fe5"},
+    {file = "pytest_kubernetes-0.3.0-py3-none-any.whl", hash = "sha256:5e46ed6bbc9cb1451929fffe81efc7c180abf0c7641298d1820ba2e46717af74"},
+    {file = "pytest_kubernetes-0.3.0.tar.gz", hash = "sha256:de1630e2df40c10689c3d0f44c9cf1f8789cd7796922668daa8a321ea0655ceb"},
 ]
 
 [package.dependencies]
@@ -1086,4 +1086,4 @@ test = ["websockets"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.1,<4.0.0"
-content-hash = "3fe6a5db1bf7c32b60f1458eac472dc49eb82c904bf2fa5d7a6334a86224f3b3"
+content-hash = "15cfddd3d7c47e57b879f3ba4ec419178712bcc025b7a86d2958500a40f042be"
