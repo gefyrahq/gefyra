@@ -34,7 +34,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: testing/images/
         platforms: linux/amd64
@@ -86,7 +86,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: operator/
         platforms: linux/amd64
@@ -135,7 +135,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v4
+      uses: docker/build-push-action@v5
       with:
         context: cargo/
         platforms: linux/amd64
