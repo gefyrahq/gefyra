@@ -56,6 +56,9 @@ jobs:
         security create-keychain -p "$MACOS_CI_KEYCHAIN_PWD" buildKeychain
         security default-keychain -s buildKeychain
         security unlock-keychain -p "$MACOS_CI_KEYCHAIN_PWD" buildKeychain
+        set +e
+        security import --help
+        set -e
         security import certificate.p12 -k buildKeychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
         security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" buildKeychain
 
