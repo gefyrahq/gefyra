@@ -40,10 +40,23 @@ def k3d():
     os.environ["KUBECONFIG"] = str(k8s.kubeconfig)
     print(f"This test run's kubeconfig location: {k8s.kubeconfig}")
     yield k8s
-    print(k8s.kubectl(["logs", "-n", "gefyra", "deployment/gefyra-operator"]))
-    print(k8s.kubectl(["logs", "-n", "gefyra", "deployment/gefyra-operator-webhook"]))
-    print(k8s.kubectl(["describe", "pod", "-n" "gefyra", "gefyra-stowaway-0"]))
-    print(k8s.kubectl(["logs", "-n", "gefyra", "pod/gefyra-stowaway-0"]))
+    print(
+        k8s.kubectl(
+            ["logs", "-n", "gefyra", "deployment/gefyra-operator"], as_dict=False
+        )
+    )
+    print(
+        k8s.kubectl(
+            ["logs", "-n", "gefyra", "deployment/gefyra-operator-webhook"],
+            as_dict=False,
+        )
+    )
+    print(
+        k8s.kubectl(
+            ["describe", "pod", "-n" "gefyra", "gefyra-stowaway-0"], as_dict=False
+        )
+    )
+    print(k8s.kubectl(["logs", "-n", "gefyra", "pod/gefyra-stowaway-0"], as_dict=False))
     k8s.delete()
 
 
