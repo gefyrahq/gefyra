@@ -126,9 +126,9 @@ class GefyraClient:
         data = {}
         for _field in fields(self):
             if _v := getattr(self, _field.name):
-                if type(_v) == StowawayParameter:
+                if type(_v) is StowawayParameter:
                     data["providerParameter"] = {"subnet": _v.subnet}
-                elif type(_v) == StowawayConfig:
+                elif type(_v) is StowawayConfig:
                     data["providerConfig"] = {
                         "iaddress": _v.iaddress,
                         "idns": _v.idns,
