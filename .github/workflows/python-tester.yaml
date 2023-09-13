@@ -22,7 +22,7 @@ jobs:
 
     - name: PyServer Test Image meta
       id: test_image_meta
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
         flavor: |
           latest=false
@@ -74,7 +74,7 @@ jobs:
     #
     - name: Operator Image meta
       id: operator_meta
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
         flavor: |
           latest=false
@@ -123,7 +123,7 @@ jobs:
     #
     - name: Cargo Image meta
       id: cargo_meta
-      uses: docker/metadata-action@v4
+      uses: docker/metadata-action@v5
       with:
         flavor: |
           latest=false
