@@ -406,7 +406,7 @@ jobs:
           path: ./client/.coverage*
   test_operator:
     name: Test Gefyra Operator
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -425,27 +425,9 @@ jobs:
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
-      - name: Install kubectl
-        run: |
-          curl -LO "https://dl.k8s.io/release/v1.28.1/bin/linux/amd64/kubectl"
-          sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-          kubectl version --client
-      - name: Remove-me k3d
-        run: k3d cluster create mycluster
-      - name: Remove-me kubectl
-        run: |
-          env
-          kubectl config current-context
-          kubectl config set-context --current --namespace=default
-          kubectl get --raw='/readyz?verbose'
-          until kubectl get sa default
-            do
-            echo kubectl get sa default
-            sleep 1
-          done
       - name: Run PyTest
         working-directory: ./operator
-        run: poetry run coverage run -m pytest -s -x
+        run: poetry run coverage run -m pytest -s -x --retry 5
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./operator
