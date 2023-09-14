@@ -48,7 +48,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_peer_config(self, peer_id: str) -> dict[str, str]:
+    def get_peer_config(self, peer_id: str) -> Dict[str, str]:
         """
         Returns a dict of configuration values for the peer to be stored in the Peer CRD
         """

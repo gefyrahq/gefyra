@@ -1028,6 +1028,24 @@ pytest = ">=7.2.1,<8.0.0"
 pyyaml = ">=6.0,<7.0"
 
 [[package]]
+name = "pytest-retry"
+version = "1.4.1"
+description = "Adds the ability to retry flaky tests in CI environments"
+category = "dev"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pytest-retry-1.4.1.tar.gz", hash = "sha256:839458529e193d82cea93e9ead66f1bf78847f35ffc8712765084974fdb7450c"},
+    {file = "pytest_retry-1.4.1-py3-none-any.whl", hash = "sha256:1a89b65df22c59a540366ef9a1e29340fe899ca938edce47e7493c8c41511f73"},
+]
+
+[package.dependencies]
+pytest = ">=7.0.0"
+
+[package.extras]
+dev = ["black", "flake8", "isort", "mypy"]
+
+[[package]]
 name = "python-dateutil"
 version = "2.8.2"
 description = "Extensions to the standard Python datetime module"
@@ -1423,5 +1441,5 @@ multidict = ">=4.0"
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8.1,<3.12"
-content-hash = "8c0e2050544025b63d0fb22f4aec825a03186022973dbca24a5b0a859dea5f41"
+python-versions = ">=3.9,<3.12"
+content-hash = "0922713d550236100d6a34c82076ba7348cfe90a9ed01089683fdfe1379f6ac7"
