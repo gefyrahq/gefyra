@@ -66,17 +66,26 @@ def operator(k3d: AClusterManager, operator_image, stowaway_image):
             if event["reason"] == "Gefyra-Ready":
                 not_found = False
     if not_found:
-        print(
-            k3d.kubectl(
-                ["describe", "deployment", "-n", "gefyra", "gefyra-operator"],
-                as_dict=False,
+        try:
+            print(
+                k3d.kubectl(
+                    ["describe", "deployment", "-n", "gefyra", "gefyra-operator"],
+                    as_dict=False,
+                )
             )
-        )
-        print(k3d.kubectl(["logs", "-n", "gefyra", "deployment", "gefyra-operator"]))
-        print(
-            k3d.kubectl(
-                ["logs", "-n", "gefyra", "deployment", "gefyra-operator-webhook"]
+            print(
+                k3d.kubectl(
+                    ["logs", "-n", "gefyra", "deployment", "gefyra-operator"],
+                    as_dict=False,
+                )
             )
-        )
+            print(
+                k3d.kubectl(
+                    ["logs", "-n", "gefyra", "deployment", "gefyra-operator-webhook"],
+                    as_dict=False,
+                )
+            )
+        except Exception as e:
+            print(e)
         raise Exception("Gefyra-Ready event not found")
     yield k3d

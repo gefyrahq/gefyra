@@ -57,7 +57,11 @@ def k3d():
                 ["describe", "pod", "-n" "gefyra", "gefyra-stowaway-0"], as_dict=False
             )
         )
-        print(k8s.kubectl(["logs", "-n", "gefyra", "pod/gefyra-stowaway-0"], as_dict=False))
+        print(
+            k8s.kubectl(
+                ["logs", "-n", "gefyra", "pod/gefyra-stowaway-0"], as_dict=False
+            )
+        )
     except Exception as e:
         print(e)
     k8s.delete()
