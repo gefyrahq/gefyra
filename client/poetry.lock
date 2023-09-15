@@ -721,13 +721,13 @@ testing = ["argcomplete", "attrs (>=19.2.0)", "hypothesis (>=3.56)", "mock", "no
 
 [[package]]
 name = "pytest-kubernetes"
-version = "0.3.0"
+version = "0.3.1"
 description = ""
 optional = false
 python-versions = ">=3.8.1,<4.0.0"
 files = [
-    {file = "pytest_kubernetes-0.3.0-py3-none-any.whl", hash = "sha256:5e46ed6bbc9cb1451929fffe81efc7c180abf0c7641298d1820ba2e46717af74"},
-    {file = "pytest_kubernetes-0.3.0.tar.gz", hash = "sha256:de1630e2df40c10689c3d0f44c9cf1f8789cd7796922668daa8a321ea0655ceb"},
+    {file = "pytest_kubernetes-0.3.1-py3-none-any.whl", hash = "sha256:aa184d809b7d5fa5201428de95defd5bdf9b4aa58f40eba3968c3477310267e6"},
+    {file = "pytest_kubernetes-0.3.1.tar.gz", hash = "sha256:d3936c5e2bfe88c388f426c8ac74ec9d7624aa3b9033ab4af58a5cb8dfc87699"},
 ]
 
 [package.dependencies]
