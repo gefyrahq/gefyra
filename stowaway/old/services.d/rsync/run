@@ -1,8 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-
-if [ ! -f /var/run/rsyncd.pid ]; then
-  exec rsync --daemon
-else
-  sleep infinity
-fi

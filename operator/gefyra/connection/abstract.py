@@ -103,7 +103,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def validate(self, gclient: dict, hints: Dict[Any, Any] = {}):
+    def validate(self, gclient: dict, hints: Dict[Any, Any]):
         """
         Validate the Gefyra client object with this connection provider
         Raises a kopf.AdmissionError if validation fails
