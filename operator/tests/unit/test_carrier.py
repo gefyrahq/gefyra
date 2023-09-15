@@ -115,12 +115,12 @@ class TestCarrier:
         )
         carrier.add_proxy_route(8081, "host", 8080)
         output = k3d.kubectl(
-            ["-n", "demo", "exec", "backend", "--", "cat", "/etc/nginx/nginx.conf"],
+            ["-n", "demo", "exec", "backend", "--", "cat", "/tmp/nginx.conf"],
             as_dict=False,
         )
-        assert "upstream stowaway-80 {server host:8080;}" in output
+        assert "upstream stowaway-8081 {server host:8080;}" in output
         assert carrier.proxy_route_exists(8081, "host", 8080) is True
-        assert carrier.proxy_route_exists(8080, "host-1", 8081) is False
+        assert carrier.proxy_route_exists(80, "host-1", 8081) is False
 
     def test_e_removeproxyroute(self, k3d: AClusterManager, operator_config):
         from gefyra.bridge.factory import (

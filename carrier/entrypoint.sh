@@ -29,4 +29,4 @@ if [ "$1" = "nginx" -o "$1" = "nginx-debug" ]; then
     fi
 fi
 
-exec nginx -g "daemon off;"
+exec nginx -g "daemon off;" -c /tmp/nginx.conf

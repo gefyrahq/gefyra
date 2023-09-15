@@ -4,11 +4,10 @@ LABEL gefyra.dev/app="carrier"
 LABEL gefyra.dev/role="bridge"
 LABEL gefyra.dev/provider="carrier"
 
-RUN apk add rsync inotify-tools
-COPY gefyra-carrier.conf /etc/nginx/nginx.conf
+RUN apk add inotify-tools
+
+COPY --chown=1000:1000 gefyra-carrier.conf /tmp/nginx.conf
 COPY setroute.sh setroute.sh
-COPY syncdirs.sh syncdirs.sh
-COPY syncdir.sh syncdir.sh
 COPY setprobe.sh setprobe.sh
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]

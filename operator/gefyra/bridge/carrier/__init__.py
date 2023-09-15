@@ -88,7 +88,7 @@ class Carrier(AbstractGefyraBridgeProvider):
             self.pod,
             self.namespace,
             self.container,
-            ["cat", "/etc/nginx/nginx.conf"],
+            ["cat", "/tmp/nginx.conf"],
         )
         if (
             f"upstream stowaway-{container_port} {{server"
