@@ -31,7 +31,10 @@ COPY --from=builder /usr/bin/wg-quick /usr/bin/
 ARG BUILD_DATE
 ARG VERSION
 ARG WIREGUARD_RELEASE
-LABEL maintainer="Schille"
+LABEL maintainer="Gefyra"
+LABEL gefyra.dev/app="cargo"
+LABEL gefyra.dev/role="connection"
+LABEL gefyra.dev/provider="cargo"
 
 ARG TARGETARCH
 RUN \

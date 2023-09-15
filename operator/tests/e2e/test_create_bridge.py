@@ -77,6 +77,17 @@ def test_a_bridge(
         namespace="demo",
         timeout=60,
     )
+    k3d.wait(
+        "pod/backend",
+        "condition=ready",
+        namespace="demo",
+        timeout=10,
+    )
+
+    k3d.kubectl(
+        ["-n", "gefyra", "exec", "gefyra-stowaway-0", "--", "nginx", "-s", "reload"],
+        as_dict=False,
+    )
     k3d.kubectl(
         ["-n", "gefyra", "delete", "-f", "tests/fixtures/a_gefyra_bridge.yaml"],
         as_dict=False,

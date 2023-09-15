@@ -141,7 +141,7 @@ class GefyraDockerClient:
 
     def probe(self):
         cargo = self.container
-        for _ in range(0, 10):
+        for _ in range(0, 20):
             _exit_code, _ = cargo.exec_run(f"timeout 1 ping -c 1 192.168.99.1")
             if _exit_code != 0:
                 continue

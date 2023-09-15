@@ -1,8 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-
-if [ ! -f /tmp/nginx.pid ]; then
-  exec nginx -g "daemon off;"
-else
-  sleep infinity
-fi
