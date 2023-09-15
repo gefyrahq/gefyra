@@ -798,7 +798,7 @@ class GefyraBaseTest:
             auto_remove=True,
             ports={"8000/tcp": [8000]},
             detach=True,
-            command=["sleep", "40"],
+            command=["sleep", "300"],
             name=container_name,
         )
         res = self.gefyra_up()
