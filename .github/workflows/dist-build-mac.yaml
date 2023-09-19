@@ -39,6 +39,7 @@ jobs:
         cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Codesign app bundle
       # Extract the secrets we defined earlier as environment variables
+      if: ${{ github.actor != 'dependabot[bot]' }}
       env: 
         MACOS_CERTIFICATE: ${{ secrets.PROD_MACOS_CERTIFICATE }}
         MACOS_CERTIFICATE_PWD: ${{ secrets.PROD_MACOS_CERTIFICATE_PWD }}
