@@ -222,13 +222,7 @@ jobs:
         with:
           python-version: '3.9'
       # https://github.com/opensafely-core/job-server/issues/3429
-      - run: |
-          brew remove --ignore-dependencies qemu
-          brew remove --ignore-dependencies colima
-          curl -o ./qemu.rb https://raw.githubusercontent.com/Homebrew/homebrew-core/dc0669eca9479e9eeb495397ba3a7480aaa45c2e/Formula/qemu.rb
-          brew install ./qemu.rb
-          brew install docker
-          brew install colima
+      - run: brew install docker
         if: ${{ matrix.os == 'macos-12' }}
       - run: colima start
         if: ${{ matrix.os == 'macos-12' }}
