@@ -989,13 +989,13 @@ pyyaml = ">=6.0,<7.0"
 
 [[package]]
 name = "pytest-retry"
-version = "1.4.1"
+version = "1.4.2"
 description = "Adds the ability to retry flaky tests in CI environments"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pytest-retry-1.4.1.tar.gz", hash = "sha256:839458529e193d82cea93e9ead66f1bf78847f35ffc8712765084974fdb7450c"},
-    {file = "pytest_retry-1.4.1-py3-none-any.whl", hash = "sha256:1a89b65df22c59a540366ef9a1e29340fe899ca938edce47e7493c8c41511f73"},
+    {file = "pytest-retry-1.4.2.tar.gz", hash = "sha256:3102b7cb1b783af50a6411bece7be7671ad44ede77e7af47a110e80637a6afeb"},
+    {file = "pytest_retry-1.4.2-py3-none-any.whl", hash = "sha256:307ff8896b223e0cdb98d730f7617f5b75c83cfc1c24c79c55412bdd087f3868"},
 ]
 
 [package.dependencies]
@@ -1366,4 +1366,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "d6c26cf1a2fe1b1329a5152fd6ad34a5ad5fdf1f58c963c69c1a384462b76dc2"
+content-hash = "cf749556fc785bfbde0a00261f4722d3d1ad218e55d5c4d6e344a2fa6af1eb33"
