@@ -57,7 +57,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
         )
     except ApiException as e:
         if e.status in [404, 403]:
-            raise GefyraClientNotFound(f"Client {client_id} does not exists.")
+            raise GefyraClientNotFound(f"Client {client_id} does not exist.")
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
