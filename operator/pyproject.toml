@@ -9,7 +9,7 @@ python = ">=3.9,<3.12"
 kopf = "^1.36.2"
 kubernetes = "^28.1.0"
 python-decouple = "^3.8"
-python-statemachine = "^2.1.1"
+python-statemachine = "^2.1.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
