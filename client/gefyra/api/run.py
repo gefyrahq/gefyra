@@ -117,7 +117,7 @@ def run(
         )
     except APIError as e:
         if e.status_code == 409:
-            logger.warning(e.explanation)
+            logger.error(e.explanation)
             return True
         else:
             raise RuntimeError(e.explanation)
