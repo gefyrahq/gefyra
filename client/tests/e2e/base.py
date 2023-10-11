@@ -1019,7 +1019,37 @@ class GefyraBaseTest:
             ],
             catch_exceptions=False,
         )
-        print(res.output)
+        self.assertEqual(res.exit_code, 0)
+        self.assert_http_service_available("localhost", 8000)
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
+
+    def test_s_run_via_cli_without_connection_name(self):
+        res = self.gefyra_up()
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        runner = CliRunner()
+        res = runner.invoke(
+            cli,
+            [
+                "run",
+                "--image",
+                "pyserver",
+                "--name",
+                "mypyserver",
+                "--namespace",
+                "default",
+                "--expose",
+                "8000:8000",
+                "--detach",
+                "--rm",
+                "--command",
+                "python3 local.py",
+            ],
+            catch_exceptions=False,
+        )
 
         self.assertEqual(res.exit_code, 0)
         self.assert_http_service_available("localhost", 8000)

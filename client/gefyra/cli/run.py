@@ -72,7 +72,9 @@ from gefyra.cli.utils import OptionEatAll, check_connection_name, parse_ip_port_
 @click.option(
     "-i", "--image", help="The docker image to run in Gefyra", type=str, required=True
 )
-@click.option("--connection-name", type=str, callback=check_connection_name)
+@click.option(
+    "--connection-name", type=str, callback=check_connection_name, required=False
+)
 def run(
     detach,
     auto_remove,
