@@ -163,7 +163,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
       - name: Set Gefyra tracking config / fake kubeconfig
@@ -218,7 +218,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
       # https://github.com/opensafely-core/job-server/issues/3429
@@ -308,7 +308,7 @@ jobs:
         uses: actions/checkout@v4
       # https://github.com/docker/setup-qemu-action
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
       - name: Install Poetry
@@ -405,7 +405,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
       - name: Checkout
