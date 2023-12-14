@@ -244,7 +244,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: /tmp
       - name: Load Gefyra images
@@ -343,7 +343,7 @@ jobs:
             --kubeconfig-update-default
             --kubeconfig-switch-context
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: /tmp
       - name: Load Operator image
