@@ -34,7 +34,7 @@ jobs:
         with:
           name: gefyra-${{ env.APP_VERSION }}-darwin-universal
       - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v2
+        uses: crazy-max/ghaction-setup-docker@v3
       - name: Sanity run Gefyra
         run: |
           ls -la
