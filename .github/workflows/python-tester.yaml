@@ -257,7 +257,7 @@ jobs:
         uses: medyagh/setup-minikube@latest
         with:
           driver: ${{ matrix.driver }}
-          start-args: --ports 127.0.0.1:31820:31820/udp --host-only-cidr
+          start-args: --ports 127.0.0.1:31820:31820/udp --host-only-cidr "192.168.59.1/24"
       - name: Install dependencies
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
