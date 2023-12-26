@@ -207,9 +207,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            driver: ''
           - os: macos-12
-            driver: virtualbox
     needs:
       - build_operator
       - build_cargo
@@ -254,10 +252,10 @@ jobs:
           docker image ls -a
       - name: start minikube
         id: minikube
-        uses: medyagh/setup-minikube@latest
+        uses: medyagh/setup-minikube@master
         with:
           driver: ${{ matrix.driver }}
-          start-args: --ports 127.0.0.1:31820:31820/udp --host-only-cidr "192.168.59.1/24"
+          start-args: --ports 127.0.0.1:31820:31820/udp
       - name: Install dependencies
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
