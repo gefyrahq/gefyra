@@ -398,7 +398,7 @@ jobs:
           poetry run coveralls --service=github
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage_data
+          name: coverage_data-${{ matrix.k3d }}
           path: ./client/.coverage*
   test_operator:
     name: Test Gefyra Operator
