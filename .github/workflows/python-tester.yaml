@@ -44,7 +44,7 @@ jobs:
         tags: pyserver
         outputs: type=docker,dest=/tmp/pyserver.tar
     - name: Upload pyserver image
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pyserver
         path: /tmp/pyserver.tar
@@ -97,7 +97,7 @@ jobs:
         cache-from: type=registry,ref=quay.io/gefyra/operator:latest
         # Goutputs: type=docker,dest=/tmp/operator.tar
     - name: Upload operator image
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: operator
         path: /tmp/operator.tar
@@ -146,7 +146,7 @@ jobs:
         cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
         outputs: type=docker,dest=/tmp/cargo.tar
     - name: Upload cargo image
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cargo
         path: /tmp/cargo.tar
@@ -196,7 +196,7 @@ jobs:
           COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: poetry run coveralls --service=github
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage_data
           path: ./client/.coverage*
@@ -287,7 +287,7 @@ jobs:
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage_data
           path: ./client/.coverage*
@@ -396,7 +396,7 @@ jobs:
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage_data
           path: ./client/.coverage*
