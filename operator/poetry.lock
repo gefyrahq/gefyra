@@ -606,17 +606,17 @@ files = [
 
 [[package]]
 name = "kopf"
-version = "1.36.2"
+version = "1.37.1"
 description = "Kubernetes Operator Pythonic Framework (Kopf)"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "kopf-1.36.2-py3-none-any.whl", hash = "sha256:bb5e63f9e2092d22abe28c0b43ababe36d216d8efa3411a36ffb40223dd55a44"},
-    {file = "kopf-1.36.2.tar.gz", hash = "sha256:801e84671145fd19d2a2fcbc4a934ae8f6cd3bca966fc437099f815f7ab11e84"},
+    {file = "kopf-1.37.1-py3-none-any.whl", hash = "sha256:dbeafe715987705d6fb44a49a26ca065b9e537a85c654efa94a520c6d16509d5"},
+    {file = "kopf-1.37.1.tar.gz", hash = "sha256:f38829cb702d788ab536ecd51f10d83175b971874af1d6c8178a864cf9af4ece"},
 ]
 
 [package.dependencies]
-aiohttp = "<4.0.0"
+aiohttp = "*"
 click = "*"
 iso8601 = "*"
 python-json-logger = "*"
@@ -626,7 +626,7 @@ typing-extensions = "*"
 [package.extras]
 dev = ["certbuilder", "certvalidator", "oscrypto", "pyngrok"]
 full-auth = ["kubernetes", "pykube-ng"]
-uvloop = ["uvloop"]
+uvloop = ["uvloop", "uvloop (>=0.18.0)"]
 
 [[package]]
 name = "kubernetes"
@@ -1356,4 +1356,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "1005d68b783710aca5418d7d14595d7f48da759a5871aa93e97d1452a66c1e52"
+content-hash = "0d28995cdeb1369f2e5f0c3662e1a0c0ca9ab4098cc8474dd09adadf09baf194"
