@@ -139,9 +139,12 @@ def deploy_app_container(
     ports: Optional[Dict] = None,
     env: Optional[Dict] = None,
     auto_remove: bool = False,
-    dns_search: List[str] = ["default"],
+    dns_search: Optional[List[str]] = None,
 ) -> Container:
     import docker
+
+    if not dns_search:
+        dns_search = ["default"]
 
     gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
 
