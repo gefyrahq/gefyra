@@ -84,7 +84,7 @@ class AliasedGroup(click.Group):
                 alias = ",".join(acmd.alias)
             else:
                 alias = None
-            commands.append((f"{subcommand} {'('+alias+')' if alias else ''}", cmd))
+            commands.append((f"{subcommand} {'(' + alias + ')' if alias else ''}", cmd))
 
         # allow for 3 times the default spacing
         if len(commands):

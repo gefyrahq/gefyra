@@ -80,7 +80,7 @@ def delete_client(
     config = ClientConfiguration(
         kube_config_file=kubeconfig,
         kube_context=kubecontext,
-        connection_name=connection_name if connection_name else "no-connection-name"
+        connection_name=connection_name if connection_name else "no-connection-name",
         # use no-connection-name to make sure you use admin access to the cluster
     )
     return handle_delete_gefyraclient(config, client_id, force, wait=wait)

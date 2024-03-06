@@ -136,7 +136,7 @@ def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None
         else:
             raise ClientConfigurationError(
                 f"Could not set up the client '{client_id}'. This is most probably a problem of Gefyra operator. \n"
-                f"Try running 'gefyra up{' --preset '+preset if preset else ''}' again after some time."
+                f"Try running 'gefyra up{' --preset ' + preset if preset else ''}' again after some time."
             )
 
         # create a temporary file with the client config
@@ -163,7 +163,7 @@ def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None
                 f"Gefyra could not successfully establish the connection to '{config.CARGO_ENDPOINT.split(':')[0]}'.\n"
                 "If you have run 'gefyra up' with a remote cluster, a newly created route may not be working "
                 "immediately.\n"
-                f"Try running 'gefyra up{' --preset '+preset if preset else ''}' again after some time. "
+                f"Try running 'gefyra up{' --preset ' + preset if preset else ''}' again after some time. "
                 f"Error: {e}"
             ) from None
         fh.close()
