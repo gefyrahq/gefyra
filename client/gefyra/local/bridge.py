@@ -28,7 +28,7 @@ def handle_create_gefyrabridge(config: ClientConfiguration, body, target: str):
         if e.status == 409:
             raise RuntimeError(f"Workload {target} already bridged.")
         logger.error(
-            f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
+            f"A Kubernetes API Error occured. \nReason: {e.reason} \nBody: {e.body}"
         )
         raise e from None
     return ireq
@@ -139,7 +139,7 @@ def deploy_app_container(
     ports: Optional[Dict] = None,
     env: Optional[Dict] = None,
     auto_remove: bool = False,
-    dns_search: str = "default",
+    dns_search: List[str] = ["default"],
 ) -> Container:
     import docker
 
@@ -155,10 +155,10 @@ def deploy_app_container(
         "ports": ports,
         "detach": True,
         "dns": [config.STOWAWAY_IP],
-        "dns_search": [dns_search],
+        "dns_search": dns_search,
         "auto_remove": auto_remove,
         "environment": env,
-        "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",
+        "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",  # noqa: E231
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 
