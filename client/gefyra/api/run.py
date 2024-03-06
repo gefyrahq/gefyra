@@ -65,7 +65,9 @@ def run(
     else:
         ns_source = "--namespace argument"
 
-    dns_search = f"{namespace}.svc.cluster.local svc.cluster.local cluster.local k8s"
+    dns_search = (
+        f"{namespace}.svc.cluster.local svc.cluster.local cluster.local k8s".split(" ")
+    )
     #
     # Confirm the wireguard connection working
     #
