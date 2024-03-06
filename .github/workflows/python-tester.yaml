@@ -207,7 +207,9 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            driver: ''
           - os: macos-12
+            driver: virtualbox
     needs:
       - build_operator
       - build_cargo
@@ -221,6 +223,8 @@ jobs:
           python-version: '3.9'
       # https://github.com/opensafely-core/job-server/issues/3429
       - run: brew install docker
+        if: ${{ matrix.os == 'macos-12' }}
+      - run: colima start
         if: ${{ matrix.os == 'macos-12' }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -243,6 +247,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: /tmp
+      - name: Load Gefyra images
+        run: |
+          docker load --input /tmp/pyserver/pyserver.tar
+          docker load --input /tmp/cargo/cargo.tar
+          docker image ls -a
       - name: start minikube
         id: minikube
         uses: medyagh/setup-minikube@latest
@@ -260,7 +269,10 @@ jobs:
         working-directory: ./client
         if: ${{ failure() }}
         run: |
+          docker logs gefyra-cargo-default
           kubectl logs -n gefyra gefyra-stowaway-0
+          docker inspect minikube
+          docker inspect gefyra-cargo-default
       - name: Show coverage report
         working-directory: ./client
         run: |
@@ -276,7 +288,7 @@ jobs:
           poetry run coveralls --service=github
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage_data
+          name: coverage_data-${{ matrix.os }}
           path: ./client/.coverage*
 
   test:
