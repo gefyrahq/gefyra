@@ -202,6 +202,7 @@ jobs:
           path: ./client/.coverage*
 
   test_minikube:
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -256,7 +257,6 @@ jobs:
         id: minikube
         uses: medyagh/setup-minikube@latest
         with:
-          driver: ${{ matrix.driver }}
           start-args: --ports 127.0.0.1:31820:31820/udp
       - name: Install dependencies
         working-directory: ./client
