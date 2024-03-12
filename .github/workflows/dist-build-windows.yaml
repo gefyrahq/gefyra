@@ -53,7 +53,7 @@ jobs:
       if: ${{ github.event.release && github.event.action == 'published' }}
       run: 7z a -r gefyra-${{ env.APP_VERSION }}-windows-x86_64.zip "dist/"
     - name: Attach files to release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: ${{ github.event.release && github.event.action == 'published' }}
       with:
         files: client/gefyra-${{ env.APP_VERSION }}-windows-x86_64.zip
