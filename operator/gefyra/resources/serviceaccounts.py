@@ -85,7 +85,7 @@ def handle_create_gefyraclient_serviceaccount(
                     name=f"gefyra-rolebinding-{sa.metadata.name}"
                 ),
                 subjects=[
-                    k8s.client.V1Subject(
+                    k8s.client.RbacV1Subject(
                         kind="ServiceAccount",
                         name=sa.metadata.name,
                         namespace=namespace,
