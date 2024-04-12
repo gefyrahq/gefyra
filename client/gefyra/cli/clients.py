@@ -77,7 +77,7 @@ def list_client(ctx):
     click.echo(tabulate(clients, headers=["ID", "STATE", "CREATED"], tablefmt="plain"))
 
 
-@clients.command("inspect", alias=["show", "get"], help="Discribe a Gefyra client")
+@clients.command("inspect", alias=["show", "get"], help="Describe a Gefyra client")
 @click.argument("client_id")
 @click.pass_context
 @standard_error_handler
