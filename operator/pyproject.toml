@@ -13,7 +13,7 @@ python-statemachine = "^2.1.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
-black = "^24.3.0"
+black = "^24.4.0"
 flake8 = "^7.0.0"
 flake8-black = "^0.3.6"
 coverage = "<7"
