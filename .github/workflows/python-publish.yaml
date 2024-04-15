@@ -3,6 +3,7 @@
 name: Upload Python Package
 
 on:
+  workflow_dispatch: {}
   release:
     types: [published]
 
@@ -20,10 +21,10 @@ jobs:
       uses: snok/install-poetry@v1
     - name: Build and publish
       env:
-        POETRY_HTTP_BASIC_PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        POETRY_HTTP_BASIC_PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
       working-directory: client/
       run: |
+        poetry config pypi-token.pypi $PYPI_API_TOKEN
         poetry build
         poetry publish
       
