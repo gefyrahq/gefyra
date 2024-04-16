@@ -3,7 +3,7 @@
 name: Build Linux binary
 
 env:
-  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/pyoxidizer-0.18.0-linux-x86_64.zip
+  PYAPP_DOWNLOAD: https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz -Lo pyapp-source.tar.gz
 
 on:
   workflow_dispatch: {}
@@ -25,19 +25,26 @@ jobs:
         python-version: '3.9'
     - name: Setup PyOxidizer and build
       working-directory: client/
+      env:
+        PYAPP_PROJECT_NAME: gefyra
+        PYAPP_EXEC_SPEC: gefyra.cli.main:main
+        PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
+        PYAPP_DISTRIBUTION_EMBED: 1
+        PYAPP_SKIP_INSTALL: 1
       run: |
-        wget ${PYOXIDIZER_DOWNLOAD}
-        unzip pyoxidizer-0.18.0-linux-x86_64.zip
-        sudo chmod +x ./pyoxidizer
-        ./pyoxidizer build exe --release
+        cat pyproject.toml | grep version -m 1 | awk '{ print "PYAPP_PROJECT_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+        curl ${PYAPP_DOWNLOAD}
+        tar -xzf pyapp-source.tar.gz
+        mv pyapp-v* pyapp-latest
+        cd pyapp-latest
+        cargo build --release
         cp `find build/ -name "gefyra"` ../gefyra
-        strip -s ../gefyra
+        mv target/release/pyapp ../gefyra && chmod +x ../gefyra
         cp README.md ../README.md
-        cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: gefyra-${{ env.APP_VERSION }}-linux-amd64
+        name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-linux-amd64
         path: |
           gefyra
           LICENSE
