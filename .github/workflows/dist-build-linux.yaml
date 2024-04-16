@@ -24,6 +24,7 @@ jobs:
       with:
         python-version: '3.9'
     - name: Determine version
+      working-directory: client/
       run: cat pyproject.toml | grep version -m 1 | awk '{ print "PYAPP_PROJECT_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Setup PyOxidizer and build
       working-directory: client/
