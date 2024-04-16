@@ -23,6 +23,8 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.9'
+    - name: Determine version
+      run: cat pyproject.toml | grep version -m 1 | awk '{ print "PYAPP_PROJECT_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Setup PyOxidizer and build
       working-directory: client/
       env:
@@ -32,10 +34,7 @@ jobs:
         PYAPP_DISTRIBUTION_EMBED: 1
         PYAPP_SKIP_INSTALL: 1
       run: |
-        cat pyproject.toml | grep version -m 1 | awk '{ print "PYAPP_PROJECT_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
         curl ${PYAPP_DOWNLOAD}
-        export PYAPP_PROJECT_VERSION=${{ env.PYAPP_PROJECT_VERSION }}
-        echo $PYAPP_PROJECT_VERSION
         tar -xzf pyapp-source.tar.gz
         mv pyapp-v* pyapp-latest
         cd pyapp-latest
