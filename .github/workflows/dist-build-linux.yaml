@@ -40,8 +40,8 @@ jobs:
         mv pyapp-v* pyapp-latest
         cd pyapp-latest
         cargo build --release
-        mv target/release/pyapp ../gefyra && chmod +x ../gefyra
-        cp README.md ../README.md
+        mv target/release/pyapp ../../gefyra && chmod +x ../../gefyra
+        cp ../README.md ../../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
