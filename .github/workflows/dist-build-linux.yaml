@@ -40,7 +40,6 @@ jobs:
         mv pyapp-v* pyapp-latest
         cd pyapp-latest
         cargo build --release
-        cp `find build/ -name "gefyra"` ../gefyra
         mv target/release/pyapp ../gefyra && chmod +x ../gefyra
         cp README.md ../README.md
     - name: Upload Artifact
