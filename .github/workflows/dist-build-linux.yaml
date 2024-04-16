@@ -3,7 +3,7 @@
 name: Build Linux binary
 
 env:
-  PYAPP_DOWNLOAD: https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz -Lo pyapp-source.tar.gz
+  PYAPP_DOWNLOAD: https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz
 
 on:
   workflow_dispatch: {}
@@ -35,7 +35,7 @@ jobs:
         PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
         PYAPP_DISTRIBUTION_EMBED: 1
       run: |
-        curl ${PYAPP_DOWNLOAD}
+        curl ${PYAPP_DOWNLOAD}  -Lo pyapp-source.tar.gz
         tar -xzf pyapp-source.tar.gz
         mv pyapp-v* pyapp-latest
         cd pyapp-latest

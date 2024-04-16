@@ -3,7 +3,7 @@
 name: Build OSX binary
 
 env:
-  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/pyoxidizer-0.18.0-macos-universal.zip
+  PYAPP_DOWNLOAD: https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz
 
 on:
   workflow_call:
@@ -27,16 +27,25 @@ jobs:
       uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: latest-stable
+    - name: Determine version
+      working-directory: client/
+      run: cat pyproject.toml | grep version -m 1 | awk '{ print "PYAPP_PROJECT_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
     - name: Setup PyOxidizer and build
       working-directory: client/
+      env:
+        PYAPP_FULL_ISOLATION: 1
+        PYAPP_PROJECT_NAME: gefyra
+        PYAPP_EXEC_SPEC: gefyra.cli.main:main
+        PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
+        PYAPP_DISTRIBUTION_EMBED: 1
       run: |
-        wget ${PYOXIDIZER_DOWNLOAD}
-        unzip pyoxidizer-0.18.0-macos-universal.zip
-        sudo chmod +x ./macos-universal/pyoxidizer
-        ./macos-universal/pyoxidizer build exe --release
-        cp `find build/ -name "gefyra"` ../gefyra
-        cp README.md ../README.md
-        cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+        curl ${PYAPP_DOWNLOAD}  -Lo pyapp-source.tar.gz
+        tar -xzf pyapp-source.tar.gz
+        mv pyapp-v* pyapp-latest
+        cd pyapp-latest
+        cargo build --release
+        mv target/release/pyapp ../../gefyra && chmod +x ../../gefyra
+        cp ../README.md ../../README.md
     - name: Codesign app bundle
       # Extract the secrets we defined earlier as environment variables
       if: ${{ github.actor != 'dependabot[bot]' }}
@@ -69,7 +78,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: gefyra-${{ env.APP_VERSION }}-darwin-universal
+        name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-darwin-universal
         path: |
           gefyra
           LICENSE
@@ -77,9 +86,9 @@ jobs:
         retention-days: 5
     - name: Create release zip
       if: ${{ github.event.release && github.event.action == 'published' }}
-      run: zip gefyra-${{ env.APP_VERSION }}-darwin-universal.zip "gefyra" "LICENSE" "README.md"
+      run: zip gefyra-${{ env.PYAPP_PROJECT_VERSION }}-darwin-universal.zip "gefyra" "LICENSE" "README.md"
     - name: Attach files to release
       uses: softprops/action-gh-release@v2
       if: ${{ github.event.release && github.event.action == 'published' }}
       with:
-        files: gefyra-${{ env.APP_VERSION }}-darwin-universal.zip
+        files: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-darwin-universal.zip
