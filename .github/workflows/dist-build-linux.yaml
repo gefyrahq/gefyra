@@ -29,11 +29,11 @@ jobs:
     - name: Setup PyOxidizer and build
       working-directory: client/
       env:
+        PYAPP_FULL_ISOLATION: 1
         PYAPP_PROJECT_NAME: gefyra
         PYAPP_EXEC_SPEC: gefyra.cli.main:main
         PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
         PYAPP_DISTRIBUTION_EMBED: 1
-        PYAPP_SKIP_INSTALL: 1
       run: |
         curl ${PYAPP_DOWNLOAD}
         tar -xzf pyapp-source.tar.gz
