@@ -34,6 +34,8 @@ jobs:
       run: |
         cat pyproject.toml | grep version -m 1 | awk '{ print "PYAPP_PROJECT_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
         curl ${PYAPP_DOWNLOAD}
+        export PYAPP_PROJECT_VERSION=${{ env.PYAPP_PROJECT_VERSION }}
+        echo $PYAPP_PROJECT_VERSION
         tar -xzf pyapp-source.tar.gz
         mv pyapp-v* pyapp-latest
         cd pyapp-latest
