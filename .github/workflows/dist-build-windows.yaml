@@ -44,9 +44,9 @@ jobs:
         cd pyapp-latest
         ls
         cargo build --release
-        mkdir dist
-        xcopy .\target\release\* .\dist /s /e /k /i /y
-        copy README.md ./dist/
+        mkdir ..\dist
+        xcopy .\target\release\* ..\dist /s /e /k /i /y
+        copy README.md ../dist/
         ls ./dist
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
