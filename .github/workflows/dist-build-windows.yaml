@@ -29,6 +29,12 @@ jobs:
         python ..\.github\scripts\get_version.py
         echo "${{ env.APP_VERSION }}"
     - name: Setup PyOxidizer and build
+      env:
+        PYAPP_FULL_ISOLATION: 1
+        PYAPP_PROJECT_NAME: gefyra
+        PYAPP_EXEC_SPEC: gefyra.cli.main:main
+        PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
+        PYAPP_DISTRIBUTION_EMBED: 1
       working-directory: client/
       run: |
         Invoke-WebRequest 'https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz' -OutFile .\pyapp-source.tar.gz
