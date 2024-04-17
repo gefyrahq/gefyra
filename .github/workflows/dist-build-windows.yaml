@@ -36,6 +36,7 @@ jobs:
         ls
         mv pyapp-v* pyapp-latest
         cd pyapp-latest
+        ls
         cargo build --release
         mkdir dist
         xcopy .\target/release/pyapp\* .\dist /s /e /k /i /y
