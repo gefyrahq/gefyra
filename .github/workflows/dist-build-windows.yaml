@@ -47,7 +47,7 @@ jobs:
         mkdir ..\dist
         xcopy .\target\release\* ..\dist /s /e /k /i /y
         copy README.md ../dist/
-        ls ./dist
+        ls ../dist
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
