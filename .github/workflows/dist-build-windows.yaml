@@ -33,7 +33,7 @@ jobs:
       run: |
         Invoke-WebRequest 'https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz' -OutFile .\pyapp-source.tar.gz
         7z x pyapp-source.tar.gz
-        7z x pyapp-source.tar -o"pyapp-latest"
+        7z x pyapp-source.tar
         mv pyapp-v* pyapp-latest
         cd pyapp-latest
         ls
