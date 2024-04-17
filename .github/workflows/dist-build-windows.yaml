@@ -32,9 +32,8 @@ jobs:
       working-directory: client/
       run: |
         Invoke-WebRequest 'https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz' -OutFile .\pyapp-source.tar.gz
-        7z x pyapp-source.tar.gz
+        7z x pyapp-source.tar.gz -so | 7z x -aoa -si -ttar -o "pyapp-latest"
         ls
-        mv pyapp-v* pyapp-latest
         cd pyapp-latest
         cargo build --release
         mkdir dist
