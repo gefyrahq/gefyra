@@ -31,14 +31,14 @@ jobs:
     - name: Setup PyOxidizer and build
       working-directory: client/
       run: |
-        Invoke-WebRequest 'https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip' -OutFile .\PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
-        7z x PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
+        Invoke-WebRequest 'https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz' -OutFile .\pyapp-source.tar.gz
+        7z x pyapp-source.tar.gz
         ls
-        mkdir build\x86_64-pc-windows-msvc\release\wininstall\
-        ./pyoxidizer.exe build wininstall --release
-        ls .\build\x86_64-pc-windows-msvc\release\wininstall\
+        mv pyapp-v* pyapp-latest
+        cd pyapp-latest
+        cargo build --release
         mkdir dist
-        xcopy .\build\x86_64-pc-windows-msvc\release\wininstall\* .\dist /s /e /k /i /y
+        xcopy .\target/release/pyapp\* .\dist /s /e /k /i /y
         copy README.md ./dist/
         ls ./dist
     - name: Upload Artifact
