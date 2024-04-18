@@ -45,7 +45,7 @@ jobs:
         ls
         cargo build --release
         mkdir ..\dist
-        copy .\target\release\pyapp.exe ..\dist
+        copy .\target\release\pyapp.exe ..\dist\gefyra.exe
         copy README.md ../dist/
         ls ../dist
     - name: Upload Artifact
