@@ -10,5 +10,5 @@ with open("pyproject.toml") as f:
             version = version.strip('"')
 
             with open(env_file, "a") as myfile:
-                myfile.write("APP_VERSION=" + version)
+                myfile.write("PYAPP_PROJECT_VERSION=" + version)
             exit(0)
