@@ -45,7 +45,7 @@ jobs:
         ls
         cargo build --release
         mkdir ..\dist
-        xcopy .\target\release\pyapp.exe ..\dist /s /e /k /i /y
+        copy .\target\release\pyapp.exe ..\dist
         copy README.md ../dist/
         ls ../dist
     - name: Upload Artifact
