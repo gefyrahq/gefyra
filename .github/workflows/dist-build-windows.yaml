@@ -43,21 +43,21 @@ jobs:
         cd pyapp-latest
         ls
         cargo build --release
-        mkdir ..\dist
-        copy .\target\release\pyapp.exe ..\dist\gefyra.exe
-        copy README.md ../dist/
-        ls ../dist
+        mkdir ..\dist-exe
+        copy .\target\release\pyapp.exe ..\dist-exe\gefyra.exe
+        copy README.md ../dist-exe/
+        ls ../dist-exe
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64
         path: |
-          client/dist/
+          client/dist-exe/
         retention-days: 5
     - name: Create release zip
       working-directory: client/
       if: ${{ github.event.release && github.event.action == 'published' }}
-      run: 7z a -r gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64.zip "dist/"
+      run: 7z a -r gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64.zip "dist-exe/"
     - name: Attach files to release
       uses: softprops/action-gh-release@v2
       if: ${{ github.event.release && github.event.action == 'published' }}
