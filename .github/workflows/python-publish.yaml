@@ -27,4 +27,19 @@ jobs:
         poetry config pypi-token.pypi $PYPI_API_TOKEN
         poetry build
         poetry publish
-      
+
+  windows_build:
+    uses: ./.github/workflows/dist-build-windows.yaml
+    secrets: inherit
+    needs: publish
+  
+  mac_build:
+    uses: ./.github/workflows/dist-build-mac.yaml
+    secrets: inherit
+    needs: publish
+  
+  linux_build:
+    uses: ./.github/workflows/dist-build-linux.yaml
+    secrets: inherit
+    needs: publish
+

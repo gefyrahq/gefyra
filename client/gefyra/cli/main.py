@@ -1,5 +1,6 @@
 import click
 
+from gefyra.cli.self import _self
 from gefyra.cli.version import version
 from gefyra.cli.run import run
 from gefyra.cli.bridge import create_bridge, unbridge
@@ -64,6 +65,7 @@ cli.add_command(cmd=unbridge, name="unbridge")
 cli.add_command(cmd=run, name="run")
 cli.add_command(cmd=version, name="version")
 cli.add_command(cmd=list, name="list")
+cli.add_command(cmd=_self, name="self")
 
 
 def main():
