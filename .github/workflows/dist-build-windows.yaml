@@ -22,6 +22,11 @@ jobs:
       working-directory: client/
       run: |
         python ..\.github\scripts\get_version.py
+    - name: Build wheel
+      shell: bash
+      working-directory: client/
+      run: |
+        poetry build
     - name: Setup PyAPP and build
       env:
         PYAPP_FULL_ISOLATION: 1
@@ -31,7 +36,6 @@ jobs:
         PYAPP_DISTRIBUTION_EMBED: 1
       working-directory: client/
       run: |
-        poetry build
         Invoke-WebRequest 'https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz' -OutFile .\pyapp-source.tar.gz
         7z x pyapp-source.tar.gz
         7z x pyapp-source.tar
