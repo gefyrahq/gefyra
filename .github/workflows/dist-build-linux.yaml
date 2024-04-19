@@ -24,7 +24,7 @@ jobs:
     - name: Determine App Version
       working-directory: client/
       run: |
-        python ..\.github\scripts\get_version.py
+        python ../.github/scripts/get_version.py
     - name: Setup PyAPP and build
       working-directory: client/
       env:
