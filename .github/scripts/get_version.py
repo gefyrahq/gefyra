@@ -10,6 +10,6 @@ with open("pyproject.toml") as f:
             version = version.strip('"')
 
             with open(env_file, "a") as myfile:
-                myfile.write("PYAPP_PROJECT_VERSION=" + version)
-                myfile.write(f"PYAPP_PROJECT_PATH=./dist/gefyra-{version}.tar.gz")
+                myfile.write("PYAPP_PROJECT_VERSION=" + version + "\n")
+                myfile.write(f"PYAPP_PROJECT_PATH=./dist/gefyra-{version}.tar.gz\n")
             exit(0)
