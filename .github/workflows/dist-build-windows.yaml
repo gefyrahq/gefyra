@@ -1,9 +1,4 @@
-# This workflow will build a PyOxidizer binary for Windows when a tag is pushed
-
 name: Build Windows binary
-
-env:
-  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
 
 on:
   workflow_dispatch: {}
@@ -11,8 +6,6 @@ on:
   push:
     tags:
       - '*'
-  release:
-    types: [published]
 
 jobs:
   build:
@@ -23,37 +16,50 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.9'
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
     - name: Determine App Version
       working-directory: client/
       run: |
         python ..\.github\scripts\get_version.py
-        echo "${{ env.APP_VERSION }}"
-    - name: Setup PyOxidizer and build
+    - name: Build wheel
+      shell: bash
       working-directory: client/
       run: |
-        Invoke-WebRequest 'https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.20.0/PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip' -OutFile .\PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
-        7z x PyOxidizer-0.20.0-exe-x86_64-pc-windows.zip
+        poetry build
+    - name: Setup PyAPP and build
+      env:
+        PYAPP_FULL_ISOLATION: 1
+        PYAPP_PROJECT_NAME: gefyra
+        PYAPP_EXEC_SPEC: gefyra.cli.main:main
+        PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
+        PYAPP_DISTRIBUTION_EMBED: 1
+      working-directory: client/
+      run: |
+        Invoke-WebRequest 'https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz' -OutFile .\pyapp-source.tar.gz
+        7z x pyapp-source.tar.gz
+        7z x pyapp-source.tar
+        mv pyapp-v* pyapp-latest
+        cd pyapp-latest
         ls
-        mkdir build\x86_64-pc-windows-msvc\release\wininstall\
-        ./pyoxidizer.exe build wininstall --release
-        ls .\build\x86_64-pc-windows-msvc\release\wininstall\
-        mkdir dist
-        xcopy .\build\x86_64-pc-windows-msvc\release\wininstall\* .\dist /s /e /k /i /y
-        copy README.md ./dist/
-        ls ./dist
+        cargo build --release
+        mkdir ..\dist-exe
+        copy .\target\release\pyapp.exe ..\dist-exe\gefyra.exe
+        copy README.md ../dist-exe/
+        ls ../dist-exe
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: gefyra-${{ env.APP_VERSION }}-windows-x86_64
+        name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64
         path: |
-          client/dist/
+          client/dist-exe/
         retention-days: 5
     - name: Create release zip
       working-directory: client/
       if: ${{ github.event.release && github.event.action == 'published' }}
-      run: 7z a -r gefyra-${{ env.APP_VERSION }}-windows-x86_64.zip "dist/"
+      run: 7z a -r gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64.zip "dist-exe/"
     - name: Attach files to release
       uses: softprops/action-gh-release@v2
       if: ${{ github.event.release && github.event.action == 'published' }}
       with:
-        files: client/gefyra-${{ env.APP_VERSION }}-windows-x86_64.zip
+        files: client/gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64.zip

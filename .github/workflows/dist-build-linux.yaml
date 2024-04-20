@@ -1,9 +1,7 @@
-# This workflow will build a PyOxidizer binary for linux when a tag is pushed
-
 name: Build Linux binary
 
 env:
-  PYOXIDIZER_DOWNLOAD: https://github.com/indygreg/PyOxidizer/releases/download/pyoxidizer%2F0.18.0/pyoxidizer-0.18.0-linux-x86_64.zip
+  PYAPP_DOWNLOAD: https://github.com/ofek/pyapp/releases/latest/download/source.tar.gz
 
 on:
   workflow_dispatch: {}
@@ -11,8 +9,6 @@ on:
   push:
     tags:
       - '*'
-  release:
-    types: [published]
 
 jobs:
   build:
@@ -23,21 +19,33 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.9'
-    - name: Setup PyOxidizer and build
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+    - name: Determine App Version
       working-directory: client/
       run: |
-        wget ${PYOXIDIZER_DOWNLOAD}
-        unzip pyoxidizer-0.18.0-linux-x86_64.zip
-        sudo chmod +x ./pyoxidizer
-        ./pyoxidizer build exe --release
-        cp `find build/ -name "gefyra"` ../gefyra
-        strip -s ../gefyra
-        cp README.md ../README.md
-        cat pyproject.toml | grep version -m 1 | awk '{ print "APP_VERSION="substr($3, 2, length($3) -2)}' >> $GITHUB_ENV
+        python ../.github/scripts/get_version.py
+    - name: Setup PyAPP and build
+      working-directory: client/
+      env:
+        PYAPP_FULL_ISOLATION: 1
+        PYAPP_PROJECT_NAME: gefyra
+        PYAPP_EXEC_SPEC: gefyra.cli.main:main
+        PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
+        PYAPP_DISTRIBUTION_EMBED: 1
+      run: |
+        poetry build
+        curl ${PYAPP_DOWNLOAD}  -Lo pyapp-source.tar.gz
+        tar -xzf pyapp-source.tar.gz
+        mv pyapp-v* pyapp-latest
+        cd pyapp-latest
+        cargo build --release
+        mv target/release/pyapp ../../gefyra && chmod +x ../../gefyra
+        cp ../README.md ../../README.md
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: gefyra-${{ env.APP_VERSION }}-linux-amd64
+        name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-linux-amd64
         path: |
           gefyra
           LICENSE
@@ -45,9 +53,9 @@ jobs:
         retention-days: 5
     - name: Create release zip
       if: ${{ github.event.release && github.event.action == 'published' }}
-      run: zip gefyra-${{ env.APP_VERSION }}-linux-amd64.zip "gefyra" "LICENSE" "README.md"
+      run: zip gefyra-${{ env.PYAPP_PROJECT_VERSION }}-linux-amd64.zip "gefyra" "LICENSE" "README.md"
     - name: Attach files to release
       uses: softprops/action-gh-release@v2
       if: ${{ github.event.release && github.event.action == 'published' }}
       with:
-        files: gefyra-${{ env.APP_VERSION }}-linux-amd64.zip
+        files: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-linux-amd64.zip
