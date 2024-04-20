@@ -8,6 +8,7 @@ import time
 from typing import IO, List, Optional, TYPE_CHECKING
 from gefyra.api.clients import get_client
 from gefyra.exceptions import GefyraConnectionError
+from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.local.minikube import detect_minikube_config
 from .utils import stopwatch
 
@@ -26,7 +27,12 @@ from gefyra.local.utils import (
     compose_kubeconfig_for_serviceaccount,
     handle_docker_get_or_create_container,
 )
-from gefyra.types import GefyraClientConfig, GefyraClientState, GefyraConnectionItem
+from gefyra.types import (
+    GefyraClient,
+    GefyraClientConfig,
+    GefyraClientState,
+    GefyraConnectionItem,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -59,17 +65,17 @@ def connect(  # noqa: C901
         file_str = client_config.read()
         client_config.close()
         gclient_conf = GefyraClientConfig.from_json_str(file_str)
-        client = get_client(gclient_conf.client_id, connection_name=connection_name)
-        loc = os.path.join(
-            get_gefyra_config_location(),
-            f"{connection_name}.yaml",
-        )
+
         # this kubeconfig is being used by the client to operate in the cluster
         kubeconfig_str = compose_kubeconfig_for_serviceaccount(
             gclient_conf.kubernetes_server,
             gclient_conf.ca_crt,
             "gefyra",
             base64.b64decode(gclient_conf.token).decode("utf-8"),
+        )
+        loc = os.path.join(
+            get_gefyra_config_location(),
+            f"{connection_name}.yaml",
         )
         with open(loc, "w") as f:
             f.write(kubeconfig_str)
@@ -91,6 +97,10 @@ def connect(  # noqa: C901
             cargo_endpoint_port=gclient_conf.gefyra_server.split(":")[1],
             cargo_container_name=f"gefyra-cargo-{connection_name}",
         )
+
+        gclient = handle_get_gefyraclient(config, gclient_conf.client_id)
+        client = GefyraClient(gclient, config)
+
         config.CARGO_PROBE_TIMEOUT = probe_timeout
 
     _retry = 0
