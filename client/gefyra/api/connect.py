@@ -90,8 +90,6 @@ def connect(  # noqa: C901
             cargo_container_name=f"gefyra-cargo-{connection_name}",
         )
         gclient = handle_get_gefyraclient(config, gclient_conf.client_id)
-        client = GefyraClient(gclient, config)
-
         if minikube_profile:
             logger.debug(f"Minikube profile detected: {minikube_profile}")
             mini_conf = detect_minikube_config(minikube_profile)
@@ -99,6 +97,9 @@ def connect(  # noqa: C901
             gclient_conf.gefyra_server = (
                 f"{mini_conf['cargo_endpoint_host']}:{mini_conf['cargo_endpoint_port']}"
             )
+        client = GefyraClient(gclient, config)
+
+        
 
         config.CARGO_PROBE_TIMEOUT = probe_timeout
 
