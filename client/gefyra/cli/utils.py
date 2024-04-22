@@ -230,6 +230,8 @@ def parse_workload(ctx, param, workload: str) -> str:
         "Invalid workload format. Please provide the workload "
         "in the format 'type/name' or 'type/name/container-name'."
     )
+    if not workload:
+        return workload
     if "/" not in workload:
         raise ValueError(MSG)
     return workload
