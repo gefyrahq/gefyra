@@ -1,6 +1,12 @@
 import ast
 import click
-from gefyra.cli.utils import OptionEatAll, check_connection_name, parse_ip_port_map
+from gefyra.cli.utils import (
+    OptionEatAll,
+    check_connection_name,
+    parse_env,
+    parse_ip_port_map,
+    parse_workload,
+)
 
 
 @click.command()
@@ -32,6 +38,7 @@ from gefyra.cli.utils import OptionEatAll, check_connection_name, parse_ip_port_
     "--env-from",
     help="Copy the environment from the container in the notation 'Pod/Container'",
     type=str,
+    callback=parse_workload,
 )
 @click.option(
     "-v",
@@ -50,6 +57,7 @@ from gefyra.cli.utils import OptionEatAll, check_connection_name, parse_ip_port_
         " times"
     ),
     type=str,
+    callback=parse_env,
     multiple=True,
 )
 @click.option(
