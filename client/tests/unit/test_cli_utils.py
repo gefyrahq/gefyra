@@ -7,7 +7,7 @@ import yaml
 
 from gefyra.local.utils import get_connection_from_kubeconfig, get_processed_paths
 from gefyra.api.utils import generate_env_dict_from_strings, get_workload_type
-from gefyra.cli.utils import parse_ip_port_map
+from gefyra.cli.utils import parse_env, parse_ip_port_map, parse_workload
 
 
 @patch("kubernetes.config.kube_config.KUBE_CONFIG_DEFAULT_LOCATION", "/tmp/kube.yaml")
@@ -95,6 +95,26 @@ def test_env_dict_creation():
         },
         res,
     )
+
+
+def test_env_parsing():
+    try:
+        parse_env(None, None, ("APP",))
+    except Exception as e:
+        assert "use 'ENV=value'" in str(e)
+
+    res = parse_env(None, None, ("APP=test-app",))
+    TestCase().assertListEqual(res, ["APP=test-app"])
+
+
+def test_workload_parsing():
+    res = parse_workload(None, None, "pod/test")
+    assert res == "pod/test"
+
+    try:
+        res = parse_workload(None, None, "pod")
+    except Exception as e:
+        assert "Invalid workload format" in str(e)
 
 
 def test_ip_port_map_parsing():

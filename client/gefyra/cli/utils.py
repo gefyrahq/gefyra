@@ -216,6 +216,27 @@ def parse_ip_port_map(ctx, param, ports: Tuple[str]) -> dict:
     return res
 
 
+def parse_env(ctx, param, envs: Tuple[str]) -> List[str]:
+    res = []
+    for env in envs:
+        if "=" not in env:
+            raise ValueError("Invalid value for env variable. Please use 'ENV=value'.")
+        res.append(env)
+    return res
+
+
+def parse_workload(ctx, param, workload: str) -> str:
+    MSG = (
+        "Invalid workload format. Please provide the workload "
+        "in the format 'type/name' or 'type/name/container-name'."
+    )
+    if not workload:
+        return workload
+    if "/" not in workload:
+        raise ValueError(MSG)
+    return workload
+
+
 def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
     from gefyra import api
 
