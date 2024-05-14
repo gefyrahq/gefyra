@@ -19,7 +19,7 @@ from gefyra.local import (
 
 logger = logging.getLogger("gefyra")
 
-__VERSION__ = "2.1.3"
+__VERSION__ = "2.1.4"
 USER_HOME = os.path.expanduser("~")
 
 
