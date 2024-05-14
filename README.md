@@ -158,9 +158,6 @@ are actually able to reach cluster-based resources, such as databases, other (mi
 [*Nginx*](https://www.nginx.com/) is used for all kinds of proxying and reverse-proxying traffic, including the interceptions of already running containers
 in the cluster.
 
-### Rsync
-[*Rsync*](https://rsync.samba.org/) is used to synchronize directories from containers running in the cluster to local
-instances. This is particularly important for Kubernetes service account tokens during a bridge operation.
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 

@@ -13,7 +13,6 @@ custom_object_api = k8s.client.CustomObjectsApi()
 BUSYBOX_COMMAND = "/bin/busybox"
 CARRIER_CONFIGURE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setroute.sh"]
 CARRIER_CONFIGURE_PROBE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setprobe.sh"]
-CARRIER_RSYNC_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "syncdirs.sh"]
 CARRIER_ORIGINAL_CONFIGMAP = "gefyra-carrier-restore-configmap"
 
 
@@ -36,6 +35,21 @@ class Carrier(AbstractGefyraBridgeProvider):
         parameters = parameters or {}
         self._patch_pod_with_carrier(handle_probes=parameters.get("handleProbes", True))
 
+    def _ensure_probes(self) -> bool:
+        probes = self._get_all_probes(self.container)
+        for probe in probes:
+            try:
+                command = CARRIER_CONFIGURE_PROBE_COMMAND_BASE + [
+                    probe.http_get.port,
+                ]
+                exec_command_pod(
+                    core_v1_api, self.pod, self.namespace, self.container, command
+                )
+            except Exception as e:
+                self.logger.error(e)
+                return False
+        return True
+
     def installed(self) -> bool:
         pod = core_v1_api.read_namespaced_pod(name=self.pod, namespace=self.namespace)
         for container in pod.spec.containers:
@@ -44,7 +58,8 @@ class Carrier(AbstractGefyraBridgeProvider):
                 and container.image
                 == f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
             ):
-                return True
+                # we always handle probes, flag is currently ignored
+                return self._ensure_probes()
         return False
 
     def ready(self) -> bool:
