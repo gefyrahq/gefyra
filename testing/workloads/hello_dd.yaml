@@ -33,6 +33,36 @@ spec:
         image: nginxdemos/hello
         ports:
         - containerPort: 80
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /alive
+            port: 80
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+        
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /ready
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
+
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /startup
+            port: 80
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
