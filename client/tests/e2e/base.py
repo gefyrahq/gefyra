@@ -630,7 +630,7 @@ class GefyraBaseTest:
         self.assertTrue(res)
         self.assert_deployment_ready(
             self.default_bridge_params["namespace"],
-            name=self.default_bridge_params["name"],
+            name=self.default_run_params["name"],
         )
 
     def test_e_run_gefyra_status_check_containers_and_bridge(self):
