@@ -35,8 +35,8 @@ class Carrier(AbstractGefyraBridgeProvider):
         parameters = parameters or {}
         self._patch_pod_with_carrier(handle_probes=parameters.get("handleProbes", True))
 
-    def _ensure_probes(self) -> bool:
-        probes = self._get_all_probes(self.container)
+    def _ensure_probes(self, container: k8s.client.V1Container) -> bool:
+        probes = self._get_all_probes(container)
         for probe in probes:
             try:
                 command = CARRIER_CONFIGURE_PROBE_COMMAND_BASE + [
@@ -59,7 +59,7 @@ class Carrier(AbstractGefyraBridgeProvider):
                 == f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
             ):
                 # we always handle probes, flag is currently ignored
-                return self._ensure_probes()
+                return self._ensure_probes(container=container)
         return False
 
     def ready(self) -> bool:
