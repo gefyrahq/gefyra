@@ -628,6 +628,10 @@ class GefyraBaseTest:
         run(**run_params)
         res = bridge(**self.default_bridge_params)
         self.assertTrue(res)
+        self.assert_deployment_ready(
+            self.default_bridge_params["namespace"],
+            name=self.default_bridge_params["name"],
+        )
 
     def test_e_run_gefyra_status_check_containers_and_bridge(self):
         _status = status(connection_name=CONNECTION_NAME)
