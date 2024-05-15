@@ -385,17 +385,17 @@ toml = ["tomli"]
 
 [[package]]
 name = "coveralls"
-version = "4.0.0"
+version = "4.0.1"
 description = "Show coverage stats online via coveralls.io"
 optional = false
 python-versions = "<3.13,>=3.8"
 files = [
-    {file = "coveralls-4.0.0-py3-none-any.whl", hash = "sha256:401715d244a27d5da03eb1ac614aa585cc7e4dd5b0d4c035113b6349da4e6161"},
-    {file = "coveralls-4.0.0.tar.gz", hash = "sha256:9486f353176d309066053d38edbade3aad6346c5eb8a5edde7090d3116219414"},
+    {file = "coveralls-4.0.1-py3-none-any.whl", hash = "sha256:7a6b1fa9848332c7b2221afb20f3df90272ac0167060f41b5fe90429b30b1809"},
+    {file = "coveralls-4.0.1.tar.gz", hash = "sha256:7b2a0a2bcef94f295e3cf28dcc55ca40b71c77d1c2446b538e85f0f7bc21aa69"},
 ]
 
 [package.dependencies]
-coverage = {version = ">=5.0,<6.0.dev0 || >6.1,<6.1.1 || >6.1.1,<7.5", extras = ["toml"]}
+coverage = {version = ">=5.0,<6.0.dev0 || >6.1,<6.1.1 || >6.1.1,<8.0", extras = ["toml"]}
 docopt = ">=0.6.1,<0.7.0"
 requests = ">=1.0.0,<3.0.0"
 
@@ -1351,4 +1351,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "0fd6ea17aaad055efdf39cce896ad6327511d8b4994f5ee78382db8fa282f604"
+content-hash = "f49d69922fb1764951a5496518ed84fb4d4011571ba595f46a121d08ebe9cc9e"
