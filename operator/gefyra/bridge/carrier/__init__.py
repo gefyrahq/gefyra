@@ -232,17 +232,18 @@ class Carrier(AbstractGefyraBridgeProvider):
         :param ireq_object: the InterceptRequest object
         :return: None
         """
-        config = {
-            f"{self.namespace}-{self.pod}": json.dumps(
-                {
-                    "originalConfig": {
-                        "image": container.image,
-                        "command": container.command,
-                        "args": container.args,
-                    }
+        data = json.dumps(
+            {
+                "originalConfig": {
+                    "image": container.image,
+                    "command": container.command,
+                    "args": container.args,
                 }
-            )
-        }
+            }
+        )
+        config = [
+            {"op": "add", "path": f"/data/{self.namespace}-{self.pod}", "value": data}
+        ]
         try:
             core_v1_api.patch_namespaced_config_map(
                 name=CARRIER_ORIGINAL_CONFIGMAP,
@@ -257,7 +258,9 @@ class Carrier(AbstractGefyraBridgeProvider):
                         metadata=k8s.client.V1ObjectMeta(
                             name=CARRIER_ORIGINAL_CONFIGMAP
                         ),
-                        data=config,
+                        data={
+                            f"{self.namespace}-{self.pod}": data,
+                        },
                     ),
                 )
             else:
