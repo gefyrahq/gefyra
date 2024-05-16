@@ -2,6 +2,14 @@ ARG ARCH=
 ARG GOLANG_VERSION=1.18
 ARG ALPINE_VERSION=3.17
 
+FROM rust:slim-buster as udp2tcp-builder
+RUN apt update && apt install wget unzip -y
+RUN rustup target add x86_64-unknown-linux-gnu
+RUN wget https://github.com/mullvad/udp-over-tcp/archive/refs/tags/v0.4.0.zip && \
+    unzip v0.4.0.zip
+WORKDIR /udp-over-tcp-0.4.0
+RUN ./build-static-bins.sh
+
 FROM ${ARCH}golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} as builder
 
 ARG wg_go_tag=0.0.20220316
@@ -26,6 +34,7 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
 FROM alpine:3.17 as cargo
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/
+COPY --from=udp2tcp-builder /udp-over-tcp-0.4.0/target/x86_64-unknown-linux-gnu/release/udp2tcp /usr/bin/
 
 # set version label
 ARG BUILD_DATE
