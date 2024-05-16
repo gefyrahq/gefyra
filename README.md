@@ -202,17 +202,7 @@ Check out the initial response from: http://hello.127.0.0.1.nip.io:8080/
 <p align="right">(<a href="#top">back to top</a>)</p>
 
 ## Usage
-The following actions are available in Gefyra's CLI:
-- `up`: setup local development infrastructure
-- `run`: deploy a new app container into the cluster
-- `bridge`: intercept the traffic to a container that's running in the cluster and send it to the development container
-- `unbridge`: remove active traffic intercepts and reset the cluster to its original state
-- `down`: remove Gefyra's development infrastructure
-- `list`: list running containers and active bridges
-- `check`: check local system dependencies 
-- `version`: print the current version and exit
-
-_For more examples, please refer to the [CLI documentation](https://gefyra.dev/reference/cli)_
+Checkout [Gefyra's CLI](https://gefyra.dev/docs/cli) or [Guides](https://gefyra.dev/docs/getting-started-with-gefyra).
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
