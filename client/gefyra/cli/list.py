@@ -70,8 +70,13 @@ def list(
         _bridges = api.list_gefyra_bridges(connection_name)
         for connection in _bridges:
             for bridge in connection[1]:
+                bridge_info = dataclasses.asdict(bridge)
+                if bridge_info.get("port_mappings"):
+                    bridge_info["port_mappings"] = "\n".join(
+                        bridge_info["port_mappings"]
+                    )
                 bridges_print.append(
-                    {"connection": connection[0], **dataclasses.asdict(bridge)}.values()
+                    {"connection": connection[0], **bridge_info}.values()
                 )
 
         if bridges_print:
@@ -83,7 +88,7 @@ def list(
                     headers=[
                         "CONNECTION",
                         "NAME",
-                        "NAMESPACE",
+                        "CLIENT",
                         "LOCAL ADDRESS",
                         "PORTS",
                         "TARGET CONTAINER",
