@@ -240,6 +240,9 @@ def parse_workload(ctx, param, workload: str) -> str:
 def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
     from gefyra import api
 
+    if not selected:
+        selected = "default"
+
     conn_list = api.list_connections()
     if not conn_list:
         raise click.UsageError(
