@@ -64,7 +64,7 @@ class ClientConfiguration(object):
         operator_image_url: str = "",
         stowaway_image_url: str = "",
         carrier_image_url: str = "",
-        cargo_image_url: str = "",
+        cargo_image_url: str = "cargo",
         kube_config_file: Optional[Path] = None,
         kube_context: Optional[str] = None,
         wireguard_mtu: str = "1340",

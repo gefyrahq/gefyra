@@ -78,6 +78,12 @@ def connections(ctx):
     type=str,
 )
 @click.option(
+    "--tcp",
+    default=False,
+    help="Connect Gefyra to a TCP cluster (preview)",
+    is_flag=True,
+)
+@click.option(
     "--minikube",
     help="Connect Gefyra to a Minikube cluster (accepts minikube profile name, default is 'minikube'))",
     type=str,
@@ -86,7 +92,12 @@ def connections(ctx):
     required=False,
 )
 @standard_error_handler
-def connect_client(client_config, connection_name: str, minikube: Optional[str] = None):
+def connect_client(
+    client_config,
+    connection_name: str,
+    minikube: Optional[str] = None,
+    tcp: bool = False,
+):
     from alive_progress import alive_bar
     from gefyra import api
 
@@ -113,6 +124,7 @@ def connect_client(client_config, connection_name: str, minikube: Optional[str] 
             connection_name=connection_name,
             client_config=client_config,
             minikube_profile=minikube,
+            use_tcp=tcp,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "
