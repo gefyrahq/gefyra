@@ -37,12 +37,6 @@ class GefyraClientConfig:
         return cls(**data)
 
 
-# https://stackoverflow.com/questions/56665298/how-to-apply-default-value-to-python-dataclass-field-when-none-was-passed
-@dataclass
-class DefaultVal:
-    val: Any
-
-
 @dataclass
 class StowawayConfig:
     # the wireguard connection data
