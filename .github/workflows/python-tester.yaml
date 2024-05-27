@@ -270,10 +270,11 @@ jobs:
         working-directory: ./client
         if: ${{ failure() }}
         run: |
-          docker logs gefyra-cargo-default
           kubectl logs -n gefyra gefyra-stowaway-0
+          kubectl logs -n gefyra deploy/gefyra-operator
           docker inspect minikube
           docker inspect gefyra-cargo-default
+          docker logs gefyra-cargo-default
       - name: Show coverage report
         working-directory: ./client
         run: |
