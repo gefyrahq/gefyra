@@ -123,7 +123,7 @@ def connect(  # noqa: C901
 
     # busy wait for the client to enter the ACTIVE state
     _i = 0
-    while _i < config.CONNECTION_TIMEOUT:
+    while _i < 300:
         if client.state == GefyraClientState.ACTIVE:
             break
         else:
