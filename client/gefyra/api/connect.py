@@ -104,7 +104,7 @@ def connect(  # noqa: C901
         config.CARGO_PROBE_TIMEOUT = probe_timeout
 
     _retry = 0
-    while _retry < 5:
+    while _retry < 10:
         gefyra_network = get_or_create_gefyra_network(config)
         try:
             client.activate_connection(
@@ -112,8 +112,9 @@ def connect(  # noqa: C901
             )
             break
         except kubernetes.client.exceptions.ApiException as e:
+            _retry += 1
             if e.status == 500:
-                logger.debug(f"Could not activate connection, retrying {_retry}/5...")
+                logger.debug(f"Could not activate connection, retrying {_retry}/10...")
                 # if the given subnet is taken in the cluster (by another client), recreate the network and try again
                 # hopefully the IPAM config will give a new subnet
                 gefyra_network.remove()
@@ -127,7 +128,7 @@ def connect(  # noqa: C901
             break
         else:
             _i += 1
-            time.sleep(0.5)
+            time.sleep(1)
     else:
         raise GefyraConnectionError("Could not activate connection") from None
     client.update()
