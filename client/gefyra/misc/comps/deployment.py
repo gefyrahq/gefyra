@@ -112,6 +112,16 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     "initialDelaySeconds": 5,
                                     "periodSeconds": 5,
                                 },
+                                "readinessProbe": {
+                                    "exec": {
+                                        "command": [
+                                            "python",
+                                            "gefyra/healthcheck.py",
+                                        ]
+                                    },
+                                    "initialDelaySeconds": 20,
+                                    "periodSeconds": 5,
+                                },
                             }
                         ],
                     },

@@ -87,6 +87,7 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
         stowaway=False,
         stowaway_image="",
         namespace=False,
+        operator_webhook=False,
     )
     # check if connected to the cluster
     try:
@@ -118,6 +119,24 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
             _status.operator_image = operator_deploy.spec.template.spec.containers[
                 0
             ].image
+    except ApiException:
+        return _status
+
+    try:
+        logger.debug("Checking operator-webhook deployment")
+        operator_webhook_deploy = config.K8S_APP_API.read_namespaced_deployment(
+            name="gefyra-operator-webhook",
+            namespace=config.NAMESPACE,
+            _request_timeout=(1, 5),
+        )
+        if (
+            operator_webhook_deploy.status.ready_replicas
+            and operator_webhook_deploy.status.ready_replicas >= 1
+        ):
+            _status.operator = True
+            _status.operator_image = (
+                operator_webhook_deploy.spec.template.spec.containers[0].image
+            )
     except ApiException:
         return _status
 
@@ -158,7 +177,10 @@ def status(connection_name: str = "") -> GefyraStatus:
         summary = StatusSummary.UP
     else:
         if client.cargo or (
-            cluster.connected and cluster.operator and cluster.stowaway
+            cluster.connected
+            and cluster.operator
+            and cluster.stowaway
+            and cluster.operator_webhook
         ):
             summary = StatusSummary.INCOMPLETE
         else:
