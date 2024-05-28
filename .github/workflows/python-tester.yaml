@@ -270,6 +270,7 @@ jobs:
         working-directory: ./client
         if: ${{ failure() }}
         run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/darwin/amd64/kubectl"
           kubectl logs -n gefyra gefyra-stowaway-0
           kubectl logs -n gefyra deploy/gefyra-operator
           docker inspect minikube
