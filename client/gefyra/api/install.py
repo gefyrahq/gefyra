@@ -116,7 +116,7 @@ def install(
                 break
         # busywait for the operator webhook to become ready
         _i = 0
-        while _i < 10:
+        while _i < 60:
             webhook_deploy = config.K8S_APP_API.read_namespaced_deployment(
                 name="gefyra-operator-webhook", namespace=config.NAMESPACE
             )
