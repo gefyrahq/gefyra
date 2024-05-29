@@ -214,6 +214,7 @@ jobs:
     needs:
       - build_operator
       - build_cargo
+      - build_test_image
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
