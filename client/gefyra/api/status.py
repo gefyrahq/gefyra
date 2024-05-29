@@ -116,27 +116,10 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
             and operator_deploy.status.ready_replicas >= 1
         ):
             _status.operator = True
+            _status.operator_webhook = True
             _status.operator_image = operator_deploy.spec.template.spec.containers[
                 0
             ].image
-    except ApiException:
-        return _status
-
-    try:
-        logger.debug("Checking operator-webhook deployment")
-        operator_webhook_deploy = config.K8S_APP_API.read_namespaced_deployment(
-            name="gefyra-operator-webhook",
-            namespace=config.NAMESPACE,
-            _request_timeout=(1, 5),
-        )
-        if (
-            operator_webhook_deploy.status.ready_replicas
-            and operator_webhook_deploy.status.ready_replicas >= 1
-        ):
-            _status.operator = True
-            _status.operator_image = (
-                operator_webhook_deploy.spec.template.spec.containers[0].image
-            )
     except ApiException:
         return _status
 
