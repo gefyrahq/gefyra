@@ -252,6 +252,7 @@ jobs:
         run: |
           docker load --input /tmp/pyserver/pyserver.tar
           docker load --input /tmp/cargo/cargo.tar
+          docker load --input /tmp/operator/operator.tar
           docker image ls -a
       - name: start minikube
         id: minikube

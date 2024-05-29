@@ -167,7 +167,13 @@ class GefyraClient(StateMachine, StateControllerMixin):
             raise kopf.TemporaryError(
                 f"Cannot read connection data from provider: {e}", delay=1
             )
-        self._patch_object({"providerConfig": conn_data})
+        try:
+            self._patch_object({"providerConfig": conn_data})
+        except k8s.client.ApiException as e:
+            if e.status == 500:
+                raise kopf.TemporaryError(
+                    f"Cannot enable connection: {e.reason}", delay=1
+                )
 
     def disable_connection(self):
         try:
