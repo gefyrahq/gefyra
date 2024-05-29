@@ -95,7 +95,7 @@ jobs:
         tags: ${{ steps.operator_meta.outputs.tags }}
         labels: ${{ steps.operator_meta.outputs.labels }}
         cache-from: type=registry,ref=quay.io/gefyra/operator:latest
-        # Goutputs: type=docker,dest=/tmp/operator.tar
+        outputs: type=docker,dest=/tmp/cargo.tar
     - name: Upload operator image
       uses: actions/upload-artifact@v4
       with:
