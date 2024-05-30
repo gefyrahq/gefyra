@@ -263,7 +263,7 @@ jobs:
           start-args: --ports 127.0.0.1:31820:31820/udp
       - name: Add image to minikube
         run: |
-          minikube cache add quay.io/gefyra/operator:2.1.6
+          minikube image load quay.io/gefyra/operator:2.1.6
       - name: Install dependencies
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
