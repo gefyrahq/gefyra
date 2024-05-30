@@ -67,6 +67,7 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
     """
     from gefyra.configuration import configuration
 
+    logger.info("Starting up connection providers")
     not_ready_providers = []
     for gefyra_connector in ConnectionProviderType:
         provider = connection_provider_factory.get(

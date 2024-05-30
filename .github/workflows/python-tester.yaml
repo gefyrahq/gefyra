@@ -254,6 +254,7 @@ jobs:
           docker load --input /tmp/pyserver/pyserver.tar
           docker load --input /tmp/cargo/cargo.tar
           docker load --input /tmp/operator/operator.tar
+          docker tag quay.io/gefyra/operator:pr-628 quay.io/gefyra/operator:latest 
           docker image ls -a
       - name: start minikube
         id: minikube
