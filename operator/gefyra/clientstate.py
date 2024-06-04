@@ -134,6 +134,9 @@ class GefyraClient(StateMachine, StateControllerMixin):
     def on_enable(self):
         self.logger.info(f"Client '{self.object_name}' is being enabled")
 
+    def on_activate(self):
+        self.logger.info(f"Client '{self.object_name}' is being activated")
+
     def on_disable(self):
         self.logger.info(f"Client '{self.object_name}' is being disabled")
         self.cleanup_all_bridges()
