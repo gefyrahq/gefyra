@@ -113,8 +113,10 @@ def install(
                 logger.info(event["object"].message)
             if event["object"].reason == "Gefyra-Ready":
                 operator_ready = True
+                logger.debug("Gefyra operator is ready")
             if event["object"].reason == "Gefyra-Webhook-Ready":
                 operator_webhook_ready = True
+                logger.debug("Gefyra operator webhook is ready")
             if operator_ready and operator_webhook_ready:
                 toc = time.perf_counter()
                 logger.info(f"Gefyra became ready in {toc - tic:0.4f} seconds")
