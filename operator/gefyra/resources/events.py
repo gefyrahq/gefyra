@@ -30,7 +30,7 @@ def create_operator_webhook_ready_event(namespace: str) -> k8s.client.EventsV1Ev
     now = _get_now()
     return k8s.client.EventsV1Event(
         metadata=k8s.client.V1ObjectMeta(
-            name="gefyra-operator-startup", namespace=namespace
+            name="gefyra-operator-webhook-startup", namespace=namespace
         ),
         reason="Gefyra-Webhook-Ready",
         note="Operator Webhook has been started configured successfully",
