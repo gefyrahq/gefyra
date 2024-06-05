@@ -37,22 +37,22 @@ def configure(settings: kopf.OperatorSettings, **_):
         host="gefyra-admission.gefyra.svc",
     )
 
-    def _write_startup_task() -> None:
-        try:
-            events.create_namespaced_event(
-                body=create_operator_webhook_ready_event(configuration.NAMESPACE),
-                namespace=configuration.NAMESPACE,
-            )
-        except k8s.client.exceptions.ApiException as e:
-            if e.status != 409:
-                logger.error("Could not create startup event: " + str(e))
-
-    _write_startup_task()
-
 
 @kopf.on.validate("gefyraclients.gefyra.dev", id="client-parameters")  # type: ignore
 def check_validate_provider_parameters(body, diff, logger, operation, **_):
     if body.get("check", False):
+
+        def _write_startup_task() -> None:
+            try:
+                events.create_namespaced_event(
+                    body=create_operator_webhook_ready_event(configuration.NAMESPACE),
+                    namespace=configuration.NAMESPACE,
+                )
+            except k8s.client.exceptions.ApiException as e:
+                if e.status != 409:
+                    logger.error("Could not create startup event: " + str(e))
+
+        _write_startup_task()
         return True
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraClient {name}")
