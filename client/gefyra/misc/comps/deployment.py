@@ -103,7 +103,12 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                 ],
                                 "livenessProbe": {
-                                    "httpGet": {"path": "/healthz", "port": 8080},
+                                    "exec": {
+                                        "command": [
+                                            "python",
+                                            "gefyra/healthcheck.py",
+                                        ]
+                                    },
                                     "initialDelaySeconds": 5,
                                     "periodSeconds": 5,
                                 },
