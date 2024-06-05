@@ -262,7 +262,7 @@ jobs:
           docker load --input /tmp/pyserver/pyserver.tar
           docker load --input /tmp/cargo/cargo.tar
           docker load --input /tmp/operator/operator.tar
-          docker tag quay.io/gefyra/operator:pr-628 quay.io/gefyra/operator:2.1.6
+          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.1.6
           docker image ls -a
       - name: Install dependencies
         working-directory: ./client
@@ -363,9 +363,10 @@ jobs:
           docker load --input /tmp/cargo/cargo.tar
           docker load --input /tmp/operator/operator.tar
           docker image ls -a
+          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.1.6
       - name: Import Operator to k3d
         run: |
-          k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
+          k3d image import quay.io/gefyra/operator:2.1.6 -c mycluster --verbose
       - name: Pytest
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
