@@ -209,8 +209,10 @@ jobs:
         include:
           - os: ubuntu-latest
             driver: ''
+            kubectl_os: linux
           - os: macos-12
             driver: virtualbox
+            kubectl_os: darwin
     needs:
       - build_operator
       - build_cargo
@@ -274,10 +276,12 @@ jobs:
         working-directory: ./client
         if: ${{ failure() }}
         run: |
-          minikube kubectl get pod -n gefyra
-          minikube kubectl logs -n gefyra gefyra-stowaway-0
-          minikube kubectl logs -n gefyra deploy/gefyra-operator-webhook
-          minikube kubectl logs -n gefyra deploy/gefyra-operator
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/${{ matrix.kubectl_os }}/amd64/kubectl"
+          chmod +x ./kubectl
+          ./kubectl get pod -n gefyra
+          ./kubectl logs -n gefyra gefyra-stowaway-0
+          ./kubectl logs -n gefyra deploy/gefyra-operator-webhook
+          ./kubectl logs -n gefyra deploy/gefyra-operator
           docker inspect minikube
           docker inspect gefyra-cargo-default
           docker logs gefyra-cargo-default
