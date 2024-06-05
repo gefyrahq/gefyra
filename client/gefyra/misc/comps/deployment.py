@@ -103,7 +103,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                 ],
                                 "livenessProbe": {
-                                    "httpGet": {"path": "/healthz", "port": "8080"},
+                                    "httpGet": {"path": "/healthz", "port": 8080},
                                     "initialDelaySeconds": 5,
                                     "periodSeconds": 5,
                                 },
