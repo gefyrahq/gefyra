@@ -359,10 +359,11 @@ jobs:
         run: |
           docker load --input /tmp/pyserver/pyserver.tar
           docker load --input /tmp/cargo/cargo.tar
+          docker load --input /tmp/operator/operator.tar
           docker image ls -a
-      # - name: Import Operator to k3d
-      #   run: |
-      #     k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
+      - name: Import Operator to k3d
+        run: |
+          k3d image import ${{ needs.build_operator.outputs.tags }} -c mycluster --verbose
       - name: Pytest
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
