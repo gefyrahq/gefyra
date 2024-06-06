@@ -42,6 +42,7 @@ async def client_connection_changed(new, body, logger, **kwargs):
                     delay=1,
                 )
     else:
+        logger.info(f"else Client is: {client.current_state}")
         # deactivate this connection
         if client.active.is_active or client.error.is_active:
             # only trigger the state transition
@@ -49,6 +50,7 @@ async def client_connection_changed(new, body, logger, **kwargs):
         if client.disabling.is_active:
             # this is called in case of retry
             client.wait()
+        logger.info(f"else2 Client is: {client.current_state}")
 
 
 @kopf.on.delete("gefyraclients.gefyra.dev")
