@@ -109,8 +109,8 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                             "gefyra/healthcheck.py",
                                         ]
                                     },
-                                    "initialDelaySeconds": 2,
-                                    "periodSeconds": 2,
+                                    "initialDelaySeconds": 5,
+                                    "periodSeconds": 5,
                                 },
                             }
                         ],
