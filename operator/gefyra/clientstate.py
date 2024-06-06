@@ -153,10 +153,8 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     def can_add_client(self):
         if self.connection_provider.peer_exists(self.object_name):
-            self.logger.error(
-                f"Client '{self.object_name}' already exists, cannot enable connection."
-            )
-            return False
+            self.logger.warning(f"Client '{self.object_name}' already exists.")
+            return True
         else:
             self.connection_provider.add_peer(
                 self.object_name, self.data["providerParameter"]
