@@ -55,4 +55,4 @@ FROM gcr.io/distroless/python3
 COPY --from=builder /opt/pysetup/venv/lib/python3.11/site-packages /usr/lib/python3.11/
 COPY . /app/
 WORKDIR /app
-CMD ["-m", "kopf", "run", "--liveness", "http://0.0.0.0:8080/healthz", "-A", "main.py"]
+CMD ["-m", "kopf", "run", "-A", "main.py"]

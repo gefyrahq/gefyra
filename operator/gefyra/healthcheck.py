@@ -2,7 +2,7 @@ import requests
 
 
 res = requests.post(
-    "https://localhost:9443/client-parameters",
+    "https://gefyra-admission.gefyra.svc/client-parameters",
     json={
         "request": {
             "resource": {
@@ -17,5 +17,4 @@ res = requests.post(
     timeout=2,
     verify=False,
 )
-print(res.content)
 assert res.status_code == 200
