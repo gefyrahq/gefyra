@@ -120,7 +120,7 @@ def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None
         bar.title = "Waiting for the Gefyra client to enter 'waiting' state"
         # busy wait for the client to enter the waiting state
         _i = 0
-        while _i < 10:
+        while _i < 20:
             try:
                 json_str = api.write_client_file(
                     client_id=client.client_id,
