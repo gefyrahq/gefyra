@@ -280,7 +280,7 @@ jobs:
           chmod +x ./kubectl
           ./kubectl get pod -n gefyra
           ./kubectl logs -n gefyra gefyra-stowaway-0
-          ./kubectl logs -n gefyra deploy/gefyra-operator-webhook
+          ./kubectl logs --previous -n gefyra deploy/gefyra-operator-webhook
           ./kubectl logs -n gefyra deploy/gefyra-operator
           docker inspect minikube
           docker inspect gefyra-cargo-default
