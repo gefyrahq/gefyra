@@ -17,6 +17,5 @@ res = requests.post(
     timeout=2,
     verify=False,
 )
-open("/tmp/health.log", "wa").write(res.text)
-open("/tmp/health.log", "wa").write(res.status_code)
+open("/tmp/health.log", "w").write(res.text)
 assert res.status_code == 200
