@@ -282,6 +282,7 @@ jobs:
           ./kubectl logs -n gefyra gefyra-stowaway-0
           ./kubectl logs --previous -n gefyra deploy/gefyra-operator-webhook
           ./kubectl logs -n gefyra deploy/gefyra-operator-webhook
+          ./kubectl describe pods -n gefyra -l gefyra.dev/role=webhook
           ./kubectl logs -n gefyra deploy/gefyra-operator
           docker inspect minikube
           docker inspect gefyra-cargo-default
