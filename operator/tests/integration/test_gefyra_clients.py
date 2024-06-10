@@ -195,7 +195,7 @@ def test_z_error_client_exists(operator: AClusterManager):
         namespace="gefyra",
         timeout=20,
     )
-    patch = json.dumps({"state": "WAITING"})
+    patch = json.dumps({"state": "ERROR"})
     k3d.kubectl(
         [
             "-n",
@@ -205,31 +205,6 @@ def test_z_error_client_exists(operator: AClusterManager):
             "client-a",
             "--type='merge'",
             f"--patch='{patch}'",
-        ]
-    )
-    sleep(2)
-    patch = json.dumps({"providerParameter": None})
-    k3d.kubectl(
-        [
-            "-n",
-            "gefyra",
-            "patch",
-            "gefyraclient",
-            "client-a",
-            "--type='merge'",
-            f"--patch='{patch}'",
-        ]
-    )
-    sleep(2)
-    k3d.kubectl(
-        [
-            "-n",
-            "gefyra",
-            "patch",
-            "gefyraclient",
-            "client-a",
-            "--type='merge'",
-            f"--patch='{patch_subnet}'",
         ]
     )
     k3d.wait(
