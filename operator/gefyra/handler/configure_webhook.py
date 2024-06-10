@@ -88,9 +88,3 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
             raise kopf.AdmissionError(f"Cannot parse 'sunset': {e}")
     provider.validate(body, hints)
     return True
-
-
-@kopf.on.cleanup()
-async def cleanup_fn(logger, **kwargs):
-    with open("/tmp/health.log", "r") as f:
-        print(f.read())
