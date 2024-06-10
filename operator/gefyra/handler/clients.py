@@ -23,6 +23,7 @@ async def client_connection_changed(new, body, logger, **kwargs):
     obj = GefyraClientObject(body)
     client = GefyraClient(obj, configuration, logger)
     # check if parameters for this connection provider have been added or removed
+    logger.info(f"Client is: {client.current_state}")
     if bool(new):
         # activate this connection
         try:
@@ -37,7 +38,8 @@ async def client_connection_changed(new, body, logger, **kwargs):
             logger.error(f"ApiException: {e}")
             if e.status == 500:
                 raise kopf.TemporaryError(
-                    f"Could not activate connection: {e}", delay=1
+                    f"Could not activate connection: {e}, \nClient is {client.current_state}",
+                    delay=1,
                 )
     else:
         # deactivate this connection

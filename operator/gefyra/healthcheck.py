@@ -17,5 +17,5 @@ res = requests.post(
     timeout=2,
     verify=False,
 )
-print(res.content)
+
 assert res.status_code == 200

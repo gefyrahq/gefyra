@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
 
+import kubernetes as k8s
 import kopf
 
 from gefyra.clientstate import GefyraClient
@@ -10,6 +11,13 @@ from gefyra.connection.factory import (
     ConnectionProviderType,
     connection_provider_factory,
 )
+
+from gefyra.resources.events import create_operator_webhook_ready_event
+
+
+logger = logging.getLogger(__name__)
+
+events = k8s.client.EventsV1Api()
 
 
 @kopf.on.startup()
@@ -33,6 +41,18 @@ def configure(settings: kopf.OperatorSettings, **_):
 @kopf.on.validate("gefyraclients.gefyra.dev", id="client-parameters")  # type: ignore
 def check_validate_provider_parameters(body, diff, logger, operation, **_):
     if body.get("check", False):
+
+        def _write_startup_task() -> None:
+            try:
+                events.create_namespaced_event(
+                    body=create_operator_webhook_ready_event(configuration.NAMESPACE),
+                    namespace=configuration.NAMESPACE,
+                )
+            except k8s.client.exceptions.ApiException as e:
+                if e.status != 409:
+                    logger.error("Could not create startup event: " + str(e))
+
+        _write_startup_task()
         return True
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraClient {name}")

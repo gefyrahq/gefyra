@@ -39,7 +39,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                             {
                                 "name": "gefyra",
                                 "image": f"quay.io/gefyra/operator:{params.version}",
-                                "imagePullPolicy": "Always",
+                                "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
                                     {
@@ -89,7 +89,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                             {
                                 "name": "gefyra",
                                 "image": f"quay.io/gefyra/operator:{params.version}",
-                                "imagePullPolicy": "Always",
+                                "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
                                     {"name": "OP_MODE", "value": "webhook"},
@@ -111,6 +111,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     "initialDelaySeconds": 5,
                                     "periodSeconds": 5,
+                                    "timeoutSeconds": 3,
                                 },
                             }
                         ],

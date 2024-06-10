@@ -103,7 +103,8 @@ def install(
         from kubernetes.watch import Watch
 
         w = Watch()
-
+        operator_ready = False
+        operator_webhook_ready = False
         # block (forever) until Gefyra cluster side is ready
         for event in w.stream(
             config.K8S_CORE_API.list_namespaced_event, namespace=config.NAMESPACE
@@ -111,12 +112,18 @@ def install(
             if event["object"].reason in ["Pulling", "Pulled"]:
                 logger.info(event["object"].message)
             if event["object"].reason == "Gefyra-Ready":
+                operator_ready = True
+                logger.debug("Gefyra operator is ready")
+            if event["object"].reason == "Gefyra-Webhook-Ready":
+                operator_webhook_ready = True
+                logger.debug("Gefyra operator webhook is ready")
+            if operator_ready and operator_webhook_ready:
                 toc = time.perf_counter()
                 logger.info(f"Gefyra became ready in {toc - tic:0.4f} seconds")
                 break
         # busywait for the operator webhook to become ready
         _i = 0
-        while _i < 10:
+        while _i < 20:
             webhook_deploy = config.K8S_APP_API.read_namespaced_deployment(
                 name="gefyra-operator-webhook", namespace=config.NAMESPACE
             )

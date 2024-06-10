@@ -82,6 +82,7 @@ def operator(k3d, stowaway_image, carrier_image):
     for key in list(sys.modules.keys()):
         if key.startswith("kopf"):
             del sys.modules[key]
+    operator.timeout = 10
     operator.__exit__(None, None, None)
 
 

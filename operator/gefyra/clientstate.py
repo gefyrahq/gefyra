@@ -134,6 +134,9 @@ class GefyraClient(StateMachine, StateControllerMixin):
     def on_enable(self):
         self.logger.info(f"Client '{self.object_name}' is being enabled")
 
+    def on_activate(self):
+        self.logger.info(f"Client '{self.object_name}' is being activated")
+
     def on_disable(self):
         self.logger.info(f"Client '{self.object_name}' is being disabled")
         self.cleanup_all_bridges()
@@ -150,10 +153,8 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     def can_add_client(self):
         if self.connection_provider.peer_exists(self.object_name):
-            self.logger.error(
-                f"Client '{self.object_name}' already exists, cannot enable connection."
-            )
-            return False
+            self.logger.warning(f"Client '{self.object_name}' already exists.")
+            return True
         else:
             self.connection_provider.add_peer(
                 self.object_name, self.data["providerParameter"]
@@ -167,7 +168,13 @@ class GefyraClient(StateMachine, StateControllerMixin):
             raise kopf.TemporaryError(
                 f"Cannot read connection data from provider: {e}", delay=1
             )
-        self._patch_object({"providerConfig": conn_data})
+        try:
+            self._patch_object({"providerConfig": conn_data})
+        except k8s.client.ApiException as e:
+            if e.status == 500:
+                raise kopf.TemporaryError(
+                    f"Cannot enable connection: {e.reason}", delay=1
+                )
 
     def disable_connection(self):
         try:

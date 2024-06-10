@@ -289,6 +289,8 @@ class GefyraClusterStatus:
     stowaway_image: str
     # the gefyra namespace is available
     namespace: bool
+    # operator webhook
+    operator_webhook: bool
 
 
 @dataclass
