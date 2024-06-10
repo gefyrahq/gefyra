@@ -111,6 +111,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     "initialDelaySeconds": 5,
                                     "periodSeconds": 5,
+                                    "timeoutSeconds": 3,
                                 },
                             }
                         ],
