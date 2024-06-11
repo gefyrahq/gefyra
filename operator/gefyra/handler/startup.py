@@ -86,7 +86,10 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
             info = "No pod found"
             pod = provider._get_stowaway_pod()
             if pod:
-                info = f"Pod {pod.metadata.name} in namespace {pod.metadata.namespace} is in state {pod.status.phase}"
+                info = (
+                    f"Pod {pod.metadata.name} in namespace {pod.metadata.namespace} is in state "
+                    f"{pod.status.phase}, {pod.message}"
+                )
 
             raise kopf.PermanentError(
                 f"Connection provider(s) {not_ready_providers} could not be started. Podinfo: {info}"
