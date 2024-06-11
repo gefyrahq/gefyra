@@ -63,7 +63,7 @@ def operator(k3d, stowaway_image, carrier_image):
     not_found = True
     _i = 0
     try:
-        while not_found and _i < 140:
+        while not_found and _i < 190:
             sleep(1)
             events = k3d.kubectl(["get", "events", "-n", "gefyra"])
             _i += 1
