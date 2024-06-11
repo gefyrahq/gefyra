@@ -41,6 +41,17 @@ def k3d():
     print(f"This test run's kubeconfig location: {k8s.kubeconfig}")
     yield k8s
     k8s.delete()
+    timeout = 0
+    exited = False
+    while not exited and timeout < 60:
+        try:
+            k8s._exec(["cluster", "get", k8s.cluster_name], timeout=5)
+        except subprocess.CalledProcessError:
+            exited = True
+        timeout += 1
+        sleep(1)
+    if not exited:
+        raise Exception("K3d cluster did not exit")
 
 
 @pytest.fixture(scope="module")
