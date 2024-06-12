@@ -193,9 +193,10 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
-        run: poetry run coveralls --service=github
+        run: poetry run coveralls --service=github-actions
       - uses: actions/upload-artifact@v4
         with:
           name: coverage_data
@@ -296,10 +297,11 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: |
-          poetry run coveralls --service=github
+          poetry run coveralls --service=github-actions
       - uses: actions/upload-artifact@v4
         with:
           name: coverage_data-${{ matrix.os }}
@@ -407,10 +409,11 @@ jobs:
         working-directory: ./client
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: |
-          poetry run coveralls --service=github
+          poetry run coveralls --service=github-actions
       - uses: actions/upload-artifact@v4
         with:
           name: coverage_data-${{ matrix.k3d }}
@@ -444,9 +447,10 @@ jobs:
         working-directory: ./operator
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
           COVERALLS_FLAG_NAME: operator
           COVERALLS_PARALLEL: true
-        run: poetry run coveralls --service=github
+        run: poetry run coveralls --service=github-actions
     
   coveralls:
     name: Indicate completion to coveralls.io
@@ -463,6 +467,7 @@ jobs:
       - name: Finished
         run: |
           pip3 install --upgrade coveralls
-          coveralls --service=github --finish
+          coveralls --service=github-actions --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
