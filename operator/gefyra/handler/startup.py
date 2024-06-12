@@ -88,7 +88,7 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
             if pod:
                 info = (
                     f"Pod {pod.metadata.name} in namespace {pod.metadata.namespace} is in state "
-                    f"{pod.status.phase}, {pod.message}"
+                    f"{pod.status.phase}, {pod.status.message}"
                 )
 
             raise kopf.PermanentError(
