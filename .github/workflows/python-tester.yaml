@@ -229,7 +229,7 @@ jobs:
       # https://github.com/opensafely-core/job-server/issues/3429
       - run: brew install docker
         if: ${{ matrix.os == 'macos-12' }}
-      - run: colima start
+      - run: colima start --memory 8
         if: ${{ matrix.os == 'macos-12' }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
