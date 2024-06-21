@@ -48,6 +48,8 @@ jobs:
             type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_NO_SUMMARY: true
         with:
           context: operator/
           platforms: linux/amd64,linux/arm64
@@ -71,6 +73,8 @@ jobs:
             type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_NO_SUMMARY: true
         with:
           context: cargo/
           platforms: linux/amd64,linux/arm64
@@ -91,6 +95,8 @@ jobs:
             type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_NO_SUMMARY: true
         with:
           context: cargo/
           platforms: linux/amd64,linux/arm64
@@ -113,6 +119,8 @@ jobs:
             type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_NO_SUMMARY: true
         with:
           context: carrier/
           platforms: linux/amd64,linux/arm64
@@ -136,6 +144,8 @@ jobs:
             type=raw,value={{tag}},enable=${{ startsWith(github.ref, 'refs/tags/') }}
       - name: Build and push
         uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_NO_SUMMARY: true
         with:
           context: stowaway/
           platforms: linux/amd64,linux/arm64
