@@ -90,13 +90,6 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
                     f"Pod {pod.metadata.name} in namespace {pod.metadata.namespace} is in state "
                     f"{pod.status.phase}, {pod.status.message}"
                 )
-                from kubernetes import watch
-
-                stream = watch.Watch().stream(
-                    core_v1_api.list_namespaced_event, "gefyra", timeout_seconds=1
-                )
-                for event in stream:
-                    print(event["object"].message)
 
             raise kopf.PermanentError(
                 f"Connection provider(s) {not_ready_providers} could not be started. Podinfo: {info}"
