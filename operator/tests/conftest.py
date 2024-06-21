@@ -25,7 +25,7 @@ def k3d():
     k8s: AClusterManager = select_provider_manager("k3d")("gefyra")
     # ClusterOptions() forces pytest-kubernetes to always write a new kubeconfig file to disk
     k8s.create(
-        ClusterOptions(),
+        ClusterOptions(api_version="1.29.5"),
         options=[
             "--agents",
             "1",
@@ -33,6 +33,8 @@ def k3d():
             "8080:80@agent:0",
             "-p",
             "31820:31820/UDP@agent:0",
+            "--agents-memory",
+            "8G",
         ],
     )
     k8s.kubectl(["create", "ns", "gefyra"])
