@@ -43,6 +43,8 @@ def run(
     namespace: str = "",
     env: Optional[List] = None,
     env_from: str = "",
+    pull: str = "missing",
+    platform: str = "linux/amd64",
 ) -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
@@ -116,6 +118,8 @@ def run(
             dns_search=dns_search,
             auto_remove=auto_remove,
             volumes=volumes,
+            pull=pull,
+            platform=platform,
         )
     except APIError as e:
         if e.status_code == 409:
