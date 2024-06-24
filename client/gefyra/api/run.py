@@ -120,6 +120,9 @@ def run(
     except APIError as e:
         if e.status_code == 409:
             logger.error(e.explanation)
+            logger.error(
+                f"\n\033[1m[Hint]\033[0m You could remove the container via: \ndocker rm {name}"
+            )
             return True
         else:
             raise RuntimeError(e.explanation)
