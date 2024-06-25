@@ -1050,9 +1050,9 @@ class GefyraBaseTest:
                 "--command",
                 "python3 local.py",
                 "--connection-name",
+                CONNECTION_NAME,
                 "--pull",
                 "always",
-                CONNECTION_NAME,
             ],
             catch_exceptions=False,
         )
