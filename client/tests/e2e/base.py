@@ -669,7 +669,6 @@ class GefyraBaseTest:
             ["unbridge", "mypyserver-to-default.deploy.hello-nginxdemo"],
             catch_exceptions=False,
         )
-        print(res.output)
         self.assertEqual(res.exit_code, 0)
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
@@ -980,7 +979,6 @@ class GefyraBaseTest:
             ["connections", "connect", "-n", CONNECTION_NAME],
             catch_exceptions=False,
         )
-        print(res.output)
         self.assertEqual(res.exit_code, 0)
         self.assert_cargo_running()
 
@@ -1024,6 +1022,42 @@ class GefyraBaseTest:
             catch_exceptions=False,
         )
         self.assertEqual(res.exit_code, 0)
+        self.assert_http_service_available("localhost", 8000)
+        self.gefyra_down()
+        self.assert_namespace_not_found("gefyra")
+        self.assert_cargo_not_running()
+
+    def test_s_run_via_cli_with_pull(self):
+        res = self.gefyra_up()
+        self.assertTrue(res)
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+        runner = CliRunner()
+        res = runner.invoke(
+            cli,
+            [
+                "run",
+                "--image",
+                "pyserver",
+                "--name",
+                "mypyserver",
+                "--namespace",
+                "default",
+                "--expose",
+                "8000:8000",
+                "--detach",
+                "--rm",
+                "--command",
+                "python3 local.py",
+                "--connection-name",
+                "--pull",
+                "always",
+                CONNECTION_NAME,
+            ],
+            catch_exceptions=False,
+        )
+        self.assertEqual(res.exit_code, 0)
+        self.assertIn("Pulling image", res.output)
         self.assert_http_service_available("localhost", 8000)
         self.gefyra_down()
         self.assert_namespace_not_found("gefyra")
