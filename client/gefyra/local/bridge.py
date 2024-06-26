@@ -148,7 +148,10 @@ def deploy_app_container(
 
     if pull == "always":
         console.info(f"Pulling image {image}...")
-        repo, tag = image.split(":")
+        if ":" in image:
+            repo, tag = image.split(":")
+        else:
+            repo, tag = image, "latest"
         config.DOCKER.images.pull(repository=repo, tag=tag, platform=platform)
         console.info(f"Pulling image {image} done.")
 
