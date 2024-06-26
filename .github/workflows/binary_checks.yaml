@@ -68,10 +68,10 @@ jobs:
         working-directory: client/
         run: |
           python ..\.github\scripts\get_version.py
-          echo "${{ env.APP_VERSION }}"
+          echo "${{ env.PYAPP_PROJECT_VERSION }}"
       - uses: actions/download-artifact@v3
         with:
-          name: gefyra-${{ env.APP_VERSION }}-windows-x86_64
+          name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64
           path: gefyra
       - name: Print info
         run: |
