@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 from docker.models.containers import Container
 
+from gefyra.cli import console
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
 from gefyra.types import GefyraLocalContainer
@@ -140,8 +141,19 @@ def deploy_app_container(
     env: Optional[Dict] = None,
     auto_remove: bool = False,
     dns_search: Optional[List[str]] = None,
+    pull: Optional[str] = "missing",
+    platform: Optional[str] = "linux/amd64",
 ) -> Container:
     import docker
+
+    if pull == "always":
+        console.info(f"Pulling image {image}...")
+        if ":" in image:
+            repo, tag = image.split(":")
+        else:
+            repo, tag = image, "latest"
+        config.DOCKER.images.pull(repository=repo, tag=tag, platform=platform)
+        console.info(f"Pulling image {image} done.")
 
     if not dns_search:
         dns_search = ["default"]

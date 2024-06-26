@@ -81,6 +81,20 @@ from gefyra.cli.utils import (
     "-i", "--image", help="The docker image to run in Gefyra", type=str, required=True
 )
 @click.option(
+    "--pull",
+    type=click.Choice(["always", "missing"], case_sensitive=False),
+    help="Define whether image should always be pulled",
+    required=False,
+    default="missing",
+)
+@click.option(
+    "--platform",
+    type=str,
+    help="Define platform for image pull. Default: linux/amd64",
+    required=False,
+    default="linux/amd64",
+)
+@click.option(
     "--connection-name", type=str, callback=check_connection_name, required=False
 )
 def run(
@@ -94,6 +108,8 @@ def run(
     command,
     name,
     image,
+    pull,
+    platform,
     connection_name,
 ):
     from gefyra import api
@@ -111,5 +127,7 @@ def run(
         auto_remove=auto_remove,
         volumes=volume,
         detach=detach,
+        pull=pull,
+        platform=platform,
         connection_name=connection_name,
     )
