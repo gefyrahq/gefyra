@@ -1038,7 +1038,7 @@ class GefyraBaseTest:
             [
                 "run",
                 "--image",
-                "pyserver",
+                "quay.io/gefyra/pyserver",
                 "--name",
                 "mypyserver",
                 "--namespace",
