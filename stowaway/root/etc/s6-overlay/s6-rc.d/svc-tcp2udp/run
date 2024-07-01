@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv bash
+ 
+tcp2udp --tcp-listen 0.0.0.0:51821 --udp-forward 127.0.0.1:51820
