@@ -48,7 +48,7 @@ def install(ctx, component, preset, apply, wait, **kwargs):
     from alive_progress import alive_bar
     from gefyra import api
 
-    if not all(kwargs.values()):
+    if not any(kwargs.values()):
         kwargs = {}
     if wait and not apply:
         raise click.BadOptionUsage(

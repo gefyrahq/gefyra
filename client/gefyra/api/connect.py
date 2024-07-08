@@ -69,6 +69,8 @@ def connect(  # noqa: C901
         file_str = client_config.read()
         client_config.close()
         gclient_conf = GefyraClientConfig.from_json_str(file_str)
+        if use_tcp:
+            gclient_conf.use_tcp = use_tcp
 
         # this kubeconfig is being used by the client to operate in the cluster
         kubeconfig_str = compose_kubeconfig_for_serviceaccount(
@@ -180,7 +182,7 @@ def connect(  # noqa: C901
         allowed_ips = ", ".join(map(str, sorted_nets))
         cargo_endpoint = "127.0.0.1:31821"
         pre_up_script = (
-            f"udptcp {cargo_endpoint} {_endpoint_addr}:{int(_endpoint_port) + 1}"
+            f"udptcp {cargo_endpoint} {_endpoint_addr}:{int(_endpoint_port)}"
         )
 
     with open(wg_conf, "w") as f:

@@ -131,10 +131,14 @@ class ClientConfiguration(object):
         self.CARGO_PROBE_TIMEOUT = 20  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
-        containers = self.DOCKER.containers.list(
-            all=True,
-            filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
-        )
+        try:
+            containers = self.DOCKER.containers.list(
+                all=True,
+                filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
+            )
+        except Exception as e:
+            logger.debug(f"Could not list containers: {e}")
+            containers = []
         if containers and not ignore_connection:
             cargo_container = containers[0]
             self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
@@ -295,7 +299,19 @@ class ClientConfiguration(object):
     def get_kubernetes_api_url(self) -> str:
         return self.K8S_CORE_API.api_client.configuration.host
 
-    def get_stowaway_host(self, port: Optional[str]) -> str:
+    def get_stowaway_host_udp(self, port: Optional[str]) -> str:
+        return self._get_stowaway_host(
+            port, "gefyra-stowaway-wireguard", "gefyra-wireguard"
+        )
+
+    def get_stowaway_host_tcp(self, port: Optional[str]) -> str:
+        return self._get_stowaway_host(
+            port, "gefyra-stowaway-wireguard-tcp", "gefyra-wireguard-tcp"
+        )
+
+    def _get_stowaway_host(
+        self, port: Optional[str], lb_name: str, port_name: str
+    ) -> str:
         """
         Return the cargo endpoint
         If the endpoint is not set, it will try to estimate if from the K8s service
@@ -308,10 +324,10 @@ class ClientConfiguration(object):
 
             try:
                 service = self.K8S_CORE_API.read_namespaced_service(
-                    namespace=self.NAMESPACE, name="gefyra-stowaway-wireguard"
+                    namespace=self.NAMESPACE, name=lb_name
                 )
                 if service.spec.type == "LoadBalancer":
-                    _port = port or service.spec.ports["gefyra-wireguard"].port
+                    _port = port or service.spec.ports[port_name].port
                     _host = (
                         service.status.load_balancer.ingress[0].hostname
                         or service.status.load_balancer.ingress[0].ip
@@ -327,16 +343,16 @@ class ClientConfiguration(object):
                         )
                     )
                     if external_ips:
-                        _port = port or service.spec.ports["gefyra-wireguard"].node_port
+                        _port = port or service.spec.ports[port_name].node_port
                         return f"{external_ips[0].address}:{_port}"
                     else:
                         raise ClientConfigurationError(
-                            "Could not find a public IP for the NodePort service gefyra-stowaway-wireguard"
+                            f"Could not find a public IP for the NodePort service {lb_name}"
                         )
             except kubernetes.client.ApiException as e:
                 if e.status == 404:
                     raise ClientConfigurationError(
-                        f"Could not find service gefyra-stowaway-wireguard in {self.NAMESPACE}"
+                        f"Could not find service {lb_name} in {self.NAMESPACE}"
                     ) from None
                 else:
                     raise e
