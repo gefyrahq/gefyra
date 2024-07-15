@@ -1085,13 +1085,13 @@ files = [
 
 [[package]]
 name = "python-statemachine"
-version = "2.3.3"
+version = "2.3.4"
 description = "Python Finite State Machines made easy."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "python_statemachine-2.3.3-py3-none-any.whl", hash = "sha256:7810ae9879c7206819ba3f1b499e755e293751654973edf224cba2b9affc9b42"},
-    {file = "python_statemachine-2.3.3.tar.gz", hash = "sha256:948dc9150cdd22ba32b9c3c103b31c069d32627490571bd0c0e52cc397f97741"},
+    {file = "python_statemachine-2.3.4-py3-none-any.whl", hash = "sha256:c892b66f1248af80854ec3ff4186399625693a79e205e3ca33dffee0c058c963"},
+    {file = "python_statemachine-2.3.4.tar.gz", hash = "sha256:f5a061a5f0abef0977a2679bf7aefecbe4d87a57ac5839e97c8f30b2d6a9f3ae"},
 ]
 
 [[package]]
@@ -1416,4 +1416,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.12"
-content-hash = "3bc8e0ca6db370e827760ed6c9e38f9543cca124f855841e353ab9d54e11e4fb"
+content-hash = "29bfbdb10f52739666f3e0cb217f8b24b74f29af84c49ab3e427cc4f358f12fa"
