@@ -229,7 +229,7 @@ If you're reporting a security vulnerability, please follow the process for repo
 
 ## Acknowledgments
 Gefyra is based on well-crafted open source software. Special credits go to the teams of 
-[https://www.linuxserver.io/](linxuserver.io) and [https://git.zx2c4.com/wireguard-go/about/](Wireguard(-go)). Please
+[https://www.linuxserver.io/](https://www.linuxserver.io/) and [https://git.zx2c4.com/wireguard-go/about/](Wireguard(-go)). Please
 be sure to check out their awesome work.  
 Gefyra was heavily inspired by the free part of Telepresence2.  
 
