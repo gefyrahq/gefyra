@@ -14,6 +14,9 @@ class OperatorConfiguration:
         self.WIREGUARD_EXT_PORT = config(
             "GEFYRA_STOWAWAY_SERVERPORT", cast=int, default=31820
         )
+        self.WIREGUARD_EXT_PORT_TCP = config(
+            "GEFYRA_STOWAWAY_SERVERPORT_TCP", cast=int, default=31821
+        )
         self.STOWAWAY_PGID = config("GEFYRA_STOWAWAY_PGID", default="1000")
         self.STOWAWAY_PUID = config("GEFYRA_STOWAWAY_PUID", default="1000")
         self.CONNECTION_PROVIDER_STARTUP_TIMEOUT = config(

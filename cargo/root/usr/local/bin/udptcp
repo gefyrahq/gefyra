@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "Starting udp2tcp --udp-listen "$1" --tcp-forward "$2
+
+(while true; 
+    do udp2tcp --udp-listen $1 --tcp-forward $2 
+done) &

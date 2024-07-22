@@ -50,7 +50,9 @@ def install(
 ) -> str:
     from gefyra.configuration import ClientConfiguration
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig, kube_context=kubecontext, docker_client=False
+    )
     if preset:
         presetoptions = LB_PRESETS.get(preset)  # type: ignore
         if not presetoptions:
@@ -144,7 +146,9 @@ def uninstall(
 ):
     from gefyra.configuration import ClientConfiguration
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig, kube_context=kubecontext, docker_client=False
+    )
     logger.info("Removing all Gefyra bridges")
     try:
         remove_remainder_bridges(config)

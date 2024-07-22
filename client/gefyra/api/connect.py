@@ -19,8 +19,11 @@ if TYPE_CHECKING:
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.local.cargo import (
     create_wireguard_config,
+    exclude_networks,
     get_cargo_ip_from_netaddress,
+    parse_ip_networks,
     probe_wireguard_connection,
+    sort_networks,
 )
 from gefyra.local.networking import get_or_create_gefyra_network, handle_remove_network
 from gefyra.local.utils import (
@@ -44,6 +47,7 @@ def connect(  # noqa: C901
     client_config: Optional[IO],
     minikube_profile: Optional[str] = None,
     probe_timeout: int = 60,
+    use_tcp: bool = False,
 ) -> bool:
     import kubernetes
     import docker
@@ -65,6 +69,8 @@ def connect(  # noqa: C901
         file_str = client_config.read()
         client_config.close()
         gclient_conf = GefyraClientConfig.from_json_str(file_str)
+        if use_tcp:
+            gclient_conf.use_tcp = use_tcp
 
         # this kubeconfig is being used by the client to operate in the cluster
         kubeconfig_str = compose_kubeconfig_for_serviceaccount(
@@ -163,10 +169,31 @@ def connect(  # noqa: C901
             f"Cannot resolve host '{config.CARGO_ENDPOINT.split(':')[0]}'."
         ) from None
 
+    allowed_ips = "0.0.0.0/0"
+    cargo_endpoint = config.CARGO_ENDPOINT
+    pre_up_script = None
+    if use_tcp:
+        # this is a udp over tcp connection
+        _endpoint_addr, _endpoint_port = config.CARGO_ENDPOINT.split(":")
+        sorted_nets = sort_networks(
+            exclude_networks(
+                parse_ip_networks("0.0.0.0/0")[0], parse_ip_networks(_endpoint_addr)[0]
+            )
+        )
+        allowed_ips = ", ".join(map(str, sorted_nets))
+        cargo_endpoint = "127.0.0.1:31821"
+        pre_up_script = (
+            f"udptcp {cargo_endpoint} {_endpoint_addr}:{int(_endpoint_port)}"
+        )
+
     with open(wg_conf, "w") as f:
         f.write(
             create_wireguard_config(
-                client.provider_config, config.CARGO_ENDPOINT, config.WIREGUARD_MTU
+                client.provider_config,
+                cargo_endpoint,
+                config.WIREGUARD_MTU,
+                allowed_ips,
+                pre_up_script,
             )
         )
 

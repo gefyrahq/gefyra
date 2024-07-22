@@ -25,6 +25,7 @@ def create_stowaway_configmap() -> k8s.client.V1ConfigMap:
         data={
             "PEERS": "0",
             "SERVERPORT": str(configuration.WIREGUARD_EXT_PORT),
+            "SERVERPORT_TCP": str(configuration.WIREGUARD_EXT_PORT_TCP),
             "PUID": configuration.STOWAWAY_PUID,
             "PGID": configuration.STOWAWAY_PGID,
             "PEERDNS": configuration.STOWAWAY_PEER_DNS,
