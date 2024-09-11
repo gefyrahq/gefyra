@@ -25,7 +25,13 @@ class GefyraClientConfig:
     token: str
     namespace: str
     ca_crt: str
-    gefyra_server: str
+    udp_gefyra_server: str
+    tcp_gefyra_server: str
+    use_tcp: bool = False
+
+    @property
+    def gefyra_server(self):
+        return self.tcp_gefyra_server if self.use_tcp else self.udp_gefyra_server
 
     @property
     def json(self):
@@ -158,19 +164,25 @@ class GefyraClient:
         self._init_data(gclient)
 
     def get_client_config(
-        self, gefyra_server: str, k8s_server: str = ""
+        self,
+        use_tcp: bool,
+        udp_gefyra_server: str,
+        tcp_gefyra_server: str,
+        k8s_server: str = "",
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
         if self.service_account:
             return GefyraClientConfig(
+                use_tcp=use_tcp,
                 client_id=self.client_id,
                 kubernetes_server=k8s_server or self._config.get_kubernetes_api_url(),
                 provider=self.provider,
                 token=self.service_account["token"],
                 namespace=self.service_account["namespace"],
                 ca_crt=self.service_account["ca.crt"],
-                gefyra_server=gefyra_server,
+                udp_gefyra_server=udp_gefyra_server,
+                tcp_gefyra_server=tcp_gefyra_server,
             )
         else:
             raise ClientConfigurationError(
@@ -258,6 +270,15 @@ class GefyraInstallOptions:
             help=(
                 "The port for Stowaway to expose the Wireguard endpoint (default:"
                 " 31820)"
+            )
+        ),
+    )
+    service_port_tcp: int = field(
+        default_factory=lambda: 31821,
+        metadata=dict(
+            help=(
+                "The tcp port for Stowaway to expose the Wireguard endpoint (default:"
+                " 31821)"
             )
         ),
     )

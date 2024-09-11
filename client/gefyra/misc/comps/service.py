@@ -28,27 +28,28 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
             raise ValueError(
                 f"Invalid service-annotations format. Please use the form key=value."
             )
+    udp_ports = [
+        {
+            "name": "gefyra-wireguard",
+            "port": 51820,
+            "targetPort": 51820,
+            "nodePort": params.service_port,
+            "protocol": "UDP",
+        }
+    ]
+    tcp_ports = [
+        {
+            "name": "gefyra-wireguard-tcp",
+            "port": 51821,
+            "targetPort": 51821,
+            "nodePort": params.service_port_tcp,
+            "protocol": "TCP",
+        }
+    ]
     if params.service_type.lower() == "nodeport":
         type = "NodePort"
-        ports = [
-            {
-                "name": "gefyra-wireguard",
-                "port": 51820,
-                "targetPort": 51820,
-                "nodePort": params.service_port,
-                "protocol": "UDP",
-            }
-        ]
     elif params.service_type.lower() == "loadbalancer":
         type = "LoadBalancer"
-        ports = [
-            {
-                "name": "gefyra-wireguard",
-                "port": params.service_port,
-                "targetPort": 51820,
-                "protocol": "UDP",
-            }
-        ]
     else:
         raise ValueError(f"Unknown service type: {params.service_type}")
     return [
@@ -63,8 +64,23 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
             },
             "spec": {
                 "type": type,
-                "ports": ports,
+                "ports": udp_ports,
                 "selector": STOWAWAY_LABELS,
             },
-        }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name": "gefyra-stowaway-wireguard-tcp",
+                "namespace": params.namespace,
+                "labels": stowaway_labels,
+                "annotations": stowaway_annotations,
+            },
+            "spec": {
+                "type": type,
+                "ports": tcp_ports,
+                "selector": STOWAWAY_LABELS,
+            },
+        },
     ]

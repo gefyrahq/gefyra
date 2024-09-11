@@ -89,8 +89,10 @@ def delete_client(
 @stopwatch
 def write_client_file(
     client_id: str,
+    use_tcp: bool = False,
     host: Optional[str] = None,
-    port: Optional[str] = None,
+    udp_port: Optional[str] = None,
+    tcp_port: Optional[str] = None,
     kube_api: Optional[str] = None,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
@@ -102,15 +104,22 @@ def write_client_file(
     client = get_client(
         client_id, kubeconfig=config.KUBE_CONFIG_FILE, kubecontext=config.KUBE_CONTEXT
     )
-    if not port:
-        port = "31820"
+    if not udp_port:
+        udp_port = "31820"
+    if not tcp_port:
+        udp_port = "31821"
     if host:
-        gefyra_server = f"{host}:{port}"
+        udp_gefyra_server = f"{host}:{udp_port}"
+        tcp_gefyra_server = f"{host}:{tcp_port}"
     else:
-        gefyra_server = config.get_stowaway_host(port)
-    logger.debug(f"gefyra_server: {gefyra_server}")
+        udp_gefyra_server = config.get_stowaway_host_ucp(udp_port)
+        tcp_gefyra_server = config.get_stowaway_host_tcp(tcp_port)
+    logger.debug(f"udp_gefyra_server: {udp_gefyra_server}")
     return client.get_client_config(
-        gefyra_server=gefyra_server, k8s_server=kube_api
+        use_tcp=use_tcp,
+        udp_gefyra_server=udp_gefyra_server,
+        tcp_gefyra_server=tcp_gefyra_server,
+        k8s_server=kube_api,
     ).json
 
 

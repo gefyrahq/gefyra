@@ -103,6 +103,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           target: cargo-win
           tags: ${{ steps.cargo_win_meta.outputs.tags }}
+          build-args: |
+            - UDP_OVER_TCP_VERSION=0.4.0
       #
       # Gefyra Carrier
       #
@@ -153,3 +155,5 @@ jobs:
           tags: ${{ steps.stowaway_meta.outputs.tags }}
           cache-from: type=registry,ref=${{ steps.stowaway_meta.outputs.tags }}
           cache-to: type=inline
+          build-args: |
+            - UDP_OVER_TCP_VERSION=0.4.0

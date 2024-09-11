@@ -151,6 +151,8 @@ jobs:
         labels: ${{ steps.cargo_meta.outputs.labels }}
         cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
         outputs: type=docker,dest=/tmp/cargo.tar
+        build-args: |
+          - UDP_OVER_TCP_VERSION=0.4.0
     - name: Upload cargo image
       uses: actions/upload-artifact@v4
       with:
