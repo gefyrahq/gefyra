@@ -59,6 +59,7 @@ RUN \
     libqrencode \
     net-tools \
     openresolv \
+    python3 \
     perl && \
   echo "**** clean up ****" && \
   apk del --no-network build-dependencies && \
@@ -186,3 +187,4 @@ COPY /root /
 
 # ports and volumes
 EXPOSE 51820/udp
+EXPOSE 8000/tcp
