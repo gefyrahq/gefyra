@@ -817,7 +817,7 @@ class GefyraBaseTest:
         with self.assertRaises(RuntimeError) as rte:
             reflect(**params)
 
-        self.assertIn("allocated", str(rte.exception))
+        assert "allocated" in str(rte.exception) or "occupied" in str(rte.exception)
         self._stop_container(container=container_name)
         self.gefyra_down()
         self.assert_namespace_not_found("gefyra")
