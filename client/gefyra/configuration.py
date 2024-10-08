@@ -71,6 +71,7 @@ class ClientConfiguration(object):
         client_id: str = "",
         gefyra_config_root: Optional[Union[str, Path]] = None,
         ignore_connection: bool = False,  # work with kubeconfig not connection
+        ignore_docker: bool = False,
     ):
         import platform
 
@@ -131,16 +132,19 @@ class ClientConfiguration(object):
         self.CARGO_PROBE_TIMEOUT = 20  # in seconds
         self.CONTAINER_RUN_TIMEOUT = 10  # in seconds
         self.CLIENT_ID = client_id
-        containers = self.DOCKER.containers.list(
-            all=True,
-            filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
-        )
-        if containers and not ignore_connection:
-            cargo_container = containers[0]
-            self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
-            self.KUBE_CONFIG_FILE = cargo_container.labels.get(ACTIVE_KUBECONFIG_LABEL)
-            self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
-            self.CARGO_CONTAINER_NAME = cargo_container.name
+        if not ignore_docker:
+            containers = self.DOCKER.containers.list(
+                all=True,
+                filters={"label": f"{CONNECTION_NAME_LABEL}={self.CONNECTION_NAME}"},
+            )
+            if containers and not ignore_connection:
+                cargo_container = containers[0]
+                self.CARGO_ENDPOINT = cargo_container.labels.get(CARGO_ENDPOINT_LABEL)
+                self.KUBE_CONFIG_FILE = cargo_container.labels.get(
+                    ACTIVE_KUBECONFIG_LABEL
+                )
+                self.CLIENT_ID = cargo_container.labels.get(CLIENT_ID_LABEL)
+                self.CARGO_CONTAINER_NAME = cargo_container.name
 
         self.NETWORK_NAME = f"{self.NETWORK_NAME}-{self.CONNECTION_NAME}"
         if cargo_endpoint_host:

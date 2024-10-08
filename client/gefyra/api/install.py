@@ -50,7 +50,9 @@ def install(
 ) -> str:
     from gefyra.configuration import ClientConfiguration
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig, kube_context=kubecontext, ignore_docker=True
+    )
     if preset:
         presetoptions = LB_PRESETS.get(preset)  # type: ignore
         if not presetoptions:
