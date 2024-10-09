@@ -1,3 +1,4 @@
+import requests
 import kubernetes as k8s
 from gefyra.configuration import configuration
 
@@ -19,6 +20,7 @@ def create_stowaway_proxyroute_configmap() -> k8s.client.V1ConfigMap:
 
 
 def create_stowaway_configmap() -> k8s.client.V1ConfigMap:
+    stowaway_ip = requests.get("https://icanhazip.com").text.strip()
     configmap = k8s.client.V1ConfigMap(
         api_version="v1",
         kind="ConfigMap",
@@ -29,6 +31,7 @@ def create_stowaway_configmap() -> k8s.client.V1ConfigMap:
             "PGID": configuration.STOWAWAY_PGID,
             "PEERDNS": configuration.STOWAWAY_PEER_DNS,
             "INTERNAL_SUBNET": configuration.STOWAWAY_INTERNAL_SUBNET,
+            "SERVERURL": stowaway_ip,
             "LOG_CONFS": "false",
         },
         metadata=k8s.client.V1ObjectMeta(

@@ -142,12 +142,7 @@ if [[ -n "$PEERS" ]]; then
         echo "**** PersistentKeepalive will be set for: ${PERSISTENTKEEPALIVE_PEERS/,/ } ****"
         mapfile -t PERSISTENTKEEPALIVE_PEERS_ARRAY < <(echo "${PERSISTENTKEEPALIVE_PEERS}" | tr ',' '\n')
     fi
-    if [[ -z "$SERVERURL" ]] || [[ "$SERVERURL" = "auto" ]]; then
-        SERVERURL=$(curl -s icanhazip.com)
-        echo "**** SERVERURL var is either not set or is set to \"auto\", setting external IP to auto detected value of $SERVERURL ****"
-    else
-        echo "**** External server address is set to $SERVERURL ****"
-    fi
+    echo "**** External server address is set to $SERVERURL ****"
     SERVERPORT=${SERVERPORT:-51820}
     echo "**** External server port is set to ${SERVERPORT}. Make sure that port is properly forwarded to port 51820 inside this container ****"
     INTERNAL_SUBNET=${INTERNAL_SUBNET:-10.13.13.0}
