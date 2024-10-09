@@ -7,7 +7,7 @@ authors = ["Michael Schilonka <michael@blueshoe.io>"]
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
 kopf = "^1.37.2"
-kubernetes = "^30.1.0"
+kubernetes = "^31.0.0"
 python-decouple = "^3.8"
 python-statemachine = "^2.3.4"
 
