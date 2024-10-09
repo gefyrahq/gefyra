@@ -20,7 +20,21 @@ def create_stowaway_statefulset(
             requests={"cpu": "0.1", "memory": "100Mi"},
             limits={"cpu": "0.75", "memory": "500Mi"},
         ),
+        startup_probe=V1Probe(
+            http_get=V1HTTPGetAction(
+                port=51822,
+            ),
+            period_seconds=1,
+            initial_delay_seconds=5,
+        ),
         readiness_probe=V1Probe(
+            http_get=V1HTTPGetAction(
+                port=51822,
+            ),
+            period_seconds=1,
+            initial_delay_seconds=5,
+        ),
+        liveness_probe=V1Probe(
             http_get=V1HTTPGetAction(
                 port=51822,
             ),
