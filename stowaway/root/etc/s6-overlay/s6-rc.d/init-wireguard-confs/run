@@ -121,7 +121,6 @@ DUDE
 
 save_vars () {
     cat <<DUDE > /config/.donoteditthisfile
-ORIG_SERVERURL="$SERVERURL"
 ORIG_SERVERPORT="$SERVERPORT"
 ORIG_PEERDNS="$PEERDNS"
 ORIG_PEERS="$PEERS"
@@ -141,12 +140,6 @@ if [[ -n "$PEERS" ]]; then
     if [[ -n "${PERSISTENTKEEPALIVE_PEERS}" ]]; then
         echo "**** PersistentKeepalive will be set for: ${PERSISTENTKEEPALIVE_PEERS/,/ } ****"
         mapfile -t PERSISTENTKEEPALIVE_PEERS_ARRAY < <(echo "${PERSISTENTKEEPALIVE_PEERS}" | tr ',' '\n')
-    fi
-    if [[ -z "$SERVERURL" ]] || [[ "$SERVERURL" = "auto" ]]; then
-        SERVERURL=$(curl -s icanhazip.com)
-        echo "**** SERVERURL var is either not set or is set to \"auto\", setting external IP to auto detected value of $SERVERURL ****"
-    else
-        echo "**** External server address is set to $SERVERURL ****"
     fi
     SERVERPORT=${SERVERPORT:-51820}
     echo "**** External server port is set to ${SERVERPORT}. Make sure that port is properly forwarded to port 51820 inside this container ****"
@@ -170,7 +163,7 @@ if [[ -n "$PEERS" ]]; then
       if [[ -f /config/.donoteditthisfile ]]; then
           . /config/.donoteditthisfile
       fi
-      if [[ "$SERVERURL" != "$ORIG_SERVERURL" ]] || [[ "$SERVERPORT" != "$ORIG_SERVERPORT" ]] || [[ "$PEERDNS" != "$ORIG_PEERDNS" ]] || [[ "$PEERS" != "$ORIG_PEERS" ]] || [[ "$INTERFACE" != "$ORIG_INTERFACE" ]] || [[ "$ALLOWEDIPS" != "$ORIG_ALLOWEDIPS" ]] || [[ "$PERSISTENTKEEPALIVE_PEERS" != "$ORIG_PERSISTENTKEEPALIVE_PEERS" ]]; then
+      if [[ "$SERVERPORT" != "$ORIG_SERVERPORT" ]] || [[ "$PEERDNS" != "$ORIG_PEERDNS" ]] || [[ "$PEERS" != "$ORIG_PEERS" ]] || [[ "$INTERFACE" != "$ORIG_INTERFACE" ]] || [[ "$ALLOWEDIPS" != "$ORIG_ALLOWEDIPS" ]] || [[ "$PERSISTENTKEEPALIVE_PEERS" != "$ORIG_PERSISTENTKEEPALIVE_PEERS" ]]; then
           echo "**** Server related environment variables changed, regenerating 1 server and ${PEERS} peer/client confs ****"
           generate_confs
           save_vars
