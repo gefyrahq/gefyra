@@ -217,7 +217,7 @@ jobs:
           - os: ubuntu-latest
             driver: ''
             kubectl_os: linux
-          - os: macos-14
+          - os: macos-13
             driver: virtualbox
             kubectl_os: darwin
     needs:
@@ -234,10 +234,10 @@ jobs:
           python-version: '3.9'
       # https://github.com/opensafely-core/job-server/issues/3429
       - run: brew install docker
-        if: ${{ matrix.os == 'macos-14' }}
+        if: ${{ matrix.os == 'macos-13' }}
       - name: Set up Docker
         uses: crazy-max/ghaction-setup-docker@v3
-        if: ${{ matrix.os == 'macos-14' }}
+        if: ${{ matrix.os == 'macos-13' }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
