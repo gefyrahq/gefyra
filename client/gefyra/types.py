@@ -275,6 +275,12 @@ class GefyraInstallOptions:
             type="array",
         ),
     )
+    registry_url: str = field(
+        default_factory=lambda: "quay.io/gefyra",
+        metadata=dict(
+            help="The registry URL for the images (default: quay.io/gefyra)",
+        ),
+    )
 
 
 @dataclass
