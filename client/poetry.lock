@@ -214,13 +214,13 @@ files = [
 
 [[package]]
 name = "cli-tracker"
-version = "0.3.0"
+version = "0.3.4"
 description = ""
 optional = false
-python-versions = ">=3.8,<4.0"
+python-versions = "<4.0,>=3.8"
 files = [
-    {file = "cli_tracker-0.3.0-py3-none-any.whl", hash = "sha256:5b9efbd6a748dc550c9d164dd2e3121bda6d69e4906217809c5401adbb0d6232"},
-    {file = "cli_tracker-0.3.0.tar.gz", hash = "sha256:c7ed858b3fa361e1e2a12e5abe7a3d14e521c9feda6f968b3379146a9b7e4d9c"},
+    {file = "cli_tracker-0.3.4-py3-none-any.whl", hash = "sha256:8ad86705e190a3d6a49819a15d96986aacc73a3bf1bb66257cb6dbe57ddbf31e"},
+    {file = "cli_tracker-0.3.4.tar.gz", hash = "sha256:93d922d02969ce115034c8d2e65a1bcfac5edd9c1eddf2ba604db2fafb65317b"},
 ]
 
 [package.dependencies]
