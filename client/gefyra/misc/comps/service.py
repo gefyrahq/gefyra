@@ -23,7 +23,14 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
             )
     if params.service_annotations:
         try:
-            stowaway_annotations.update(params.service_annotations)
+            for annotation in params.service_annotations:
+                try:
+                    # handle cli params as key=value
+                    key, value = annotation[0].split("=")
+                    stowaway_annotations[key] = value
+                except ValueError:
+                    # handle preset values
+                    stowaway_annotations.update(params.service_annotations)
         except IndexError:
             raise ValueError(
                 f"Invalid service-annotations format. Please use the form key=value."
