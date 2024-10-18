@@ -75,7 +75,7 @@ def install(ctx, component, preset, apply, wait, **kwargs):
             stats=False,
             dual_line=True,
         ):
-            ouput = api.install(component, preset, apply, wait**kwargs)
+            ouput = api.install(component, preset, apply, wait, **kwargs)
     else:
         ouput = api.install(component, preset, apply, wait, **kwargs)
     if not apply:
