@@ -150,7 +150,7 @@ class OptionEatAll(click.Option):
 
 def multi_options(options):
     map_to_types = dict(
-        array=str,
+        array=list,
         number=float,
         string=str,
     )

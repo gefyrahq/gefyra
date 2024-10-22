@@ -38,7 +38,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                         "containers": [
                             {
                                 "name": "gefyra",
-                                "image": f"quay.io/gefyra/operator:{params.version}",
+                                "image": f"{params.registry_url}/operator:{params.version}",
                                 "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
@@ -88,7 +88,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                         "containers": [
                             {
                                 "name": "gefyra",
-                                "image": f"quay.io/gefyra/operator:{params.version}",
+                                "image": f"{params.registry_url}/operator:{params.version}",
                                 "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
