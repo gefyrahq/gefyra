@@ -20,6 +20,7 @@ def _check_and_install(
     connection_name: str = "",
     preset: Optional[str] = None,
     bar=None,
+    registry_url: Optional[str] = None,
 ) -> bool:
     status = api.status(connection_name=connection_name)
 
@@ -32,12 +33,14 @@ def _check_and_install(
         return False
     else:  # status.summary == StatusSummary.DOWN:
         logger.debug(f"Preset {preset}")
+        logger.debug(f"Registry URL {registry_url}")
         api.install(
             kubeconfig=config.KUBE_CONFIG_FILE,
             kubecontext=config.KUBE_CONTEXT,
             apply=True,
             wait=True,
             preset=preset,
+            registry_url=registry_url,
         )
         return True
 
@@ -56,9 +59,19 @@ def _check_and_install(
     help=f"Set configs from a preset (available: {','.join(api.LB_PRESETS.keys())})",
     type=str,
 )
+@click.option(
+    "--registry-url",
+    help="Set the registry URL for the Gefyra operator",
+    type=str,
+)
 @pass_context
 @standard_error_handler
-def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None):
+def cluster_up(
+    ctx,
+    minikube: Optional[str] = None,
+    preset: Optional[str] = None,
+    registry_url: Optional[str] = None,
+):
     from alive_progress import alive_bar
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
     from time import sleep
@@ -86,7 +99,11 @@ def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None
     ) as bar:
         # run a default install
         install_success = _check_and_install(
-            config=config, connection_name=connection_name, preset=preset, bar=bar
+            config=config,
+            connection_name=connection_name,
+            preset=preset,
+            bar=bar,
+            registry_url=registry_url,
         )
         if install_success:
             bar()
