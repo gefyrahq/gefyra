@@ -69,7 +69,6 @@ def copy_files_or_directories_from_cluster_to_local_container(
                 f"{file_from_argument.source}:{file_from_argument.destination}"
             )
             logger.debug(e)
-            del tar_buffer
             continue
 
         try:
