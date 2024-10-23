@@ -3,7 +3,7 @@ import os
 import sys
 from threading import Thread, Event
 from typing import Dict, List, Optional, TYPE_CHECKING, Tuple
-from client.gefyra.cli.utils import FileFromArgument
+from gefyra.cli.utils import FileFromArgument
 from gefyra.cluster.utils import get_file_from_pod_container, retrieve_pod_and_container
 
 if TYPE_CHECKING:
@@ -29,6 +29,63 @@ def check_input():
     line = sys.stdin.readline()
     if not line:
         stop_thread.set()
+
+
+def copy_files_or_directories_from_cluster_to_local_container(
+    config,
+    namespace: str,
+    local_container_name: str,
+    file_from: Tuple[FileFromArgument],
+):
+    from kubernetes.client import ApiException
+
+    for file_from_argument in file_from:
+        try:
+            file_from_pod, file_from_container = retrieve_pod_and_container(
+                file_from_argument.workload, namespace=namespace, config=config
+            )
+        except ApiException as e:
+            logger.error(
+                f"Cannot copy file/directory from pod: {e.reason} ({e.status})."
+            )
+            continue
+
+        logger.debug(
+            f"Copying file/directory from {file_from_pod}/{file_from_container}"
+        )
+
+        try:
+            tar_buffer = get_file_from_pod_container(
+                config,
+                file_from_pod,
+                namespace,
+                file_from_container,
+                file_from_argument.source,
+            )
+        except (RuntimeError, ApiException) as e:
+            logger.info(
+                f"Cannot copy file/directory from pod:"
+                f" --file-from {str(file_from_argument.workload)}:"
+                f"{file_from_argument.source}:{file_from_argument.destination}"
+            )
+            logger.debug(e)
+            del tar_buffer
+            continue
+
+        try:
+            client = config.DOCKER
+            client.containers.get(local_container_name).put_archive(
+                file_from_argument.destination,
+                tar_buffer.read(),
+            )
+        except Exception as e:
+            logger.info(
+                f"Cannot copy file/directory into container:"
+                f" --file-from {str(file_from_argument.workload)}:"
+                f"{file_from_argument.source}:{file_from_argument.destination}"
+            )
+            logger.debug(e)
+            continue
 
 
 @stopwatch
@@ -134,57 +191,13 @@ def run(
         else:
             raise RuntimeError(e.explanation)
 
-    #
-    # 3. copy files from a K8s container
-    #
     if file_from:
-        for file_from_argument in file_from:
-            try:
-                file_from_pod, file_from_container = retrieve_pod_and_container(
-                    file_from_argument.workload, namespace=namespace, config=config
-                )
-            except ApiException as e:
-                logger.error(
-                    f"Cannot copy file/directory from pod: {e.reason} ({e.status})."
-                )
-                continue
-
-            logger.debug(
-                f"Copying file/directory from {file_from_pod}/{file_from_container}"
-            )
-
-            try:
-                tar_buffer = get_file_from_pod_container(
-                    config,
-                    file_from_pod,
-                    namespace,
-                    file_from_container,
-                    file_from_argument.source,
-                )
-            except (RuntimeError, ApiException) as e:
-                logger.info(
-                    f"Cannot copy file/directory from pod:"
-                    f" --file-from {str(file_from_argument.workload)}:"
-                    f"{file_from_argument.source}:{file_from_argument.destination}"
-                )
-                logger.debug(e)
-                del tar_buffer
-                continue
-
-            try:
-                client = config.DOCKER
-                client.containers.get(name).put_archive(
-                    file_from_argument.destination,
-                    tar_buffer.read(),
-                )
-            except Exception as e:
-                logger.info(
-                    f"Cannot copy file/directory into container:"
-                    f" --file-from {str(file_from_argument.workload)}:"
-                    f"{file_from_argument.source}:{file_from_argument.destination}"
-                )
-                logger.debug(e)
-                continue
+        copy_files_or_directories_from_cluster_to_local_container(
+            config,
+            namespace=namespace,
+            local_container_name=name,
+            file_from=file_from,
+        )
 
     logger.info(
         f"Container image '{', '.join(container.image.tags)}' started with name"
