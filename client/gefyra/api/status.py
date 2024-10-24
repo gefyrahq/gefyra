@@ -153,7 +153,9 @@ def status(connection_name: str = "") -> GefyraStatus:
         client = _get_client_status(config)
     except urllib3.exceptions.MaxRetryError as e:
         raise ClientConfigurationError(
-            f"Cannot reach cluster on {e.pool.host}:{e.pool.port}"
+            f"Cannot reach cluster on {e.pool.host}:{e.pool.port}\n"
+            f"Used kubeconfig: {config.KUBE_CONFIG_FILE} from Gefyra connection {connection_name}\n"
+            f"Please delete the connection and create a new one. Use: gefyra connection remove {connection_name}"
         )
 
     if client.connection:
