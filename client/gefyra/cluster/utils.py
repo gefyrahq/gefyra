@@ -2,6 +2,7 @@ import logging
 from time import sleep
 from typing import Tuple, TYPE_CHECKING
 from gefyra.api.utils import get_workload_type
+import io
 
 if TYPE_CHECKING:
     from kubernetes.client.models import V1Pod
@@ -48,6 +49,70 @@ def get_env_from_pod_container(
                 raise e
     raise RuntimeError(
         f"Failed to get env from pod {pod_name} in namespace {namespace} after"
+        f" {retries} tries."
+    )
+
+
+def get_file_from_pod_container(
+    config: ClientConfiguration,
+    pod_name: str,
+    namespace: str,
+    container_name: str,
+    source: str,
+) -> io.BytesIO:
+    from kubernetes.client import ApiException
+    from kubernetes.stream import stream
+
+    retries = 10
+    counter = 0
+    interval = 1
+    while counter < retries:
+        try:
+            import os
+
+            exec_command = [
+                "/bin/sh",
+                "-c",
+                f"cd {os.path.dirname(source)} && tar cf - {os.path.basename(source)}",
+            ]
+
+            resp = stream(
+                config.K8S_CORE_API.connect_get_namespaced_pod_exec,
+                pod_name,
+                namespace,
+                container=container_name,
+                command=exec_command,
+                stderr=True,
+                stdin=False,
+                stdout=True,
+                tty=False,
+                _preload_content=False,
+            )
+
+            tar_buffer = io.BytesIO()
+            while resp.is_open():
+                resp.update(timeout=1)
+                if resp.peek_stdout():
+                    tar_buffer.write(resp.read_stdout().encode("utf-8"))
+                if resp.peek_stderr():
+                    logger.debug("Error:", resp.read_stderr())
+
+            resp.close()
+
+            tar_buffer.seek(0)
+            return tar_buffer
+        except ApiException as e:
+            if "500 Internal Server Error" in e.reason:
+                sleep(interval)
+                counter += 1
+                logger.debug(
+                    f"Failed to copy file from pod {pod_name} in namespace {namespace} on"
+                    f" try {counter}."
+                )
+            else:
+                raise e
+    raise RuntimeError(
+        f"Failed to copy file from pod {pod_name} in namespace {namespace} after"
         f" {retries} tries."
     )
 

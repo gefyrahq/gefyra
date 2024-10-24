@@ -2,6 +2,7 @@ from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
 from click import ClickException
+from typing import NamedTuple
 
 
 def standard_error_handler(func):
@@ -235,6 +236,42 @@ def parse_workload(ctx, param, workload: str) -> str:
     if "/" not in workload:
         raise ValueError(MSG)
     return workload
+
+
+class FileFromArgument(NamedTuple):
+    workload: str
+    source: str
+    destination: str = "/"
+
+
+def parse_file_from(ctx, param, file_from_arguments) -> Tuple[FileFromArgument]:
+    if not file_from_arguments:
+        return None
+
+    MSG = (
+        "Invalid argument format. Please provide the file "
+        "in the format 'type/name:source:destination' or "
+        "'type/name/container-name:source:destination'."
+    )
+
+    file_from = []
+    for file_from_argument in file_from_arguments:
+        split_argument = file_from_argument.split(":")
+        if len(split_argument) != 3:
+            raise ValueError(MSG)
+
+        workload, source, destination = split_argument
+        if "/" not in workload:
+            raise ValueError(MSG)
+
+        file_from_argument_parsed = FileFromArgument(
+            workload=workload,
+            source=source,
+            destination=destination,
+        )
+        file_from.append(file_from_argument_parsed)
+
+    return tuple(file_from)
 
 
 def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:

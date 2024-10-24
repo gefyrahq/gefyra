@@ -4,6 +4,7 @@ from gefyra.cli.utils import (
     OptionEatAll,
     check_connection_name,
     parse_env,
+    parse_file_from,
     parse_ip_port_map,
     parse_workload,
 )
@@ -39,6 +40,13 @@ from gefyra.cli.utils import (
     help="Copy the environment from the container in the notation 'Pod/Container'",
     type=str,
     callback=parse_workload,
+)
+@click.option(
+    "--file-from",
+    help="Copy the file from the container in the notation 'Pod/Container'",
+    type=str,
+    callback=parse_file_from,
+    multiple=True,
 )
 @click.option(
     "-v",
@@ -102,6 +110,7 @@ def run(
     auto_remove,
     expose,
     env_from,
+    file_from,
     volume,
     env,
     namespace,
@@ -116,12 +125,14 @@ def run(
 
     if command:
         command = ast.literal_eval(command)[0]
+
     api.run(
         image=image,
         name=name,
         command=command,
         namespace=namespace,
         env_from=env_from,
+        file_from=file_from,
         env=env,
         ports=expose,
         auto_remove=auto_remove,
