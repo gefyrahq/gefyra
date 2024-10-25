@@ -1,11 +1,11 @@
 {
-    "python.testing.pytestArgs": [
-        "operator"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.formatting.provider": "black",
-    "gefyra.up": {
-        "minikube": false
-    },
+  "python.testing.pytestArgs": ["tests/"],
+  "python.testing.cwd": "${workspaceFolder}/client/",
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.formatting.provider": "black",
+  "gefyra.up": {
+    "minikube": false
+  },
+  "python.analysis.include": ["client"]
 }
