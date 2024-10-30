@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Gefyra"
-version = "2.2.2"
+version = "2.2.3"
 description = "Gefyra runs all developer machine side components of Gefyra's Kubernetes-based development infrastructure"
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 readme = "README.md"
@@ -22,7 +22,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0.0"
-kubernetes = ">=24.2,<31.0"
+kubernetes = ">=24.2,<32.0"
 docker = ">=6,<8"
 
 [tool.poetry.group.cli.dependencies]
