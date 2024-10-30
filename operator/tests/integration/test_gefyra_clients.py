@@ -73,7 +73,9 @@ def test_c_client_activate(operator: AClusterManager):
     assert client_a.get("stateTransitions") is not None
     assert client_a["providerConfig"] is not None
 
-    service_accounts = k3d.kubectl(["-n", "gefyra", "get", "serviceaccount"], as_dict=False)
+    service_accounts = k3d.kubectl(
+        ["-n", "gefyra", "get", "serviceaccount"], as_dict=False
+    )
     assert "gefyra-client-client-a" in service_accounts
 
 
