@@ -80,13 +80,9 @@ class ClientConfiguration(object):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
         self._kube_config_path = None
         self._kube_context = None
-        self.REGISTRY = (
-            registry.rstrip("/") if registry else "quay.io/gefyra"
-        )
+        self.REGISTRY = registry.rstrip("/") if registry else "quay.io/gefyra"
         if registry:
-            logger.debug(
-                f"Using registry prefix (other than default): {self.REGISTRY}"
-            )
+            logger.debug(f"Using registry prefix (other than default): {self.REGISTRY}")
         self.OPERATOR_IMAGE = (
             operator_image_url or f"{self.REGISTRY}/operator:{__VERSION__}"
         )
@@ -113,9 +109,7 @@ class ClientConfiguration(object):
                 cargo_image_url or f"{self.REGISTRY}/cargo-win:{__VERSION__}"
             )
         else:
-            self.CARGO_IMAGE = (
-                cargo_image_url or f"{self.REGISTRY}/cargo:{__VERSION__}"
-            )
+            self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY}/cargo:{__VERSION__}"
         if cargo_image_url:
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:
