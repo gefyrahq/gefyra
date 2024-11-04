@@ -275,10 +275,22 @@ class GefyraInstallOptions:
             type="array",
         ),
     )
-    registry_url: str = field(
+    registry: str = field(
         default_factory=lambda: "quay.io/gefyra",
         metadata=dict(
             help="The registry URL for the images (default: quay.io/gefyra)",
+        ),
+    )
+    mtu: int = field(
+        default_factory=lambda: 1340,
+        metadata=dict(
+            help="The MTU for the Wireguard interface (default: 1340)",
+        ),
+    )
+    stowaway_storage: int = field(
+        default_factory=lambda: 64,
+        metadata=dict(
+            help="The storage size for the Stowaway PVC in Mi (default: 64)",
         ),
     )
 

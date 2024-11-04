@@ -38,17 +38,29 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                         "containers": [
                             {
                                 "name": "gefyra",
-                                "image": f"{params.registry_url}/operator:{params.version}",
+                                "image": f"{params.registry}/operator:{params.version}",
                                 "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
+                                    {
+                                        "name": "GEFYRA_STOWAWAY_IMAGE",
+                                        "value": f"{params.registry}/stowaway",
+                                    },
                                     {
                                         "name": "GEFYRA_STOWAWAY_TAG",
                                         "value": params.version,
                                     },
                                     {
+                                        "name": "GEFYRA_CARRIER_IMAGE",
+                                        "value": f"{params.registry}/carrier",
+                                    },
+                                    {
                                         "name": "GEFYRA_CARRIER_IMAGE_TAG",
                                         "value": params.version,
+                                    },
+                                    {
+                                        "name": "GEFYRA_STOWAWAY_STORAGE",
+                                        "value": params.stowaway_storage,
                                     },
                                 ],
                             }
@@ -88,18 +100,30 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                         "containers": [
                             {
                                 "name": "gefyra",
-                                "image": f"{params.registry_url}/operator:{params.version}",
+                                "image": f"{params.registry}/operator:{params.version}",
                                 "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
                                     {"name": "OP_MODE", "value": "webhook"},
                                     {
+                                        "name": "GEFYRA_STOWAWAY_IMAGE",
+                                        "value": f"{params.registry}/stowaway",
+                                    },
+                                    {
                                         "name": "GEFYRA_STOWAWAY_TAG",
                                         "value": params.version,
                                     },
                                     {
+                                        "name": "GEFYRA_CARRIER_IMAGE",
+                                        "value": f"{params.registry}/carrier",
+                                    },
+                                    {
                                         "name": "GEFYRA_CARRIER_IMAGE_TAG",
                                         "value": params.version,
+                                    },
+                                    {
+                                        "name": "GEFYRA_STOWAWAY_STORAGE",
+                                        "value": params.stowaway_storage,
                                     },
                                 ],
                                 "livenessProbe": {

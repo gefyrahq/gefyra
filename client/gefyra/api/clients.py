@@ -19,6 +19,8 @@ logger = logging.getLogger(__name__)
 def add_clients(
     client_id: str,
     quantity: int = 1,
+    registry: Optional[str] = None,
+    mtu: Optional[int] = None,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
 ) -> Iterable[GefyraClient]:
@@ -26,7 +28,11 @@ def add_clients(
     Add a new client to the connection provider
     """
     config = ClientConfiguration(
-        kube_config_file=kubeconfig, kube_context=kubecontext, ignore_connection=True
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        ignore_connection=True,
+        registry=registry,
+        wireguard_mtu=mtu,
     )
     if quantity > 1 and client_id:
         raise RuntimeError("Cannot specify both quantity > 1 and client_id")
@@ -94,11 +100,18 @@ def write_client_file(
     kube_api: Optional[str] = None,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
+    registry: Optional[str] = None,
+    wireguard_mtu: Optional[int] = 1340,
 ) -> str:
     """
     Write a client file
     """
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        registry=registry,
+        wireguard_mtu=wireguard_mtu,
+    )
     client = get_client(
         client_id, kubeconfig=config.KUBE_CONFIG_FILE, kubecontext=config.KUBE_CONTEXT
     )
