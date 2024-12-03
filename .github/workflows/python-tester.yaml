@@ -236,7 +236,7 @@ jobs:
       - run: brew install docker
         if: ${{ matrix.os == 'macos-13' }}
       - name: Install QEMU 9.0.2
-        uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@8e475672d005e1bef9417c8cdd16b6c512d1cab7
+        uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@36650ca7022bda0bfd0f46ce543437856863848d
         if: ${{ matrix.os == 'macos-13' }}
       - name: Set up Docker
         uses: crazy-max/ghaction-setup-docker@v3
