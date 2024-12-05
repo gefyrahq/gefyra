@@ -1,4 +1,5 @@
 import click
+from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
 
 
@@ -22,6 +23,10 @@ def operator(ctx):
 def update(version):
     from gefyra import api
 
+    console.info("Updating the Gefyra operator")
+
     api.operator.update(
         version=version,
     )
+
+    console.success("Gefyra operator updated successfully")

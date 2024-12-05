@@ -51,7 +51,11 @@ def install(
     from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(
-        kube_config_file=kubeconfig, kube_context=kubecontext, ignore_docker=True
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        ignore_docker=True,
+        registry=kwargs.get("registry", ""),
+        wireguard_mtu=kwargs.get("mtu", 1340),
     )
     if preset:
         presetoptions = LB_PRESETS.get(preset)  # type: ignore

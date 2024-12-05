@@ -29,6 +29,9 @@ class OperatorConfiguration:
 
         self.STOWAWAY_PROXYROUTE_CONFIGMAPNAME = "gefyra-stowaway-proxyroutes"
         self.STOWAWAY_CONFIGMAPNAME = "gefyra-stowaway-config"
+        self.STOWAWAY_STORAGE = config(
+            "GEFYRA_STOWAWAY_STORAGE", cast=int, default=64
+        )  # see https://github.com/gefyrahq/gefyra/issues/670
         # Carrier
         self.CARRIER_IMAGE = config(
             "GEFYRA_CARRIER_IMAGE", default="quay.io/gefyra/carrier"
