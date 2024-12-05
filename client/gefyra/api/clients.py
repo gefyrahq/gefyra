@@ -20,7 +20,6 @@ def add_clients(
     client_id: str,
     quantity: int = 1,
     registry: Optional[str] = None,
-    mtu: Optional[int] = None,
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
 ) -> Iterable[GefyraClient]:
@@ -32,7 +31,6 @@ def add_clients(
         kube_context=kubecontext,
         ignore_connection=True,
         registry=registry,
-        wireguard_mtu=mtu,
     )
     if quantity > 1 and client_id:
         raise RuntimeError("Cannot specify both quantity > 1 and client_id")

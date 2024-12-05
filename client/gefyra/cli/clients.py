@@ -27,17 +27,15 @@ def clients(ctx):
     default=1,
 )
 @click.option("--registry", help="The registry URL for the images", type=str)
-@click.option("--mtu", help="The MTU for the Wireguard interface", type=int)
 @click.pass_context
 @standard_error_handler
-def create_clients(ctx, client_id, quantity, registry, mtu):
+def create_clients(ctx, client_id, quantity, registry):
     from gefyra import api
 
     api.add_clients(
         client_id,
         quantity,
         registry=registry,
-        mtu=mtu,
         kubeconfig=ctx.obj["kubeconfig"],
         kubecontext=ctx.obj["context"],
     )
