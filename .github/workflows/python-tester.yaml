@@ -239,7 +239,7 @@ jobs:
         uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@8e475672d005e1bef9417c8cdd16b6c512d1cab7
         if: ${{ matrix.os == 'macos-13' }}
       - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v3
+        uses: crazy-max/ghaction-setup-docker@v4
         if: ${{ matrix.os == 'macos-13' }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
