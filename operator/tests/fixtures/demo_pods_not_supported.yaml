@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backend
+  namespace: demo-failing
+  labels:
+    app: backend
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+    - name: backend
+      image: quay.io/gefyra/gefyra-demo-backend
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: web
+          containerPort: 5002
+          protocol: TCP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+  namespace: demo-failing
+  labels:
+    app: frontend
+spec:
+  containers:
+    - name: frontend
+      image: quay.io/gefyra/gefyra-demo-frontend
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: web
+          containerPort: 5003
+          protocol: TCP
+      env:
+        - name: SVC_URL
+          value: "backend.demo.svc.cluster.local:5002"
+      livenessProbe:
+        exec:
+          command:
+            - cat
+            - /tmp/healthy
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        exec:
+          command:
+            - cat
+            - /tmp/ready
+        initialDelaySeconds: 5
+        periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: demo-failing
+spec:
+  selector:
+    app: backend
+  ports:
+  - protocol: TCP
+    port: 5002
+    targetPort: 5002
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: demo-failing
+spec:
+  selector:
+    app: frontend
+  ports:
+  - protocol: "TCP"
+    port: 80
+    targetPort: 5003
+  type: LoadBalancer

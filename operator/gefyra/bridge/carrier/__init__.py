@@ -1,6 +1,6 @@
 import json
 from typing import Any, Dict, List, Optional
-from gefyra.utils import exec_command_pod
+from gefyra.utils import BridgeException, exec_command_pod
 import kubernetes as k8s
 
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
@@ -33,7 +33,10 @@ class Carrier(AbstractGefyraBridgeProvider):
 
     def install(self, parameters: Optional[Dict[Any, Any]] = None):
         parameters = parameters or {}
-        self._patch_pod_with_carrier(handle_probes=parameters.get("handleProbes", True))
+        try:
+            self._patch_pod_with_carrier(handle_probes=parameters.get("handleProbes", True))
+        except BridgeException as be:
+            raise BridgeException from be
 
     def _ensure_probes(self, container: k8s.client.V1Container) -> bool:
         probes = self._get_all_probes(container)
@@ -143,7 +146,7 @@ class Carrier(AbstractGefyraBridgeProvider):
                             "Not all of the probes to be handled are currently"
                             " supported by Gefyra"
                         )
-                        return False, pod
+                        raise BridgeException()
                 if (
                     container.image
                     == f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"

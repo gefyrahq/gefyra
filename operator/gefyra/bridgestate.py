@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Optional
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.bridge.factory import BridgeProviderType, bridge_provider_factory
@@ -7,9 +7,10 @@ import kopf
 import kubernetes as k8s
 from statemachine import State, StateMachine
 
-
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
+
+from gefyra.utils import BridgeException
 
 
 class GefyraBridgeObject(GefyraStateObject):
@@ -37,7 +38,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     install = (
         requested.to(installing, on="_install_provider")
-        | error.to(installing)
+        | installing.to(error)
         | installing.to.itself(on="_wait_for_provider")
     )
     set_installed = (
@@ -106,7 +107,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     @property
     def should_terminate(self) -> bool:
-        if self.sunset and self.sunset <= datetime.utcnow():
+        if self.sunset and self.sunset <= datetime.now(UTC):
             # remove this bridge because the sunset time is in the past
             self.logger.warning(
                 f"Bridge '{self.object_name}' should be terminated "
@@ -121,7 +122,10 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         It installs the bridge provider
         :return: Nothing
         """
-        self.bridge_provider.install()
+        try:
+            self.bridge_provider.install()
+        except BridgeException:
+            self.send("impair")
 
     def _wait_for_provider(self):
         if not self.bridge_provider.ready():
