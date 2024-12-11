@@ -1,4 +1,4 @@
-from datetime import datetime, UTC
+from datetime import datetime
 from typing import Any, Optional
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.bridge.factory import BridgeProviderType, bridge_provider_factory
@@ -107,7 +107,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     @property
     def should_terminate(self) -> bool:
-        if self.sunset and self.sunset <= datetime.now(UTC):
+        if self.sunset and self.sunset <= datetime.utcnow():
             # remove this bridge because the sunset time is in the past
             self.logger.warning(
                 f"Bridge '{self.object_name}' should be terminated "
