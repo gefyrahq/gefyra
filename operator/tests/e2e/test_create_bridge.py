@@ -103,6 +103,7 @@ def test_a_bridge(
 
     gclient_a.delete()
 
+
 def test_b_cleanup_bridges_routes(
     carrier_image,
     operator: AClusterManager,
@@ -134,11 +135,9 @@ def test_b_cleanup_bridges_routes(
         timeout=60,
     )
 
+
 def test_c_fail_create_not_supported_bridges(
-    demo_backend_image,
-    demo_frontend_image,
-    carrier_image,
-    operator: AClusterManager
+    demo_backend_image, demo_frontend_image, carrier_image, operator: AClusterManager
 ):
     k3d = operator
     k3d.load_image(demo_backend_image)
@@ -173,4 +172,3 @@ def test_c_fail_create_not_supported_bridges(
             namespace="demo-failing",
             timeout=60,
         )
-    

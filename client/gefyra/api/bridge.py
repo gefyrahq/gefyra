@@ -58,7 +58,7 @@ def check_workloads(
             f"Could not find {workload_type}/{workload_name} to bridge. Available"
             f" {workload_type}: {', '.join(cleaned_names)}"
         )
-    
+
     if container_name not in [
         container for c_list in pods_to_intercept.values() for container in c_list
     ]:
@@ -76,14 +76,16 @@ def check_workloads(
         else:
             raise RuntimeError(f"Unsupported workload type: {workload_type}")
     except ApiException as e:
-        raise RuntimeError(f"Error fetching workload {workload_type}/{workload_name}: {e}")
+        raise RuntimeError(
+            f"Error fetching workload {workload_type}/{workload_name}: {e}"
+        )
 
     containers = workload.spec.template.spec.containers
-    target_container = next(
-        (c for c in containers if c.name == container_name), None
-    )
+    target_container = next((c for c in containers if c.name == container_name), None)
     if not target_container:
-        raise RuntimeError(f"Container {container_name} not found in workload {workload_type}/{workload_name}.")
+        raise RuntimeError(
+            f"Container {container_name} not found in workload {workload_type}/{workload_name}."
+        )
 
     def validate_http_probe(probe, probe_type):
         if probe and probe.http_get is None:

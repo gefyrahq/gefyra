@@ -34,7 +34,9 @@ class Carrier(AbstractGefyraBridgeProvider):
     def install(self, parameters: Optional[Dict[Any, Any]] = None):
         parameters = parameters or {}
         try:
-            self._patch_pod_with_carrier(handle_probes=parameters.get("handleProbes", True))
+            self._patch_pod_with_carrier(
+                handle_probes=parameters.get("handleProbes", True)
+            )
         except BridgeException as be:
             raise BridgeException from be
 
