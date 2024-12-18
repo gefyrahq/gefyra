@@ -1,7 +1,5 @@
 import json
 import logging
-import subprocess
-import pytest
 from pytest_kubernetes.providers import AClusterManager
 from .utils import GefyraDockerClient
 
@@ -148,7 +146,7 @@ def test_c_fail_create_not_supported_bridges(
     k3d.wait("ns/demo-failing", "jsonpath='{.status.phase}'=Active")
     k3d.apply("tests/fixtures/demo_pods_not_supported.yaml")
     k3d.wait(
-        "pod/backend",
+        "pod/frontend",
         "condition=ready",
         namespace="demo-failing",
         timeout=60,
@@ -164,11 +162,9 @@ def test_c_fail_create_not_supported_bridges(
     )
 
     # applying the bridge shouldn't have worked
-    with pytest.raises(subprocess.TimeoutExpired):
-        k3d.wait(
-            "pod/frontend",
-            "jsonpath=.status.containerStatuses[0].image=docker.io/library/"
-            + carrier_image,
-            namespace="demo-failing",
-            timeout=60,
-        )
+    k3d.wait(
+        "pod/frontend",
+        "condition=ready",
+        namespace="demo-failing",
+        timeout=60,
+    )

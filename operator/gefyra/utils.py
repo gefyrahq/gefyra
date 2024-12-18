@@ -13,10 +13,6 @@ from websocket import ABNF
 logger = logging.getLogger("gefyra.utils")
 
 
-class BridgeException(Exception):
-    pass
-
-
 def get_label_selector(labels: dict[str, str]) -> str:
     return ",".join(["{0}={1}".format(*label) for label in list(labels.items())])
 

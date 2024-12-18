@@ -10,7 +10,8 @@ from statemachine import State, StateMachine
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
 
-from gefyra.utils import BridgeException
+from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.exceptions import BridgeException
 
 
 class GefyraBridgeObject(GefyraStateObject):
@@ -38,7 +39,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     install = (
         requested.to(installing, on="_install_provider")
-        | installing.to(error)
+        | error.to(installing)
         | installing.to.itself(on="_wait_for_provider")
     )
     set_installed = (
@@ -124,8 +125,9 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         """
         try:
             self.bridge_provider.install()
-        except BridgeException:
-            self.send("impair")
+        except BridgeInstallException as be:
+            self.logger.debug(f"Encountered: {be}")
+            self.send("impair", exception=be)
 
     def _wait_for_provider(self):
         if not self.bridge_provider.ready():
@@ -193,3 +195,11 @@ class GefyraBridge(StateMachine, StateControllerMixin):
     def on_restore(self):
         self.bridge_provider.uninstall()
         self.send("terminate")
+
+    def on_impair(self, exception: BridgeException | None):
+        self.logger.error(f"Failed from {self.current_state}")
+        self.post_event(
+            reason=f"Failed from {self.current_state}",
+            message=exception.message,
+            _type="Warning",
+        )
