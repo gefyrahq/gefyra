@@ -196,7 +196,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.bridge_provider.uninstall()
         self.send("terminate")
 
-    def on_impair(self, exception: BridgeException | None):
+    def on_impair(self, exception: Optional[BridgeException] = None):
         self.logger.error(f"Failed from {self.current_state}")
         self.post_event(
             reason=f"Failed from {self.current_state}",
