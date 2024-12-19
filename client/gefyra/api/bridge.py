@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from gefyra.types import GefyraBridge
 
 
-from .utils import stopwatch, wrap_bridge
+from .utils import get_workload_type, stopwatch, wrap_bridge
 
 logger = logging.getLogger(__name__)
 
@@ -67,14 +67,11 @@ def check_workloads(
     # Validate workload and probes
     api = config.K8S_APP_API
     try:
-        if workload_type == "deployment":
+        reconstructed_workload_type = get_workload_type(workload_type)
+        if reconstructed_workload_type == "deployment":
             workload = api.read_namespaced_deployment(workload_name, namespace)
-        elif workload_type == "statefulset":
+        elif reconstructed_workload_type == "statefulset":
             workload = api.read_namespaced_stateful_set(workload_name, namespace)
-        elif workload_type == "daemonset":
-            workload = api.read_namespaced_daemon_set(workload_name, namespace)
-        else:
-            raise RuntimeError(f"Unsupported workload type: {workload_type}")
     except ApiException as e:
         raise RuntimeError(
             f"Error fetching workload {workload_type}/{workload_name}: {e}"
