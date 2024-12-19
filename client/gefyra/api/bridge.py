@@ -70,7 +70,7 @@ def check_workloads(
     try:
         reconstructed_workload_type = get_workload_type(workload_type)
         if reconstructed_workload_type == "pod":
-            workload = core_api.read_namespaced_pod(workload_name, namespace)
+            workload = core_api.read_namespaced_pod_template(workload_name, namespace)
         elif reconstructed_workload_type == "deployment":
             workload = api.read_namespaced_deployment(workload_name, namespace)
         elif reconstructed_workload_type == "statefulset":
