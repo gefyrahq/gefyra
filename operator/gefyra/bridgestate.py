@@ -7,9 +7,11 @@ import kopf
 import kubernetes as k8s
 from statemachine import State, StateMachine
 
-
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
+
+from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.exceptions import BridgeException
 
 
 class GefyraBridgeObject(GefyraStateObject):
@@ -121,7 +123,11 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         It installs the bridge provider
         :return: Nothing
         """
-        self.bridge_provider.install()
+        try:
+            self.bridge_provider.install()
+        except BridgeInstallException as be:
+            self.logger.debug(f"Encountered: {be}")
+            self.send("impair", exception=be)
 
     def _wait_for_provider(self):
         if not self.bridge_provider.ready():
@@ -189,3 +195,11 @@ class GefyraBridge(StateMachine, StateControllerMixin):
     def on_restore(self):
         self.bridge_provider.uninstall()
         self.send("terminate")
+
+    def on_impair(self, exception: Optional[BridgeException] = None):
+        self.logger.error(f"Failed from {self.current_state}")
+        self.post_event(
+            reason=f"Failed from {self.current_state}",
+            message=exception.message,
+            _type="Warning",
+        )
