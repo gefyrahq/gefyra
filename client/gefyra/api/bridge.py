@@ -80,7 +80,11 @@ def check_workloads(
             f"Error fetching workload {workload_type}/{workload_name}: {e}"
         )
 
-    containers = workload.spec.template.spec.containers
+    containers = (
+        workload.spec.template.spec.containers
+        if getattr(workload.spec, "template")
+        else workload.spec.containers
+    )
     target_container = next((c for c in containers if c.name == container_name), None)
     if not target_container:
         raise RuntimeError(
