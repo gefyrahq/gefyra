@@ -66,9 +66,12 @@ def check_workloads(
 
     # Validate workload and probes
     api = config.K8S_APP_API
+    core_api = config.K8S_CORE_API
     try:
         reconstructed_workload_type = get_workload_type(workload_type)
-        if reconstructed_workload_type == "deployment":
+        if reconstructed_workload_type == "pod":
+            workload = core_api.read_namespaced_pod(workload_name, namespace)
+        elif reconstructed_workload_type == "deployment":
             workload = api.read_namespaced_deployment(workload_name, namespace)
         elif reconstructed_workload_type == "statefulset":
             workload = api.read_namespaced_stateful_set(workload_name, namespace)
