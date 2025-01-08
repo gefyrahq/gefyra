@@ -116,11 +116,28 @@ def inspect_client(ctx, client_id):
     help="The output file to write the config to",
     type=click.File("wb"),
 )
-@click.option("--registry", help="The registry URL for the images", type=str)
-@click.option("--mtu", help="The MTU for the Wireguard interface", type=int)
+@click.option(
+    "--registry",
+    help="The registry URL for the images",
+    type=str,
+)
+@click.option(
+    "--mtu",
+    help="The MTU for the Wireguard interface",
+    type=int,
+)
 @click.pass_context
 @standard_error_handler
-def get_config(ctx, client_id, host, port, kube_api, output, registry, mtu):
+def get_config(
+    ctx,
+    client_id,
+    host,
+    port,
+    kube_api,
+    output,
+    registry,
+    mtu,
+):
     from gefyra import api
 
     json_str = api.write_client_file(

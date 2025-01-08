@@ -3,6 +3,7 @@ name = "Gefyra Operator"
 version = "2.2.4"
 description = "Gefyra Operator runs all cluster-side components of Gefyra's Kubernetes-based development system"
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
