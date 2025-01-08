@@ -8,7 +8,9 @@ def test_a_create_client(operator: AClusterManager):
     k3d = operator
     from gefyra.api.clients import add_clients
 
-    gclient = add_clients("client-a", kubeconfig=operator.kubeconfig, registry="kuchen.io/gefyra")[0]
+    gclient = add_clients(
+        "client-a", kubeconfig=operator.kubeconfig, registry="kuchen.io/gefyra"
+    )[0]
     assert gclient._config.REGISTRY == "kuchen.io/gefyra"
     client_a: GefyraClient = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
@@ -56,9 +58,10 @@ def test_c_create_clients(operator: AClusterManager):
     from gefyra.api.clients import add_clients
 
     for client in ["client-b", "client-c", "client-d", "client-e", "client-f"]:
-        gclient = add_clients(client, kubeconfig=operator.kubeconfig, registry="kuchen.io/gefyra")[0]
+        gclient = add_clients(
+            client, kubeconfig=operator.kubeconfig, registry="kuchen.io/gefyra"
+        )[0]
         assert gclient._config.REGISTRY == "kuchen.io/gefyra"
-
 
 
 def test_d_delete_client(operator: AClusterManager):
