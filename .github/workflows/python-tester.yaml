@@ -236,10 +236,10 @@ jobs:
       - run: brew install docker
         if: ${{ matrix.os == 'macos-13' }}
       - name: Install QEMU 9.0.2
-        uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@19ca9ade20f5da695f76a10988d6532058575f82
+        uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@ea5e6b5583a8fd470ffecc0b3f4670e5ce4f8ed2
         if: ${{ matrix.os == 'macos-13' }}
       - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v3
+        uses: crazy-max/ghaction-setup-docker@v4
         if: ${{ matrix.os == 'macos-13' }}
       - name: Install Poetry
         uses: snok/install-poetry@v1

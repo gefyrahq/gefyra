@@ -1,15 +1,15 @@
 [tool.poetry]
 name = "Gefyra Operator"
-version = "2.2.3"
+version = "2.2.4"
 description = "Gefyra Operator runs all cluster-side components of Gefyra's Kubernetes-based development system"
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
-kopf = "^1.37.2"
+kopf = "^1.37.4"
 kubernetes = "^31.0.0"
 python-decouple = "^3.8"
-python-statemachine = "^2.3.6"
+python-statemachine = "^2.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
@@ -18,7 +18,7 @@ flake8 = "^7.1.1"
 flake8-black = "^0.3.6"
 coverage = "<8"
 pytest-asyncio = "^0.23.8"
-mypy = "^1.13.0"
+mypy = "^1.14.1"
 pytest-kubernetes = "^0.3.0"
 docker = "^7.0.0"
 coveralls = "^4.0.1"
