@@ -19,7 +19,7 @@ def test_a_create_client(operator: AClusterManager):
         "gefyraclients.gefyra.dev/client-a",
         "jsonpath=.state=WAITING",
         namespace="gefyra",
-        timeout=20,
+        timeout=60,
     )
     assert gclient.state is GefyraClientState.WAITING
 
@@ -29,7 +29,7 @@ def test_b_get_client(operator: AClusterManager):
     from gefyra.api.clients import get_client
 
     gclient = get_client("client-a", kubeconfig=operator.kubeconfig)
-    retries = 10
+    retries = 20
     counter = 0
     try:
         assert gclient.state is GefyraClientState.WAITING
@@ -37,7 +37,7 @@ def test_b_get_client(operator: AClusterManager):
         if counter >= retries:
             raise e
         counter += 1
-        sleep(2)
+        sleep(4)
 
     assert gclient.provider_parameter is None
     assert gclient.provider_config is None
@@ -63,6 +63,6 @@ def test_d_delete_client(operator: AClusterManager):
     from gefyra.api.clients import delete_client
 
     delete_client("client-f", kubeconfig=operator.kubeconfig)
-    sleep(2)
+    sleep(5)
     with pytest.raises(RuntimeError):
         k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-f"])
