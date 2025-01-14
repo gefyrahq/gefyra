@@ -60,7 +60,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     {
                                         "name": "GEFYRA_STOWAWAY_STORAGE",
-                                        "value": params.stowaway_storage,
+                                        "value": str(params.stowaway_storage),
                                     },
                                 ],
                             }
@@ -123,7 +123,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     {
                                         "name": "GEFYRA_STOWAWAY_STORAGE",
-                                        "value": params.stowaway_storage,
+                                        "value": str(params.stowaway_storage),
                                     },
                                 ],
                                 "livenessProbe": {
