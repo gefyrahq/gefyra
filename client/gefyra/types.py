@@ -26,6 +26,8 @@ class GefyraClientConfig:
     namespace: str
     ca_crt: str
     gefyra_server: str
+    registry: str | None
+    wiregard_mtu: str | None
 
     @property
     def json(self):
@@ -158,7 +160,11 @@ class GefyraClient:
         self._init_data(gclient)
 
     def get_client_config(
-        self, gefyra_server: str, k8s_server: str = ""
+        self,
+        gefyra_server: str,
+        k8s_server: str = "",
+        registry: str | None = None,
+        wireguard_mtu: int | None = None,
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
@@ -171,6 +177,8 @@ class GefyraClient:
                 namespace=self.service_account["namespace"],
                 ca_crt=self.service_account["ca.crt"],
                 gefyra_server=gefyra_server,
+                registry=registry,
+                wiregard_mtu=str(wireguard_mtu),
             )
         else:
             raise ClientConfigurationError(
