@@ -123,7 +123,7 @@ def connect_client(
             connection_name=connection_name,
             client_config=client_config,
             minikube_profile=minikube,
-            mtu=mtu
+            mtu=mtu,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "
