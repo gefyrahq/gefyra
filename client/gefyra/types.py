@@ -26,8 +26,8 @@ class GefyraClientConfig:
     namespace: str
     ca_crt: str
     gefyra_server: str
-    registry: str | None
-    wiregard_mtu: str | None
+    registry: Optional[str]
+    wiregard_mtu: Optional[str]
 
     @property
     def json(self):
@@ -163,8 +163,8 @@ class GefyraClient:
         self,
         gefyra_server: str,
         k8s_server: str = "",
-        registry: str | None = None,
-        wireguard_mtu: int | None = None,
+        registry: Optional[str] = None,
+        wireguard_mtu: Optional[int] = None,
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
