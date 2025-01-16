@@ -27,7 +27,7 @@ class GefyraClientConfig:
     ca_crt: str
     gefyra_server: str
     registry: Optional[str]
-    wiregard_mtu: Optional[str]
+    wireguard_mtu: Optional[str]
 
     @property
     def json(self):
@@ -178,7 +178,7 @@ class GefyraClient:
                 ca_crt=self.service_account["ca.crt"],
                 gefyra_server=gefyra_server,
                 registry=registry,
-                wiregard_mtu=str(wireguard_mtu),
+                wireguard_mtu=str(wireguard_mtu),
             )
         else:
             raise ClientConfigurationError(
