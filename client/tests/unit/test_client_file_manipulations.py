@@ -4,7 +4,6 @@ from gefyra.types import GefyraClient
 from pytest_kubernetes.providers import AClusterManager
 
 
-
 def test_a_write_client_file(operator: AClusterManager):
     k3d = operator
     from gefyra.api.clients import add_clients
@@ -50,7 +49,7 @@ def test_a_write_client_file(operator: AClusterManager):
         host="localhost",
         port="31820",
         kubeconfig=k3d.kubeconfig,
-        kubecontext=k3d.context
+        kubecontext=k3d.context,
     )
 
     client_file_json = json.loads(client_file_str)
@@ -83,7 +82,7 @@ def test_a_write_client_file_with_registry_and_mtu(operator: AClusterManager):
         kubeconfig=k3d.kubeconfig,
         kubecontext=k3d.context,
         registry="kuchen.io/gefyra",
-        wireguard_mtu=570
+        wireguard_mtu=570,
     )
 
     client_file_json = json.loads(client_file_str)
