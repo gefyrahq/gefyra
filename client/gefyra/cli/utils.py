@@ -150,7 +150,7 @@ class OptionEatAll(click.Option):
 
 def multi_options(options):
     map_to_types = dict(
-        array=str,
+        array=list,
         number=float,
         string=str,
     )
@@ -161,7 +161,7 @@ def multi_options(options):
                 "--" + opt_params["long"],
                 opt_params["name"],
             )
-            if "short" in opt_params and not opt_params["short"] is None:
+            if "short" in opt_params and opt_params["short"] is not None:
                 param_decls = ("-" + opt_params["short"], *param_decls)
 
             attrs = dict(

@@ -85,8 +85,18 @@ def connections(ctx):
     flag_value="minikube",  # if --minikube is used as flag, we default to profile 'minikube'
     required=False,
 )
+@click.option(
+    "--mtu",
+    help="The MTU for the Wireguard interface",
+    type=int,
+)
 @standard_error_handler
-def connect_client(client_config, connection_name: str, minikube: Optional[str] = None):
+def connect_client(
+    client_config,
+    connection_name: str,
+    minikube: Optional[str] = None,
+    mtu: int = 1340,
+):
     from alive_progress import alive_bar
     from gefyra import api
 
@@ -113,6 +123,7 @@ def connect_client(client_config, connection_name: str, minikube: Optional[str] 
             connection_name=connection_name,
             client_config=client_config,
             minikube_profile=minikube,
+            mtu=mtu,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "
