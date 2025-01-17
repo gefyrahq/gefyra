@@ -1,5 +1,6 @@
 import click
 
+from gefyra.cli.reverse import reverse
 from gefyra.cli.duplicate import duplicate
 from gefyra.cli.operator import operator
 from gefyra.cli.self import _self
@@ -71,6 +72,7 @@ cli.add_command(cmd=list, name="list")
 cli.add_command(cmd=_self, name="self")
 cli.add_command(cmd=operator, name="operator")
 cli.add_command(cmd=duplicate, name="duplicate")
+cli.add_command(cmd=reverse, name="reverse")
 
 
 def main():
