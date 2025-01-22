@@ -4,6 +4,7 @@ import kubernetes as k8s
 from gefyra.resources.crds import (
     create_gefyraclient_definition,
     create_gefyrabridge_definition,
+    create_shadow_definition,
 )
 from gefyra.resources.events import create_operator_ready_event
 from gefyra.connection.factory import (
@@ -38,6 +39,19 @@ def handle_crds(logger) -> None:
         if e.status == 409:
             logger.warning(
                 "Gefyra CRD gefyraclient already available but might "
+                "be outdated. Please remove it manually if you encounter issues."
+            )
+        else:
+            raise e
+
+    gshadows = create_shadow_definition()
+    try:
+        extension_api.create_custom_resource_definition(body=gshadows)
+        logger.info("Gefyra CRD gefyrashadow created")
+    except k8s.client.exceptions.ApiException as e:
+        if e.status == 409:
+            logger.warning(
+                "Gefyra CRD gefyrashadow already available but might "
                 "be outdated. Please remove it manually if you encounter issues."
             )
         else:
