@@ -360,7 +360,7 @@ jobs:
         name: Create Single Cluster
         with:
           cluster-name: "mycluster"
-          k3d-version: v5.5.1
+          k3d-version: v5.8.1
           args: >-
             --agents 1
             -p "31820:31820/UDP@agent:0"
