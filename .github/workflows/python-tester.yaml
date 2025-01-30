@@ -321,7 +321,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        k3d: [v1.25.16-k3s4, v1.26.15-k3s1, v1.27.16-k3s1, v1.28.15-k3s1, v1.29.13-k3s1, v1.30.9-k3s1, v1.31.5-k3s1, 1.32.1-k3s1]
+        k3d: [v1.25.16-k3s4, v1.26.15-k3s1, v1.27.16-k3s1, v1.28.15-k3s1, v1.29.13-k3s1, v1.30.9-k3s1, v1.31.5-k3s1, v1.32.1-k3s1]
     needs:
       - build_cargo
       - build_operator
