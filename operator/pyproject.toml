@@ -14,7 +14,7 @@ python-statemachine = "^2.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
-black = "^24.10.0"
+black = "^25.1.0"
 flake8 = "^7.1.1"
 flake8-black = "^0.3.6"
 coverage = "<8"
