@@ -217,9 +217,6 @@ jobs:
           - os: ubuntu-latest
             driver: ''
             kubectl_os: linux
-          - os: macos-13
-            driver: virtualbox
-            kubectl_os: darwin
     needs:
       - build_operator
       - build_cargo
