@@ -89,6 +89,7 @@ def connections(ctx):
     "--mtu",
     help="The MTU for the Wireguard interface",
     type=int,
+    default=1340,
 )
 @standard_error_handler
 def connect_client(

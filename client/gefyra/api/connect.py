@@ -52,7 +52,7 @@ def connect(  # noqa: C901
     cargo_container = None
     # if this connection already exists, just restore it
     if connection_name in [conns.name for conns in list_connections()]:
-        logger.debug(f"Restoring exinsting connection {connection_name}")
+        logger.debug(f"Restoring existing connection {connection_name}")
         config = ClientConfiguration(connection_name=connection_name)
         cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
         client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)

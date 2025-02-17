@@ -71,6 +71,7 @@ def _check_and_install(
     help="Set the MTU for the Gefyra network",
     type=int,
     required=False,
+    default=1340,
 )
 @pass_context
 @standard_error_handler
