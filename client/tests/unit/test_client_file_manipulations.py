@@ -85,7 +85,7 @@ def test_b_write_client_file_without_registry_and_mtu(operator: AClusterManager)
 
     client_file_json = json.loads(client_file_str)
 
-    assert client_file_json["wireguard_mtu"] is None
+    assert client_file_json["wireguard_mtu"] == "1340"
     assert client_file_json["registry"] is None
 
 
