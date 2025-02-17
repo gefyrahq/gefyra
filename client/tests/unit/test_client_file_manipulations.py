@@ -59,7 +59,37 @@ def test_a_write_client_file(operator: AClusterManager):
     assert client_file_json["wireguard_mtu"] == "1340"
 
 
-def test_a_write_client_file_with_registry_and_mtu(operator: AClusterManager):
+def test_b_write_client_file_without_registry_and_mtu(operator: AClusterManager):
+    k3d = operator
+
+    client_a: GefyraClient = k3d.kubectl(
+        ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
+    )
+
+    assert client_a["state"] is not None
+
+    k3d.wait(
+        "gefyraclients.gefyra.dev/client-a",
+        "jsonpath=.state=ACTIVE",
+        namespace="gefyra",
+        timeout=20,
+    )
+
+    client_file_str = write_client_file(
+        client_id="client-a",
+        host="localhost",
+        port="31820",
+        kubeconfig=k3d.kubeconfig,
+        kubecontext=k3d.context,
+    )
+
+    client_file_json = json.loads(client_file_str)
+
+    assert client_file_json["wireguard_mtu"] is None
+    assert client_file_json["registry"] is None
+
+
+def test_c_write_client_file_with_registry_and_mtu(operator: AClusterManager):
     k3d = operator
 
     client_a: GefyraClient = k3d.kubectl(
@@ -86,8 +116,6 @@ def test_a_write_client_file_with_registry_and_mtu(operator: AClusterManager):
     )
 
     client_file_json = json.loads(client_file_str)
-
-    print(client_file_json)
 
     assert client_file_json["wireguard_mtu"] == "570"
     assert client_file_json["registry"] == "kuchen.io/gefyra"
