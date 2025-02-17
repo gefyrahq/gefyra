@@ -26,8 +26,8 @@ class GefyraClientConfig:
     namespace: str
     ca_crt: str
     gefyra_server: str
-    registry: Optional[str]
-    wireguard_mtu: Optional[str]
+    registry: Optional[str] = None
+    wireguard_mtu: Optional[str] = None
 
     @property
     def json(self):
