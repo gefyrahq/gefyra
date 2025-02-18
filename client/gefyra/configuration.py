@@ -60,14 +60,14 @@ class ClientConfiguration(object):
         cargo_endpoint_host: str = "",
         cargo_endpoint_port: str = "31820",
         cargo_container_name: str = "",
-        registry: str = "",
+        registry: Optional[str] = "",
         operator_image_url: str = "",
         stowaway_image_url: str = "",
         carrier_image_url: str = "",
         cargo_image_url: str = "",
         kube_config_file: Optional[Path] = None,
         kube_context: Optional[str] = None,
-        wireguard_mtu: str = "1340",
+        wireguard_mtu: Optional[str] = None,
         client_id: str = "",
         gefyra_config_root: Optional[Union[str, Path]] = None,
         ignore_connection: bool = False,  # work with kubeconfig not connection
@@ -150,7 +150,10 @@ class ClientConfiguration(object):
         if kube_context:
             self.KUBE_CONTEXT = kube_context
 
-        self.WIREGUARD_MTU = wireguard_mtu
+        if not wireguard_mtu:
+            self.WIREGUARD_MTU = "1340"
+        else:
+            self.WIREGUARD_MTU = wireguard_mtu
         if not gefyra_config_root:
             self.GEFYRA_LOCATION = Path.home().joinpath(".gefyra")
         else:
