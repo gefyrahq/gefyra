@@ -125,6 +125,7 @@ def inspect_client(ctx, client_id):
     "--mtu",
     help="The MTU for the Wireguard interface",
     type=int,
+    default=1340,
 )
 @click.pass_context
 @standard_error_handler

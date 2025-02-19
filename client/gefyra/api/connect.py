@@ -43,7 +43,7 @@ def connect(  # noqa: C901
     connection_name: str,
     client_config: Optional[IO],
     minikube_profile: Optional[str] = None,
-    mtu: Optional[int] = None,
+    mtu: Optional[int] = 1340,
     probe_timeout: int = 60,
 ) -> bool:
     import kubernetes
@@ -52,7 +52,7 @@ def connect(  # noqa: C901
     cargo_container = None
     # if this connection already exists, just restore it
     if connection_name in [conns.name for conns in list_connections()]:
-        logger.debug(f"Restoring exinsting connection {connection_name}")
+        logger.debug(f"Restoring existing connection {connection_name}")
         config = ClientConfiguration(connection_name=connection_name)
         cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
         client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)
@@ -97,7 +97,7 @@ def connect(  # noqa: C901
             cargo_endpoint_host=gclient_conf.gefyra_server.split(":")[0],
             cargo_endpoint_port=gclient_conf.gefyra_server.split(":")[1],
             cargo_container_name=f"gefyra-cargo-{connection_name}",
-            wireguard_mtu=gclient_conf.wireguard_mtu or mtu,
+            wireguard_mtu=gclient_conf.wireguard_mtu or (str(mtu) if mtu else None),
         )
 
         gclient = handle_get_gefyraclient(config, gclient_conf.client_id)

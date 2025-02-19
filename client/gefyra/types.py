@@ -26,8 +26,8 @@ class GefyraClientConfig:
     namespace: str
     ca_crt: str
     gefyra_server: str
-    registry: Optional[str]
-    wireguard_mtu: Optional[str]
+    registry: Optional[str] = None
+    wireguard_mtu: Optional[str] = "1340"
 
     @property
     def json(self):
@@ -164,7 +164,7 @@ class GefyraClient:
         gefyra_server: str,
         k8s_server: str = "",
         registry: Optional[str] = None,
-        wireguard_mtu: Optional[int] = None,
+        wireguard_mtu: Optional[int] = 1340,
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
@@ -178,7 +178,8 @@ class GefyraClient:
                 ca_crt=self.service_account["ca.crt"],
                 gefyra_server=gefyra_server,
                 registry=registry,
-                wireguard_mtu=str(wireguard_mtu),
+                # if somehow the mtu is not given make sure to have null as json value
+                wireguard_mtu=str(wireguard_mtu) if wireguard_mtu else None,
             )
         else:
             raise ClientConfigurationError(
