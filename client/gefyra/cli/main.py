@@ -25,8 +25,9 @@ from gefyra.cli.utils import AliasedGroup
     help="Context of the kubeconfig file to use instead of 'default'",
 )
 @click.option("-d", "--debug", default=False, is_flag=True)
+@click.option("-k", "--debug-kubernetes", default=False, is_flag=True)
 @click.pass_context
-def cli(ctx: click.Context, kubeconfig, context, debug):
+def cli(ctx: click.Context, kubeconfig, context, debug, debug_kubernetes):
     import logging
     from gefyra.cli.telemetry import CliTelemetry
 
@@ -42,6 +43,13 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
         logging.getLogger("gefyra").setLevel(logging.DEBUG)
     else:
         logging.getLogger("gefyra").setLevel(logging.ERROR)
+
+    if debug_kubernetes:
+        from kubernetes.client import Configuration
+
+        k8s_client_config = Configuration.get_default_copy()
+        k8s_client_config.debug = True
+        Configuration.set_default(k8s_client_config)
 
     ctx.ensure_object(dict)
 
