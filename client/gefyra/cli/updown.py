@@ -21,7 +21,7 @@ def _check_and_install(
     preset: Optional[str] = None,
     bar=None,
     registry: Optional[str] = None,
-    mtu: Optional[int] = None,
+    mtu: Optional[str] = None,
 ) -> bool:
     status = api.status(connection_name=connection_name)
 
@@ -80,7 +80,7 @@ def cluster_up(
     minikube: Optional[str] = None,
     preset: Optional[str] = None,
     registry: Optional[str] = None,
-    mtu: Optional[int] = None,
+    mtu: Optional[int] = 1340,
 ):
     from alive_progress import alive_bar
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
@@ -102,7 +102,7 @@ def cluster_up(
         kube_config_file=kubeconfig,
         kube_context=kubecontext,
         registry=registry,
-        wireguard_mtu=mtu,
+        wireguard_mtu=str(mtu) if mtu else None,
     )
     with alive_bar(
         4,

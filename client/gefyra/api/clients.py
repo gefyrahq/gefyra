@@ -108,7 +108,7 @@ def write_client_file(
         kube_config_file=kubeconfig,
         kube_context=kubecontext,
         registry=registry,
-        wireguard_mtu=wireguard_mtu,
+        wireguard_mtu=str(wireguard_mtu) if wireguard_mtu else None,
     )
     client = get_client(
         client_id, kubeconfig=config.KUBE_CONFIG_FILE, kubecontext=config.KUBE_CONTEXT
