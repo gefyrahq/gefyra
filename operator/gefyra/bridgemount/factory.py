@@ -1,8 +1,8 @@
 from enum import Enum
 
 from gefyra.configuration import OperatorConfiguration
-from gefyra.shadow.abstract import AbstractGefyraShadowProvider
-from gefyra.shadow.duplicate import DuplicateBuilder
+from gefyra.bridgemount.abstract import AbstractGefyraBridgeMountProvider
+from gefyra.bridgemount.duplicate import DuplicateBuilder
 
 
 class ShadowProviderType(Enum):
@@ -42,7 +42,7 @@ class GefyraShadowFactory:
         target_container: str,
         logger,
         **kwargs
-    ) -> AbstractGefyraShadowProvider:
+    ) -> AbstractGefyraBridgeMountProvider:
         return self.__create(
             provider_type,
             configuration,

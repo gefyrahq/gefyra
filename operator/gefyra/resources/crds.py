@@ -170,7 +170,7 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
     return crd
 
 
-def create_shadow_definition() -> k8s.client.V1CustomResourceDefinition:
+def create_bridge_mount_definition() -> k8s.client.V1CustomResourceDefinition:
     schema_props = k8s.client.V1JSONSchemaProps(
         type="object",
         properties={
@@ -180,12 +180,7 @@ def create_shadow_definition() -> k8s.client.V1CustomResourceDefinition:
                 type="string"
             ),  # target workload to intercept
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
-            # the traffic destinations for this bridge
-            "portMappings": k8s.client.V1JSONSchemaProps(
-                type="array",
-                default=[],
-                items=k8s.client.V1JSONSchemaProps(type="string"),
-            ),
+            "provider": k8s.client.V1JSONSchemaProps(type="string"),
             "sunset": k8s.client.V1JSONSchemaProps(type="string"),
             "state": k8s.client.V1JSONSchemaProps(type="string", default="REQUESTED"),
             "stateTransitions": k8s.client.V1JSONSchemaProps(
@@ -200,9 +195,9 @@ def create_shadow_definition() -> k8s.client.V1CustomResourceDefinition:
     def_spec = k8s.client.V1CustomResourceDefinitionSpec(
         group="gefyra.dev",
         names=k8s.client.V1CustomResourceDefinitionNames(
-            kind="gefyrashadow",
-            plural="gefyrashadows",
-            short_names=["gshadow", "gshadows"],
+            kind="gefyrabridgemount",
+            plural="gefyrabridgemounts",
+            short_names=["gbridgemount", "gbridgemounts"],
         ),
         scope="Namespaced",
         versions=[
@@ -222,7 +217,7 @@ def create_shadow_definition() -> k8s.client.V1CustomResourceDefinition:
         kind="CustomResourceDefinition",
         spec=def_spec,
         metadata=k8s.client.V1ObjectMeta(
-            name="gefyrashadow.gefyra.dev",
+            name="gefyrabridgemount.gefyra.dev",
             namespace=configuration.NAMESPACE,
             finalizers=[],
         ),
