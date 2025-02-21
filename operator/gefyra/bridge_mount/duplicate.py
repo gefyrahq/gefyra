@@ -3,7 +3,7 @@ from kubernetes.client import (
     V1Deployment,
 )
 
-from gefyra.bridgemount.abstract import AbstractGefyraBridgeMountProvider
+from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
 from gefyra.configuration import OperatorConfiguration
 
 app = k8s.client.AppsV1Api()
@@ -78,9 +78,12 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         # Create the new deployment
         app.create_namespaced_deployment(namespace, new_deployment)
 
+    def prepare(self):
+        self._duplicate_deployment(self.target, self.namespace)
+
     def install(self):
         # TODO extend to StatefulSet and Pods
-        self._duplicate_deployment(self.target, self.namespace)
+        pass
 
     def ready(self):
         return super().ready()

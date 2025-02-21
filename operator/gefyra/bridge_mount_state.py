@@ -7,8 +7,8 @@ from statemachine import State, StateMachine
 
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
-from gefyra.bridgemount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.bridgemount.duplicate import DuplicateBridgeMount
+from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
+from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
 
 class GefyraBridgeMountObject(GefyraStateObject):
@@ -24,18 +24,18 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     plural = "gefyrabridgemounts"
 
     requested = State("Bridge Mount requested", initial=True, value="REQUESTED")
+    preparing = State("Bridge Mount preparing", value="PREPARING")
     installing = State("Bridge Mount installing", value="INSTALLING")
-    # preparing = State("Bridge Mount preparing", value="PREPARING")  # needed?
     active = State("Bridge Mount active", value="ACTIVE")
     removing = State("Bridge Mount removing", value="REMOVING")
-    restoring = State("Bridge Mount restoring Pod", value="RESTORING")
+    restoring = State("Bridge Mount restoring workload", value="RESTORING")
     error = State("Bridge Mount error", value="ERROR")
     terminated = State("Bridge Mount terminated", value="TERMINATED")
 
-    install = requested.to(installing) | error.to(installing)
-
+    prepare = requested.to(preparing) | error.to(preparing) | preparing.to.itself()
+    install = preparing.to(installing) | installing.to.itself()
     activate = installing.to(active) | active.to.itself()
-    remove = active.to(removing) | error.to(removing) | removing.to.itself()
+
     restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
     impair = error.from_(requested, installing, active, removing, active, error)
     terminate = (
@@ -69,13 +69,14 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         It creates a Gefyra shadow provider object based on the provider type
         :return: The shadow provider is being returned.
         """
-        return DuplicateBridgeMount(
+        res: AbstractGefyraBridgeMountProvider = DuplicateBridgeMount(
             self.configuration,
             self.data["targetNamespace"],
             self.data["target"],
             self.data["targetContainer"],
             self.logger,
         )
+        return res
 
     @property
     def sunset(self) -> Optional[datetime]:
@@ -95,6 +96,9 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             return True
         else:
             return False
+
+    def on_prepare(self):
+        self.bridge_mount_provider.prepare()
 
     def on_install(self):
         self.bridge_mount_provider.install()

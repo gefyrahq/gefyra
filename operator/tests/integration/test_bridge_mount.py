@@ -4,7 +4,7 @@ from pytest_kubernetes.providers import AClusterManager
 
 class TestBridgeMountObject:
     def test_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
-        from gefyra.bridgemount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
         file_path = str(
             Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()
@@ -37,7 +37,7 @@ class TestBridgeMountObject:
         )
 
     def test_removal_of_bridge_mount(self, gefyra_crd: AClusterManager):
-        from gefyra.bridgemount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
         name = "nginx-deployment"
         namespace = "default"

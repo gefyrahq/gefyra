@@ -1,8 +1,8 @@
 from enum import Enum
 
 from gefyra.configuration import OperatorConfiguration
-from gefyra.bridgemount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.bridgemount.duplicate import DuplicateBuilder
+from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
+from gefyra.bridge_mount.duplicate import DuplicateBuilder
 
 
 class ShadowProviderType(Enum):

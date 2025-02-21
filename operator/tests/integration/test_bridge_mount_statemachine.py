@@ -6,8 +6,8 @@ from pytest_kubernetes.providers import AClusterManager
 
 class TestBridgeMountObject:
     def test_duplication_by_bridge_mount_install(self, gefyra_crd: AClusterManager):
-        from gefyra.bridgemountstate import GefyraBridgeMount
-        from gefyra.bridgemountstate import GefyraBridgeMountObject
+        from operator.gefyra.bridge_mountstate import GefyraBridgeMount
+        from operator.gefyra.bridge_mountstate import GefyraBridgeMountObject
 
         file_path = str(
             Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()
@@ -32,6 +32,8 @@ class TestBridgeMountObject:
             logger=None,
         )
         assert bridge_mount_machine.requested.is_active
+        bridge_mount_machine.prepare()
+        assert bridge_mount_machine.preparing.is_active
         bridge_mount_machine.install()
         assert bridge_mount_machine.installing.is_active
 

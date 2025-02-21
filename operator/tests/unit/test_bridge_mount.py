@@ -8,7 +8,7 @@ from kubernetes.client import (
     V1PodTemplateSpec,
 )
 
-from gefyra.bridgemount.duplicate import DuplicateBridgeMount
+from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
 
 class TestBridgeMountObject(TestCase):

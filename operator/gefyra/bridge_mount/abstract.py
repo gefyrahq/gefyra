@@ -7,9 +7,16 @@ class AbstractGefyraBridgeMountProvider(ABC):
     provider_type = ""
 
     @abstractmethod
-    def install(self):
+    def install(self) -> None:
         """
-        Install this Gefyra bridgemount provider to the Kubernetes Pod
+        Install this Gefyra bridgemount provider to the Kubernetes Resource
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def prepare(self) -> None:
+        """
+        Prepare this Gefyra bridgemount provider to the Kubernetes Resource
         """
         raise NotImplementedError
 
@@ -21,7 +28,7 @@ class AbstractGefyraBridgeMountProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def uninstall(self):
+    def uninstall(self) -> None:
         """
         Uninstall this Gefyra bridgemount provider from the Kubernetes Pod
         """
