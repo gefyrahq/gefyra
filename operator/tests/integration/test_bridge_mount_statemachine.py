@@ -6,8 +6,8 @@ from pytest_kubernetes.providers import AClusterManager
 
 class TestBridgeMountObject:
     def test_duplication_by_bridge_mount_install(self, gefyra_crd: AClusterManager):
-        from operator.gefyra.bridge_mountstate import GefyraBridgeMount
-        from operator.gefyra.bridge_mountstate import GefyraBridgeMountObject
+        from gefyra.bridge_mount_state import GefyraBridgeMount
+        from gefyra.bridge_mount_state import GefyraBridgeMountObject
 
         file_path = str(
             Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()

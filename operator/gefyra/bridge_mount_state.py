@@ -27,7 +27,6 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     preparing = State("Bridge Mount preparing", value="PREPARING")
     installing = State("Bridge Mount installing", value="INSTALLING")
     active = State("Bridge Mount active", value="ACTIVE")
-    removing = State("Bridge Mount removing", value="REMOVING")
     restoring = State("Bridge Mount restoring workload", value="RESTORING")
     error = State("Bridge Mount error", value="ERROR")
     terminated = State("Bridge Mount terminated", value="TERMINATED")
@@ -37,12 +36,11 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     activate = installing.to(active) | active.to.itself()
 
     restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
-    impair = error.from_(requested, installing, active, removing, active, error)
+    impair = error.from_(requested, installing, active, active, error)
     terminate = (
         requested.to(terminated)
         | installing.to(terminated)
         | active.to(terminated)
-        | removing.to(terminated)
         | restoring.to(terminated)
         | error.to(terminated)
         | terminated.to.itself()
