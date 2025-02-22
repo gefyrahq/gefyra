@@ -1,10 +1,13 @@
+import logging
 from unittest.mock import MagicMock
 
 from pathlib import Path
 from pytest_kubernetes.providers import AClusterManager
 
+logger = logging.getLogger()
 
-class TestBridgeMountObject:
+
+class TestBridgeMountStateMachine:
     def test_duplication_by_bridge_mount_install(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount_state import GefyraBridgeMount
         from gefyra.bridge_mount_state import GefyraBridgeMountObject
@@ -29,13 +32,10 @@ class TestBridgeMountObject:
         bridge_mount_machine = GefyraBridgeMount(
             model=bridge_mount_object,
             configuration=None,
-            logger=None,
+            logger=logger,
         )
         assert bridge_mount_machine.requested.is_active
         bridge_mount_machine.prepare()
-        assert bridge_mount_machine.preparing.is_active
-        bridge_mount_machine.install()
-        assert bridge_mount_machine.installing.is_active
 
         gefyra_crd.wait(
             "deployment/" + name + "-gefyra",
@@ -43,5 +43,13 @@ class TestBridgeMountObject:
             namespace=namespace,
             timeout=60,
         )
-        bridge_mount_machine.activate()
         assert bridge_mount_machine.active.is_active
+
+        bridge_mount_machine.terminate()
+        gefyra_crd.wait(
+            "deployment/" + name + "-gefyra",
+            "delete",
+            namespace=namespace,
+            timeout=60,
+        )
+        assert bridge_mount_machine.terminated.is_active

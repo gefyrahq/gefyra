@@ -21,6 +21,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         target: str,
         target_container: str,
         logger,
+        **kwargs,
     ) -> None:
         self.configuration = configuration
         self.namespace = target_namespace
@@ -96,4 +97,4 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         app.delete_namespaced_deployment(gefyra_deployment_name, namespace)
 
     def uninstall(self):
-        self.uninstall_deployment(self.target, self.namespace)
+        self.uninstall_deployment(deployment_name=self.target, namespace=self.namespace)

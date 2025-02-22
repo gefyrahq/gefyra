@@ -181,6 +181,9 @@ def create_bridge_mount_definition() -> k8s.client.V1CustomResourceDefinition:
             ),  # target workload to intercept
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
             "provider": k8s.client.V1JSONSchemaProps(type="string"),
+            "providerParameter": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
             "sunset": k8s.client.V1JSONSchemaProps(type="string"),
             "state": k8s.client.V1JSONSchemaProps(type="string", default="REQUESTED"),
             "stateTransitions": k8s.client.V1JSONSchemaProps(
@@ -217,7 +220,7 @@ def create_bridge_mount_definition() -> k8s.client.V1CustomResourceDefinition:
         kind="CustomResourceDefinition",
         spec=def_spec,
         metadata=k8s.client.V1ObjectMeta(
-            name="gefyrabridgemount.gefyra.dev",
+            name="gefyrabridgemounts.gefyra.dev",
             namespace=configuration.NAMESPACE,
             finalizers=[],
         ),

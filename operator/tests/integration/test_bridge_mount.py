@@ -1,5 +1,8 @@
+import logging
 from pathlib import Path
 from pytest_kubernetes.providers import AClusterManager
+
+logger = logging.getLogger()
 
 
 class TestBridgeMountObject:
@@ -18,9 +21,9 @@ class TestBridgeMountObject:
             target_namespace=namespace,
             target=name,
             target_container="nginx",
-            logger=None,
+            logger=logger,
         )
-        mount.install()
+        mount.prepare()
 
         new_deployment = gefyra_crd.kubectl(
             ["-n", namespace, "get", "deploy", name + "-gefyra"]

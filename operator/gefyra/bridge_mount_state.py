@@ -59,22 +59,25 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         self.logger = logger
         self.custom_api = k8s.client.CustomObjectsApi()
         self.events_api = k8s.client.EventsV1Api()
-        self._bridge_mount_provider = None
+        self._bridge_mount_provider: Optional[AbstractGefyraBridgeMountProvider] = None
 
     @property
     def bridge_mount_provider(self) -> AbstractGefyraBridgeMountProvider:
         """
-        It creates a Gefyra shadow provider object based on the provider type
-        :return: The shadow provider is being returned.
+        It creates a Gefyra bridge mount provider object based on the provider type
+        :return: The bridge mount provider is being returned.
         """
-        res: AbstractGefyraBridgeMountProvider = DuplicateBridgeMount(
-            self.configuration,
-            self.data["targetNamespace"],
-            self.data["target"],
-            self.data["targetContainer"],
-            self.logger,
-        )
-        return res
+        if not self._bridge_mount_provider:
+            self._bridge_mount_provider: AbstractGefyraBridgeMountProvider = (
+                DuplicateBridgeMount(
+                    configuration=self.configuration,
+                    target_namespace=self.data["targetNamespace"],
+                    target=self.data["target"],
+                    target_container=self.data["targetContainer"],
+                    logger=self.logger,
+                )
+            )
+        return self._bridge_mount_provider
 
     @property
     def sunset(self) -> Optional[datetime]:
@@ -97,11 +100,12 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
 
     def on_prepare(self):
         self.bridge_mount_provider.prepare()
+        self.send("install")
 
     def on_install(self):
         self.bridge_mount_provider.install()
+        self.send("activate")
 
     def on_terminate(self):
         self.logger.info(f"GefyraBridgeMount '{self.object_name}' is being removed")
         self.bridge_mount_provider.uninstall()
-        self.send("terminate")
