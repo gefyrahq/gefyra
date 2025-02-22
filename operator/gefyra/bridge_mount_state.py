@@ -98,6 +98,13 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         else:
             return False
 
+    @property
+    def is_intact(self) -> bool:
+        return self.bridge_mount_provider.is_intact()
+
+    def on_restore(self):
+        self.bridge_mount_provider.restore()
+
     def on_prepare(self):
         self.logger.info("Preparing GefyraBridgeMount '{self.object_name}'")
         self.bridge_mount_provider.prepare()

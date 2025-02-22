@@ -46,6 +46,10 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             if key not in ANNOTATION_FILTER
         }
 
+    @property
+    def _gefyra_workload_name(self) -> str:
+        return f"{self.target}-gefyra"
+
     def _clone_deployment_structure(self, deployment: V1Deployment) -> V1Deployment:
         new_deployment = deployment
 
@@ -79,11 +83,28 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         # Create the new deployment
         app.create_namespaced_deployment(namespace, new_deployment)
 
+    @property
+    def is_instact(self):
+        try:
+            deployment = app.read_namespaced_deployment(
+                self._gefyra_workload_name, self.namespace
+            )
+            deployment.metadata
+            # TODO check image
+        except Exception:
+            return False
+        return True
+
     def prepare(self):
         self._duplicate_deployment(self.target, self.namespace)
 
     def install(self):
         # TODO extend to StatefulSet and Pods
+        pass
+
+    def restore(self):
+        # do we need to check the deployment for the image or the actual pods?
+        # the pods should be based on the deployment right?
         pass
 
     def ready(self):
@@ -92,9 +113,9 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def validate(self, brige_request):
         return super().validate(brige_request)
 
-    def uninstall_deployment(self, deployment_name: str, namespace: str) -> None:
-        gefyra_deployment_name = f"{deployment_name}-gefyra"
-        app.delete_namespaced_deployment(gefyra_deployment_name, namespace)
+    def uninstall_deployment(self) -> None:
+        gefyra_deployment_name = self._gefyra_workload_name
+        app.delete_namespaced_deployment(gefyra_deployment_name, self.namespace)
 
     def uninstall(self):
-        self.uninstall_deployment(deployment_name=self.target, namespace=self.namespace)
+        self.uninstall_deployment()
