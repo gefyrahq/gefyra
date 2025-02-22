@@ -4,7 +4,7 @@
 The Gefyra bridge object describes the dispatching configuration for Carrier2.
 We always want a default upstream: the shaddow deployment created for a GefyraMount object.
 Every Gefyra user bridge is subsequently added to Carrier2 to match certain HTTP attributes, for example
-a header value or a path prefix, and directed to the local Gefyra client.
+a header value or a path prefix. Matched traffic will be directed to the local Gefyra client container.
 
 
 ### Example Config and Structure
@@ -12,9 +12,9 @@ a header value or a path prefix, and directed to the local Gefyra client.
 version: 1
 port: 8080
 clusterUpstream: 
-    - "podname.target-ns.pod.cluster.local:8000"
-    - "10.28.100.46:8000"
-    - "10.28.100.66:8000"  # the pods serving the cluster traffic, replication 3
+    - "podname1.target-ns.pod.cluster.local:8000"
+    - "podname2.target-ns.pod.cluster.local:8000"
+    - "podname3.target-ns.pod.cluster.local:8000"  # the pods serving the cluster traffic, replication 3
 httpGetProbes: 
     - 8001
     - 8002
@@ -26,6 +26,20 @@ bridges:
             - matchHeader:
                 name: "x-gefyra"
                 value: "user-1"
+              matchPath: 
+                path: "/my-svc"
+                type: "prefix"
+            # or
+            - matchPath:
+                path: "/always"
+                type: "prefix"
+    user-2:
+        endpoint: "stowaway-port-10002.gefyra.svc.cluster.local:10001"
+        rules:
+            # and
+            - matchHeader:
+                name: "x-gefyra"
+                value: "user-2"
               matchPath: 
                 path: "/my-svc"
                 type: "prefix"
