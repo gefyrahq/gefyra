@@ -99,6 +99,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             return False
 
     def on_prepare(self):
+        self.logger.info("Preparing GefyraBridgeMount '{self.object_name}'")
         self.bridge_mount_provider.prepare()
         self.send("install")
 
