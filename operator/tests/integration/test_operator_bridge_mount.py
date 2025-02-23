@@ -29,16 +29,56 @@ def test_a_create_bridge_mount(operator: AClusterManager):
         namespace="default",
         timeout=60,
     )
-    pod = k3d.kubectl(
-        ["-n", "default", "get", "pod", "-l", "app=nginx-gefyra", "-o", "json"]
-    )
+    pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
     assert (
         pod["items"][0]["spec"]["containers"][0]["image"]
         == "quay.io/gefyra/carrier2:latest"
     )
 
 
-def test_b_bridge_mount_terminate(operator: AClusterManager):
+def test_b_change_deployment_replicas(operator: AClusterManager):
+    k3d = operator
+    k3d.kubectl(
+        [
+            "-n",
+            "default",
+            "scale",
+            "deployment/nginx-deployment",
+            "--replicas=2",
+        ],
+        as_dict=False,
+    )
+    k3d.wait(
+        "deployment/nginx-deployment",
+        "jsonpath='{.status.readyReplicas}'=2",
+        namespace="default",
+        timeout=60,
+    )
+    # Operator recognizes the change and updates the bridge mount
+    k3d.wait(
+        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
+        "jsonpath=.state=RESTORING",
+        namespace="gefyra",
+        timeout=60,
+    )
+    k3d.wait(
+        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
+        "jsonpath=.state=ACTIVE",
+        namespace="gefyra",
+        timeout=60,
+    )
+    pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
+    assert (
+        pod["items"][0]["spec"]["containers"][0]["image"]
+        == "quay.io/gefyra/carrier2:latest"
+    )
+    assert (
+        pod["items"][1]["spec"]["containers"][0]["image"]
+        == "quay.io/gefyra/carrier2:latest"
+    )
+
+
+def test_c_bridge_mount_terminate(operator: AClusterManager):
     k3d = operator
     k3d.kubectl(
         [

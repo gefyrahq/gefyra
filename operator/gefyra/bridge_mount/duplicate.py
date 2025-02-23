@@ -47,7 +47,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
     @property
     def _carrier_image(self):
-        return self.configuration.CARRIER2_IMAGE
+        return f"{self.configuration.CARRIER2_IMAGE}:{self.configuration.CARRIER2_IMAGE_TAG}"
 
     @property
     def _gefyra_workload_name(self) -> str:
@@ -90,9 +90,17 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self._duplicate_deployment(self.target, self.namespace)
 
     @cached_property
-    def _relevant_pods(self) -> V1PodList:
+    def _gefyra_pods(self) -> V1PodList:
         return self._get_pods_workload(
             name=self._gefyra_workload_name,
+            namespace=self.namespace,
+            workload_type="deployment",
+        )
+
+    @cached_property
+    def _original_pods(self) -> V1PodList:
+        return self._get_pods_workload(
+            name=self.target,
             namespace=self.namespace,
             workload_type="deployment",
         )
@@ -135,7 +143,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
     def install(self):
         # TODO extend to StatefulSet and Pods
-        for pod in self._relevant_pods.items:
+        for pod in self._original_pods.items:
             for container in pod.spec.containers:
                 if container.name == self.container:
                     # TODO
@@ -152,17 +160,14 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                     #             " supported by Gefyra"
                     #         )
                     #         return False, pod)
-                    if (
-                        container.image
-                        == f"{self.configuration.CARRIER2_IMAGE}:{self.configuration.CARRIER2_IMAGE_TAG}"
-                    ):
+                    if container.image == self._carrier_image:
                         # this pod/container is already running Carrier
                         self.logger.info(
                             f"The container {self.container} in Pod {pod} is already"
                             " running Carrier2"
                         )
                     # self._store_pod_original_config(container)
-                    container.image = f"{self.configuration.CARRIER2_IMAGE}:{self.configuration.CARRIER2_IMAGE_TAG}"
+                    container.image = self._carrier_image
                     break
             else:
                 raise RuntimeError(
@@ -178,7 +183,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     @property
     def _carrier_installed(self):
         res = True
-        for pod in self._relevant_pods.items:
+        for pod in self._original_pods.items:
             for container in pod.spec.containers:
                 if container.name == self.container:
                     res = res and container.image == self._carrier_image
@@ -206,13 +211,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def _duplicated_pods_ready(self):
         return all(
             self.pod_ready_and_healthy(pod, self.container)
-            for pod in self._relevant_pods.items
+            for pod in self._gefyra_pods.items
         )
-
-    def restore(self):
-        # do we need to check the deployment for the image or the actual pods?
-        # the pods should be based on the deployment right?
-        pass
 
     def prepared(self):
         return self._duplicated_pods_ready

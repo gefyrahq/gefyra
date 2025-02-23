@@ -31,8 +31,15 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     error = State("Bridge Mount error", value="ERROR")
     terminated = State("Bridge Mount terminated", value="TERMINATED")
 
-    prepare = requested.to(preparing) | error.to(preparing) | preparing.to.itself()
-    install = preparing.to(installing) | installing.to.itself()
+    prepare = (
+        restoring.to(preparing)
+        | requested.to(preparing)
+        | error.to(preparing)
+        | preparing.to.itself()
+    )
+    install = (
+        restoring.to(preparing) | preparing.to(installing) | installing.to.itself()
+    )
     activate = installing.to(active) | active.to.itself()
 
     restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
@@ -96,10 +103,18 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
 
     @property
     def is_intact(self) -> bool:
-        return self.bridge_mount_provider.is_intact()
+        return (
+            self.bridge_mount_provider.prepared() and self.bridge_mount_provider.ready()
+        )
 
     def on_restore(self):
-        self.bridge_mount_provider.restore()
+        self.logger.warning(
+            f"Problem detected. Restoring GefyraBridgeMount '{self.object_name}'"
+        )
+        if not self.bridge_mount_provider.prepared():
+            self.send("prepare")
+        elif not self.bridge_mount_provider.ready():
+            self.send("install")
 
     def on_prepare(self):
         self.logger.info("Preparing GefyraBridgeMount '{self.object_name}'")

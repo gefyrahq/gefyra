@@ -56,11 +56,9 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             bridge_mount.activate()
         elif bridge_mount.error.is_active:
             bridge_mount.restore()
-        elif bridge_mount.restoring.is_active:
-            bridge_mount.activate()
         elif bridge_mount.active.is_active:
             # check if all is good
-            # if not set to impaired
-            pass
+            if not bridge_mount.is_intact:
+                bridge_mount.restore()
     except TransitionNotAllowed as e:
         raise kopf.TemporaryError(f"Transition not allowed: {e}", delay=3)
