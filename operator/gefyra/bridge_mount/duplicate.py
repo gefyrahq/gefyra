@@ -184,6 +184,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                     res = res and container.image == self._carrier_image
         return res
 
+    # TODO this util exists in the client aswell
+    # maybe refactor
     def pod_ready_and_healthy(self, pod: V1Pod, container_name: str) -> bool:
         if not pod.status.container_statuses:
             return False
