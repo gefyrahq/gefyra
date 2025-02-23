@@ -10,6 +10,7 @@ from kubernetes.client import (
     V1LabelSelector,
     V1PodTemplateSpec,
     V1Pod,
+    V1PodList,
     V1PodSpec,
     V1Container,
 )
@@ -104,22 +105,24 @@ class TestBridgeMountObject(TestCase):
                 ),
             ),
         )
-        core_v1_api.list_namespaced_pod.return_value = [
-            V1Pod(
-                metadata=V1ObjectMeta(
-                    name="nginx-123",
-                    labels={"app": "nginx"},
-                ),
-                spec=V1PodSpec(
-                    containers=[
-                        V1Container(
-                            name="nginx",
-                            image="nginx",
-                        )
-                    ],
-                ),
-            )
-        ]
+        core_v1_api.list_namespaced_pod.return_value = V1PodList(
+            items=[
+                V1Pod(
+                    metadata=V1ObjectMeta(
+                        name="nginx-123",
+                        labels={"app": "nginx"},
+                    ),
+                    spec=V1PodSpec(
+                        containers=[
+                            V1Container(
+                                name="nginx",
+                                image="nginx",
+                            )
+                        ],
+                    ),
+                )
+            ]
+        )
         mount = DuplicateBridgeMount(
             configuration=OperatorConfiguration(),
             target_namespace="default",
