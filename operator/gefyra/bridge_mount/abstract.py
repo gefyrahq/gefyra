@@ -28,6 +28,13 @@ class AbstractGefyraBridgeMountProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def prepared(self) -> bool:
+        """
+        Check if this Gefyra bridgemount provider is prepared for bridgemounts
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def uninstall(self) -> None:
         """
         Uninstall this Gefyra bridgemount provider from the Kubernetes Pod

@@ -16,7 +16,7 @@ def test_a_create_bridge_mount(operator: AClusterManager):
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=ACTIVE",
         namespace="gefyra",
-        timeout=20,
+        timeout=60,
     )
     bridge_mount_obj = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyrabridgemounts.gefyra.dev", "bridgemount-a"]
@@ -28,6 +28,13 @@ def test_a_create_bridge_mount(operator: AClusterManager):
         "jsonpath='{.status.readyReplicas}'=1",
         namespace="default",
         timeout=60,
+    )
+    pod = k3d.kubectl(
+        ["-n", "default", "get", "pod", "-l", "app=nginx-gefyra", "-o", "json"]
+    )
+    assert (
+        pod["items"][0]["spec"]["containers"][0]["image"]
+        == "quay.io/gefyra/carrier2:latest"
     )
 
 

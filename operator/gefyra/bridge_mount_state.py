@@ -67,17 +67,13 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         It creates a Gefyra bridge mount provider object based on the provider type
         :return: The bridge mount provider is being returned.
         """
-        if not self._bridge_mount_provider:
-            self._bridge_mount_provider: AbstractGefyraBridgeMountProvider = (
-                DuplicateBridgeMount(
-                    configuration=self.configuration,
-                    target_namespace=self.data["targetNamespace"],
-                    target=self.data["target"],
-                    target_container=self.data["targetContainer"],
-                    logger=self.logger,
-                )
-            )
-        return self._bridge_mount_provider
+        return DuplicateBridgeMount(
+            configuration=self.configuration,
+            target_namespace=self.data["targetNamespace"],
+            target=self.data["target"],
+            target_container=self.data["targetContainer"],
+            logger=self.logger,
+        )
 
     @property
     def sunset(self) -> Optional[datetime]:
@@ -108,11 +104,17 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     def on_prepare(self):
         self.logger.info("Preparing GefyraBridgeMount '{self.object_name}'")
         self.bridge_mount_provider.prepare()
-        self.send("install")
+
+    @install.cond
+    def _bridge_mount_prepared(self):
+        return self.bridge_mount_provider.prepared()
 
     def on_install(self):
         self.bridge_mount_provider.install()
-        self.send("activate")
+
+    @activate.cond
+    def _bridge_mount_finished(self):
+        return self.bridge_mount_provider.ready()
 
     def on_terminate(self):
         self.logger.info(f"GefyraBridgeMount '{self.object_name}' is being removed")

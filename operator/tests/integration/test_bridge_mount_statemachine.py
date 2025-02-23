@@ -1,14 +1,18 @@
 import logging
+from time import sleep
 from unittest.mock import MagicMock
 
 from pathlib import Path
 from pytest_kubernetes.providers import AClusterManager
+from statemachine.exceptions import TransitionNotAllowed
+
+from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger()
 
 
 class TestBridgeMountStateMachine:
-    def test_duplication_by_bridge_mount_install(self, gefyra_crd: AClusterManager):
+    def test_a_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount_state import GefyraBridgeMount
         from gefyra.bridge_mount_state import GefyraBridgeMountObject
 
@@ -28,14 +32,30 @@ class TestBridgeMountStateMachine:
             }
         )
         bridge_mount_object._write_state = MagicMock()
+        configuration = OperatorConfiguration()
 
         bridge_mount_machine = GefyraBridgeMount(
             model=bridge_mount_object,
-            configuration=None,
+            configuration=configuration,
             logger=logger,
         )
         assert bridge_mount_machine.requested.is_active
-        bridge_mount_machine.prepare()
+        retries = 20
+        while retries > 0:
+            print(bridge_mount_machine.current_state)
+            try:
+                if bridge_mount_machine.preparing.is_active:
+                    bridge_mount_machine.install()
+                elif bridge_mount_machine.requested.is_active:
+                    bridge_mount_machine.prepare()
+                elif bridge_mount_machine.installing.is_active:
+                    bridge_mount_machine.activate()
+                else:
+                    break
+            except TransitionNotAllowed:
+                retries -= 1
+
+            sleep(2)
 
         gefyra_crd.wait(
             "deployment/" + name + "-gefyra",
