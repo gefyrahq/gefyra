@@ -1166,6 +1166,8 @@ class GefyraBaseTest:
 
         clients = list_client()
 
-        applied_config = clients[0].get_client_config()
+        applied_config = clients[0].get_client_config(
+            gefyra_server="127.0.0.1:31820"
+        )
 
         self.assertEqual(applied_config.WIREGUARD_MTU, "1200")
