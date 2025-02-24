@@ -1170,4 +1170,3 @@ class GefyraBaseTest:
         applied_config = clients[0].get_client_config()
 
         self.assertEqual(applied_config.WIREGUARD_MTU, "1200")
-
