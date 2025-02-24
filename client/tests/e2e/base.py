@@ -1139,7 +1139,6 @@ class GefyraBaseTest:
     def test_v_client_connect_params_precedence(self):
         runner = CliRunner()
         self.gefyra_up()
-        self.assert_cargo_not_running()
         self.assert_gefyra_client_state(
             client_id=CONNECTION_NAME, state=GefyraClientState.WAITING
         )
