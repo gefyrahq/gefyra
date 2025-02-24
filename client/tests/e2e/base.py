@@ -1135,3 +1135,39 @@ class GefyraBaseTest:
                 config=default_configuration, name="foo", namespace="default"
             )
         self.assertIn("Pod foo not found.", str(rte.exception))
+
+    def test_v_client_connect_params_precedence(self):
+        runner = CliRunner()
+        self.gefyra_up()
+        self.assert_cargo_not_running()
+        self.assert_gefyra_client_state(
+            client_id=CONNECTION_NAME, state=GefyraClientState.WAITING
+        )
+
+        c_file = write_client_file(
+            client_id=CONNECTION_NAME,
+            host="127.0.0.1",
+        )
+
+        file_loc = os.path.join(
+            get_gefyra_config_location(),
+            f"{CONNECTION_NAME}_client.json",
+        )
+        fh = open(file_loc, "w+")
+        fh.write(c_file)
+        fh.seek(0)
+        fh.close()
+        sleep(10)
+        res = runner.invoke(
+            cli,
+            ["connections", "connect", "-n", CONNECTION_NAME, "--mtu", "1200"],
+            catch_exceptions=False,
+        )
+        self.assertEqual(res.exit_code, 0)
+
+        clients = list_client()
+
+        applied_config = clients[0].get_client_config()
+
+        self.assertEqual(applied_config.WIREGUARD_MTU, "1200")
+
