@@ -1,84 +1,18 @@
 use async_trait::async_trait;
-use log::debug;
+use log::{debug, info};
+use matching::GefyraClient;
 use pingora::{prelude::*, server::configuration::ServerConf};
-use serde_yaml::{Mapping, Value};
-use std::{fs, path::Path, str::FromStr, sync::Arc};
 
-pub enum PathMatchType {
-    Prefix,
-}
+use std::{fs, path::Path, sync::Arc};
 
-impl FromStr for PathMatchType {
-    type Err = ();
-
-    fn from_str(input: &str) -> Result<PathMatchType, Self::Err> {
-        match input.to_lowercase().as_str() {
-            "prefix" => Ok(PathMatchType::Prefix),
-            _ => Err(()),
-        }
-    }
-}
-
-pub struct MatchPath {
-    path: String,
-    match_type: PathMatchType,
-}
-
-pub struct MatchHeader {
-    name: String,
-    value: String,
-}
-
-pub enum MatchRule {
-    Path(MatchPath),
-    Header(MatchHeader),
-}
-
-pub struct MatchAndCondition {
-    rules: Vec<MatchRule>,
-}
-
-pub struct MatchOrCondition {
-    rules: Vec<MatchAndCondition>,
-}
-impl MatchOrCondition {
-    pub fn from_yaml(value: &Vec<Value>) -> MatchOrCondition {
-        MatchOrCondition { rules: Vec::new() }
-    }
-}
-
-pub struct GefyraClient {
-    key: String,
-    endpoint: String,
-    // peer: HttpPeer,
-    matching_rules: MatchOrCondition,
-}
-impl GefyraClient {
-    pub fn from_yaml(value: &Mapping) -> Vec<GefyraClient> {
-        let mut clients = Vec::new();
-        for (key, value) in value.iter() {
-            
-            // todo this must be error checked
-            let client = GefyraClient {
-                key: key.as_str().unwrap().to_string(),
-                endpoint: value["endpoint"].as_str().unwrap().to_string(),
-                // peer: todo!(),
-                matching_rules: MatchOrCondition::from_yaml(value["rules"].as_sequence().unwrap()),
-            };
-            debug!("Adding GefyraClient {:?}", client.key);
-            clients.push(client);
-        }
-        clients
-    }
-}
+mod matching;
 
 pub struct Carrier2 {
     cluster_upstream: Option<Arc<LoadBalancer<RoundRobin>>>,
+    cluster_tls: bool,
+    cluster_sni: String,
     gefyra_clients: Arc<Vec<GefyraClient>>,
 }
-
-
-
 
 #[async_trait]
 impl ProxyHttp for Carrier2 {
@@ -88,9 +22,24 @@ impl ProxyHttp for Carrier2 {
     }
 
     async fn upstream_peer(&self, _session: &mut Session, _ctx: &mut ()) -> Result<Box<HttpPeer>> {
+        let client_idx = self
+            .gefyra_clients
+            .iter()
+            .position(|c| c.matching_rules.is_hit(_session.req_header()));
+        if let Some(client_idx) = client_idx {
+            let client = &self.gefyra_clients[client_idx];
+            info!("Selected GefyraClient {:?}", client.key);
+            return Ok(Box::new(client.peer.clone()));
+        }
+
         if let Some(cluster_lb) = &self.cluster_upstream {
             let cluster_peer = cluster_lb.select(b"", 256).unwrap();
-            let peer = Box::new(HttpPeer::new(cluster_peer, false, "".to_string()));
+            let peer = Box::new(HttpPeer::new(
+                cluster_peer,
+                self.cluster_tls,
+                self.cluster_sni.clone(),
+            ));
+            info!("Selected cluster upstream peer");
             return Ok(peer);
         }
         Err(Box::new(pingora::Error {
@@ -100,15 +49,6 @@ impl ProxyHttp for Carrier2 {
             cause: todo!(),
             context: todo!(),
         }))
-    }
-
-    async fn upstream_request_filter(
-        &self,
-        _session: &mut Session,
-        upstream_request: &mut RequestHeader,
-        _ctx: &mut Self::CTX,
-    ) -> Result<()> {
-        Ok(())
     }
 }
 
@@ -151,7 +91,7 @@ fn main() {
         let bridge_data = bridge_data.as_mapping().unwrap();
         // read the cluster upstream
         let cluster_upstreams = if bridge_data.contains_key("clusterUpstream") {
-            let addresss: Vec<String> = bridge_data["clusterUpstream"]
+            let addresss: Vec<String> = bridge_data["clusterUpstream"]["peers"]
                 .as_sequence()
                 .unwrap()
                 .iter()
@@ -166,7 +106,12 @@ fn main() {
 
         let carrier2_http_router = Carrier2 {
             cluster_upstream: cluster_upstreams,
-            gefyra_clients: Arc::new(Vec::new()),
+            gefyra_clients: Arc::new(clients),
+            cluster_tls: bridge_data["clusterUpstream"]["tls"].as_bool().unwrap(),
+            cluster_sni: bridge_data["clusterUpstream"]["sni"]
+                .as_str()
+                .unwrap()
+                .to_string(),
         };
 
         let mut http_dispatcher =

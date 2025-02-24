@@ -1,22 +1,29 @@
 version: 1
 port: 8080
 clusterUpstream: 
-    - "www.blueshoe.de:80"
+    peers:
+        - "www.blueshoe.de:443"
+    tls: true
+    sni: "www.blueshoe.de"
 httpGetProbes: 
     - 8001
     - 8002
 bridges:
     user-1:
-        endpoint: "stowaway-port-10001.gefyra.svc.cluster.local:10001"
+        endpoint: "www.blueshoe.io:443"
+        tls: true
+        sni: "www.blueshoe.io"
         rules:
             # and
-            - matchHeader:
-                name: "x-gefyra"
-                value: "user-1"
-              matchPath: 
-                path: "/my-svc"
-                type: "prefix"
+            - match:
+                - matchHeader:
+                    name: "x-gefyra"
+                    value: "user-1"
+                - matchPath: 
+                    path: "/my-svc"
+                    type: "prefix"
             # or
-            - matchPath:
-                path: "/always"
-                type: "prefix"
+            - match:
+                - matchPath:
+                    path: "/always"
+                    type: "prefix"
