@@ -1140,7 +1140,7 @@ class GefyraBaseTest:
         runner = CliRunner()
         self.gefyra_up()
         self.assert_gefyra_client_state(
-            client_id=CONNECTION_NAME, state=GefyraClientState.WAITING
+            client_id=CONNECTION_NAME, state=GefyraClientState.ACTIVE
         )
 
         c_file = write_client_file(
