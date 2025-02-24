@@ -44,14 +44,15 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                 group="gefyra.dev",
                 plural="gefyrabridgemounts",
             )
+            return
         except k8s.client.ApiException:
             pass
 
     try:
-        if bridge_mount.preparing.is_active:
-            bridge_mount.install()
-        elif bridge_mount.requested.is_active:
+        if bridge_mount.requested.is_active:
             bridge_mount.prepare()
+        elif bridge_mount.preparing.is_active:
+            bridge_mount.install()
         elif bridge_mount.installing.is_active:
             bridge_mount.activate()
         elif bridge_mount.error.is_active:
@@ -60,5 +61,11 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             # check if all is good
             if not bridge_mount.is_intact:
                 bridge_mount.restore()
+    # this happens when either the transition from x to y is not allowed
+    # or when the condition for the transition is not fulfilled.
     except TransitionNotAllowed as e:
-        raise kopf.TemporaryError(f"Transition not allowed: {e}", delay=3)
+        retry_delay = 3
+        raise kopf.TemporaryError(
+            f"Transition not allowed: {e}. Retrying in {retry_delay}s.",
+            delay=retry_delay,
+        )
