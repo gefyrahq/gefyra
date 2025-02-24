@@ -97,7 +97,7 @@ def connect(  # noqa: C901
             cargo_endpoint_host=gclient_conf.gefyra_server.split(":")[0],
             cargo_endpoint_port=gclient_conf.gefyra_server.split(":")[1],
             cargo_container_name=f"gefyra-cargo-{connection_name}",
-            wireguard_mtu=gclient_conf.wireguard_mtu or (str(mtu) if mtu else None),
+            wireguard_mtu=(str(mtu) if mtu else None) or gclient_conf.wireguard_mtu,
         )
 
         gclient = handle_get_gefyraclient(config, gclient_conf.client_id)
