@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 
 from gefyra.configuration import ClientConfiguration
@@ -13,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 def get_or_create_gefyra_network(
-    config: ClientConfiguration, occupied_networks: List[str] = []
+    config: ClientConfiguration, occupied_networks: Optional[List[str]] = None
 ) -> "Network":
+    if not occupied_networks:
+        occupied_networks = []
     gefyra_network = handle_create_network(config, occupied_networks)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
