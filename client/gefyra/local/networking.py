@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_or_create_gefyra_network(
-    config: ClientConfiguration, occupied_networks: List[str]
+    config: ClientConfiguration, occupied_networks: List[str] = []
 ) -> "Network":
     gefyra_network = handle_create_network(config, occupied_networks)
     logger.debug(f"Network {gefyra_network.attrs}")
