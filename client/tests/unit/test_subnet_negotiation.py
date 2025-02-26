@@ -3,6 +3,7 @@ from gefyra.local.networking import _get_subnet
 
 
 def test_subnet_negotiation():
+    """This test assumes, that docker will reuse the same subnet, if it is free."""
     config = ClientConfiguration()
     temp_network = config.DOCKER.networks.create("gefyra-test-network")
     temp_subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
