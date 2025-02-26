@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 
 from gefyra.configuration import ClientConfiguration
@@ -12,13 +12,39 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def get_or_create_gefyra_network(config: ClientConfiguration) -> "Network":
-    gefyra_network = handle_create_network(config)
+def get_or_create_gefyra_network(
+    config: ClientConfiguration, occupied_networks: List[str]
+) -> "Network":
+    gefyra_network = handle_create_network(config, occupied_networks)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
 
-def handle_create_network(config: ClientConfiguration) -> "Network":
+def _get_subnet(
+    config: ClientConfiguration, network_name: str, occupied_networks: List[str]
+) -> str:
+    tries = 255
+    networks: List[Network] = []
+    subnet = ""
+    # this is a workaround to select a free subnet (instead of finding it with python code)
+    for i in range(tries):
+        temp_network = config.DOCKER.networks.create(
+            f"{network_name}-{i}", driver="bridge"
+        )
+        networks.append(temp_network)
+        subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
+        if subnet not in occupied_networks:
+            break
+    for network in networks:
+        network.remove()
+    if not subnet:
+        raise RuntimeError("Could not find a free subnet")
+    return subnet
+
+
+def handle_create_network(
+    config: ClientConfiguration, occupied_networks: List[str]
+) -> "Network":
     from docker.errors import NotFound
     from docker.types import IPAMConfig, IPAMPool
 
@@ -56,10 +82,10 @@ def handle_create_network(config: ClientConfiguration) -> "Network":
     except NotFound:
         pass
 
-    # this is a workaround to select a free subnet (instead of finding it with python code)
-    temp_network = config.DOCKER.networks.create(network_name, driver="bridge")
-    subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
-    temp_network.remove()  # remove the temp network again
+    subnet = _get_subnet(
+        config=config, network_name=network_name, occupied_networks=occupied_networks
+    )
+    logger.debug(f"Using subnet: {subnet}")
 
     ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
     ipam_config = IPAMConfig(pool_configs=[ipam_pool])

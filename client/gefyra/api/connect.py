@@ -38,6 +38,19 @@ from gefyra.types import (
 logger = logging.getLogger(__name__)
 
 
+def _get_client_networks(config: ClientConfiguration) -> List[str]:
+    clients = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+        namespace=config.NAMESPACE,
+        plural="gefyraclients",
+        group="gefyra.dev",
+        version="v1",
+    )
+    return [
+        client["providerParameter"]["subnet"]
+        for client in filter(lambda x: "providerParameter" in x, clients["items"])
+    ]
+
+
 @stopwatch
 def connect(  # noqa: C901
     connection_name: str,
@@ -106,8 +119,10 @@ def connect(  # noqa: C901
         config.CARGO_PROBE_TIMEOUT = probe_timeout
 
     _retry = 0
+    occupied_networks = _get_client_networks(config)
+
     while _retry < 10:
-        gefyra_network = get_or_create_gefyra_network(config)
+        gefyra_network = get_or_create_gefyra_network(config, occupied_networks)
         try:
             client.activate_connection(
                 gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
