@@ -1,13 +1,12 @@
 ---
 version: 1
 threads: 2
-pid_file: /tmp/load_balancer.pid
-error_log: /tmp/err.log
-upgrade_sock: /tmp/load_balancer.sock
+pid_file: /tmp/carrier2.pid
+error_log: /tmp/carrier.error.log
+upgrade_sock: /tmp/carrier2.sock
+upstream_keepalive_pool_size: 100
 # user: nobody
 # group: webusers
-client_bind_to_ipv4: 
-  - 0.0.0.0
 # ca_file # The path to the root CA file
 # https://github.com/cloudflare/pingora/blob/main/docs/user_guide/conf.md
 

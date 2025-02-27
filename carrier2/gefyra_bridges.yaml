@@ -1,24 +1,26 @@
 version: 1
 port: 8080
+# tls:
+#    certificate: "/path/to/ca.crt"
+#    key: "/path/to/key.pem"
+#    sni: "host.blueshoe.io"
 clusterUpstream: 
-    peers:
-        - "www.blueshoe.de:443"
-    tls: true
-    sni: "www.blueshoe.de"
-httpGetProbes: 
-    - 8001
-    - 8002
+    - "www.blueshoe.de:443"
+probes: 
+    httpGet:
+        - 8001
+        - 8002
 bridges:
     user-1:
         endpoint: "www.blueshoe.io:443"
         tls: true
         sni: "www.blueshoe.io"
         rules:
-            # and
             - match:
                 - matchHeader:
                     name: "x-gefyra"
                     value: "user-1"
+                # and
                 - matchPath: 
                     path: "/my-svc"
                     type: "prefix"

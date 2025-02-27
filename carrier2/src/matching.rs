@@ -118,13 +118,11 @@ impl GefyraClient {
         for (key, value) in value.iter() {
             debug!("GefyraClient with values {:?}", value);
             // todo this must be error checked
+            let tls = value["tls"].as_bool().unwrap_or_else(|| false);
+            let sni = value["sni"].as_str().unwrap_or_else(|| "").to_string();
             let client = GefyraClient {
                 key: key.as_str().unwrap().to_string(),
-                peer: HttpPeer::new(
-                    value["endpoint"].as_str().unwrap(),
-                    value["tls"].as_bool().unwrap(),
-                    value["sni"].as_str().unwrap().to_string(),
-                ),
+                peer: HttpPeer::new(value["endpoint"].as_str().unwrap(), tls, sni),
                 matching_rules: serde_yaml::from_value(value.clone()).unwrap(),
             };
             debug!("Adding GefyraClient {:?}", client);
@@ -136,7 +134,14 @@ impl GefyraClient {
 
 #[cfg(test)]
 mod tests {
-    use super::{MatchAndCondition, MatchHeader, MatchPath, MatchRule, MatchType};
+    use std::collections::HashMap;
+
+    use pingora::{http::{Method, RequestHeader}, upstreams::peer::Peer};
+    use serde_yaml::{Mapping, Value};
+
+    use crate::matching::MatchOrCondition;
+
+    use super::{GefyraClient, MatchAndCondition, MatchHeader, MatchPath, MatchRule, MatchType};
 
     #[test]
     fn match_path() {
@@ -231,11 +236,11 @@ mod tests {
 
     #[test]
     fn match_conditions() {
-        let cond1 = MatchAndCondition {
+        let and_cond1 = MatchAndCondition {
             and_match: vec![
                 MatchRule::Header(MatchHeader {
                     name: "x-gefyra".to_string(),
-                    value: "michael".to_string(),
+                    value: "jon".to_string(),
                     match_type: MatchType::ExactLookup,
                 }),
                 MatchRule::Path(MatchPath {
@@ -244,6 +249,84 @@ mod tests {
                 }),
             ],
         };
-        // TODO add condition test cases
+
+        let and_cond2 = MatchAndCondition {
+            and_match: vec![
+                MatchRule::Path(MatchPath {
+                    path: "/always".to_string(),
+                    match_type: MatchType::ExactLookup,
+                }),
+            ],
+        };
+        let mut req1 = RequestHeader::build(Method::GET, "/my-path_123".as_bytes(), None).unwrap();
+        let mut req2 = RequestHeader::build(Method::GET, "/always".as_bytes(), None).unwrap();
+        let mut req3 = RequestHeader::build(Method::GET, "/never".as_bytes(), None).unwrap();
+        assert!(!and_cond1.is_hit(&req1));
+        assert!(!and_cond1.is_hit(&req2));
+        assert!(!and_cond1.is_hit(&req3));
+        req1.append_header("x-gefyra", "jon").unwrap();
+        req2.append_header("x-gefyra", "jon").unwrap();
+        req3.append_header("x-gefyra", "balu").unwrap();
+        assert!(and_cond1.is_hit(&req1));
+        assert!(!and_cond1.is_hit(&req2));
+        assert!(!and_cond1.is_hit(&req3));
+
+
+        assert!(and_cond2.is_hit(&req2));
+
+        // chain to and-conditions from above with or-operator
+        let or_cond1 = MatchOrCondition {
+            or_rules: vec![and_cond1, and_cond2],
+        };
+
+        assert!(or_cond1.is_hit(&req1));
+        assert!(or_cond1.is_hit(&req2));
+        assert!(!or_cond1.is_hit(&req3));
+    }
+
+    #[test]
+    fn read_gefyra_client() {
+        let users = " 
+        user-1: 
+            endpoint: \"www.blueshoe.io:443\" 
+            tls: true 
+            sni: \"www.blueshoe.io\" 
+            rules: 
+                - match: 
+                    - matchHeader: 
+                        name: \"x-gefyra\" 
+                        value: \"user-1\"
+                    - matchPath: 
+                        path: \"/my-svc\"
+                        type: \"prefix\"
+                - match:
+                    - matchPath:
+                        path: \"/always\"
+                        type: \"prefix\"
+        user-2:  
+            endpoint: \"www.gefyra.dev:443\"  
+            tls: false  
+            rules:
+                - match:
+                    - matchHeader:
+                        name: \"x-gefyra\"
+                        value: \"user-1\"
+                    - matchPath: 
+                        path: \"/my-svc\"
+                        type: \"prefix\"
+                - match:
+                    - matchPath:
+                        path: \"/always\"
+                        type: \"prefix\"
+        ";
+        
+        let mapping1 = serde_yaml::from_str(users).unwrap();
+        let clients = GefyraClient::from_yaml(&mapping1);
+        assert_eq!(clients.len(), 2);
+        assert_eq!(clients[0].key, "user-1");
+        assert_eq!(clients[0].peer.is_tls(), true);
+        assert_eq!(clients[0].peer.sni(), "www.blueshoe.io");
+        assert_eq!(clients[0].matching_rules.or_rules.len(), 2);
+
     }
 }
