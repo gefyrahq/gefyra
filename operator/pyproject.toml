@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Gefyra Operator"
-version = "2.3.0"
+version = "2.3.1"
 description = "Gefyra Operator runs all cluster-side components of Gefyra's Kubernetes-based development system"
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 package-mode = false
