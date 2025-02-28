@@ -6,8 +6,17 @@ edition = "2021"
 [dependencies]
 async-trait = "0.1.86"
 env_logger = "0.11.6"
+http = "1.2.0"
 log = "0.4.26"
 pingora = { version = "0.4.0", features = ["lb", "boringssl"] }
 regex = "1.11.1"
 serde = "1.0.218"
 serde_yaml = "0.9.34"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+
+[[bench]]
+name = "gefyra"
+harness = false

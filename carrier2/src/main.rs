@@ -1,11 +1,15 @@
 use async_trait::async_trait;
+use http::{Response, StatusCode};
+use lib::GefyraClient;
 use log::{debug, info, warn};
-use matching::GefyraClient;
-use pingora::{listeners::TcpSocketOptions, prelude::*, server::configuration::ServerConf};
+use pingora::{
+    apps::http_app::ServeHttp, prelude::*, protocols::http::ServerSession,
+    server::configuration::ServerConf, services::listening::Service,
+};
 
-use std::{fs, path::Path, sync::Arc};
+use std::{fs, sync::Arc};
 
-mod matching;
+pub mod lib;
 
 pub struct Carrier2 {
     cluster_upstream: Option<Arc<LoadBalancer<RoundRobin>>>,
@@ -52,6 +56,19 @@ impl ProxyHttp for Carrier2 {
     }
 }
 
+pub struct HttpGetProbeHandler;
+
+#[async_trait]
+impl ServeHttp for HttpGetProbeHandler {
+    async fn response(&self, _: &mut ServerSession) -> Response<Vec<u8>> {
+        Response::builder()
+            .status(StatusCode::OK)
+            .header(http::header::CONTENT_LENGTH, 0)
+            .body(vec![])
+            .unwrap()
+    }
+}
+
 fn main() {
     env_logger::init();
 
@@ -60,28 +77,8 @@ fn main() {
     // TODO lots of unwraps here
     let conf_file = args.conf.clone().unwrap();
     let conf_str = fs::read_to_string(conf_file.clone()).unwrap();
-    let conf_data: serde_yaml::Value = serde_yaml::from_str(conf_str.as_str()).unwrap();
+    let carrier_config: serde_yaml::Value = serde_yaml::from_str(conf_str.as_str()).unwrap();
     let server_conf: ServerConf = serde_yaml::from_str(conf_str.as_str()).unwrap();
-    // process gefyra bridge file from Pingora config.yaml
-    let carrier_config = if conf_data.as_mapping().unwrap().contains_key("bridge_file") {
-        let gefyra_file_path = Path::new(&conf_file)
-            .parent()
-            .unwrap()
-            .join(conf_data["bridge_file"].as_str().unwrap());
-        let gefyra_bridge_str = fs::read_to_string(gefyra_file_path);
-        match gefyra_bridge_str {
-            Ok(content) => {
-                let bridge_data: serde_yaml::Value = serde_yaml::from_str(&content).unwrap();
-                Some(bridge_data)
-            }
-            Err(_) => {
-                warn!("bridge_file specified, but not readable");
-                None
-            }
-        }
-    } else {
-        None
-    };
 
     // init and boostrap pingora server
     let mut my_server = Server::new_with_opt_and_conf(Some(args), server_conf);
@@ -89,13 +86,14 @@ fn main() {
 
     debug!("{:?}", my_server.configuration);
     debug!("GefyraBrige config: {:?}", carrier_config);
+    let carrier_config = carrier_config.as_mapping().unwrap();
 
-    if let None = carrier_config {
+    if !carrier_config.contains_key("bridges") {
         // no GefyraBridge data given, run without actually doing anything
         my_server.run_forever();
-    } else if let Some(carrier_config) = carrier_config {
+    } else {
         // GefyraBridge data given, run the proxy process
-        let carrier_config = carrier_config.as_mapping().unwrap();
+
         // read the cluster upstream
         let cluster_upstreams = if carrier_config.contains_key("clusterUpstream") {
             let addresss: Vec<String> = carrier_config["clusterUpstream"]
@@ -162,6 +160,23 @@ fn main() {
 
         // add http dispatcher server
         my_server.add_service(http_dispatcher);
+
+        // configure probes
+        if carrier_config.contains_key("probes") {
+            // httpGet probe
+            if let Some(http_get_ports) = carrier_config["probes"].get("httpGet") {
+                let ports = http_get_ports.as_sequence().unwrap();
+                debug!("probe ports: {:?}", ports);
+                for port in ports {
+                    let mut httpget_probe_handler = Service::new(
+                        format!("httpGet probe handler {}", port.as_u64().unwrap()),
+                        HttpGetProbeHandler,
+                    );
+                    httpget_probe_handler.add_tcp(&format!("0.0.0.0:{}", port.as_u64().unwrap()));
+                    my_server.add_service(httpget_probe_handler);
+                }
+            }
+        }
 
         // run this friend forever (until the next upgrade)
         my_server.run_forever();

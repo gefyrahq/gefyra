@@ -4,7 +4,7 @@ use regex::Regex;
 use serde::Deserialize;
 use serde_yaml::Mapping;
 
-#[derive(Debug, PartialEq, Deserialize, Default)]
+#[derive(Debug, PartialEq, Deserialize, Default, Clone)]
 pub enum MatchType {
     #[default]
     #[serde(rename = "exact")]
@@ -15,7 +15,7 @@ pub enum MatchType {
     RegexLookup,
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Clone)]
 pub struct MatchPath {
     path: String,
     #[serde(rename = "type")]
@@ -31,7 +31,7 @@ impl MatchPath {
     }
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Clone)]
 pub struct MatchHeader {
     name: String,
     value: String,
@@ -51,7 +51,7 @@ impl MatchHeader {
     }
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Clone)]
 pub enum MatchRule {
     #[serde(rename = "matchPath")]
     Path(MatchPath),
@@ -59,7 +59,7 @@ pub enum MatchRule {
     Header(MatchHeader),
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Clone)]
 pub struct MatchAndCondition {
     #[serde(rename = "match")]
     #[serde(with = "serde_yaml::with::singleton_map_recursive")]
@@ -91,7 +91,7 @@ impl MatchAndCondition {
     }
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Clone)]
 pub struct MatchOrCondition {
     #[serde(rename = "rules")]
     or_rules: Vec<MatchAndCondition>,
@@ -106,7 +106,7 @@ impl MatchOrCondition {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GefyraClient {
     pub key: String,
     pub peer: HttpPeer,
@@ -134,14 +134,15 @@ impl GefyraClient {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use pingora::{
+        http::{Method, RequestHeader},
+        upstreams::peer::Peer,
+    };
 
-    use pingora::{http::{Method, RequestHeader}, upstreams::peer::Peer};
-    use serde_yaml::{Mapping, Value};
-
-    use crate::matching::MatchOrCondition;
-
-    use super::{GefyraClient, MatchAndCondition, MatchHeader, MatchPath, MatchRule, MatchType};
+    use super::{
+        GefyraClient, MatchAndCondition, MatchHeader, MatchOrCondition, MatchPath, MatchRule,
+        MatchType,
+    };
 
     #[test]
     fn match_path() {
@@ -251,12 +252,10 @@ mod tests {
         };
 
         let and_cond2 = MatchAndCondition {
-            and_match: vec![
-                MatchRule::Path(MatchPath {
-                    path: "/always".to_string(),
-                    match_type: MatchType::ExactLookup,
-                }),
-            ],
+            and_match: vec![MatchRule::Path(MatchPath {
+                path: "/always".to_string(),
+                match_type: MatchType::ExactLookup,
+            })],
         };
         let mut req1 = RequestHeader::build(Method::GET, "/my-path_123".as_bytes(), None).unwrap();
         let mut req2 = RequestHeader::build(Method::GET, "/always".as_bytes(), None).unwrap();
@@ -270,7 +269,6 @@ mod tests {
         assert!(and_cond1.is_hit(&req1));
         assert!(!and_cond1.is_hit(&req2));
         assert!(!and_cond1.is_hit(&req3));
-
 
         assert!(and_cond2.is_hit(&req2));
 
@@ -319,14 +317,14 @@ mod tests {
                         path: \"/always\"
                         type: \"prefix\"
         ";
-        
+
         let mapping1 = serde_yaml::from_str(users).unwrap();
         let clients = GefyraClient::from_yaml(&mapping1);
         assert_eq!(clients.len(), 2);
         assert_eq!(clients[0].key, "user-1");
+        assert_eq!(clients[1].key, "user-2");
         assert_eq!(clients[0].peer.is_tls(), true);
         assert_eq!(clients[0].peer.sni(), "www.blueshoe.io");
         assert_eq!(clients[0].matching_rules.or_rules.len(), 2);
-
     }
 }
