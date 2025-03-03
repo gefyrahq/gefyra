@@ -26,6 +26,8 @@ class GefyraClientConfig:
     namespace: str
     ca_crt: str
     gefyra_server: str
+    registry: Optional[str] = None
+    wireguard_mtu: Optional[str] = "1340"
 
     @property
     def json(self):
@@ -158,7 +160,11 @@ class GefyraClient:
         self._init_data(gclient)
 
     def get_client_config(
-        self, gefyra_server: str, k8s_server: str = ""
+        self,
+        gefyra_server: str,
+        k8s_server: str = "",
+        registry: Optional[str] = None,
+        wireguard_mtu: Optional[int] = 1340,
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
@@ -171,6 +177,9 @@ class GefyraClient:
                 namespace=self.service_account["namespace"],
                 ca_crt=self.service_account["ca.crt"],
                 gefyra_server=gefyra_server,
+                registry=registry,
+                # if somehow the mtu is not given make sure to have null as json value
+                wireguard_mtu=str(wireguard_mtu) if wireguard_mtu else None,
             )
         else:
             raise ClientConfigurationError(
@@ -273,6 +282,24 @@ class GefyraInstallOptions:
         metadata=dict(
             help="Kubernetes annotations for the Stowaway service (default: [])",
             type="array",
+        ),
+    )
+    registry: str = field(
+        default_factory=lambda: "quay.io/gefyra",
+        metadata=dict(
+            help="The registry URL for the images (default: quay.io/gefyra)",
+        ),
+    )
+    mtu: int = field(
+        default_factory=lambda: 1340,
+        metadata=dict(
+            help="The MTU for the Wireguard interface (default: 1340)",
+        ),
+    )
+    stowaway_storage: int = field(
+        default_factory=lambda: 64,
+        metadata=dict(
+            help="The storage size for the Stowaway PVC in Mi (default: 64)",
         ),
     )
 

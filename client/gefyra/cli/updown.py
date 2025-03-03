@@ -20,6 +20,8 @@ def _check_and_install(
     connection_name: str = "",
     preset: Optional[str] = None,
     bar=None,
+    registry: Optional[str] = None,
+    mtu: Optional[str] = None,
 ) -> bool:
     status = api.status(connection_name=connection_name)
 
@@ -38,6 +40,8 @@ def _check_and_install(
             apply=True,
             wait=True,
             preset=preset,
+            registry=registry,
+            mtu=mtu,
         )
         return True
 
@@ -56,9 +60,28 @@ def _check_and_install(
     help=f"Set configs from a preset (available: {','.join(api.LB_PRESETS.keys())})",
     type=str,
 )
+@click.option(
+    "--registry",
+    help="Set the registry to use for the Gefyra components",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--mtu",
+    help="Set the MTU for the Gefyra network",
+    type=int,
+    required=False,
+    default=1340,
+)
 @pass_context
 @standard_error_handler
-def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None):
+def cluster_up(
+    ctx,
+    minikube: Optional[str] = None,
+    preset: Optional[str] = None,
+    registry: Optional[str] = None,
+    mtu: Optional[int] = 1340,
+):
     from alive_progress import alive_bar
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
     from time import sleep
@@ -75,7 +98,12 @@ def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None
     kubeconfig = ctx.obj["kubeconfig"]
     kubecontext = ctx.obj["context"]
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        registry=registry,
+        wireguard_mtu=str(mtu) if mtu else None,
+    )
     with alive_bar(
         4,
         title="Installing Gefyra to the cluster",
@@ -86,7 +114,12 @@ def cluster_up(ctx, minikube: Optional[str] = None, preset: Optional[str] = None
     ) as bar:
         # run a default install
         install_success = _check_and_install(
-            config=config, connection_name=connection_name, preset=preset, bar=bar
+            config=config,
+            connection_name=connection_name,
+            preset=preset,
+            bar=bar,
+            registry=config.REGISTRY,
+            mtu=config.WIREGUARD_MTU,
         )
         if install_success:
             bar()

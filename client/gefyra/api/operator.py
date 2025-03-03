@@ -38,7 +38,7 @@ def update(
                             "containers": [
                                 {
                                     "name": "gefyra",
-                                    "image": f"quay.io/gefyra/operator:{version}",
+                                    "image": config.OPERATOR_IMAGE,
                                 }
                             ]
                         }
