@@ -75,110 +75,118 @@ fn main() {
     // parse arguments from CLI
     let args = Opt::parse_args();
     // TODO lots of unwraps here
-    let conf_file = args.conf.clone().unwrap();
-    let conf_str = fs::read_to_string(conf_file.clone()).unwrap();
-    let carrier_config: serde_yaml::Value = serde_yaml::from_str(conf_str.as_str()).unwrap();
-    let server_conf: ServerConf = serde_yaml::from_str(conf_str.as_str()).unwrap();
+    let conf_file = args.conf.clone();
+    let my_server = if let Some(conf_file) = conf_file {
+        let conf_str = fs::read_to_string(conf_file.clone()).unwrap();
+        let carrier_config: serde_yaml::Value = serde_yaml::from_str(conf_str.as_str()).unwrap();
+        let server_conf: ServerConf = serde_yaml::from_str(conf_str.as_str()).unwrap();
+        // init and boostrap pingora server
+        let mut my_server = Server::new_with_opt_and_conf(Some(args), server_conf);
+        my_server.bootstrap();
 
-    // init and boostrap pingora server
-    let mut my_server = Server::new_with_opt_and_conf(Some(args), server_conf);
-    my_server.bootstrap();
+        debug!("{:?}", my_server.configuration);
+        debug!("GefyraBrige config: {:?}", carrier_config);
+        let carrier_config = carrier_config.as_mapping().unwrap();
 
-    debug!("{:?}", my_server.configuration);
-    debug!("GefyraBrige config: {:?}", carrier_config);
-    let carrier_config = carrier_config.as_mapping().unwrap();
-
-    if !carrier_config.contains_key("bridges") {
-        // no GefyraBridge data given, run without actually doing anything
-        my_server.run_forever();
-    } else {
-        // GefyraBridge data given, run the proxy process
-
-        // read the cluster upstream
-        let cluster_upstreams = if carrier_config.contains_key("clusterUpstream") {
-            let addresss: Vec<String> = carrier_config["clusterUpstream"]
-                .as_sequence()
-                .unwrap()
-                .iter()
-                .map(|a| a.as_str().unwrap().to_string())
-                .collect();
-            Some(Arc::new(LoadBalancer::try_from_iter(addresss).unwrap()))
+        if !carrier_config.contains_key("bridges") {
+            // no GefyraBridge data given, run without actually doing anything
+            my_server.run_forever();
         } else {
-            None
-        };
+            // GefyraBridge data given, run the proxy process
 
-        let clients = GefyraClient::from_yaml(carrier_config["bridges"].as_mapping().unwrap());
-
-        let mut cert_path: Option<String> = None;
-        let mut key_path: Option<String> = None;
-        let mut local_sni: Option<String> = None;
-
-        if carrier_config.contains_key("tls") {
-            cert_path = match carrier_config["tls"]["certificate"].as_str() {
-                Some(path) => Some(path.into()),
-                None => {
-                    warn!("'tls' is set, but 'certificate' is missing");
-                    None
-                }
+            // read the cluster upstream
+            let cluster_upstreams = if carrier_config.contains_key("clusterUpstream") {
+                let addresss: Vec<String> = carrier_config["clusterUpstream"]
+                    .as_sequence()
+                    .unwrap()
+                    .iter()
+                    .map(|a| a.as_str().unwrap().to_string())
+                    .collect();
+                Some(Arc::new(LoadBalancer::try_from_iter(addresss).unwrap()))
+            } else {
+                None
             };
-            key_path = match carrier_config["tls"]["key"].as_str() {
-                Some(path) => Some(path.into()),
-                None => {
-                    warn!("'tls' is set, but 'key' is missing");
-                    None
-                }
+
+            let clients = GefyraClient::from_yaml(carrier_config["bridges"].as_mapping().unwrap());
+
+            let mut cert_path: Option<String> = None;
+            let mut key_path: Option<String> = None;
+            let mut local_sni: Option<String> = None;
+
+            if carrier_config.contains_key("tls") {
+                cert_path = match carrier_config["tls"]["certificate"].as_str() {
+                    Some(path) => Some(path.into()),
+                    None => {
+                        warn!("'tls' is set, but 'certificate' is missing");
+                        None
+                    }
+                };
+                key_path = match carrier_config["tls"]["key"].as_str() {
+                    Some(path) => Some(path.into()),
+                    None => {
+                        warn!("'tls' is set, but 'key' is missing");
+                        None
+                    }
+                };
+                local_sni = match carrier_config["tls"]["sni"].as_str() {
+                    Some(path) => Some(path.into()),
+                    None => {
+                        warn!("'tls' is set, but 'sni' is missing");
+                        None
+                    }
+                };
+            }
+
+            let carrier2_http_router = Carrier2 {
+                cluster_upstream: cluster_upstreams,
+                gefyra_clients: Arc::new(clients),
+                cluster_tls: cert_path.is_some(),
+                cluster_sni: local_sni.unwrap_or_else(|| "".to_string()),
             };
-            local_sni = match carrier_config["tls"]["sni"].as_str() {
-                Some(path) => Some(path.into()),
-                None => {
-                    warn!("'tls' is set, but 'sni' is missing");
-                    None
-                }
-            };
-        }
 
-        let carrier2_http_router = Carrier2 {
-            cluster_upstream: cluster_upstreams,
-            gefyra_clients: Arc::new(clients),
-            cluster_tls: cert_path.is_some(),
-            cluster_sni: local_sni.unwrap_or_else(|| "".to_string()),
-        };
+            let mut http_dispatcher =
+                http_proxy_service(&my_server.configuration, carrier2_http_router);
+            // set listening addr
+            let listening = format!("0.0.0.0:{}", carrier_config["port"].as_u64().unwrap());
+            if cert_path.is_some() && key_path.is_some() {
+                // add tls setting
+                http_dispatcher
+                    .add_tls(&listening, &cert_path.unwrap(), &key_path.unwrap())
+                    .unwrap();
+            } else {
+                // add listening port (no tls)
+                http_dispatcher.add_tcp(&listening);
+            }
 
-        let mut http_dispatcher =
-            http_proxy_service(&my_server.configuration, carrier2_http_router);
-        // set listening addr
-        let listening = format!("0.0.0.0:{}", carrier_config["port"].as_u64().unwrap());
-        if cert_path.is_some() && key_path.is_some() {
-            // add tls setting
-            http_dispatcher
-                .add_tls(&listening, &cert_path.unwrap(), &key_path.unwrap())
-                .unwrap();
-        } else {
-            // add listening port (no tls)
-            http_dispatcher.add_tcp(&listening);
-        }
+            // add http dispatcher server
+            my_server.add_service(http_dispatcher);
 
-        // add http dispatcher server
-        my_server.add_service(http_dispatcher);
-
-        // configure probes
-        if carrier_config.contains_key("probes") {
-            // httpGet probe
-            if let Some(http_get_ports) = carrier_config["probes"].get("httpGet") {
-                let ports = http_get_ports.as_sequence().unwrap();
-                debug!("probe ports: {:?}", ports);
-                for port in ports {
-                    let mut httpget_probe_handler = Service::new(
-                        format!("httpGet probe handler {}", port.as_u64().unwrap()),
-                        HttpGetProbeHandler,
-                    );
-                    httpget_probe_handler.add_tcp(&format!("0.0.0.0:{}", port.as_u64().unwrap()));
-                    my_server.add_service(httpget_probe_handler);
+            // configure probes
+            if carrier_config.contains_key("probes") {
+                // httpGet probe
+                if let Some(http_get_ports) = carrier_config["probes"].get("httpGet") {
+                    let ports = http_get_ports.as_sequence().unwrap();
+                    debug!("probe ports: {:?}", ports);
+                    for port in ports {
+                        let mut httpget_probe_handler = Service::new(
+                            format!("httpGet probe handler {}", port.as_u64().unwrap()),
+                            HttpGetProbeHandler,
+                        );
+                        httpget_probe_handler
+                            .add_tcp(&format!("0.0.0.0:{}", port.as_u64().unwrap()));
+                        my_server.add_service(httpget_probe_handler);
+                    }
                 }
             }
         }
-
-        // run this friend forever (until the next upgrade)
-        my_server.run_forever();
+        my_server
+    } else {
+        warn!("No configuration provided. Idle mode ...");
+        let mut my_server = Server::new(Some(args)).unwrap();
+        my_server.bootstrap();
+        my_server
     };
+
+    // run this friend forever (until the next upgrade)
+    my_server.run_forever();
 }

@@ -1,4 +1,9 @@
 version: 1
+threads: 2
+pid_file: /tmp/carrier2.pid
+error_log: /tmp/carrier.error.log
+upgrade_sock: /tmp/carrier2.sock
+upstream_keepalive_pool_size: 100
 port: 8080
 # tls:
 #    certificate: "/path/to/ca.crt"
