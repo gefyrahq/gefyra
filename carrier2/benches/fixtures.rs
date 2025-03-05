@@ -30,7 +30,7 @@ pub fn get_gefyra_clients(amount: u32) -> Vec<GefyraClient> {
     }
 
     let mapping1 = serde_yaml::from_str(&yaml).unwrap();
-    GefyraClient::from_yaml(&mapping1)
+    GefyraClient::from_yaml(&mapping1, false, "".to_string())
 }
 
 pub fn get_simple_header(amount: u32, path: String) -> RequestHeader {

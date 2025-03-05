@@ -1,5 +1,5 @@
 version: 1
-threads: 2
+threads: 4
 pid_file: /tmp/carrier2.pid
 error_log: /tmp/carrier.error.log
 upgrade_sock: /tmp/carrier2.sock
@@ -10,27 +10,27 @@ port: 8080
 #    key: "/path/to/key.pem"
 #    sni: "host.blueshoe.io"
 clusterUpstream: 
-    - "www.blueshoe.de:443"
+    - "httpstat.us:80"
 probes: 
     httpGet:
         - 8001
         - 8002
-bridges:
-    user-1:
-        endpoint: "www.blueshoe.io:443"
-        tls: true
-        sni: "www.blueshoe.io"
-        rules:
-            - match:
-                - matchHeader:
-                    name: "x-gefyra"
-                    value: "user-1"
-                # and
-                - matchPath: 
-                    path: "/my-svc"
-                    type: "prefix"
-            # or
-            - match:
-                - matchPath:
-                    path: "/always"
-                    type: "prefix"
+# bridges:
+#     user-1:
+#         endpoint: "www.blueshoe.io:443"
+#         tls: true
+#         sni: "www.blueshoe.io"
+#         rules:
+#             - match:
+#                 - matchHeader:
+#                     name: "x-gefyra"
+#                     value: "user-1"
+#                 and
+#                 - matchPath: 
+#                     path: "/my-svc"
+#                     type: "prefix"
+#             or
+#             - match:
+#                 - matchPath:
+#                     path: "/always"
+#                     type: "prefix"

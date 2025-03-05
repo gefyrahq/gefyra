@@ -12,6 +12,7 @@ python = ">=3.11,<=3.14"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
 pytest-kubernetes = "^0.6.0"
+requests = "^2.32.3"
 
 [build-system]
 requires = ["poetry-core"]

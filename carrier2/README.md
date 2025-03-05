@@ -10,44 +10,62 @@ a header value or a path prefix. Matched traffic will be directed to the local G
 ### Example Config and Structure
 ```yaml
 version: 1
+threads: 2
+pid_file: /tmp/carrier2.pid
+error_log: /tmp/carrier.error.log
+upgrade_sock: /tmp/carrier2.sock
+upstream_keepalive_pool_size: 100
 port: 8080
+# tls:
+#    certificate: "/path/to/ca.crt"
+#    key: "/path/to/key.pem"
+#    sni: "host.blueshoe.io"
 clusterUpstream: 
-    - "podname1.target-ns.pod.cluster.local:8000"
-    - "podname2.target-ns.pod.cluster.local:8000"
-    - "podname3.target-ns.pod.cluster.local:8000"  # the pods serving the cluster traffic, replication 3
-httpGetProbes: 
-    - 8001
-    - 8002
+    - "www.blueshoe.de:443"
+probes: 
+    httpGet:
+        - 8001
+        - 8002
 bridges:
     user-1:
-        endpoint: "stowaway-port-10001.gefyra.svc.cluster.local:10001"
+        endpoint: "www.blueshoe.io:443"
+        tls: true
+        sni: "www.blueshoe.io"
         rules:
-            # and
-            - matchHeader:
-                name: "x-gefyra"
-                value: "user-1"
-              matchPath: 
-                path: "/my-svc"
-                type: "prefix"
+            - match:
+                - matchHeader:
+                    name: "x-gefyra"
+                    value: "user-1"
+                # and
+                - matchPath: 
+                    path: "/my-svc"
+                    type: "prefix"
             # or
-            - matchPath:
-                path: "/always"
-                type: "prefix"
-    user-2:
-        endpoint: "stowaway-port-10002.gefyra.svc.cluster.local:10001"
-        rules:
-            # and
-            - matchHeader:
-                name: "x-gefyra"
-                value: "user-2"
-              matchPath: 
-                path: "/my-svc"
-                type: "prefix"
-            # or
-            - matchPath:
-                path: "/always"
-                type: "prefix"
+            - match:
+                - matchPath:
+                    path: "/always"
+                    type: "prefix"
 ```
 
 ## Run a dev version with debug ouput
 `RUST_LOG=debug cargo run -- -c conf.yaml`
+
+
+## Create a self-signed local certificate for testing
+Found under `tests/fixtures`, `test_key.pem` and `test_cert.pem`.
+Created with the following command:
+```
+openssl genrsa -out ca.key 2048
+openssl req -new -x509 -days 365 -key ca.key -subj "/C=CN/ST=GD/L=SZ/O=Blueshoe/CN=Blueshoe CA" -out test_ca.pem
+openssl req -newkey rsa:2048 -nodes -keyout test_key.pem -subj "/C=CN/ST=GD/L=SZ/O=Blueshoe/CN=localhost" -out server.csr
+openssl x509 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -in server.csr -CA test_ca.pem -CAkey ca.key -CAcreateserial -out test_cert.pem
+```
+
+## Graceful Upgrade
+A graceful upgrade is performed with (in a buybox container):
+```
+kill -SIGQUIT $(ps | grep "[c]arrier2" | awk ' { print $1 }' | tail -1) && carrier2 -c /tmp/config.yaml -u &
+```
+
+1. Sending `SIGQUIT` the currently running instance
+2. Start a new instance

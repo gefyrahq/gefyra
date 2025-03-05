@@ -113,13 +113,13 @@ pub struct GefyraClient {
     pub matching_rules: MatchOrCondition,
 }
 impl GefyraClient {
-    pub fn from_yaml(value: &Mapping) -> Vec<GefyraClient> {
+    pub fn from_yaml(value: &Mapping, default_tls_on: bool, sni: String) -> Vec<GefyraClient> {
         let mut clients = Vec::new();
         for (key, value) in value.iter() {
             debug!("GefyraClient with values {:?}", value);
             // todo this must be error checked
-            let tls = value["tls"].as_bool().unwrap_or_else(|| false);
-            let sni = value["sni"].as_str().unwrap_or_else(|| "").to_string();
+            let tls = value["tls"].as_bool().unwrap_or_else(|| default_tls_on);
+            let sni = value["sni"].as_str().unwrap_or_else(|| &sni).to_string();
             let client = GefyraClient {
                 key: key.as_str().unwrap().to_string(),
                 peer: HttpPeer::new(value["endpoint"].as_str().unwrap(), tls, sni),
@@ -319,7 +319,7 @@ mod tests {
         ";
 
         let mapping1 = serde_yaml::from_str(users).unwrap();
-        let clients = GefyraClient::from_yaml(&mapping1);
+        let clients = GefyraClient::from_yaml(&mapping1, false, "".to_string());
         assert_eq!(clients.len(), 2);
         assert_eq!(clients[0].key, "user-1");
         assert_eq!(clients[1].key, "user-2");
