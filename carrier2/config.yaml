@@ -10,7 +10,7 @@ port: 8080
 #    key: "/path/to/key.pem"
 #    sni: "host.blueshoe.io"
 clusterUpstream: 
-    - "httpstat.us:80"
+    - "blueshoe.de:80"
 probes: 
     httpGet:
         - 8001

@@ -5,7 +5,10 @@ from time import sleep
 
 CARRIER_TIMEOUT = 2
 
-def test_a_test_upstreams(http_upstream, https_upstream, http_peer, https_peer_5443, https_peer_5444):
+
+def test_a_test_upstreams(
+    http_upstream, https_upstream, http_peer, https_peer_5443, https_peer_5444
+):
     # this test ensures the local environment is not busy
 
     session = requests.Session()
@@ -57,7 +60,8 @@ def test_d_simple_probes_upstream_all(carrier2, http_upstream):
     queue = Queue()
     # running carrier2 in a background process
     p = Process(
-        target=carrier2, args=("-c ./tests/fixtures/default_upstream.yaml", CARRIER_TIMEOUT, queue)
+        target=carrier2,
+        args=("-c ./tests/fixtures/default_upstream.yaml", CARRIER_TIMEOUT, queue),
     )
     p.start()
 
@@ -146,26 +150,18 @@ def test_f_noprobes_one_peer(carrier2, http_upstream, http_peer):
 
     # this request gets dispatched to a peer on https://localhost:5443
     # rule: path match /what/a/path/
-    res = session.get(
-        "http://localhost:8080/what/a/path/"
-    )
+    res = session.get("http://localhost:8080/what/a/path/")
     assert res.status_code == 200
     assert "Gefyra peer rockz, too!" in res.text
 
     # this request gets dispatched to a peer on https://localhost:5443
     # rule: header match x-gefyra:peer
-    res = session.get(
-        "http://localhost:8080/gefyra/",
-        headers={"x-gefyra": "peer"}
-    )
+    res = session.get("http://localhost:8080/gefyra/", headers={"x-gefyra": "peer"})
     assert res.status_code == 200
     assert "Gefyra peer rockz, too!" in res.text
 
     # this request gets upstreamed to https://localhost:4443
-    res = session.get(
-        "http://localhost:8080/gefyra/",
-        headers={"x-gefyra": "upstream"}
-    )
+    res = session.get("http://localhost:8080/gefyra/", headers={"x-gefyra": "upstream"})
     assert res.status_code == 200
     assert "Gefyra upstream rockz!" in res.text
 
@@ -174,7 +170,9 @@ def test_f_noprobes_one_peer(carrier2, http_upstream, http_peer):
     assert "Server starting" in res
 
 
-def test_h_probes_three_peer_mixed_https(carrier2, https_upstream, https_peer_5443, https_peer_5444, http_peer):
+def test_h_probes_three_peer_mixed_https(
+    carrier2, https_upstream, https_peer_5443, https_peer_5444, http_peer
+):
     queue = Queue()
     # running carrier2 in a background process
     p = Process(
@@ -212,7 +210,7 @@ def test_h_probes_three_peer_mixed_https(carrier2, https_upstream, https_peer_54
     res = session.get(
         "https://localhost:8080/gefyra/",
         headers={"x-gefyra": "user-1"},
-        verify="./tests/fixtures/test_ca.pem"
+        verify="./tests/fixtures/test_ca.pem",
     )
     assert res.status_code == 200
     assert "Gefyra peer rockz, too!" in res.text
@@ -222,7 +220,7 @@ def test_h_probes_three_peer_mixed_https(carrier2, https_upstream, https_peer_54
     res = session.get(
         "https://localhost:8080/gefyra/",
         headers={"x-gefyra": "user-2"},
-        verify="./tests/fixtures/test_ca.pem"
+        verify="./tests/fixtures/test_ca.pem",
     )
     assert res.status_code == 200
     assert "Gefyra peer with different output, here!" in res.text
@@ -233,7 +231,7 @@ def test_h_probes_three_peer_mixed_https(carrier2, https_upstream, https_peer_54
     res = session.get(
         "https://localhost:8080/gefyra/",
         headers={"x-gefyra": "user-3"},
-        verify="./tests/fixtures/test_ca.pem"
+        verify="./tests/fixtures/test_ca.pem",
     )
     assert res.status_code == 200
     assert "Gefyra peer rockz, too!" in res.text
@@ -242,7 +240,7 @@ def test_h_probes_three_peer_mixed_https(carrier2, https_upstream, https_peer_54
     res = session.get(
         "https://localhost:8080/gefyra/",
         headers={"x-gefyra": "upstream"},
-        verify="./tests/fixtures/test_ca.pem"
+        verify="./tests/fixtures/test_ca.pem",
     )
 
     assert res.status_code == 200
