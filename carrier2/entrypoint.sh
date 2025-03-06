@@ -3,4 +3,4 @@
 
 set -e
 
-carrier2 -c /tmp/config.yaml -u
+carrier2 -c /tmp/config.yaml

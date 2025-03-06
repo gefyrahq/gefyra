@@ -1,4 +1,5 @@
 from multiprocessing import Process, Queue
+import subprocess
 import requests
 from requests.adapters import HTTPAdapter, Retry
 from time import sleep
@@ -6,7 +7,14 @@ from time import sleep
 CARRIER_TIMEOUT = 2
 
 
-def test_a_test_upstreams(
+def test_a_cargo_tests():
+    subprocess.run(
+        "cargo test",
+        shell=True,
+    )
+
+
+def test_b_test_upstreams(
     http_upstream, https_upstream, http_peer, https_peer_5443, https_peer_5444
 ):
     # this test ensures the local environment is not busy
@@ -46,17 +54,17 @@ def test_a_test_upstreams(
     assert res.status_code == 200
 
 
-def test_b_execute_help(carrier2):
+def test_c_execute_help(carrier2):
     res = carrier2("--help")
     assert "Command-line options" in res
 
 
-def test_c_noargs(carrier2):
+def test_d_noargs(carrier2):
     res = carrier2("")
     assert "Idle mode" in res
 
 
-def test_d_simple_probes_upstream_all(carrier2, http_upstream):
+def test_e_simple_probes_upstream_all(carrier2, http_upstream):
     queue = Queue()
     # running carrier2 in a background process
     p = Process(
@@ -89,7 +97,7 @@ def test_d_simple_probes_upstream_all(carrier2, http_upstream):
     assert "Server starting" in res
 
 
-def test_e_simple_probes_tls_upstream_all(carrier2, https_upstream):
+def test_f_simple_probes_tls_upstream_all(carrier2, https_upstream):
     queue = Queue()
     # running carrier2 in a background process
     p = Process(
@@ -129,7 +137,7 @@ def test_e_simple_probes_tls_upstream_all(carrier2, https_upstream):
     assert "Server starting" in res
 
 
-def test_f_noprobes_one_peer(carrier2, http_upstream, http_peer):
+def test_g_noprobes_one_peer(carrier2, http_upstream, http_peer):
     queue = Queue()
     # running carrier2 in a background process
     p = Process(

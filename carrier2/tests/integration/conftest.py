@@ -46,11 +46,7 @@ def k3d():
             "--agents",
             "1",
             "-p",
-            "8080:80@agent:0",
-            "-p",
-            "31820:31820/UDP@agent:0",
-            "--agents-memory",
-            "8G",
+            "8091:80@loadbalancer",
         ],
     )
     os.environ["KUBECONFIG"] = str(k8s.kubeconfig)

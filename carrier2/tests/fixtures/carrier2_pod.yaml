@@ -34,6 +34,22 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
+  name: carrier-12
+  namespace: default
+  labels:
+    app: carrier
+spec:
+  securityContext:
+    runAsUser: 12
+    runAsGroup: 12
+  containers:
+    - name: carrier
+      image: carrier2:pytest
+      imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
   name: carrier-nosec
   namespace: default
   labels:

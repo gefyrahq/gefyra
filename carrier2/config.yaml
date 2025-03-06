@@ -4,17 +4,17 @@ pid_file: /tmp/carrier2.pid
 error_log: /tmp/carrier.error.log
 upgrade_sock: /tmp/carrier2.sock
 upstream_keepalive_pool_size: 100
-port: 8080
+# port: 5002
 # tls:
 #    certificate: "/path/to/ca.crt"
 #    key: "/path/to/key.pem"
 #    sni: "host.blueshoe.io"
-clusterUpstream: 
-    - "blueshoe.de:80"
-probes: 
-    httpGet:
-        - 8001
-        - 8002
+#clusterUpstream: 
+#    - "10.42.0.17:5002"
+# probes: 
+#     httpGet:
+#         - 8001
+#         - 8002
 # bridges:
 #     user-1:
 #         endpoint: "www.blueshoe.io:443"

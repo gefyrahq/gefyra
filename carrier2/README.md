@@ -7,6 +7,18 @@ Every Gefyra user bridge is subsequently added to Carrier2 to match certain HTTP
 a header value or a path prefix. Matched traffic will be directed to the local Gefyra client container.
 
 
+## Running the tests
+The entire test suite (inlcuding Rust's `cargo test`) is set up with `pytest` and [pytest-kubernetes](https://github.com/Blueshoe/pytest-kubernetes). Run it under `/carrier2` with:
+```bash
+poetry run pytest -x
+```
+
+You will need the following dependencies installed:
+- Docker
+- Rust (`Rustup`)
+- k3d
+- Python + Poetry
+
 ### Example Config and Structure
 ```yaml
 version: 1
@@ -62,10 +74,15 @@ openssl x509 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -i
 ```
 
 ## Graceful Upgrade
+
+### Manually
 A graceful upgrade is performed with (in a buybox container):
 ```
 kill -SIGQUIT $(ps | grep "[c]arrier2" | awk ' { print $1 }' | tail -1) && carrier2 -c /tmp/config.yaml -u &
 ```
 
-1. Sending `SIGQUIT` the currently running instance
+1. Sending `SIGQUIT` to the currently running instance
 2. Start a new instance
+
+### Via Python
+Have a look into `tests/integration/utils.py` to see how we send a new `Carrier2` config and perform a graceful reload.
