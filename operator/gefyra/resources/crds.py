@@ -3,7 +3,7 @@ import kubernetes as k8s
 from gefyra.configuration import configuration
 
 CONNECTION_PROVIDERS = ["stowaway"]
-BRIDGE_PROVIDERS = ["carrier"]
+BRIDGE_PROVIDERS = ["carrier", "carrier2"]
 
 
 def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
