@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from gefyra.types import GefyraBridge
 
 
-from .utils import stopwatch, wrap_bridge
+from gefyra.api.utils import get_workload_information, stopwatch, wrap_bridge
 
 logger = logging.getLogger(__name__)
 
@@ -100,15 +100,7 @@ def bridge(
             f" {config.NETWORK_NAME}. Did you run 'gefyra up'?"
         ) from None
 
-    try:
-        _bits = list(filter(None, target.split("/")))
-        workload_type, workload_name = _bits[0:2]
-        container_name = _bits[2] if _bits[2:] else None
-    except IndexError:
-        raise GefyraBridgeError(
-            "Invalid --target notation. Use"
-            " <workload_type>/<workload_name>(/<container_name>)."
-        ) from None
+    workload_type, workload_name, container_name = get_workload_information(target)
 
     pods_to_intercept = get_pods_to_intercept(
         workload_name=workload_name,
