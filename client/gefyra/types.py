@@ -380,3 +380,37 @@ class GefyraBridge:
     target_pod: str
     provider: str
     state: str
+
+
+@dataclass
+class GefyraBridgeMount:
+    # the id of the mount
+    mount_id: str
+    # the namespace this cluster runs in the host cluster
+    namespace: str
+    # the uid from Kubernetes for this object
+    uid: str
+    # the labels of this Gefyra object
+    labels: Dict[str, str]
+    # the provider of the mount
+    provider: str
+    # target
+    target: str
+
+    # the state of the mount
+    _state: str
+    _state_transitions: Dict[str, str]
+    provider_parameter: Optional[StowawayParameter] = None
+
+    def __init__(self, gbridgemount: dict[str, Any]):
+        self._init_data(gbridgemount)
+
+    def _init_data(self, _object: dict[str, Any]):
+        self.name = _object["metadata"]["name"]
+        self.uid = _object["metadata"]["uid"]
+        self.provider = _object.get("provider", "")
+        self._state = _object.get("state", "")
+        self._state_transitions = _object.get("stateTransitions", {})
+        self.target = _object.get("target", "")
+        self.namespace = _object["metadata"]["namespace"]
+        self.labels = _object["metadata"].get("labels", {})

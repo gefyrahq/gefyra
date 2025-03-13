@@ -1,7 +1,7 @@
 import logging
 import socket
 import time
-from typing import Any, Dict, Iterable, TYPE_CHECKING, Optional, Tuple
+from typing import Any, Dict, Iterable, TYPE_CHECKING, Tuple
 
 from gefyra.exceptions import GefyraBridgeError
 
@@ -76,11 +76,11 @@ def stopwatch(func):
     return wrapper
 
 
-def get_workload_information(target: str) -> Tuple[str, str, Optional[str]]:
+def get_workload_information(target: str) -> Tuple[str, str, str]:
     try:
         _bits = list(filter(None, target.split("/")))
         workload_type, workload_name = _bits[0:2]
-        container_name = _bits[2] if _bits[2:] else None
+        container_name = _bits[2]
     except IndexError:
         raise GefyraBridgeError(
             "Invalid --target notation. Use"

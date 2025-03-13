@@ -1,4 +1,5 @@
 import logging
+import time
 
 from gefyra.configuration import ClientConfiguration
 
@@ -26,16 +27,61 @@ def handle_create_gefyrabridgemount(config: ClientConfiguration, body, target: s
     return mount
 
 
+def handle_delete_gefyramount(
+    config: ClientConfiguration, name: str, force: bool, wait: bool
+) -> bool:
+    from kubernetes.client import ApiException
+
+    try:
+        if force:
+            config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
+                namespace=config.NAMESPACE,
+                name=name,
+                group="gefyra.dev",
+                plural="gefyrabridgemounts",
+                version="v1",
+                body={"metadata": {"finalizers": None}},
+            )
+        config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object(
+            namespace=config.NAMESPACE,
+            name=name,
+            group="gefyra.dev",
+            plural="gefyrabridgemounts",
+            version="v1",
+        )
+        if wait:
+            timeout = 30
+            counter = 0
+            while counter < timeout:
+                try:
+                    get_gefyrabridgemount(config=config, name=name)
+                except ApiException:
+                    return True
+                time.sleep(1)
+                counter += 1
+            return False
+        return True
+    except ApiException as e:
+        logger.debug(e)
+        if e.status in [404, 403]:
+            return False
+        else:
+            logger.error(
+                f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
+            )
+            raise e
+
+
 def get_gbridgemount_body(
     config: ClientConfiguration,
     name: str,
-    target,
-    target_namespace,
-    target_container,
+    target: str,
+    target_namespace: str,
+    target_container: str,
 ) -> dict[str, str | dict[str, str]]:
     return {
         "apiVersion": "gefyra.dev/v1",
-        "kind": "gefyrabridgeount",
+        "kind": "gefyrabridgemount",
         "metadata": {
             "name": name,
             "namespace": config.NAMESPACE,
@@ -48,29 +94,22 @@ def get_gbridgemount_body(
     }
 
 
-def get_all_gefyrabridgemounts(
-    config: ClientConfiguration,
-) -> list[dict[str, str | dict[str, str]]]:
+def get_gefyrabridgemount(
+    config: ClientConfiguration, name: str
+) -> dict[str, dict[str, str]]:
     from kubernetes.client import ApiException
 
     try:
-        ireq_list = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+        mount = config.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(
+            name=name,
             namespace=config.NAMESPACE,
             group="gefyra.dev",
             plural="gefyrabridgemounts",
             version="v1",
         )
-        if ireq_list:
-            # filter bridges for this client
-            return list(
-                item
-                for item in ireq_list.get("items")
-                if item["client"] == config.CLIENT_ID
-            )
-        else:
-            return []
+        return mount
     except ApiException as e:
         if e.status != 404:
             logger.warning("Error getting GefyraBridgeMounts: " + str(e))
             raise e from None
-        return []
+        return {}
