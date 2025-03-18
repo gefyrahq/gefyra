@@ -32,7 +32,9 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                     key, value = annotation[0].split("=")
                     stowaway_annotations[key] = value
                 except ValueError:
-                    logger.warn("Some of the given CLI parameters are malformed. Make sure they are in the form of: name=value")
+                    logger.warn(
+                        "Some of the given CLI parameters are malformed. Make sure they are in the form of: name=value"
+                    )
                     # handle preset values
                     stowaway_annotations.update(params.service_annotations)
         except IndexError:
