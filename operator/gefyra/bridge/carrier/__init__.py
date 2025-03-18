@@ -6,6 +6,11 @@ import kubernetes as k8s
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.configuration import OperatorConfiguration
 
+from gefyra.bridge.carrier2 import (
+    CARRIER_CONFIGURE_COMMAND_BASE,
+    CARRIER_CONFIGURE_PROBE_COMMAND_BASE,
+)
+
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_object_api = k8s.client.CustomObjectsApi()
@@ -16,7 +21,7 @@ BUSYBOX_COMMAND = "/bin/busybox"
 CARRIER_ORIGINAL_CONFIGMAP = "gefyra-carrier-restore-configmap"
 
 
-class Carrier2(AbstractGefyraBridgeProvider):
+class Carrier(AbstractGefyraBridgeProvider):
     def __init__(
         self,
         configuration: OperatorConfiguration,

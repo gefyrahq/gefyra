@@ -1,10 +1,11 @@
-import json
-from typing import Any, Dict, List, Optional
-from gefyra.utils import exec_command_pod
+from typing import Any, Dict, Optional
 import kubernetes as k8s
 
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.configuration import OperatorConfiguration
+
+from gefyra.bridge.carrier2.utils import send_carrier2_config, reload_carrier2_config
+from gefyra.bridge.carrier2.const import CARRIER2_CONFIG_TEMPLATE
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -16,7 +17,7 @@ CARRIER_CONFIGURE_PROBE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setprobe.sh"]
 CARRIER_ORIGINAL_CONFIGMAP = "gefyra-carrier-restore-configmap"
 
 
-class Carrier(AbstractGefyraBridgeProvider):
+class Carrier2(AbstractGefyraBridgeProvider):
     def __init__(
         self,
         configuration: OperatorConfiguration,
@@ -54,10 +55,10 @@ class Carrier(AbstractGefyraBridgeProvider):
         Check if this Gefyra bridge provider is ready for bridges
         """
 
-        # 1. Check if Carrier2 is running in the target Pod and status accordingly, raise TemporaryError otherwise (retry)
+        # 1. Check if Carrier2 is running in the target Pod and status accordingly,
+        # raise TemporaryError otherwise (retry)
         # 2. return True
-
-        raise NotImplementedError
+        return True
 
     def uninstall(self):
         """
@@ -84,8 +85,13 @@ class Carrier(AbstractGefyraBridgeProvider):
         #    + all active bridges and the requested bridge (including rules)
         # 4. Retrive actual config from running Carrier2 instance, raise TemporaryError on error (retry)
         # 5. Compare constructed config with actual config, return result
-
-        raise NotImplementedError
+        carrier2_config = CARRIER2_CONFIG_TEMPLATE.format(
+            container_port=container_port,
+            destination_port=destination_port,
+            ip=destination_host,
+        )
+        send_carrier2_config(core_v1_api, self.pod, self.namespace, carrier2_config)
+        reload_carrier2_config(core_v1_api, self.pod, self.namespace)
 
     def remove_proxy_route(
         self, container_port: int, destination_host: str, destination_port: int
@@ -144,7 +150,7 @@ class Carrier2Builder:
         logger,
         **_ignored,
     ):
-        instance = Carrier(
+        instance = Carrier2(
             configuration=configuration,
             target_namespace=target_namespace,
             target_pod=target_pod,
