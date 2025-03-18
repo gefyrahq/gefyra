@@ -1,8 +1,11 @@
 # flake8: noqa
 from typing import TYPE_CHECKING
+import logging
 
 if TYPE_CHECKING:
     from gefyra.types import GefyraInstallOptions
+
+logger = logging.getLogger(__name__)
 
 STOWAWAY_LABELS = {
     "gefyra.dev/app": "stowaway",
@@ -29,6 +32,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                     key, value = annotation[0].split("=")
                     stowaway_annotations[key] = value
                 except ValueError:
+                    logger.warn("Some of the given CLI parameters are malformed. Make sure they are in the form of: name=value")
                     # handle preset values
                     stowaway_annotations.update(params.service_annotations)
         except IndexError:
