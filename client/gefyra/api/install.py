@@ -54,7 +54,8 @@ def install(
         kube_config_file=kubeconfig,
         kube_context=kubecontext,
         ignore_docker=True,
-        registry_url=kwargs.get("registry_url", ""),
+        registry=kwargs.get("registry", ""),
+        wireguard_mtu=kwargs.get("mtu", 1340),
     )
     if preset:
         presetoptions = LB_PRESETS.get(preset)  # type: ignore

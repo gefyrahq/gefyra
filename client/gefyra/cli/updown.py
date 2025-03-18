@@ -20,7 +20,8 @@ def _check_and_install(
     connection_name: str = "",
     preset: Optional[str] = None,
     bar=None,
-    registry_url: Optional[str] = None,
+    registry: Optional[str] = None,
+    mtu: Optional[str] = None,
 ) -> bool:
     status = api.status(connection_name=connection_name)
 
@@ -33,14 +34,14 @@ def _check_and_install(
         return False
     else:  # status.summary == StatusSummary.DOWN:
         logger.debug(f"Preset {preset}")
-        logger.debug(f"Registry URL {registry_url}")
         api.install(
             kubeconfig=config.KUBE_CONFIG_FILE,
             kubecontext=config.KUBE_CONTEXT,
             apply=True,
             wait=True,
             preset=preset,
-            registry_url=registry_url,
+            registry=registry,
+            mtu=mtu,
         )
         return True
 
@@ -60,9 +61,17 @@ def _check_and_install(
     type=str,
 )
 @click.option(
-    "--registry-url",
-    help="Set the registry URL for the Gefyra operator",
+    "--registry",
+    help="Set the registry to use for the Gefyra components",
     type=str,
+    required=False,
+)
+@click.option(
+    "--mtu",
+    help="Set the MTU for the Gefyra network",
+    type=int,
+    required=False,
+    default=1340,
 )
 @pass_context
 @standard_error_handler
@@ -70,7 +79,8 @@ def cluster_up(
     ctx,
     minikube: Optional[str] = None,
     preset: Optional[str] = None,
-    registry_url: Optional[str] = None,
+    registry: Optional[str] = None,
+    mtu: Optional[int] = 1340,
 ):
     from alive_progress import alive_bar
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
@@ -88,7 +98,12 @@ def cluster_up(
     kubeconfig = ctx.obj["kubeconfig"]
     kubecontext = ctx.obj["context"]
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        registry=registry,
+        wireguard_mtu=str(mtu) if mtu else None,
+    )
     with alive_bar(
         4,
         title="Installing Gefyra to the cluster",
@@ -103,7 +118,8 @@ def cluster_up(
             connection_name=connection_name,
             preset=preset,
             bar=bar,
-            registry_url=registry_url,
+            registry=config.REGISTRY,
+            mtu=config.WIREGUARD_MTU,
         )
         if install_success:
             bar()

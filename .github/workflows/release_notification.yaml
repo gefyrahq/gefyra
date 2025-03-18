@@ -10,7 +10,7 @@ jobs:
   send_mail:
     runs-on: ubuntu-latest
     steps:
-    - uses: dawidd6/action-send-mail@v3
+    - uses: dawidd6/action-send-mail@v4
       name: Send Release Mail
       with:
         server_address: ${{secrets.SMTP_SERVER}}

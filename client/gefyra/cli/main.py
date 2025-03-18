@@ -32,6 +32,12 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
 
     # Set up logging based on the debug flag
     if debug:
+        from kubernetes.client import Configuration
+
+        k8s_client_config = Configuration.get_default_copy()
+        k8s_client_config.debug = True
+        Configuration.set_default(k8s_client_config)
+
         logger = logging.getLogger()
         handler = logging.StreamHandler()
         formatter = logging.Formatter(

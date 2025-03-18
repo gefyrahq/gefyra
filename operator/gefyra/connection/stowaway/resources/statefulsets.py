@@ -77,7 +77,7 @@ def create_stowaway_statefulset(
                 spec=k8s.client.V1PersistentVolumeClaimSpec(
                     access_modes=["ReadWriteOnce"],
                     resources=k8s.client.V1ResourceRequirements(
-                        requests={"storage": "50Mi"}
+                        requests={"storage": f"{configuration.STOWAWAY_STORAGE}Mi"}
                     ),
                 ),
             )

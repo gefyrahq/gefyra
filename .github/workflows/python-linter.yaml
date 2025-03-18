@@ -30,3 +30,9 @@ jobs:
         poetry install
         poetry run black . --check
         poetry run flake8 --config ../setup.cfg
+    - name: Run MyPy client
+      working-directory: client/
+      run: |
+        poetry install
+        poetry run mypy gefyra
+      

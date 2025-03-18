@@ -19,7 +19,7 @@ from gefyra.local import (
 
 logger = logging.getLogger("gefyra")
 
-__VERSION__ = "2.2.3"
+__VERSION__ = "2.3.1"
 USER_HOME = os.path.expanduser("~")
 
 
@@ -60,14 +60,14 @@ class ClientConfiguration(object):
         cargo_endpoint_host: str = "",
         cargo_endpoint_port: str = "31820",
         cargo_container_name: str = "",
-        registry_url: str = "",
+        registry: Optional[str] = "",
         operator_image_url: str = "",
         stowaway_image_url: str = "",
         carrier_image_url: str = "",
         cargo_image_url: str = "",
         kube_config_file: Optional[Path] = None,
         kube_context: Optional[str] = None,
-        wireguard_mtu: str = "1340",
+        wireguard_mtu: Optional[str] = None,
         client_id: str = "",
         gefyra_config_root: Optional[Union[str, Path]] = None,
         ignore_connection: bool = False,  # work with kubeconfig not connection
@@ -80,29 +80,25 @@ class ClientConfiguration(object):
         self.NAMESPACE = "gefyra"  # another namespace is currently not supported
         self._kube_config_path = None
         self._kube_context = None
-        self.REGISTRY_URL = (
-            registry_url.rstrip("/") if registry_url else "quay.io/gefyra"
-        )
-        if registry_url:
-            logger.debug(
-                f"Using registry prefix (other than default): {self.REGISTRY_URL}"
-            )
+        self.REGISTRY = registry.rstrip("/") if registry else "quay.io/gefyra"
+        if registry:
+            logger.debug(f"Using registry prefix (other than default): {self.REGISTRY}")
         self.OPERATOR_IMAGE = (
-            operator_image_url or f"{self.REGISTRY_URL}/operator:{__VERSION__}"
+            operator_image_url or f"{self.REGISTRY}/operator:{__VERSION__}"
         )
         if operator_image_url:
             logger.debug(
                 f"Using Operator image (other than default): {operator_image_url}"
             )
         self.STOWAWAY_IMAGE = (
-            stowaway_image_url or f"{self.REGISTRY_URL}/stowaway:{__VERSION__}"
+            stowaway_image_url or f"{self.REGISTRY}/stowaway:{__VERSION__}"
         )
         if stowaway_image_url:
             logger.debug(
                 f"Using Stowaway image (other than default): {stowaway_image_url}"
             )
         self.CARRIER_IMAGE = (
-            carrier_image_url or f"{self.REGISTRY_URL}/carrier:{__VERSION__}"
+            carrier_image_url or f"{self.REGISTRY}/carrier:{__VERSION__}"
         )
         if carrier_image_url:
             logger.debug(
@@ -110,12 +106,10 @@ class ClientConfiguration(object):
             )
         if sys.platform == "win32" or "microsoft" in platform.release().lower():
             self.CARGO_IMAGE = (
-                cargo_image_url or f"{self.REGISTRY_URL}/cargo-win:{__VERSION__}"
+                cargo_image_url or f"{self.REGISTRY}/cargo-win:{__VERSION__}"
             )
         else:
-            self.CARGO_IMAGE = (
-                cargo_image_url or f"{self.REGISTRY_URL}/cargo:{__VERSION__}"
-            )
+            self.CARGO_IMAGE = cargo_image_url or f"{self.REGISTRY}/cargo:{__VERSION__}"
         if cargo_image_url:
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:
@@ -156,7 +150,10 @@ class ClientConfiguration(object):
         if kube_context:
             self.KUBE_CONTEXT = kube_context
 
-        self.WIREGUARD_MTU = wireguard_mtu
+        if not wireguard_mtu:
+            self.WIREGUARD_MTU = "1340"
+        else:
+            self.WIREGUARD_MTU = wireguard_mtu
         if not gefyra_config_root:
             self.GEFYRA_LOCATION = Path.home().joinpath(".gefyra")
         else:
