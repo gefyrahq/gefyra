@@ -1,5 +1,6 @@
 from typing import Any, Dict, Optional
 import kubernetes as k8s
+from kubernetes.client import ApiException
 
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.configuration import OperatorConfiguration
@@ -85,13 +86,42 @@ class Carrier2(AbstractGefyraBridgeProvider):
         #    + all active bridges and the requested bridge (including rules)
         # 4. Retrive actual config from running Carrier2 instance, raise TemporaryError on error (retry)
         # 5. Compare constructed config with actual config, return result
+
+    def add_cluster_upstream(
+        self,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+    ):
         carrier2_config = CARRIER2_CONFIG_TEMPLATE.format(
             container_port=container_port,
             destination_port=destination_port,
             ip=destination_host,
         )
-        send_carrier2_config(core_v1_api, self.pod, self.namespace, carrier2_config)
-        reload_carrier2_config(core_v1_api, self.pod, self.namespace)
+        send_done = False
+        retries = 5
+
+        while not send_done and retries > 0:
+            try:
+                send_carrier2_config(
+                    core_v1_api, self.pod, self.namespace, carrier2_config
+                )
+                send_done = True
+            except ApiException:
+                retries -= 1
+                continue
+
+        reload_done = False
+        retries = 5
+        while not reload_done and retries > 0:
+            try:
+                reload_carrier2_config(core_v1_api, self.pod, self.namespace)
+                reload_done = True
+            except ApiException:
+                retries -= 1
+                continue
+
+        print("patching done")
 
     def remove_proxy_route(
         self, container_port: int, destination_host: str, destination_port: int
