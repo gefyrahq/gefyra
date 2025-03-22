@@ -1,29 +1,27 @@
 from enum import Enum
 
 from gefyra.configuration import OperatorConfiguration
-from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
-from gefyra.bridge.carrier import CarrierBuilder
-from gefyra.bridge.carrier2 import Carrier2Builder
+from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
+from gefyra.bridge_mount.duplicate import DuplicateBuilder
 
 
-class BridgeProviderType(Enum):
-    CARRIER = "carrier"
-    CARRIER2 = "carrier2"
+class ShadowProviderType(Enum):
+    DUPLICATE = "duplicate"
 
 
-class GefyraBridgeFactory:
+class GefyraShadowFactory:
     def __init__(self):
         self._builders = {}
 
-    def register_builder(self, provider_type: BridgeProviderType, builder):
+    def register_builder(self, provider_type: ShadowProviderType, builder):
         self._builders[provider_type.value] = builder
 
     def __create(
         self,
-        provider_type: BridgeProviderType,
+        provider_type: ShadowProviderType,
         configuration: OperatorConfiguration,
         target_namespace: str,
-        target_pod: str,
+        target: str,
         target_container: str,
         logger,
         **kwargs
@@ -32,24 +30,19 @@ class GefyraBridgeFactory:
         if not builder:
             raise ValueError(provider_type)
         return builder(
-            configuration,
-            target_namespace,
-            target_pod,
-            target_container,
-            logger,
-            **kwargs
+            configuration, target_namespace, target, target_container, logger, **kwargs
         )
 
     def get(
         self,
-        provider_type: BridgeProviderType,
+        provider_type: ShadowProviderType,
         configuration: OperatorConfiguration,
         target_namespace: str,
         target_pod: str,
         target_container: str,
         logger,
         **kwargs
-    ) -> AbstractGefyraBridgeProvider:
+    ) -> AbstractGefyraBridgeMountProvider:
         return self.__create(
             provider_type,
             configuration,
@@ -61,6 +54,7 @@ class GefyraBridgeFactory:
         )
 
 
-bridge_provider_factory = GefyraBridgeFactory()
-bridge_provider_factory.register_builder(BridgeProviderType.CARRIER, CarrierBuilder())
-bridge_provider_factory.register_builder(BridgeProviderType.CARRIER2, Carrier2Builder())
+shadow_provider_factory = GefyraShadowFactory()
+shadow_provider_factory.register_builder(
+    ShadowProviderType.DUPLICATE, DuplicateBuilder()
+)

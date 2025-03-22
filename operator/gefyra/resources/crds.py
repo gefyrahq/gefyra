@@ -3,7 +3,7 @@ import kubernetes as k8s
 from gefyra.configuration import configuration
 
 CONNECTION_PROVIDERS = ["stowaway"]
-BRIDGE_PROVIDERS = ["carrier"]
+BRIDGE_PROVIDERS = ["carrier", "carrier2"]
 
 
 def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
@@ -163,6 +163,64 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
         spec=def_spec,
         metadata=k8s.client.V1ObjectMeta(
             name="gefyraclients.gefyra.dev",
+            namespace=configuration.NAMESPACE,
+            finalizers=[],
+        ),
+    )
+    return crd
+
+
+def create_bridge_mount_definition() -> k8s.client.V1CustomResourceDefinition:
+    schema_props = k8s.client.V1JSONSchemaProps(
+        type="object",
+        properties={
+            # the targets for this bridge / traffic sources
+            "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
+            "target": k8s.client.V1JSONSchemaProps(
+                type="string"
+            ),  # target workload to intercept
+            "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
+            "provider": k8s.client.V1JSONSchemaProps(type="string"),
+            "providerParameter": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
+            "sunset": k8s.client.V1JSONSchemaProps(type="string"),
+            "state": k8s.client.V1JSONSchemaProps(type="string", default="REQUESTED"),
+            "stateTransitions": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
+            "status": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
+        },
+    )
+
+    def_spec = k8s.client.V1CustomResourceDefinitionSpec(
+        group="gefyra.dev",
+        names=k8s.client.V1CustomResourceDefinitionNames(
+            kind="gefyrabridgemount",
+            plural="gefyrabridgemounts",
+            short_names=["gbridgemount", "gbridgemounts"],
+        ),
+        scope="Namespaced",
+        versions=[
+            k8s.client.V1CustomResourceDefinitionVersion(
+                name="v1",
+                served=True,
+                storage=True,
+                schema=k8s.client.V1CustomResourceValidation(
+                    open_apiv3_schema=schema_props
+                ),
+            )
+        ],
+    )
+
+    crd = k8s.client.V1CustomResourceDefinition(
+        api_version="apiextensions.k8s.io/v1",
+        kind="CustomResourceDefinition",
+        spec=def_spec,
+        metadata=k8s.client.V1ObjectMeta(
+            name="gefyrabridgemounts.gefyra.dev",
             namespace=configuration.NAMESPACE,
             finalizers=[],
         ),

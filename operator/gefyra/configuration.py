@@ -40,6 +40,11 @@ class OperatorConfiguration:
         self.CARRIER_STARTUP_TIMEOUT = config(
             "GEFYRA_CARRIER_STARTUP_TIMEOUT", cast=int, default=60
         )
+        # Carrier2
+        self.CARRIER2_IMAGE = config(
+            "GEFYRA_CARRIER2_IMAGE", default="quay.io/gefyra/carrier2"
+        )
+        self.CARRIER2_IMAGE_TAG = config("GEFYRA_CARRIER2_IMAGE_TAG", default="test")
 
     def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if k.isupper()}

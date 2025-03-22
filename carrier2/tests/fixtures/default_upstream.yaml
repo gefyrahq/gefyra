@@ -1,0 +1,9 @@
+version: 1
+threads: 2
+port: 8080
+clusterUpstream: 
+    - "localhost:4443"
+probes: 
+    httpGet:
+        - 8001
+        - 8002
