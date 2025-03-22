@@ -11,6 +11,8 @@ kopf = "^1.37.4"
 kubernetes = "^32.0.1"
 python-decouple = "^3.8"
 python-statemachine = "^2.5.0"
+pydantic = "^2.10.6"
+pydantic-settings = "^2.8.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4"
