@@ -11,6 +11,7 @@ from kubernetes.client import (
     V1ObjectMeta,
     V1ServiceSpec,
     V1ServicePort,
+    V1Container,
 )
 
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
@@ -197,6 +198,36 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         svc_name = self._get_duplication_svc_name()
         return f"{svc_name}.{self.namespace}.svc.cluster.local"
 
+    def _set_carrier_upstream(self, pod: V1Pod, container: V1Container) -> None:
+        timeout = 30
+        waiting_pod = core_v1_api.read_namespaced_pod(
+            name=pod.metadata.name, namespace=self.namespace
+        )
+        # wait for pod to be ready
+        while (
+            not self.pod_ready_and_healthy(waiting_pod, self.container) and timeout > 0
+        ):
+            sleep(1)
+            timeout -= 1
+            waiting_pod = core_v1_api.read_namespaced_pod(
+                name=pod.metadata.name, namespace=self.namespace
+            )
+        if timeout == 0:
+            raise RuntimeError(f"Pod {pod.metadata.name} did not become ready in time")
+        carrier = Carrier2(
+            configuration=self.configuration,
+            target_namespace=self.namespace,
+            target_pod=pod.metadata.name,
+            target_container=self.container,
+            logger=self.logger,
+        )
+        for port in container.ports:
+            carrier.add_cluster_upstream(
+                container_port=port.container_port,
+                destination_host=self._get_svc_fqdn(),
+                destination_port=port.container_port,
+            )
+
     def install(self):
         # TODO extend to StatefulSet and Pods
         for pod in self._original_pods.items:
@@ -235,38 +266,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             core_v1_api.patch_namespaced_pod(
                 name=pod.metadata.name, namespace=self.namespace, body=pod
             )
-            timeout = 30
-            waiting_pod = core_v1_api.read_namespaced_pod(
-                name=pod.metadata.name, namespace=self.namespace
-            )
-            # wait for pod to be ready
-            while (
-                not self.pod_ready_and_healthy(waiting_pod, self.container)
-                and timeout > 0
-            ):
-                sleep(1)
-                timeout -= 1
-                waiting_pod = core_v1_api.read_namespaced_pod(
-                    name=pod.metadata.name, namespace=self.namespace
-                )
-            if timeout == 0:
-                raise RuntimeError(
-                    f"Pod {pod.metadata.name} did not become ready in time"
-                )
-            sleep(5)
-            carrier = Carrier2(
-                configuration=self.configuration,
-                target_namespace=self.namespace,
-                target_pod=pod.metadata.name,
-                target_container=self.container,
-                logger=self.logger,
-            )
-            for port in container.ports:
-                carrier.add_cluster_upstream(
-                    container_port=port.container_port,
-                    destination_host=self._get_svc_fqdn(),
-                    destination_port=port.container_port,
-                )
+            self._set_carrier_upstream(pod, container)
 
     @property
     def _carrier_installed(self):

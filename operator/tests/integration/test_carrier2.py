@@ -2,6 +2,8 @@ import logging
 from pathlib import Path
 from time import sleep
 from pytest_kubernetes.providers import AClusterManager
+import requests
+from requests.adapters import HTTPAdapter, Retry
 
 
 logger = logging.getLogger()
@@ -32,26 +34,11 @@ class TestCarrier2:
         sleep(10)
         mount.install()
 
-        # carrier = Carrier2(
-        #     configuration=configuration,
-        #     target_namespace=namespace,
-        #     target_pod=carrier_pod_name,
-        #     target_container="nginx",
-        #     logger=logger,
-        # )
-        # shadow_pod = gefyra_crd.kubectl(
-        #     ["get", "pod", shadow_pod_name, "-n", "default"],
-        # )
-        # container_port = carrier_pod["spec"]["containers"][0]["ports"][0][
-        #     "containerPort"
-        # ]
-        # dest_pod_port = shadow_pod["spec"]["containers"][0]["ports"][0]["containerPort"]
-        # dest_host = shadow_pod["status"]["podIP"]
+        retries = Retry(total=10, backoff_factor=0.2)
+        session = requests.Session()
+        session.mount("http://localhost:8080", HTTPAdapter(max_retries=retries))
 
-        # carrier.add_proxy_route(
-        #     container_port=container_port,
-        #     destination_host=dest_host,
-        #     destination_port=dest_pod_port,
-        # )
-
-        sleep(300)
+        # the is now served from backend-shadow (from the cluster) via Carrier2
+        resp = session.get("http://localhost:8080")
+        assert resp.status_code == 200
+        assert "Welcome to nginx!" in resp.text
