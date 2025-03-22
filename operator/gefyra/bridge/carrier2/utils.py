@@ -1,6 +1,8 @@
 from typing import List
 import time
 
+from gefyra.bridge.carrier2.config import Carrier2Config
+
 
 def stream_exec_retries(
     core_api, name: str, namespace: str, commands: List[str], retries: int = 5
@@ -9,7 +11,7 @@ def stream_exec_retries(
 
     while retries > 0:
         try:
-            stream_exec(core_api, name, namespace, commands)
+            return stream_exec(core_api, name, namespace, commands)
             break
         except ApiException:
             retries -= 1
@@ -51,9 +53,13 @@ def stream_exec(core_api, name: str, namespace: str, commands: List[str]):
 
 
 # https://github.com/kubernetes-client/python/issues/476
-def send_carrier2_config(core_api, name: str, namespace: str, config_content: str):
+def send_carrier2_config(core_api, name: str, namespace: str, config: Carrier2Config):
     # Calling exec interactively.
-    commands = ["cat <<'EOF' >" + "/tmp/config.yaml" + "\n", config_content, "\n"]
+    commands = [
+        "cat <<'EOF' >" + "/tmp/config.yaml" + "\n",
+        config.model_dump_yaml(),
+        "\n",
+    ]
     stream_exec_retries(core_api, name, namespace, commands)
 
 

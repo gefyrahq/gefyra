@@ -5,7 +5,7 @@ from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.utils import send_carrier2_config, reload_carrier2_config
-from gefyra.bridge.carrier2.const import CARRIER2_CONFIG_TEMPLATE
+from gefyra.bridge.carrier2.config import Carrier2Config
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -31,6 +31,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         self.pod = target_pod
         self.container = target_container
         self.logger = logger
+        self.carrier_config = Carrier2Config()
 
     provider_type = "carrier2"
 
@@ -88,16 +89,21 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     def add_cluster_upstream(
         self,
-        container_port: int,
         destination_host: str,
         destination_port: int,
     ):
-        carrier2_config = CARRIER2_CONFIG_TEMPLATE.format(
-            container_port=container_port,
-            destination_port=destination_port,
-            ip=destination_host,
-        )
-        send_carrier2_config(core_v1_api, self.pod, self.namespace, carrier2_config)
+        if self.carrier_config.clusterUpstream is None:
+            self.carrier_config.clusterUpstream = []
+        if (
+            f"{destination_host}:{destination_port}"
+            not in self.carrier_config.clusterUpstream
+        ):
+            self.carrier_config.clusterUpstream.append(
+                f"{destination_host}:{destination_port}"
+            )
+
+    def commit_config(self) -> None:
+        send_carrier2_config(core_v1_api, self.pod, self.namespace, self.carrier_config)
         reload_carrier2_config(core_v1_api, self.pod, self.namespace)
 
     def remove_proxy_route(

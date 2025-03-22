@@ -125,22 +125,31 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             ),
         )
 
-    def _duplicate_deployment(self, deployment_name: str, namespace: str) -> None:
-        deployment = app.read_namespaced_deployment(deployment_name, namespace)
+    def _duplicate_deployment(self) -> None:
+        deployment = self._get_workload()
 
         # Create a copy of the deployment
         new_deployment = self._clone_deployment_structure(deployment)
         new_svc = self._get_svc_for_deployment(new_deployment)
 
         # Create the new deployment
-        app.create_namespaced_deployment(namespace, new_deployment)
+        app.create_namespaced_deployment(self.namespace, new_deployment)
         core_v1_api.create_namespaced_service(
-            namespace,
+            self.namespace,
             new_svc,
         )
 
+    def _get_workload(self) -> V1Deployment:
+        # TODO extend to pods
+        try:
+            return app.read_namespaced_deployment(self.target, self.namespace)
+        except ApiException as e:
+            if e.status == 404:
+                raise Exception(f"Deployment {self.target} not found.")
+            raise RuntimeError(f"Exception when calling Kubernetes API: {e}")
+
     def prepare(self):
-        self._duplicate_deployment(self.target, self.namespace)
+        self._duplicate_deployment()
 
     @cached_property
     def _gefyra_pods(self) -> V1PodList:
@@ -221,12 +230,15 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             target_container=self.container,
             logger=self.logger,
         )
-        for port in container.ports:
+        # TODO what about multiple ports?
+        carrier.carrier_config.port = container.ports[0].container_port
+        for port in self._get_svc_ports(deployment=self._get_workload()):
             carrier.add_cluster_upstream(
-                container_port=port.container_port,
                 destination_host=self._get_svc_fqdn(),
-                destination_port=port.container_port,
+                destination_port=port.port,
             )
+
+        carrier.commit_config()
 
     def install(self):
         # TODO extend to StatefulSet and Pods

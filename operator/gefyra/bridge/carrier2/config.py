@@ -1,16 +1,10 @@
 import yaml
 
-from typing import Optional, Tuple, Type
-from pydantic import Field, BaseModel
-from pydantic_settings import (
-    BaseSettings,
-    PydanticBaseSettingsSource,
-    SettingsConfigDict,
-    YamlConfigSettingsSource,
-)
+from typing import Optional
+from pydantic import ConfigDict, Field, BaseModel
 
 
-ERROR_LOG_PATH = "error.log"
+ERROR_LOG_PATH = "/tmp/carrier.error.log"
 
 
 class CarrierMatchHeader(BaseModel):
@@ -38,36 +32,28 @@ class CarrierProbe(BaseModel):
 
 
 class CarrierTLS(BaseModel):
-    certificate: str
-    key: str
+    certificate: str = "./tests/fixtures/test_cert.pem"
+    key: str = "./tests/fixtures/test_key.pem"
     sni: Optional[str] = None
 
 
-class CarrierConfig(BaseSettings):
-    version: str
-    threads: int
-    port: int
+class Carrier2Config(BaseModel):
+    version: int = 1
+    threads: int = 4
+    port: Optional[int] = None
     error_log: str = Field(
         default=ERROR_LOG_PATH,
     )
-    tls: Optional[CarrierTLS]
-    clusterUpstream: Optional[list[str]]
-    probes: Optional[CarrierProbe]
-    bridges: Optional[dict[str, CarrierBridge]]
-    model_config = SettingsConfigDict(
-        yaml_file="/tmp/config.yaml", coerce_numbers_to_str=True
-    )
-
-    @classmethod
-    def settings_customise_sources(
-        cls,
-        settings_cls: Type[BaseSettings],
-        init_settings: PydanticBaseSettingsSource,
-        env_settings: PydanticBaseSettingsSource,
-        dotenv_settings: PydanticBaseSettingsSource,
-        file_secret_settings: PydanticBaseSettingsSource,
-    ) -> Tuple[PydanticBaseSettingsSource, ...]:
-        return (YamlConfigSettingsSource(settings_cls),)
+    pid_file: str = "/tmp/carrier2.pid"
+    upgrade_sock: str = "/tmp/carrier2.sock"
+    upstream_keepalive_pool_size: int = 100
+    tls: Optional[CarrierTLS] = None
+    clusterUpstream: Optional[list[str]] = None
+    probes: Optional[CarrierProbe] = None
+    bridges: Optional[dict[str, CarrierBridge]] = None
+    model_config = ConfigDict(coerce_numbers_to_str=True)
 
     def model_dump_yaml(self) -> str:
-        return yaml.safe_dump(self.model_dump(), sort_keys=False)
+        return yaml.safe_dump(
+            self.model_dump(by_alias=True, exclude_none=True), sort_keys=False
+        )
