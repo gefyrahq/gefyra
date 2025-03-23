@@ -33,6 +33,7 @@ class TestCarrier2:
 
         sleep(10)
         mount.install()
+        sleep(300)
         retries = Retry(total=20, backoff_factor=0.3)
         session = requests.Session()
         session.mount("http://localhost:8080", HTTPAdapter(max_retries=retries))

@@ -1,5 +1,6 @@
 from functools import cached_property
 from time import sleep
+from typing import List
 import uuid
 import kubernetes as k8s
 from kubernetes.client import (
@@ -12,6 +13,7 @@ from kubernetes.client import (
     V1ServiceSpec,
     V1ServicePort,
     V1Container,
+    V1Probe,
 )
 
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
@@ -207,15 +209,15 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         svc_name = self._get_duplication_svc_name()
         return f"{svc_name}.{self.namespace}.svc.cluster.local"
 
-    def _set_carrier_upstream(self, pod: V1Pod, container: V1Container) -> None:
+    def _set_carrier_upstream(
+        self, pod: V1Pod, container: V1Container, probes: List[V1Probe]
+    ) -> None:
         timeout = 30
         waiting_pod = core_v1_api.read_namespaced_pod(
             name=pod.metadata.name, namespace=self.namespace
         )
         # wait for pod to be ready
-        while (
-            not self.pod_ready_and_healthy(waiting_pod, self.container) and timeout > 0
-        ):
+        while not self._pod_is_running(waiting_pod) and timeout > 0:
             sleep(1)
             timeout -= 1
             waiting_pod = core_v1_api.read_namespaced_pod(
@@ -237,28 +239,56 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 destination_host=self._get_svc_fqdn(),
                 destination_port=port.port,
             )
-
+        if probes:
+            carrier.add_probes(probes=probes)
         carrier.commit_config()
+
+    def _check_probe_compatibility(self, probe: k8s.client.V1Probe) -> bool:
+        """
+        Check if this type of probe is compatible with Gefyra Carrier
+        :param probe: instance of k8s.client.V1Probe
+        :return: bool if this is compatible
+        """
+        if probe is None:
+            return True
+        elif probe._exec:
+            # exec is not supported
+            return False
+        elif probe.tcp_socket:
+            # tcp sockets are not yet supported
+            return False
+        elif probe.http_get:
+            return True
+        else:
+            return True
+
+    def _get_all_probes(self, container: V1Container) -> List[V1Probe]:
+        probes = []
+        if container.startup_probe:
+            probes.append(container.startup_probe)
+        if container.readiness_probe:
+            probes.append(container.readiness_probe)
+        if container.liveness_probe:
+            probes.append(container.liveness_probe)
+        return probes
 
     def install(self):
         # TODO extend to StatefulSet and Pods
         for pod in self._original_pods.items:
             for container in pod.spec.containers:
+                probes = self._get_all_probes(container)
                 if container.name == self.container:
-                    # TODO
-                    # if self.handle_probes:
-                    #     # check if these probes are all supported
-                    #     if not all(
-                    #         map(
-                    #             self._check_probe_compatibility,
-                    #             self._get_all_probes(container),
-                    #         )
-                    #     ):
-                    #         self.logger.error(
-                    #             "Not all of the probes to be handled are currently"
-                    #             " supported by Gefyra"
-                    #         )
-                    #         return False, pod)
+                    if not all(
+                        map(
+                            self._check_probe_compatibility,
+                            probes,
+                        )
+                    ):
+                        self.logger.error(
+                            "Not all of the probes to be handled are currently"
+                            " supported by Gefyra"
+                        )
+                        return False, pod
                     if container.image == self._carrier_image:
                         # this pod/container is already running Carrier
                         self.logger.info(
@@ -278,7 +308,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             core_v1_api.patch_namespaced_pod(
                 name=pod.metadata.name, namespace=self.namespace, body=pod
             )
-            self._set_carrier_upstream(pod, container)
+            self._set_carrier_upstream(pod, container, probes)
 
     @property
     def _carrier_installed(self):
@@ -288,6 +318,9 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 if container.name == self.container:
                     res = res and container.image == self._carrier_image
         return res
+
+    def _pod_is_running(self, pod: V1Pod) -> bool:
+        return pod.status.phase == "Running"
 
     # TODO this util exists in the client aswell
     # maybe refactor
@@ -300,7 +333,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             if container_status.name == container_name
         )
         return (
-            pod.status.phase == "Running"
+            self._pod_is_running(pod)
             and pod.status.container_statuses[container_idx].ready
             and pod.status.container_statuses[container_idx].started
             and pod.status.container_statuses[container_idx].state.running

@@ -1,11 +1,14 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 import kubernetes as k8s
+from kubernetes.client import (
+    V1Probe,
+)
 
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.utils import send_carrier2_config, reload_carrier2_config
-from gefyra.bridge.carrier2.config import Carrier2Config
+from gefyra.bridge.carrier2.config import Carrier2Config, CarrierProbe
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -101,6 +104,11 @@ class Carrier2(AbstractGefyraBridgeProvider):
             self.carrier_config.clusterUpstream.append(
                 f"{destination_host}:{destination_port}"
             )
+
+    def add_probes(self, probes: List[V1Probe]):
+        self.carrier_config.probes = CarrierProbe(
+            httpGet=[probe.http_get.port for probe in probes]
+        )
 
     def commit_config(self) -> None:
         send_carrier2_config(core_v1_api, self.pod, self.namespace, self.carrier_config)
