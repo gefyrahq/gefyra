@@ -318,6 +318,13 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         )
 
     @property
+    def _original_pods_ready(self):
+        return all(
+            self.pod_ready_and_healthy(pod, self.container)
+            for pod in self._original_pods.items
+        )
+
+    @property
     def _duplicated_pods_ready(self):
         return all(
             self.pod_ready_and_healthy(pod, self.container)
@@ -328,7 +335,11 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         return self._duplicated_pods_ready
 
     def ready(self):
-        return self._duplicated_pods_ready and self._carrier_installed
+        return (
+            self._duplicated_pods_ready
+            and self._carrier_installed
+            and self._original_pods_ready
+        )
 
     def validate(self, brige_request):
         return super().validate(brige_request)

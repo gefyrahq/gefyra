@@ -10,8 +10,6 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.carrier2.config import (
     Carrier2Config,
     CarrierBridge,
-    CarrierMatch,
-    CarrierMatchHeader,
     CarrierProbe,
     CarrierRule,
 )
@@ -85,16 +83,22 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     def add_proxy_route(
         self,
-        # container_port: int, # probably not needed since carrier just updates based on all objects
-        # destination_host: str,
-        # destination_port: int,
-        # parameters: Optional[Dict[Any, Any]] = None,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+        parameters: Optional[Dict[Any, Any]] = None,
     ):
+        # params not needed since carrier just updates based on all objects
         """
         Add a new proxy_route to the bridge provider
         """
-        if self.ready():
-            self.update_carrier_config()
+        if not self.ready():
+            raise RuntimeError(
+                f"Not able to configure Carrier in Pod {self.pod}. See error above."
+            )
+        endpoint = f"{destination_host}:{destination_port}"
+        for pod in self.pods.items:
+            self.update_carrier_config(pod, endpoint)
 
         # 1. Call self.ready() (retry)
         # 2. Select all currently active GefyraBridges for this target
@@ -105,48 +109,43 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     def _get_rules_for_bridge(self, bridge: dict) -> List[CarrierRule]:
         rules = []
-        for rule in bridge["spec"]["providerParameter"]["rules"]:
+        self.logger.info(bridge)
+        for rule in bridge["providerParameter"]["rules"]:
+            self.logger.info(rule)
             if "match" in rule:
-                rules.append(
-                    CarrierRule(
-                        match=[
-                            CarrierMatch(
-                                match_header=CarrierMatchHeader(
-                                    name=header["name"],
-                                    value=header["value"],
-                                )
-                            )
-                            for header in rule["match"]
-                        ]
-                    )
-                )
+                rules.append(CarrierRule(**rule))
         return rules
 
-    def _convert_bridge_to_rule(self, bridge: dict) -> CarrierBridge:
+    def _convert_bridge_to_rule(self, bridge: dict, endpoint: str) -> CarrierBridge:
         return CarrierBridge(
-            endpoint=bridge["spec"]["destinationIP"],
+            endpoint=endpoint,
             rules=self._get_rules_for_bridge(bridge),
         )
 
-    def _set_bridges(self, config: Carrier2Config) -> Carrier2Config:
+    def _set_bridges(self, config: Carrier2Config, endpoint: str) -> Carrier2Config:
         bridges = custom_object_api.list_namespaced_custom_object(
             "gefyra.dev",
             "v1",
-            self.namespace,
+            self.configuration.NAMESPACE,
             "gefyrabridges",
             label_selector=f"gefyra.dev/bridge-mount={self.target}",
         )
+        self.logger.info(f"gefyra.dev/bridge-mount={self.target}")
+        self.logger.info(f"BRIDGES {bridges}")
+
         result = {}
         for bridge in bridges["items"]:
             # TODO if bridge is not deacticating or something
             bridge_name = bridge["metadata"]["name"]
-            result[bridge_name] = self._convert_bridge_to_rule(bridge)
+            result[bridge_name] = self._convert_bridge_to_rule(bridge, endpoint)
+
+        config.bridges = result
 
         return config
 
     def _set_cluster_upstream(self, config: Carrier2Config) -> Carrier2Config:
         svc = core_v1_api.read_namespaced_service(
-            name=generate_duplicate_svc_name(self.target, self.container),
+            name=generate_duplicate_svc_name(self._bridge_mount_target, self.container),
             namespace=self.namespace,
         )
         config.clusterUpstream = get_upstreams_for_svc(
@@ -164,11 +163,11 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 )
         return config
 
-    def update_carrier_config(self, pod: V1Pod):
+    def update_carrier_config(self, pod: V1Pod, endpoint: str):
         carrier_config = Carrier2Config()
         carrier_config = self._set_cluster_upstream(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
-        carrier_config = self._set_bridges(carrier_config)
+        carrier_config = self._set_bridges(carrier_config, endpoint)
         carrier_config.commit(pod_name=pod.metadata.name, namespace=self.namespace)
 
     def _get_pods_workload(
@@ -176,6 +175,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
     ) -> V1PodList:
         API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
         NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."
+        self.logger.info(f"Getting pods for {workload_type} - {name} in {namespace}")
         try:
             if workload_type == "deployment":
                 workload = app_api.read_namespaced_deployment(
@@ -206,13 +206,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         return pods
 
     @property
-    def workload(self):
-        pass
-
-    def _get_pods_from_bridge_mount(self) -> str:
-        """
-        Get the pods from the bridge mount
-        """
+    def _bridge_mount_target(self) -> str:
         bridge_mount = custom_object_api.get_namespaced_custom_object(
             "gefyra.dev",
             "v1",
@@ -220,10 +214,14 @@ class Carrier2(AbstractGefyraBridgeProvider):
             "gefyrabridgemounts",
             self.target,
         )
-        bridge_mount_target = bridge_mount["target"]
+        return bridge_mount["target"]
 
+    def _get_pods_from_bridge_mount(self) -> str:
+        """
+        Get the pods from the bridge mount
+        """
         return self._get_pods_workload(
-            name=bridge_mount_target,
+            name=self._bridge_mount_target,
             namespace=self.namespace,
             workload_type="deployment",  # TODO
         )
@@ -306,8 +304,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # 1. Call self.ready() (retry)
         # 2. Retrive actual config to running Carrier2 instance, raise TemporaryError on error (retry)
         # 3. Check this brige (client-id) is in the config, return the result
-
-        raise NotImplementedError
+        return False
+        # raise NotImplementedError
 
     def validate(self, brige_request: dict):
         """

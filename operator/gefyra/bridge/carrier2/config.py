@@ -16,7 +16,7 @@ class CarrierMatchHeader(BaseModel):
 
 class CarrierMatch(BaseModel):
     match_header: CarrierMatchHeader = Field(
-        serialization_alias="matchHeader",
+        alias="matchHeader",
     )
 
 
