@@ -40,7 +40,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
     ) -> None:
         self.configuration = configuration
         self.namespace = target_namespace
-        self.target = target  # BridgeMount
+        self.bridge_mount_name = target  # BridgeMount
         self.container = target_container
         self.logger = logger
         self.carrier_config = Carrier2Config()
@@ -128,14 +128,14 @@ class Carrier2(AbstractGefyraBridgeProvider):
             "v1",
             self.configuration.NAMESPACE,
             "gefyrabridges",
-            label_selector=f"gefyra.dev/bridge-mount={self.target}",
+            label_selector=f"gefyra.dev/bridge-mount={self.bridge_mount_name}",
         )
-        self.logger.info(f"gefyra.dev/bridge-mount={self.target}")
+        self.logger.info(f"gefyra.dev/bridge-mount={self.bridge_mount_name}")
         self.logger.info(f"BRIDGES {bridges}")
 
         result = {}
         for bridge in bridges["items"]:
-            # TODO if bridge is not deacticating or something
+            # TODO if bridge is not deactivating or something
             bridge_name = bridge["metadata"]["name"]
             result[bridge_name] = self._convert_bridge_to_rule(bridge, endpoint)
 
@@ -212,7 +212,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
             "v1",
             self.configuration.NAMESPACE,
             "gefyrabridgemounts",
-            self.target,
+            self.bridge_mount_name,
         )
         return bridge_mount["target"]
 
@@ -266,7 +266,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         self.logger.debug(f"Pod {pod.metadata.name} is ready")
 
     def commit_config(self) -> None:
-        self.logger.debug(f"Commiting config to pods for {self.target}")
+        self.logger.debug(f"Commiting config to pods for {self.bridge_mount_name}")
         self.logger.debug(f"Config: {self.carrier_config}")
         for pod in self.pods.items:
             self._pod_running(pod)

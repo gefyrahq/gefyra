@@ -127,6 +127,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
 
     def on_install(self):
         self.bridge_mount_provider.install()
+        self.activate()
 
     @activate.cond
     def _bridge_mount_finished(self):
