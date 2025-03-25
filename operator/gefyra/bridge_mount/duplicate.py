@@ -263,7 +263,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                     if container.image == self._carrier_image:
                         # this pod/container is already running Carrier
                         self.logger.info(
-                            f"The container {self.container} in Pod {pod} is already"
+                            f"The container {self.container} in Pod {pod.metadata.name} is already"
                             " running Carrier2"
                         )
                     # self._store_pod_original_config(container)

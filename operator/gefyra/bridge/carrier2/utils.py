@@ -2,6 +2,7 @@ from typing import List
 import time
 
 import kubernetes as k8s
+from websocket import WebSocketConnectionClosedException
 
 core_v1_api = k8s.client.CoreV1Api()
 
@@ -18,6 +19,9 @@ def stream_exec_retries(
             retries -= 1
             time.sleep(1)
             continue
+        except WebSocketConnectionClosedException:
+            #  raise Exception(f"Failed to exec commands with {retries} retries due to closed connection")
+            return
     raise Exception(f"Failed to exec commands with {retries} retries")
 
 

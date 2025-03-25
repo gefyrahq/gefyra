@@ -1,5 +1,7 @@
 from pytest_kubernetes.providers import AClusterManager
 
+from utils import read_carrier2_config
+
 
 def test_a_create_bridge_mount(operator: AClusterManager):
     k3d = operator
@@ -42,5 +44,12 @@ def test_a_create_bridge_mount(operator: AClusterManager):
         namespace="gefyra",
         timeout=120,
     )
+
+    from kubernetes.client.api import core_v1_api
+    core_v1 = core_v1_api.CoreV1Api()
+
+    config = read_carrier2_config(core_v1, pod["items"][0]["metadata"]["name"], "default")
+    config = config[0].replace("\n ", "").replace(" ", "")
+    assert "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer" in config
     # todo fetch config from container
     # check if config is correct
