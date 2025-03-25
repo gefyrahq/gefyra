@@ -199,30 +199,10 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         return pods
 
     def _set_carrier_upstream(
-        self, pod: V1Pod, container: V1Container, probes: List[V1Probe]
-    ) -> None:
-        timeout = 30
-        waiting_pod = core_v1_api.read_namespaced_pod(
-            name=pod.metadata.name, namespace=self.namespace
-        )
-        # wait for pod to be ready
-        # TODO check this busy wait, blocks Operator? - better raise TemporaryError?
-        while not self._pod_is_running(waiting_pod) and timeout > 0:
-            sleep(1)
-            timeout -= 1
-            waiting_pod = core_v1_api.read_namespaced_pod(
-                name=pod.metadata.name, namespace=self.namespace
-            )
-        if timeout == 0:
-            raise RuntimeError(f"Pod {pod.metadata.name} did not become ready in time")
-        # TODO use a dependency injection?
-        carrier = Carrier2(
-            configuration=self.configuration,
-            target_namespace=self.namespace,
-            target_pod=pod.metadata.name,
-            target_container=self.container,
-            logger=self.logger,
-        )
+        self, upstream_ports: list[int], probes: List[V1Probe]
+    ) -> Carrier2Config:
+        carrier_config = Carrier2Config()
+
         # TODO what about multiple ports?
         for upstream_port in upstream_ports:
             carrier_config.port = upstream_port  # TODO currently only last port working
@@ -244,7 +224,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
     def _check_probe_compatibility(self, probe: k8s.client.V1Probe) -> bool:
         """
-        Check if this type of probe is compatible with Gefyra Carrier2
+        Check if this type of probe is compatible with Gefyra Carrier
         :param probe: instance of k8s.client.V1Probe
         :return: bool if this is compatible
         """
