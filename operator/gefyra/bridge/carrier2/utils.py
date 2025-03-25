@@ -1,30 +1,32 @@
 from typing import List
 import time
 
-from gefyra.bridge.carrier2.config import Carrier2Config
+import kubernetes as k8s
+
+core_v1_api = k8s.client.CoreV1Api()
 
 
 def stream_exec_retries(
-    core_api, name: str, namespace: str, commands: List[str], retries: int = 5
+    name: str, namespace: str, commands: List[str], retries: int = 30
 ):
     from kubernetes.client.rest import ApiException
 
     while retries > 0:
         try:
-            return stream_exec(core_api, name, namespace, commands)
-            break
+            return stream_exec(name, namespace, commands)
         except ApiException:
             retries -= 1
             time.sleep(1)
             continue
+    raise Exception(f"Failed to exec commands with {retries} retries")
 
 
-def stream_exec(core_api, name: str, namespace: str, commands: List[str]):
+def stream_exec(name: str, namespace: str, commands: List[str]):
     from kubernetes.stream import stream
 
     exec_command = ["busybox", "sh"]
     resp = stream(
-        core_api.connect_get_namespaced_pod_exec,
+        core_v1_api.connect_get_namespaced_pod_exec,
         name,
         namespace,
         command=exec_command,
@@ -53,18 +55,18 @@ def stream_exec(core_api, name: str, namespace: str, commands: List[str]):
 
 
 # https://github.com/kubernetes-client/python/issues/476
-def send_carrier2_config(core_api, name: str, namespace: str, config: Carrier2Config):
+def send_carrier2_config(name: str, namespace: str, content):
     # Calling exec interactively.
     commands = [
         "cat <<'EOF' >" + "/tmp/config.yaml" + "\n",
-        config.model_dump_yaml(),
+        content,
         "\n",
     ]
-    stream_exec_retries(core_api, name, namespace, commands)
+    stream_exec_retries(name, namespace, commands)
 
 
-def reload_carrier2_config(core_api, name: str, namespace: str):
+def reload_carrier2_config(name: str, namespace: str):
     commands = [
         "kill -SIGQUIT $(ps | grep '[c]arrier2' | awk ' { print $1 }' | tail -1) && carrier2 -c /tmp/config.yaml -u &"
     ]
-    stream_exec_retries(core_api, name, namespace, commands)
+    stream_exec_retries(name, namespace, commands)

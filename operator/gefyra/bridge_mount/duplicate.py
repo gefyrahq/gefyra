@@ -1,5 +1,4 @@
 from functools import cached_property
-from time import sleep
 from typing import List
 import uuid
 import kubernetes as k8s
@@ -11,15 +10,19 @@ from kubernetes.client import (
     V1Service,
     V1ObjectMeta,
     V1ServiceSpec,
-    V1ServicePort,
-    V1Container,
     V1Probe,
 )
 
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
 from gefyra.configuration import OperatorConfiguration
 
-from gefyra.bridge.carrier2 import Carrier2
+from gefyra.bridge.carrier2.config import Carrier2Config, CarrierProbe
+from gefyra.bridge_mount.utils import (
+    generate_duplicate_svc_name,
+    get_all_probes,
+    get_ports_for_deployment,
+    get_upstreams_for_svc,
+)
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -32,6 +35,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def __init__(
         self,
         configuration: OperatorConfiguration,
+        name: str,
         target_namespace: str,
         target: str,
         target_container: str,
@@ -42,6 +46,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self.namespace = target_namespace
         self.target = target
         self.container = target_container
+        self.name = name
         self.logger = logger
 
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
@@ -95,26 +100,12 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         )
         return new_deployment
 
-    def _get_svc_ports(self, deployment: V1Deployment) -> list[V1ServicePort]:
-        ports = []
-        for container in deployment.spec.template.spec.containers:
-            if container.name == self.container:
-                for port in container.ports:
-                    ports.append(
-                        V1ServicePort(
-                            port=port.container_port,
-                            target_port=port.container_port,
-                        )
-                    )
-        return ports
-
-    def _get_duplication_svc_name(self) -> str:
-        return f"{self.target}-{self.container}-gefyra-svc"
-
     def _get_svc_for_deployment(self, deployment: V1Deployment) -> V1Service:
         return V1Service(
             metadata=V1ObjectMeta(
-                name=self._get_duplication_svc_name(),
+                name=generate_duplicate_svc_name(
+                    workload_name=self.target, container_name=self.container
+                ),
                 labels=deployment.metadata.labels,
             ),
             spec=V1ServiceSpec(
@@ -123,7 +114,9 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                         "bridge.gefyra.dev/duplication-id"
                     ]
                 },
-                ports=self._get_svc_ports(deployment=deployment),
+                ports=get_ports_for_deployment(
+                    deployment=deployment, container_name=self.container
+                ),
             ),
         )
 
@@ -205,43 +198,29 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         )
         return pods
 
-    def _get_svc_fqdn(self) -> str:
-        svc_name = self._get_duplication_svc_name()
-        return f"{svc_name}.{self.namespace}.svc.cluster.local"
-
     def _set_carrier_upstream(
-        self, pod: V1Pod, container: V1Container, probes: List[V1Probe]
-    ) -> None:
-        timeout = 30
-        waiting_pod = core_v1_api.read_namespaced_pod(
-            name=pod.metadata.name, namespace=self.namespace
-        )
-        # wait for pod to be ready
-        while not self._pod_is_running(waiting_pod) and timeout > 0:
-            sleep(1)
-            timeout -= 1
-            waiting_pod = core_v1_api.read_namespaced_pod(
-                name=pod.metadata.name, namespace=self.namespace
-            )
-        if timeout == 0:
-            raise RuntimeError(f"Pod {pod.metadata.name} did not become ready in time")
-        carrier = Carrier2(
-            configuration=self.configuration,
-            target_namespace=self.namespace,
-            target_pod=pod.metadata.name,
-            target_container=self.container,
-            logger=self.logger,
-        )
+        self, upstream_ports: list[int], probes: List[V1Probe]
+    ) -> Carrier2Config:
+        carrier_config = Carrier2Config()
+
         # TODO what about multiple ports?
-        carrier.carrier_config.port = container.ports[0].container_port
-        for port in self._get_svc_ports(deployment=self._get_workload()):
-            carrier.add_cluster_upstream(
-                destination_host=self._get_svc_fqdn(),
-                destination_port=port.port,
-            )
+        for upstream_port in upstream_ports:
+            carrier_config.port = upstream_port  # TODO currently only last port working
+
+        svc_name = generate_duplicate_svc_name(
+            workload_name=self.target, container_name=self.container
+        )
+        svc = core_v1_api.read_namespaced_service(svc_name, self.namespace)
+
+        carrier_config.clusterUpstream = get_upstreams_for_svc(
+            svc=svc,
+            namespace=self.namespace,
+        )
         if probes:
-            carrier.add_probes(probes=probes)
-        carrier.commit_config()
+            carrier_config.probes = CarrierProbe(
+                httpGet=[probe.http_get.port for probe in probes]
+            )
+        return carrier_config
 
     def _check_probe_compatibility(self, probe: k8s.client.V1Probe) -> bool:
         """
@@ -262,22 +241,14 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         else:
             return True
 
-    def _get_all_probes(self, container: V1Container) -> List[V1Probe]:
-        probes = []
-        if container.startup_probe:
-            probes.append(container.startup_probe)
-        if container.readiness_probe:
-            probes.append(container.readiness_probe)
-        if container.liveness_probe:
-            probes.append(container.liveness_probe)
-        return probes
-
     def install(self):
         # TODO extend to StatefulSet and Pods
+        upstream_ports = []
         for pod in self._original_pods.items:
             for container in pod.spec.containers:
-                probes = self._get_all_probes(container)
+                upstream_ports.append(container.ports[0].container_port)
                 if container.name == self.container:
+                    probes = get_all_probes(container)
                     if not all(
                         map(
                             self._check_probe_compatibility,
@@ -308,7 +279,13 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             core_v1_api.patch_namespaced_pod(
                 name=pod.metadata.name, namespace=self.namespace, body=pod
             )
-            self._set_carrier_upstream(pod, container, probes)
+            carrier_config = self._set_carrier_upstream(upstream_ports, probes)
+            self.logger.debug(f"Commiting carrier2 config to pod {pod.metadata.name}")
+            self.logger.debug(f"Carrier2 config: {carrier_config}")
+            carrier_config.commit(
+                pod.metadata.name,
+                self.namespace,
+            )
 
     @property
     def _carrier_installed(self):
@@ -322,7 +299,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def _pod_is_running(self, pod: V1Pod) -> bool:
         return pod.status.phase == "Running"
 
-    # TODO this util exists in the client aswell
+    # TODO this util exists in the client aswell and Carrier2
     # maybe refactor
     def pod_ready_and_healthy(self, pod: V1Pod, container_name: str) -> bool:
         if not pod.status.container_statuses:
@@ -357,7 +334,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         return super().validate(brige_request)
 
     def uninstall_service(self) -> None:
-        gefyra_svc_name = self._get_duplication_svc_name()
+        gefyra_svc_name = generate_duplicate_svc_name(self.target, self.container)
         core_v1_api.delete_namespaced_service(gefyra_svc_name, self.namespace)
 
     def uninstall_deployment(self) -> None:

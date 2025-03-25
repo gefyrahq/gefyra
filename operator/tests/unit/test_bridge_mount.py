@@ -13,6 +13,7 @@ from kubernetes.client import (
     V1PodList,
     V1PodSpec,
     V1Container,
+    V1ContainerPort,
 )
 
 from gefyra.configuration import OperatorConfiguration
@@ -25,6 +26,7 @@ class TestBridgeMountObject(TestCase):
         from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
         mount = DuplicateBridgeMount(
+            name="test",
             configuration=None,
             target_namespace="default",
             target="nginx",
@@ -39,6 +41,7 @@ class TestBridgeMountObject(TestCase):
         from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
         mount = DuplicateBridgeMount(
+            name="test",
             configuration=None,
             target_namespace="default",
             target="nginx",
@@ -64,15 +67,16 @@ class TestBridgeMountObject(TestCase):
         self.assertEqual(
             new_deployment.spec.selector.match_labels, {"app": "nginx-gefyra"}
         )
-        self.assertEqual(
-            new_deployment.spec.template.metadata.labels,
+        self.assertDictContainsSubset(
             {"app": "nginx-gefyra"},
+            new_deployment.spec.template.metadata.labels,
         )
 
     def test_cleaning_annotations(self):
         from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
         mount = DuplicateBridgeMount(
+            name="test",
             configuration=None,
             target_namespace="default",
             target="nginx",
@@ -89,8 +93,13 @@ class TestBridgeMountObject(TestCase):
         cleaned_annotations = mount._clean_annotations(annotations)
         self.assertEqual(cleaned_annotations, {"some-other-key": "some-value"})
 
-    @patch.multiple("gefyra.bridge_mount.duplicate", app=DEFAULT, core_v1_api=DEFAULT)
-    def test_carrier_patch(self, app, core_v1_api):
+    @patch.multiple(
+        "gefyra.bridge_mount.duplicate",
+        app=DEFAULT,
+        core_v1_api=DEFAULT,
+        custom_object_api=DEFAULT,
+    )
+    def test_carrier_patch(self, app, core_v1_api, custom_object_api):
         from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
         app.read_namespaced_deployment.return_value = V1Deployment(
@@ -102,6 +111,19 @@ class TestBridgeMountObject(TestCase):
                 selector=V1LabelSelector(match_labels={"app": "nginx"}),
                 template=V1PodTemplateSpec(
                     metadata=V1ObjectMeta(labels={"app": "nginx"}),
+                    spec=V1PodSpec(
+                        containers=[
+                            V1Container(
+                                name="nginx",
+                                image="nginx",
+                                ports=[
+                                    V1ContainerPort(
+                                        container_port=80,
+                                    )
+                                ],
+                            )
+                        ]
+                    ),
                 ),
             ),
         )
@@ -117,13 +139,22 @@ class TestBridgeMountObject(TestCase):
                             V1Container(
                                 name="nginx",
                                 image="nginx",
+                                ports=[
+                                    V1ContainerPort(
+                                        container_port=80,
+                                    )
+                                ],
                             )
                         ],
                     ),
                 )
             ]
         )
+        custom_object_api.get_namespaced_custom_object.return_value = {
+            "target": "nginx-deployment",
+        }
         mount = DuplicateBridgeMount(
+            name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
             target="nginx",

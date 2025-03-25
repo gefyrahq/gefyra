@@ -3,6 +3,8 @@ import yaml
 from typing import Optional
 from pydantic import ConfigDict, Field, BaseModel
 
+from gefyra.bridge.carrier2.utils import reload_carrier2_config, send_carrier2_config
+
 
 ERROR_LOG_PATH = "/tmp/carrier.error.log"
 
@@ -14,7 +16,7 @@ class CarrierMatchHeader(BaseModel):
 
 class CarrierMatch(BaseModel):
     match_header: CarrierMatchHeader = Field(
-        alias="matchHeader",
+        serialization_alias="matchHeader",
     )
 
 
@@ -57,3 +59,7 @@ class Carrier2Config(BaseModel):
         return yaml.safe_dump(
             self.model_dump(by_alias=True, exclude_none=True), sort_keys=False
         )
+
+    def commit(self, pod_name: str, namespace: str):
+        send_carrier2_config(pod_name, namespace, self.model_dump_yaml())
+        reload_carrier2_config(pod_name, namespace)

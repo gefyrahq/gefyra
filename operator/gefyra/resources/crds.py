@@ -30,9 +30,9 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
             ),
             # the targets for this bridge / traffic sources
             "targetNamespace": k8s.client.V1JSONSchemaProps(type="string"),
-            "targetPod": k8s.client.V1JSONSchemaProps(
+            "target": k8s.client.V1JSONSchemaProps(
                 type="string"
-            ),  # target a specific Pod for intercept
+            ),  # target bridge mount to connect to
             "targetContainer": k8s.client.V1JSONSchemaProps(type="string"),
             # the traffic destinations for this bridge
             "client": k8s.client.V1JSONSchemaProps(type="string"),

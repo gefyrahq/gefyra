@@ -19,10 +19,19 @@ spec:
         image: nginx:1.14.2
         ports:
         - containerPort: 80
+        startupProbe:
+          failureThreshold: 30
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
         livenessProbe:
           failureThreshold: 10
           httpGet:
-            path: /alive
+            path: /
             port: 80
             scheme: HTTP
           periodSeconds: 10
@@ -30,9 +39,9 @@ spec:
           timeoutSeconds: 5
         
         readinessProbe:
-          failureThreshold: 3
+          failureThreshold: 10
           httpGet:
-            path: /ready
+            path: /
             port: 80
             scheme: HTTP
           initialDelaySeconds: 10

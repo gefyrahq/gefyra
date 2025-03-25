@@ -79,6 +79,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             target_namespace=self.data["targetNamespace"],
             target=self.data["target"],
             target_container=self.data["targetContainer"],
+            name=self.data["metadata"]["name"],
             logger=self.logger,
         )
 

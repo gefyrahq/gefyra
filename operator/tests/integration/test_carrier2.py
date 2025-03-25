@@ -10,19 +10,25 @@ logger = logging.getLogger()
 
 
 class TestCarrier2:
+
     def test_carrier2_duplicated_svc_available(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
         from gefyra.configuration import OperatorConfiguration
 
-        file_path = str(
+        nginx_fixture = str(
             Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()
         )
-        gefyra_crd.apply(file_path)
+        bridge_mount_fixture = str(
+            Path(Path(__file__).parent.parent, "fixtures/bridge_mount.yaml").absolute()
+        )  # needed as for bridge mount and bridge (target is shared through this object)
+        gefyra_crd.apply(nginx_fixture)
+        gefyra_crd.apply(bridge_mount_fixture)
         name = "nginx-deployment"
         configuration = OperatorConfiguration()
         namespace = "default"
 
         mount = DuplicateBridgeMount(
+            name="bridgemount-a",
             configuration=configuration,
             target_namespace=namespace,
             target=name,
@@ -30,15 +36,23 @@ class TestCarrier2:
             logger=logger,
         )
         mount.prepare()
-
-        sleep(10)
         mount.install()
-        sleep(300)
-        retries = Retry(total=20, backoff_factor=0.3)
+        retries = Retry(total=60, backoff_factor=0.2, status_forcelist=[404, 500])
         session = requests.Session()
         session.mount("http://localhost:8080", HTTPAdapter(max_retries=retries))
 
         # the is now served from backend-shadow (from the cluster) via Carrier2
-        resp = session.get("http://localhost:8080")
-        assert resp.status_code == 200
-        assert "Welcome to nginx!" in resp.text
+        content_retries = 10
+        while content_retries > 0:
+            try:
+                resp = session.get("http://localhost:8080")
+                assert resp.status_code == 200
+                assert "Welcome to nginx!" in resp.text
+                return
+            except AssertionError:
+                print("Retrying to get the expected response from the service")
+                content_retries -= 1
+                sleep(1)
+        raise AssertionError(
+            f"Could not get the expected response from the service. Got: {resp.text}"
+        )

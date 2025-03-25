@@ -91,7 +91,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             BridgeProviderType(self.data.get("provider")),
             self.configuration,
             self.data["targetNamespace"],
-            self.data["targetPod"],
+            self.data["target"],
             self.data["targetContainer"],
             self.logger,
         )
