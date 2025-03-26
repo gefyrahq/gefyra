@@ -23,12 +23,6 @@ from tabulate import tabulate
     callback=parse_ip_port_map,
 )
 @click.option(
-    "-n",
-    "--namespace",
-    #   help=namespace_help_text,
-    default="default",
-)
-@click.option(
     "-P",
     "--no-probe-handling",
     is_flag=True,
@@ -49,9 +43,7 @@ from tabulate import tabulate
 )
 @click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
-def create_bridge(
-    name, ports, target, namespace, no_probe_handling, connection_name, timeout
-):
+def create_bridge(name, ports, target, no_probe_handling, connection_name, timeout):
     from alive_progress import alive_bar
     from gefyra import api
 
@@ -67,8 +59,7 @@ def create_bridge(
     _created_bridges = api.bridge(
         name=name,
         ports=ports,
-        target=target,
-        namespace=namespace,
+        bridge_mount_name=target,
         handle_probes=no_probe_handling,
         wait=False,
         connection_name=connection_name,

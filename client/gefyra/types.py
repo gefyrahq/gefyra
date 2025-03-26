@@ -397,6 +397,8 @@ class GefyraBridgeMount:
     provider: str
     # target
     target: str
+    target_container: str
+    target_namespace: str
 
     # the state of the mount
     _state: str
@@ -413,5 +415,7 @@ class GefyraBridgeMount:
         self._state = _object.get("state", "")
         self._state_transitions = _object.get("stateTransitions", {})
         self.target = _object.get("target", "")
+        self.target_container = _object.get("targetContainer", "")
+        self.target_namespace = _object.get("targetNamespace", "")
         self.namespace = _object["metadata"]["namespace"]
         self.labels = _object["metadata"].get("labels", {})

@@ -1,6 +1,7 @@
 import logging
 import time
 
+from gefyra.types import GefyraBridgeMount
 from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
@@ -94,9 +95,7 @@ def get_gbridgemount_body(
     }
 
 
-def get_gefyrabridgemount(
-    config: ClientConfiguration, name: str
-) -> dict[str, dict[str, str]]:
+def get_gefyrabridgemount(config: ClientConfiguration, name: str) -> GefyraBridgeMount:
     from kubernetes.client import ApiException
 
     try:
@@ -107,7 +106,7 @@ def get_gefyrabridgemount(
             plural="gefyrabridgemounts",
             version="v1",
         )
-        return mount
+        return GefyraBridgeMount(mount)
     except ApiException as e:
         if e.status != 404:
             logger.warning("Error getting GefyraBridgeMounts: " + str(e))
