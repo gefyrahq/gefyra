@@ -123,6 +123,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def _duplicate_deployment(self) -> None:
         deployment = self._get_workload()
 
+        # TODO check if deployment already exists, handle with 'patch' instead of 'create'
+
         # Create a copy of the deployment
         new_deployment = self._clone_deployment_structure(deployment)
         new_svc = self._get_svc_for_deployment(new_deployment)
