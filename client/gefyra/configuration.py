@@ -185,7 +185,7 @@ class ClientConfiguration(object):
             else:
                 try:
                     _ip_output = self.DOCKER.containers.run(
-                        "alpine", "getent hosts host.docker.internal", remove=True
+                        "alpine", "getent ahostsv4 host.docker.internal", remove=True
                     )
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
                     logger.debug(f"Found host.docker.internal IP: {_ip}")
