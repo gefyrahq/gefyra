@@ -378,7 +378,7 @@ class GefyraBridge:
     port_mappings: List[str]
     target_container: str
     target_namespace: str
-    target_pod: str
+    target: str
     provider: str
     state: str
 

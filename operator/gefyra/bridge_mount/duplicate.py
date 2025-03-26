@@ -282,8 +282,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 name=pod.metadata.name, namespace=self.namespace, body=pod
             )
             carrier_config = self._set_carrier_upstream(upstream_ports, probes)
-            self.logger.debug(f"Commiting carrier2 config to pod {pod.metadata.name}")
-            self.logger.debug(f"Carrier2 config: {carrier_config}")
+            self.logger.info(f"Commiting carrier2 config to pod {pod.metadata.name}")
+            self.logger.info(f"Carrier2 config: {carrier_config}")
             carrier_config.commit(
                 pod.metadata.name,
                 self.namespace,

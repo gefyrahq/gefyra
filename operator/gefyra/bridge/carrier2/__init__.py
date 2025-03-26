@@ -163,8 +163,15 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 )
         return config
 
+    def _set_own_ports(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
+        for container in pod.spec.containers:
+            if container.name == self.container:
+                config.port = container.ports[0].container_port
+        return config
+
     def update_carrier_config(self, pod: V1Pod, endpoint: str):
         carrier_config = Carrier2Config()
+        carrier_config = self._set_own_ports(carrier_config, pod)
         carrier_config = self._set_cluster_upstream(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
         carrier_config = self._set_bridges(carrier_config, endpoint)

@@ -58,7 +58,7 @@ def wrap_bridge(bridge: Dict[Any, Any]) -> "GefyraBridge":
         port_mappings=bridge["portMappings"] or [],
         target_container=bridge["targetContainer"],
         target_namespace=bridge["targetNamespace"],
-        target_pod=bridge["targetPod"],
+        target=bridge["target"],
         state=bridge["state"],
     )
 

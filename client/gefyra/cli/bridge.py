@@ -60,7 +60,7 @@ def create_bridge(
         "port_mappings": "PORTS",
         "local_container_ip": "LOCAL ADDRESS",
         "target_container": "TARGET CONTAINER",
-        "target_pod": "TARGET POD",
+        "target": "TARGET",
         "target_namespace": "NAMESPACE",
     }
     # we are not blocking this call

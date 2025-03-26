@@ -106,7 +106,7 @@ def get_gbridge_body(
     config: ClientConfiguration,
     name: str,
     destination_ip,
-    target_pod,
+    target,
     target_namespace,
     target_container,
     port_mappings,
@@ -118,12 +118,20 @@ def get_gbridge_body(
         "metadata": {
             "name": name,
             "namespace": config.NAMESPACE,
+            "labels": {
+                "gefyra.dev/bridge-mount": target,
+            },
         },
-        "provider": "carrier",
+        "provider": "carrier2",
         "connectionProvider": "stowaway",
+        "providerParameter": {
+            "rules": [
+                {"match": [{"matchHeader": {"name": "x-gefyra", "value": "peer"}}]}
+            ]
+        },
         "client": config.CLIENT_ID,
         "destinationIP": destination_ip,
-        "targetPod": target_pod,
+        "target": target,
         "targetNamespace": target_namespace,
         "targetContainer": target_container,
         "portMappings": port_mappings,

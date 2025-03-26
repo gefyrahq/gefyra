@@ -1,10 +1,13 @@
 from typing import List
 import time
+import logging
 
 import kubernetes as k8s
 from websocket import WebSocketConnectionClosedException
 
 core_v1_api = k8s.client.CoreV1Api()
+
+logger = logging.getLogger(__name__)
 
 
 def stream_exec_retries(
@@ -20,14 +23,16 @@ def stream_exec_retries(
             time.sleep(1)
             continue
         except WebSocketConnectionClosedException:
-            #  raise Exception(f"Failed to exec commands with {retries} retries due to closed connection")
-            return
+            raise Exception(
+                f"Failed to exec commands with {retries} retries due to closed connection"
+            )
     raise Exception(f"Failed to exec commands with {retries} retries")
 
 
 def stream_exec(name: str, namespace: str, commands: List[str]):
     from kubernetes.stream import stream
 
+    logger.info(f"Executing commands on {name} in namespace {namespace}")
     exec_command = ["busybox", "sh"]
     resp = stream(
         core_v1_api.connect_get_namespaced_pod_exec,
@@ -41,6 +46,8 @@ def stream_exec(name: str, namespace: str, commands: List[str]):
         _preload_content=False,
     )
 
+    logger.info(f"Connected to {name} in namespace {namespace}")
+
     while resp.is_open():
         resp.update(timeout=1)
         if resp.peek_stdout():
@@ -53,6 +60,8 @@ def stream_exec(name: str, namespace: str, commands: List[str]):
             resp.write_stdin(c)
         else:
             break
+
+    logger.info(f"Closing connection to {name} in namespace {namespace}")
     resp.write_stdin("\n")
     resp.readline_stdout(timeout=3)
     resp.close()

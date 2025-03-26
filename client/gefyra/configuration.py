@@ -327,6 +327,7 @@ class ClientConfiguration(object):
                             nodes.items[0].status.addresses,
                         )
                     )
+                    print([n.status.addresses for n in nodes.items])
                     if external_ips:
                         _port = port or service.spec.ports["gefyra-wireguard"].node_port
                         return f"{external_ips[0].address}:{_port}"
