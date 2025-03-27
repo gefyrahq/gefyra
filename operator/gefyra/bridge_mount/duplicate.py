@@ -24,6 +24,7 @@ from gefyra.bridge_mount.utils import (
     get_upstreams_for_svc,
 )
 from gefyra.utils import wait_until_condition
+from gefyra.bridge.carrier2.utils import read_carrier2_config
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -202,6 +203,16 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         )
         return pods
 
+    @property
+    def _default_upstream(self) -> List[str]:
+        svc_name = generate_duplicate_svc_name(
+            workload_name=self.target, container_name=self.container
+        )
+        svc = core_v1_api.read_namespaced_service(svc_name, self.namespace)
+        return get_upstreams_for_svc(
+            svc=svc,
+        )
+
     def _set_carrier_upstream(
         self, upstream_ports: list[int], probes: List[V1Probe]
     ) -> Carrier2Config:
@@ -211,15 +222,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         for upstream_port in upstream_ports:
             carrier_config.port = upstream_port  # TODO currently only last port working
 
-        svc_name = generate_duplicate_svc_name(
-            workload_name=self.target, container_name=self.container
-        )
-        svc = core_v1_api.read_namespaced_service(svc_name, self.namespace)
-
-        carrier_config.clusterUpstream = get_upstreams_for_svc(
-            svc=svc,
-            namespace=self.namespace,
-        )
+        carrier_config.clusterUpstream = self._default_upstream
         if probes:
             carrier_config.probes = CarrierProbe(
                 httpGet=[probe.http_get.port for probe in probes]
@@ -356,6 +359,25 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             for pod in self._gefyra_pods.items
         )
 
+    @property
+    def _upstream_set(self) -> bool:
+        for pod in self._original_pods.items:
+            config_str_list = read_carrier2_config(
+                core_v1_api, pod.metadata.name, self.namespace
+            )
+            config_str = "\n".join(config_str_list)
+            pod_config = Carrier2Config.from_string(config_str)
+            if not pod_config.clusterUpstream:
+                return False
+            return all(
+                [
+                    upstream in pod_config.clusterUpstream
+                    for upstream in self._default_upstream
+                ]
+            )
+        self.logger.error("Cannot determine original pods")
+        return False
+
     def prepared(self):
         return self._duplicated_pods_ready
 
@@ -364,6 +386,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             self._duplicated_pods_ready
             and self._carrier_installed
             and self._original_pods_ready
+            and self._upstream_set
         )
 
     def validate(self, brige_request):

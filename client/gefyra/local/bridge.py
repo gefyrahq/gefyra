@@ -7,7 +7,7 @@ from docker.models.containers import Container
 from gefyra.cli import console
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
-from gefyra.types import GefyraLocalContainer
+from gefyra.types import GefyraLocalContainer, MatchHeader
 
 from .utils import handle_docker_run_container
 
@@ -102,6 +102,26 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
     return container_information
 
 
+def get_match_header_rules(
+    match_header: List[MatchHeader] = [],
+) -> List[Dict[str, Dict[str, str]]]:
+    return [
+        {
+            "matchHeader": {
+                "name": header.name,
+                "value": header.value,
+            }
+        }
+        for header in match_header
+    ]
+
+
+def get_bridge_rules(
+    match_header: List[MatchHeader] = [],
+) -> List[Dict[str, List[Dict[str, Dict[str, str]]]]]:
+    return [{"match": get_match_header_rules(match_header)}]
+
+
 def get_gbridge_body(
     config: ClientConfiguration,
     name: str,
@@ -111,6 +131,7 @@ def get_gbridge_body(
     target_container,
     port_mappings,
     handle_probes,
+    match_header: List[MatchHeader] = [],
 ):
     return {
         "apiVersion": "gefyra.dev/v1",
@@ -124,11 +145,7 @@ def get_gbridge_body(
         },
         "provider": "carrier2",
         "connectionProvider": "stowaway",
-        "providerParameter": {
-            "rules": [
-                {"match": [{"matchHeader": {"name": "x-gefyra", "value": "peer"}}]}
-            ]
-        },
+        "providerParameter": {"rules": get_bridge_rules(match_header)},
         "client": config.CLIENT_ID,
         "destinationIP": destination_ip,
         "target": target,

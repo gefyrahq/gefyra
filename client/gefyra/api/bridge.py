@@ -3,6 +3,7 @@ import logging
 # from time import sleep
 from typing import List, Dict, TYPE_CHECKING
 
+from gefyra.types import MatchHeader
 from gefyra.local.mount import get_gefyrabridgemount
 from gefyra.exceptions import GefyraBridgeError  # , CommandTimeoutError
 
@@ -77,6 +78,7 @@ def bridge(
     timeout: int = 0,
     wait: bool = False,
     connection_name: str = "",
+    match_header: List[MatchHeader] = [],
 ) -> List["GefyraBridge"]:
     from docker.errors import NotFound
 
@@ -149,6 +151,7 @@ def bridge(
         target_container=mount.target_container,
         port_mappings=port_mappings,
         handle_probes=handle_probes,
+        match_header=match_header,
     )
     bridge = handle_create_gefyrabridge(config, bridge_body, bridge_mount_name)
     logger.debug(f"Bridge {bridge['metadata']['name']} created")

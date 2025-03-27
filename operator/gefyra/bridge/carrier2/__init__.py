@@ -150,7 +150,6 @@ class Carrier2(AbstractGefyraBridgeProvider):
         )
         config.clusterUpstream = get_upstreams_for_svc(
             svc=svc,
-            namespace=self.namespace,
         )
         return config
 

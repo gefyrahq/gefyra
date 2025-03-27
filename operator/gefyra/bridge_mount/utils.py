@@ -11,7 +11,7 @@ from kubernetes.client import (
 core_v1_api = k8s.client.CoreV1Api()
 
 
-def get_upstreams_for_svc(svc: V1Service, namespace: str) -> list[str]:
+def get_upstreams_for_svc(svc: V1Service) -> list[str]:
     res = []
     name = svc.metadata.name
     namespace = svc.metadata.namespace

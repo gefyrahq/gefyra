@@ -3,6 +3,8 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
 from click import ClickException
 
+from gefyra.types import MatchHeader
+
 
 def standard_error_handler(func):
     def wrapper(*args, **kwargs):
@@ -265,3 +267,11 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
                 param="connection-name",  # type: ignore
             )
         return connection_name
+
+
+def parse_match_header(ctx, param, match_header_raw: Tuple[str]) -> List[MatchHeader]:
+    res = []
+    for match_header in match_header_raw:
+        name, value = match_header.split(":")
+        res.append(MatchHeader(name=name, value=value))
+    return res

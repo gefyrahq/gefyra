@@ -1,10 +1,13 @@
 import dataclasses
 from time import sleep
+from typing import List
 import click
+from gefyra.types import MatchHeader
 from gefyra.cli import console
 from gefyra.cli.utils import (
     check_connection_name,
     parse_ip_port_map,
+    parse_match_header,
     standard_error_handler,
 )
 from tabulate import tabulate
@@ -21,6 +24,13 @@ from tabulate import tabulate
     required=True,
     multiple=True,
     callback=parse_ip_port_map,
+)
+@click.option(
+    "--match-header",
+    help="Match header to forward traffic based to this client. E.g.: --matchHeader name:x-gefyra:peer",
+    required=True,
+    multiple=True,
+    callback=parse_match_header,
 )
 @click.option(
     "-P",
@@ -43,7 +53,15 @@ from tabulate import tabulate
 )
 @click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
-def create_bridge(name, ports, target, no_probe_handling, connection_name, timeout):
+def create_bridge(
+    name,
+    ports,
+    target,
+    match_header: List[MatchHeader],
+    no_probe_handling,
+    connection_name,
+    timeout,
+):
     from alive_progress import alive_bar
     from gefyra import api
 
@@ -63,6 +81,7 @@ def create_bridge(name, ports, target, no_probe_handling, connection_name, timeo
         handle_probes=no_probe_handling,
         wait=False,
         connection_name=connection_name,
+        match_header=match_header,
     )
     with alive_bar(
         total=None,

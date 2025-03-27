@@ -419,3 +419,9 @@ class GefyraBridgeMount:
         self.target_namespace = _object.get("targetNamespace", "")
         self.namespace = _object["metadata"]["namespace"]
         self.labels = _object["metadata"].get("labels", {})
+
+
+@dataclass
+class MatchHeader:
+    name: str
+    value: str

@@ -105,3 +105,7 @@ class Carrier2Config(BaseModel):
             timeout=30,
             backoff=1,
         )
+
+    @classmethod
+    def from_string(cls, content_str: str):
+        return Carrier2Config(**yaml.safe_load(content_str))
