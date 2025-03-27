@@ -21,6 +21,7 @@ def get_upstreams_for_svc(svc: V1Service, namespace: str) -> list[str]:
 
 
 def generate_duplicate_svc_name(workload_name: str, container_name: str) -> str:
+    # TODO must not be longer than 63 chars
     return f"{workload_name}-{container_name}-gefyra-svc"
 
 

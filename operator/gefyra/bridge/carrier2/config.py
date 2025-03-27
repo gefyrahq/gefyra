@@ -1,9 +1,15 @@
+from functools import partial
 import yaml
 
 from typing import Optional
 from pydantic import ConfigDict, Field, BaseModel
 
-from gefyra.bridge.carrier2.utils import reload_carrier2_config, send_carrier2_config
+import kubernetes as k8s
+
+from gefyra.bridge.carrier2.utils import (
+    stream_exec,
+)
+from gefyra.utils import wait_until_condition
 
 
 ERROR_LOG_PATH = "/tmp/carrier.error.log"
@@ -60,6 +66,42 @@ class Carrier2Config(BaseModel):
             self.model_dump(by_alias=True, exclude_none=True), sort_keys=False
         )
 
-    def commit(self, pod_name: str, namespace: str):
-        send_carrier2_config(pod_name, namespace, self.model_dump_yaml())
-        reload_carrier2_config(pod_name, namespace)
+    def commit(self, pod_name: str, container_name: str, namespace: str):
+
+        core_v1 = k8s.client.CoreV1Api()
+        read_func = partial(core_v1.read_namespaced_pod_status, pod_name, namespace)
+
+        # busy wait for pod to get ready, raises RuntimeError on timeout
+        # TODO raise TemporaryError to handle longer pulls via async
+        wait_until_condition(
+            read_func,
+            lambda s: all(
+                [container.ready for container in s.status.container_statuses]
+            ),
+            timeout=30,
+            backoff=0.2,
+        )
+
+        config_str = self.model_dump_yaml()
+
+        config_commands = [
+            # 1. write new config
+            "cat <<'EOF' > /tmp/config.yaml\n" f"{config_str}",
+            "EOF",
+            # 2. graceful upgrade of the process
+            "kill -SIGQUIT $(ps | grep '[c]arrier2' | awk ' { print $1 }' | tail -1) && "
+            "carrier2 -c /tmp/config.yaml -u &",
+            # 3. read current config
+            "cat /tmp/config.yaml",
+        ]
+
+        read_func = partial(
+            stream_exec, pod_name, namespace, container_name, config_commands
+        )
+        # TODO raise TemporaryError to handle longer Carrier2 pulls via async
+        wait_until_condition(
+            read_func,
+            lambda s: isinstance(s, str) and config_str in s,
+            timeout=30,
+            backoff=1,
+        )

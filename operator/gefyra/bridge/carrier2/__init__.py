@@ -175,7 +175,11 @@ class Carrier2(AbstractGefyraBridgeProvider):
         carrier_config = self._set_cluster_upstream(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
         carrier_config = self._set_bridges(carrier_config, endpoint)
-        carrier_config.commit(pod_name=pod.metadata.name, namespace=self.namespace)
+        carrier_config.commit(
+            pod_name=pod.metadata.name,
+            container_name=self.container,
+            namespace=self.namespace,
+        )
 
     def _get_pods_workload(
         self, name: str, namespace: str, workload_type: str
@@ -279,8 +283,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
             self._pod_running(pod)
             self.carrier_config.commit(
                 pod.metadata.name,
-                self.namespace,
                 self.container,
+                self.namespace,
             )
 
     def remove_proxy_route(

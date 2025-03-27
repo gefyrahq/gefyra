@@ -1,4 +1,4 @@
-from functools import cached_property
+from functools import cached_property, partial
 from typing import List
 import uuid
 import kubernetes as k8s
@@ -23,6 +23,7 @@ from gefyra.bridge_mount.utils import (
     get_ports_for_deployment,
     get_upstreams_for_svc,
 )
+from gefyra.utils import wait_until_condition
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -82,6 +83,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         new_deployment.metadata.labels = labels
         new_deployment.metadata.resource_version = None
         new_deployment.metadata.uid = None
+        # TODO must not be longer than 63 chars
         new_deployment.metadata.name = f"{deployment.metadata.name}-gefyra"
 
         pod_labels = self._get_duplication_labels(
@@ -281,11 +283,32 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             core_v1_api.patch_namespaced_pod(
                 name=pod.metadata.name, namespace=self.namespace, body=pod
             )
+
+            # wait for the container restart to become effective
+            read_func = partial(
+                core_v1_api.read_namespaced_pod_status,
+                pod.metadata.name,
+                self.namespace,
+            )
+            # TODO better check for the image under s.status.container_statuses instead of restart count
+            wait_until_condition(
+                read_func,
+                lambda s: next(
+                    filter(
+                        lambda c: c.name == self.container, s.status.container_statuses
+                    )
+                ).restart_count
+                > 0,
+                timeout=30,
+                backoff=0.2,
+            )
+
             carrier_config = self._set_carrier_upstream(upstream_ports, probes)
             self.logger.info(f"Commiting carrier2 config to pod {pod.metadata.name}")
             self.logger.info(f"Carrier2 config: {carrier_config}")
             carrier_config.commit(
                 pod.metadata.name,
+                self.container,
                 self.namespace,
             )
 

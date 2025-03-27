@@ -144,6 +144,21 @@ def carrier_image(request):
     return name
 
 
+@pytest.fixture(scope="session")
+def carrier2_image(request):
+    name = "carrier2:pytest"
+    subprocess.run(
+        (
+            f"docker build -t {name} -f"
+            f" {(Path(__file__).parent / Path('../../carrier2/Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
+        ),
+        shell=True,
+    )
+    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    return name
+
+
 @pytest.fixture(scope="module")
 def gefyra_crd(k3d):
     import kubernetes

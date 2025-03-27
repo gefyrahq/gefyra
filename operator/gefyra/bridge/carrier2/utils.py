@@ -29,16 +29,16 @@ def stream_exec_retries(
     raise Exception(f"Failed to exec commands with {retries} retries")
 
 
-def stream_exec(name: str, namespace: str, commands: List[str]):
+def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
     from kubernetes.stream import stream
 
-    logger.info(f"Executing commands on {name} in namespace {namespace}")
     exec_command = ["busybox", "sh"]
     resp = stream(
         core_v1_api.connect_get_namespaced_pod_exec,
         name,
         namespace,
         command=exec_command,
+        container=container,
         stderr=True,
         stdin=True,
         stdout=True,
@@ -46,25 +46,23 @@ def stream_exec(name: str, namespace: str, commands: List[str]):
         _preload_content=False,
     )
 
-    logger.info(f"Connected to {name} in namespace {namespace}")
-
+    last_ouput = None
     while resp.is_open():
         resp.update(timeout=1)
         if resp.peek_stdout():
-            print(f"STDOUT: {resp.read_stdout()}")
+            last_ouput = resp.read_stdout()
         if resp.peek_stderr():
-            print(f"STDERR: {resp.read_stderr()}")
-
+            last_ouput = resp.read_stderr()
+            logger.error(f"Error from carrier2: {last_ouput}")
+            break
         if commands:
             c = commands.pop(0)
-            resp.write_stdin(c)
+            resp.write_stdin(c + "\n")
         else:
             break
 
-    logger.info(f"Closing connection to {name} in namespace {namespace}")
-    resp.write_stdin("\n")
-    resp.readline_stdout(timeout=3)
     resp.close()
+    return last_ouput
 
 
 # https://github.com/kubernetes-client/python/issues/476
