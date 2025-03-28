@@ -20,9 +20,25 @@ def get_upstreams_for_svc(svc: V1Service) -> list[str]:
     return res
 
 
+def generate_k8s_conform_name(name: str, suffix: str, max_length: int = 63) -> str:
+    """
+    Generate a k8s conform name with a suffix.
+    """
+    if len(name) + len(suffix) <= max_length:
+        return f"{name}{suffix}"
+    return name[: max_length - len(suffix)] + suffix
+
+
 def generate_duplicate_svc_name(workload_name: str, container_name: str) -> str:
-    # TODO must not be longer than 63 chars
-    return f"{workload_name}-{container_name}-gefyra-svc"
+    base = f"{workload_name}-{container_name}"
+    suffix = "-gefyra-svc"
+
+    return generate_k8s_conform_name(base, suffix)
+
+
+def generate_duplicate_deployment_name(workload_name: str):
+    suffix = "-gefyra"
+    return generate_k8s_conform_name(workload_name, suffix)
 
 
 def get_duplicate_svc_fqdn(

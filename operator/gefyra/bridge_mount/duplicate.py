@@ -18,6 +18,7 @@ from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import Carrier2Config, CarrierProbe
 from gefyra.bridge_mount.utils import (
+    generate_duplicate_deployment_name,
     generate_duplicate_svc_name,
     get_all_probes,
     get_ports_for_deployment,
@@ -84,8 +85,10 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         new_deployment.metadata.labels = labels
         new_deployment.metadata.resource_version = None
         new_deployment.metadata.uid = None
-        # TODO must not be longer than 63 chars
-        new_deployment.metadata.name = f"{deployment.metadata.name}-gefyra"
+
+        new_deployment.metadata.name = generate_duplicate_deployment_name(
+            deployment.metadata.name
+        )
 
         pod_labels = self._get_duplication_labels(
             new_deployment.spec.template.metadata.labels or {}
