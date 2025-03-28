@@ -20,6 +20,7 @@ from gefyra.bridge.carrier2.config import Carrier2Config, CarrierProbe
 from gefyra.bridge_mount.utils import (
     generate_duplicate_deployment_name,
     generate_duplicate_svc_name,
+    generate_k8s_conform_name,
     get_all_probes,
     get_ports_for_deployment,
     get_upstreams_for_svc,
@@ -55,7 +56,9 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
         duplication_labels = {}
         for key in labels:
-            duplication_labels[key] = f"{labels[key]}-gefyra"
+            duplication_labels[key] = generate_k8s_conform_name(
+                f"{labels[key]}", "-gefyra"
+            )
         return duplication_labels
 
     def _clean_annotations(self, annotations: dict[str, str]) -> dict[str, str]:

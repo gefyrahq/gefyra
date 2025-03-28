@@ -148,7 +148,7 @@ jobs:
           DOCKER_BUILD_NO_SUMMARY: true
         with:
           context: carrier2/
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.carrier2_meta.outputs.tags }}
           cache-from: type=registry,ref=${{ steps.carrier2_meta.outputs.tags }}
