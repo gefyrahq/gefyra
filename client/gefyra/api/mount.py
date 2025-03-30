@@ -27,6 +27,9 @@ def mount(
     connection_name: str = "",
     wait: bool = False,
     timeout: int = 0,
+    tls_certificate: Optional[str] = None,
+    tls_key: Optional[str] = None,
+    tls_sni: Optional[str] = None,
 ):
     from gefyra.configuration import ClientConfiguration
 
@@ -38,7 +41,14 @@ def mount(
     workload_type, workload_name, container_name = get_workload_information(target)
     mount_name = f"{workload_name}-gefyra"
     bridge_mount_body = get_gbridgemount_body(
-        config, mount_name, workload_name, namespace, container_name
+        config,
+        mount_name,
+        workload_name,
+        namespace,
+        container_name,
+        tls_certificate,
+        tls_key,
+        tls_sni,
     )
     bridge_mount = handle_create_gefyrabridgemount(config, bridge_mount_body, target)
     waiting_time = 0

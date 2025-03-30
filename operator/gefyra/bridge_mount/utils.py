@@ -8,6 +8,8 @@ from kubernetes.client import (
     V1Probe,
 )
 
+from gefyra.bridge.carrier2.config import CarrierTLS
+
 core_v1_api = k8s.client.CoreV1Api()
 
 
@@ -61,6 +63,16 @@ def get_ports_for_deployment(
                     )
                 )
     return ports
+
+
+def _get_tls_from_provider_parameters(params: dict):
+    if "tls" not in params:
+        return None
+    return CarrierTLS(
+        certificate=params["tls"]["certificate"],
+        key=params["tls"]["key"],
+        sni=params["tls"].get("sni", None),
+    )
 
 
 def get_all_probes(container: V1Container) -> List[V1Probe]:

@@ -1,3 +1,4 @@
+from functools import cached_property
 from time import sleep
 from typing import Any, Dict, List, Optional
 from kopf import TemporaryError
@@ -14,6 +15,7 @@ from gefyra.bridge.carrier2.config import (
     CarrierRule,
 )
 from gefyra.bridge_mount.utils import (
+    _get_tls_from_provider_parameters,
     generate_duplicate_svc_name,
     get_all_probes,
     get_upstreams_for_svc,
@@ -168,12 +170,20 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 config.port = container.ports[0].container_port
         return config
 
+    def _set_tls(self, config: Carrier2Config):
+        if "tls" in self._bridge_mount_provider_parameter:
+            config.tls = _get_tls_from_provider_parameters(
+                self._bridge_mount_provider_parameter
+            )
+        return config
+
     def update_carrier_config(self, pod: V1Pod, endpoint: str):
         carrier_config = Carrier2Config()
         carrier_config = self._set_own_ports(carrier_config, pod)
         carrier_config = self._set_cluster_upstream(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
         carrier_config = self._set_bridges(carrier_config, endpoint)
+        carrier_config = self._set_tls(carrier_config)
         carrier_config.commit(
             pod_name=pod.metadata.name,
             container_name=self.container,
@@ -216,15 +226,28 @@ class Carrier2(AbstractGefyraBridgeProvider):
         return pods
 
     @property
-    def _bridge_mount_target(self) -> str:
-        bridge_mount = custom_object_api.get_namespaced_custom_object(
+    def _bridge_mount_resource(self) -> dict:
+        """
+        Get the bridge mount resource
+        """
+        return custom_object_api.get_namespaced_custom_object(
             "gefyra.dev",
             "v1",
             self.configuration.NAMESPACE,
             "gefyrabridgemounts",
             self.bridge_mount_name,
         )
-        return bridge_mount["target"]
+
+    @cached_property
+    def _bridge_mount_provider_parameter(self) -> dict:
+        """
+        Get the bridge mount provider parameter
+        """
+        return self._bridge_mount_resource["providerParameter"]
+
+    @property
+    def _bridge_mount_target(self) -> str:
+        return self._bridge_mount_resource["target"]
 
     def _get_pods_from_bridge_mount(self) -> str:
         """

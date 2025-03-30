@@ -18,6 +18,7 @@ from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import Carrier2Config, CarrierProbe
 from gefyra.bridge_mount.utils import (
+    _get_tls_from_provider_parameters,
     generate_duplicate_deployment_name,
     generate_duplicate_svc_name,
     generate_k8s_conform_name,
@@ -52,6 +53,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self.container = target_container
         self.name = name
         self.logger = logger
+        self.params = kwargs.get("providerParameter", {})
 
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
         duplication_labels = {}
@@ -235,6 +237,11 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             )
         return carrier_config
 
+    def _set_tls(self, carrier_config: Carrier2Config) -> Carrier2Config:
+        if self.params.get("tls"):
+            carrier_config.tls = _get_tls_from_provider_parameters(self.params)
+        return carrier_config
+
     def _check_probe_compatibility(self, probe: k8s.client.V1Probe) -> bool:
         """
         Check if this type of probe is compatible with Gefyra Carrier
@@ -313,6 +320,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             )
 
             carrier_config = self._set_carrier_upstream(upstream_ports, probes)
+            carrier_config = self._set_tls(carrier_config)
             self.logger.info(f"Commiting carrier2 config to pod {pod.metadata.name}")
             self.logger.info(f"Carrier2 config: {carrier_config}")
             carrier_config.commit(

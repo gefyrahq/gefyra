@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 import click
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
@@ -30,11 +31,15 @@ def mount(ctx):
     "--provider", help="Provider for the bridge", type=str, default="carrier2"
 )
 @click.option(
-    "--provider-parameter",
-    help="Provider specific parameters",
-    type=dict,
-    default={},
+    "--tls-key", help="Path to key file for tls traffic", type=str, required=False
 )
+@click.option(
+    "--tls-certificate",
+    help="Path to certificate file for tls traffic",
+    type=str,
+    required=False,
+)
+@click.option("--tls-sni", help="SNI for tls traffic", type=str, required=False)
 @click.option("--connection-name", type=str, default="default")
 @click.option("--wait", is_flag=True, help="Wait for the mount to be ready")
 @click.option("--timeout", type=int, default=60, required=False)
@@ -48,6 +53,9 @@ def create(
     connection_name: str = "",
     wait: bool = False,
     timeout: int = 0,
+    tls_certificate: Optional[str] = None,
+    tls_key: Optional[str] = None,
+    tls_sni: Optional[str] = None,
 ):
     from gefyra import api
 
@@ -61,6 +69,9 @@ def create(
         timeout=timeout,
         kubeconfig=ctx.obj["kubeconfig"],
         kubecontext=ctx.obj["context"],
+        tls_certificate=tls_certificate,
+        tls_key=tls_key,
+        tls_sni=tls_sni,
     )
 
 

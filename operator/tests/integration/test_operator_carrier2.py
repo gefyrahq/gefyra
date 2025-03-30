@@ -53,9 +53,14 @@ def test_a_create_bridge_mount(operator: AClusterManager):
         core_v1, pod["items"][0]["metadata"]["name"], "default"
     )
     config = config[0].replace("\n ", "").replace(" ", "")
+    print(config)
     assert (
-        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer"
+        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer"  # noqa: E501
         in config
     )
+    assert "./tests/fixtures/test_cert.pem" in config
+    assert "./tests/fixtures/test_key.pem" in config
+    assert "test.gefyra.dev" in config
+
     # todo fetch config from container
     # check if config is correct

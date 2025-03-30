@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Optional
 
 from gefyra.types import GefyraBridgeMount
 from gefyra.configuration import ClientConfiguration
@@ -73,13 +74,38 @@ def handle_delete_gefyramount(
             raise e
 
 
+def get_tls_config(
+    tls_certificate: Optional[str] = None,
+    tls_key: Optional[str] = None,
+    tls_sni: Optional[str] = None,
+) -> dict[str, dict[str, str]]:
+    if not tls_certificate and not tls_key:
+        return {}
+    if tls_certificate is None or tls_key is None:
+        raise RuntimeError(
+            "TLS configuration requires both certificate and key to be set."
+        )
+    res = {
+        "tls": {
+            "certificate": tls_certificate,
+            "key": tls_key,
+        }
+    }
+    if res and tls_sni is not None:
+        res["tls"]["sni"] = tls_sni
+    return res
+
+
 def get_gbridgemount_body(
     config: ClientConfiguration,
     name: str,
     target: str,
     target_namespace: str,
     target_container: str,
-) -> dict[str, str | dict[str, str]]:
+    tls_certificate: Optional[str] = None,
+    tls_key: Optional[str] = None,
+    tls_sni: Optional[str] = None,
+) -> dict[str, str | dict[str, dict[str, str]] | dict[str, str]]:
     return {
         "apiVersion": "gefyra.dev/v1",
         "kind": "gefyrabridgemount",
@@ -91,7 +117,11 @@ def get_gbridgemount_body(
         "target": target,
         "targetContainer": target_container,
         "provider": "carrier2",
-        "providerParameter": {},
+        "providerParameter": get_tls_config(
+            tls_certificate=tls_certificate,
+            tls_key=tls_key,
+            tls_sni=tls_sni,
+        ),
     }
 
 
