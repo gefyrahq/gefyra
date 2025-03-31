@@ -17,7 +17,9 @@ def mount(ctx):
 
 
 @mount.command("create", help="Create a new Gefyra mount")
-@click.option("--namespace", help="The mount's target namespace", type=str)
+@click.option(
+    "--namespace", help="The mount's target namespace", type=str, default="default"
+)
 @click.option(
     "--target",
     help=(
@@ -49,7 +51,6 @@ def create(
     namespace: str,
     target: str,
     provider: str,
-    provider_parameter: dict[str, str],
     connection_name: str = "",
     wait: bool = False,
     timeout: int = 0,
@@ -63,7 +64,6 @@ def create(
         namespace=namespace,
         target=target,
         provider=provider,
-        provider_parameter=provider_parameter,
         connection_name=connection_name,
         wait=wait,
         timeout=timeout,

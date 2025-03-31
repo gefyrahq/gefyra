@@ -84,6 +84,6 @@ def get_workload_information(target: str) -> Tuple[str, str, str]:
     except IndexError:
         raise GefyraBridgeError(
             "Invalid --target notation. Use"
-            " <workload_type>/<workload_name>(/<container_name>)."
+            " <workload_type>/<workload_name>/<container_name>."
         ) from None
     return workload_type, workload_name, container_name

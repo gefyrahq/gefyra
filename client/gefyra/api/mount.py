@@ -21,7 +21,6 @@ def mount(
     namespace: str,
     target: str,
     provider: str,
-    provider_parameter: dict[str, str],
     kubeconfig: Path,
     kubecontext: str,
     connection_name: str = "",
