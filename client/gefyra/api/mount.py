@@ -56,11 +56,8 @@ def mount(
     while True and wait:
         # watch whether all relevant mounts have been established
         mount = get_gefyrabridgemount(config, mount_name)
-        if (
-            mount["metadata"]["uid"] in bridge_mount["metadata"]["uid"]
-            and mount.get("state", "") == "ACTIVE"
-        ):
-            logger.info(f"Bridge mount {mount['metadata']['name']} established.")
+        if mount.uid in bridge_mount["metadata"]["uid"] and mount._state == "ACTIVE":
+            logger.info(f"Bridge mount {mount.mount_id} established.")
             break
         sleep(1)
         # Raise exception in case timeout is reached
