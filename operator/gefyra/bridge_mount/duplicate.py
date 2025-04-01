@@ -53,7 +53,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self.container = target_container
         self.name = name
         self.logger = logger
-        self.params = kwargs.get("providerParameter", {})
+        self.params = kwargs.get("provider_parameter", {})
 
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
         duplication_labels = {}
