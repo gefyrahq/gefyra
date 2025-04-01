@@ -409,6 +409,7 @@ class GefyraBridgeMount:
         self._init_data(gbridgemount)
 
     def _init_data(self, _object: dict[str, Any]):
+        self.mount_id = _object["metadata"]["name"]
         self.name = _object["metadata"]["name"]
         self.uid = _object["metadata"]["uid"]
         self.provider = _object.get("provider", "")
