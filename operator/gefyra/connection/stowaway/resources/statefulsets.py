@@ -1,5 +1,5 @@
 import kubernetes as k8s
-from kubernetes.client import V1Probe, V1ExecAction
+from kubernetes.client import V1Probe, V1HTTPGetAction
 
 from gefyra.configuration import OperatorConfiguration
 
@@ -12,17 +12,34 @@ def create_stowaway_statefulset(
         image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",
         image_pull_policy=configuration.STOWAWAY_IMAGE_PULLPOLICY,
         # Wireguard default port 51820 will be mapped by the nodeport service
-        ports=[k8s.client.V1ContainerPort(container_port=51820, protocol="UDP")],
+        ports=[
+            k8s.client.V1ContainerPort(container_port=51820, protocol="UDP"),
+            k8s.client.V1ContainerPort(container_port=51822, protocol="TCP"),
+        ],
         resources=k8s.client.V1ResourceRequirements(
             requests={"cpu": "0.1", "memory": "100Mi"},
             limits={"cpu": "0.75", "memory": "500Mi"},
         ),
-        readiness_probe=V1Probe(
-            _exec=V1ExecAction(
-                command=["test", "-n", '"$(wg)"'],
+        startup_probe=V1Probe(
+            http_get=V1HTTPGetAction(
+                port=51822,
             ),
             period_seconds=1,
-            initial_delay_seconds=1,
+            initial_delay_seconds=5,
+        ),
+        readiness_probe=V1Probe(
+            http_get=V1HTTPGetAction(
+                port=51822,
+            ),
+            period_seconds=1,
+            initial_delay_seconds=5,
+        ),
+        liveness_probe=V1Probe(
+            http_get=V1HTTPGetAction(
+                port=51822,
+            ),
+            period_seconds=1,
+            initial_delay_seconds=5,
         ),
         env_from=[
             k8s.client.V1EnvFromSource(
