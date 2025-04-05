@@ -10,6 +10,8 @@ from gefyra.cli.utils import (
     standard_error_handler,
 )
 
+logger = logging.getLogger("gefyra")
+
 
 @click.command(
     "install",
@@ -49,6 +51,9 @@ def install(ctx, component, preset, apply, wait, **kwargs):
     from gefyra import api
 
     # filter out empty kwargs
+    empty_kwargs = [k for k, v in kwargs.items() if not v]
+    if empty_kwargs:
+        logger.warn(f"Filtered out empty CLI params: {', '.join(empty_kwargs)}")
     kwargs = {k: v for k, v in kwargs.items() if v}
 
     if wait and not apply:
@@ -56,7 +61,6 @@ def install(ctx, component, preset, apply, wait, **kwargs):
             option_name="wait", message="Cannot wait without '--apply'"
         )
     if wait:
-        logger = logging.getLogger("gefyra")
         logger.setLevel(logging.INFO)
         formatter = logging.Formatter("%(message)s")
         if len(logger.handlers) > 0:

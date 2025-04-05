@@ -11,6 +11,7 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.resources.serviceaccounts import (
     get_serviceaccount_data,
     handle_create_gefyraclient_serviceaccount,
+    handle_delete_gefyraclient_serviceaccount,
 )
 
 
@@ -149,7 +150,9 @@ class GefyraClient(StateMachine, StateControllerMixin):
                 f"Removing '{self.object_name}' from connection provider"
             )
             self.connection_provider.remove_peer(self.object_name)
-        # TODO delete SA, Rolebinding
+
+        sa_name = f"gefyra-client-{self.object_name}"
+        handle_delete_gefyraclient_serviceaccount(self.logger, sa_name, self.namespace)
 
     def can_add_client(self):
         if self.connection_provider.peer_exists(self.object_name):
