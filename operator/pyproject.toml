@@ -23,7 +23,7 @@ mypy = "^1.15.0"
 pytest-kubernetes = "^0.3.0"
 docker = "^7.0.0"
 coveralls = "^4.0.1"
-types-requests = "^2.32.0.20250306"
+types-requests = "^2.32.0.20250328"
 pytest-retry = "^1.7.0"
 
 [build-system]
