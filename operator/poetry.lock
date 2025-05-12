@@ -719,14 +719,14 @@ files = [
 
 [[package]]
 name = "kopf"
-version = "1.37.5"
+version = "1.38.0"
 description = "Kubernetes Operator Pythonic Framework (Kopf)"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "kopf-1.37.5-py3-none-any.whl", hash = "sha256:ca6999350052c2f179200bead2386cc35f5bed873f60af3cb8f8a736994e0d68"},
-    {file = "kopf-1.37.5.tar.gz", hash = "sha256:c468b4adc1c9ec7dde5bb852ab9b0d4e51e07b98c22538bc5dc5876422ba767c"},
+    {file = "kopf-1.38.0-py3-none-any.whl", hash = "sha256:2384b8021032d9f87e53a6b46097c47e566d9280c838809483698640e1b36df0"},
+    {file = "kopf-1.38.0.tar.gz", hash = "sha256:7b9f83240269636e00e4b11e9c7c8afbfefba3d3326ac2d2aa7904d35c4f89cd"},
 ]
 
 [package.dependencies]
@@ -735,7 +735,6 @@ click = "*"
 iso8601 = "*"
 python-json-logger = "*"
 pyyaml = "*"
-typing_extensions = "*"
 
 [package.extras]
 dev = ["certbuilder", "certvalidator", "oscrypto", "pyngrok"]
@@ -1499,7 +1498,7 @@ version = "4.11.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "dev"]
+groups = ["dev"]
 files = [
     {file = "typing_extensions-4.11.0-py3-none-any.whl", hash = "sha256:c1f94d72897edaf4ce775bb7558d5b79d8126906a14ea5ed1635921406c0387a"},
     {file = "typing_extensions-4.11.0.tar.gz", hash = "sha256:83f085bd5ca59c80295fc2a82ab5dac679cbe02b9f33f7d83af68e241bea51b0"},
@@ -1640,4 +1639,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "85c9023b1c7967b03d2790570a16e32f6971bc600cc1c5b7fce12adc19a0fb9a"
+content-hash = "dd9472477c0bb4940a82a9ebe88e1f9e8c99f4923f3017281d07f4e389f5fbf3"
