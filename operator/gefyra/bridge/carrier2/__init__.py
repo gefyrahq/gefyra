@@ -98,9 +98,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
             raise RuntimeError(
                 f"Not able to configure Carrier in Pod {self.pod}. See error above."
             )
-        endpoint = f"{destination_host}:{destination_port}"
         for pod in self.pods.items:
-            self.update_carrier_config(pod, endpoint)
+            self.update_carrier_config(pod)
 
         # 1. Call self.ready() (retry)
         # 2. Select all currently active GefyraBridges for this target
@@ -118,13 +117,13 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 rules.append(CarrierRule(**rule))
         return rules
 
-    def _convert_bridge_to_rule(self, bridge: dict, endpoint: str) -> CarrierBridge:
+    def _convert_bridge_to_rule(self, bridge: dict) -> CarrierBridge:
         return CarrierBridge(
-            endpoint=endpoint,
+            endpoint=bridge["clusterEndpoint"],
             rules=self._get_rules_for_bridge(bridge),
         )
 
-    def _set_bridges(self, config: Carrier2Config, endpoint: str) -> Carrier2Config:
+    def _set_bridges(self, config: Carrier2Config) -> Carrier2Config:
         bridges = custom_object_api.list_namespaced_custom_object(
             "gefyra.dev",
             "v1",
@@ -139,7 +138,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         for bridge in bridges["items"]:
             # TODO if bridge is not deactivating or something
             bridge_name = bridge["metadata"]["name"]
-            result[bridge_name] = self._convert_bridge_to_rule(bridge, endpoint)
+            result[bridge_name] = self._convert_bridge_to_rule(bridge)
 
         config.bridges = result
 
@@ -171,18 +170,23 @@ class Carrier2(AbstractGefyraBridgeProvider):
         return config
 
     def _set_tls(self, config: Carrier2Config):
-        if "tls" in self._bridge_mount_provider_parameter:
+        if (
+            self._bridge_mount_provider_parameter
+            and "tls" in self._bridge_mount_provider_parameter
+        ):
             config.tls = _get_tls_from_provider_parameters(
                 self._bridge_mount_provider_parameter
             )
         return config
 
-    def update_carrier_config(self, pod: V1Pod, endpoint: str):
+    def update_carrier_config(self, pod: V1Pod):
         carrier_config = Carrier2Config()
         carrier_config = self._set_own_ports(carrier_config, pod)
         carrier_config = self._set_cluster_upstream(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
-        carrier_config = self._set_bridges(carrier_config, endpoint)
+        # TODO endpoint is only the current one (add_proxy_route)
+        # the other endpoints currently get the same value
+        carrier_config = self._set_bridges(carrier_config)
         carrier_config = self._set_tls(carrier_config)
         carrier_config.commit(
             pod_name=pod.metadata.name,
@@ -239,11 +243,11 @@ class Carrier2(AbstractGefyraBridgeProvider):
         )
 
     @cached_property
-    def _bridge_mount_provider_parameter(self) -> dict:
+    def _bridge_mount_provider_parameter(self) -> Optional[dict]:
         """
         Get the bridge mount provider parameter
         """
-        return self._bridge_mount_resource["providerParameter"]
+        return self._bridge_mount_resource.get("providerParameter")
 
     @property
     def _bridge_mount_target(self) -> str:

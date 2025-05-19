@@ -152,6 +152,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
                     self.data["client"], destination, int(source_port)
                 )
             proxy_host, proxy_port = proxy_host.split(":", 1)
+            self._patch_object({"clusterEndpoint": f"{proxy_host}:{proxy_port}"})
             if not self.bridge_provider.proxy_route_exists(
                 target_port, proxy_host, proxy_port
             ):

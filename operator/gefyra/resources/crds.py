@@ -46,6 +46,8 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
                 default=[],
                 items=k8s.client.V1JSONSchemaProps(type="string"),
             ),
+            # Service name + port of the corresponding client stowaway proxy
+            "clusterEndpoint": k8s.client.V1JSONSchemaProps(type="string", default=""),
             # "syncDownDirectories": k8s.client.V1JSONSchemaProps(
             #     type="array",
             #     default=[],

@@ -238,7 +238,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         return carrier_config
 
     def _set_tls(self, carrier_config: Carrier2Config) -> Carrier2Config:
-        if self.params.get("tls"):
+        if self.params and self.params.get("tls"):
             carrier_config.tls = _get_tls_from_provider_parameters(self.params)
         return carrier_config
 
