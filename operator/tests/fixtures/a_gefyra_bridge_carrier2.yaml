@@ -11,7 +11,7 @@ providerParameter:
     - match:
         - matchHeader:
             name: "x-gefyra"
-            value: "peer"
+            value: "peer1"
 connectionProvider: stowaway
 client: client-a
 targetNamespace: default

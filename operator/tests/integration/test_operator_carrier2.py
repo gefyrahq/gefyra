@@ -55,7 +55,7 @@ def test_a_create_bridge_mount(operator: AClusterManager):
     config = config[0].replace("\n ", "").replace(" ", "")
     print(config)
     assert (
-        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer"  # noqa: E501
+        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"  # noqa: E501
         in config
     )
     assert "./tests/fixtures/test_cert.pem" in config
@@ -72,6 +72,7 @@ def test_b_second_bridge(operator: AClusterManager):
         namespace="gefyra",
         timeout=120,
     )
+
     from kubernetes.client.api import core_v1_api
 
     core_v1 = core_v1_api.CoreV1Api()
@@ -83,7 +84,36 @@ def test_b_second_bridge(operator: AClusterManager):
     config = config[0].replace("\n ", "").replace(" ", "")
     print(config)
     assert (
-        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer"  # noqa: E501
+        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"  # noqa: E501
         in config
+    )
+    assert "name:x-gefyravalue:peer2" in config  # noqa: E501
+
+
+def test_delete_bridge(operator: AClusterManager):
+    k3d = operator
+    k3d.kubectl(
+        ["-n", "gefyra", "delete", "gefyrabridges.gefyra.dev", "bridge-a"],
+        as_dict=False,
+    )
+
+    k3d.wait(
+        "gefyrabridges.gefyra.dev/bridge-a",
+        "delete",
+        namespace="gefyra",
+        timeout=60,
+    )
+    from kubernetes.client.api import core_v1_api
+
+    core_v1 = core_v1_api.CoreV1Api()
+    pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
+    config = read_carrier2_config(
+        core_v1, pod["items"][0]["metadata"]["name"], "default"
+    )
+    config = config[0].replace("\n ", "").replace(" ", "")
+    print(config)
+    assert (
+        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"  # noqa: E501
+        not in config
     )
     assert "name:x-gefyravalue:peer2" in config  # noqa: E501

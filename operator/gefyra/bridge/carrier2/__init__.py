@@ -20,6 +20,7 @@ from gefyra.bridge_mount.utils import (
     get_all_probes,
     get_upstreams_for_svc,
 )
+from gefyra.bridge.carrier2.utils import read_carrier2_config
 
 app_api = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -136,12 +137,11 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
         result = {}
         for bridge in bridges["items"]:
-            # TODO if bridge is not deactivating or something
-            bridge_name = bridge["metadata"]["name"]
-            result[bridge_name] = self._convert_bridge_to_rule(bridge)
-
+            self.logger.info(f"BRIDGE State {bridge['state']}")
+            if bridge["state"] != "REMOVING":
+                bridge_name = bridge["metadata"]["name"]
+                result[bridge_name] = self._convert_bridge_to_rule(bridge)
         config.bridges = result
-
         return config
 
     def _set_cluster_upstream(self, config: Carrier2Config) -> Carrier2Config:
@@ -184,8 +184,6 @@ class Carrier2(AbstractGefyraBridgeProvider):
         carrier_config = self._set_own_ports(carrier_config, pod)
         carrier_config = self._set_cluster_upstream(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
-        # TODO endpoint is only the current one (add_proxy_route)
-        # the other endpoints currently get the same value
         carrier_config = self._set_bridges(carrier_config)
         carrier_config = self._set_tls(carrier_config)
         carrier_config.commit(
@@ -302,17 +300,6 @@ class Carrier2(AbstractGefyraBridgeProvider):
             raise RuntimeError(f"Pod {pod.metadata.name} did not become ready in time")
         self.logger.debug(f"Pod {pod.metadata.name} is ready")
 
-    def commit_config(self) -> None:
-        self.logger.debug(f"Commiting config to pods for {self.bridge_mount_name}")
-        self.logger.debug(f"Config: {self.carrier_config}")
-        for pod in self.pods.items:
-            self._pod_running(pod)
-            self.carrier_config.commit(
-                pod.metadata.name,
-                self.container,
-                self.namespace,
-            )
-
     def remove_proxy_route(
         self, container_port: int, destination_host: str, destination_port: int
     ):
@@ -321,15 +308,12 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
         :param proxy_route: the proxy_route to be removed in the form of IP:PORT
         """
-
-        # 1. Call self.ready() (retry)
-        # 2. Retrive actual config to running Carrier2 instance, raise TemporaryError on error (retry)
-        # 3. Remove this brige (user-id) from bridge rules
-        # 4. Send edited config to running Carrier2 instance, raise TemporaryError on error (retry)
-        # 5. Carrier2 graceful reload
-        # 5. Return None
-
-        raise NotImplementedError
+        if not self.ready():
+            raise RuntimeError(
+                f"Not able to configure Carrier in Pod {self.pod}. See error above."
+            )
+        for pod in self.pods.items:
+            self.update_carrier_config(pod)
 
     def proxy_route_exists(
         self, container_port: int, destination_host: str, destination_port: int
@@ -341,7 +325,22 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # 1. Call self.ready() (retry)
         # 2. Retrive actual config to running Carrier2 instance, raise TemporaryError on error (retry)
         # 3. Check this brige (client-id) is in the config, return the result
-        return False
+        pod: V1Pod = self.pods.items[0]
+        config_str_list = read_carrier2_config(
+            core_v1_api, pod.metadata.name, pod.metadata.namespace
+        )
+        config_str = "\n".join(config_str_list)
+        pod_config = Carrier2Config.from_string(config_str)
+        if not pod_config.bridges:
+            return False
+        self.logger.info(f"{destination_host}:{destination_port}")
+
+        bridge_exists = any(
+            bridge.endpoint == f"{destination_host}:{destination_port}"
+            for bridge in pod_config.bridges.values()
+        )
+        self.logger.info(f"Bridge exists: {bridge_exists}")
+        return bridge_exists
         # raise NotImplementedError
 
     def validate(self, brige_request: dict):

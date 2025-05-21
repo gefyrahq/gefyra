@@ -165,6 +165,9 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.logger.info(f"GefyraBridge '{self.object_name}' is being created")
 
     def on_remove(self):
+        self.send("terminate")
+
+    def on_terminate(self):
         self.logger.info(f"GefyraBridge '{self.object_name}' is being removed")
         destination = self.data["destinationIP"]
         for port_mapping in self.data.get("portMappings"):
@@ -185,7 +188,6 @@ class GefyraBridge(StateMachine, StateControllerMixin):
                 self.connection_provider.remove_destination(
                     self.data["client"], destination, int(source_port)
                 )
-        self.send("set_installed")
 
     def on_restore(self):
         self.bridge_provider.uninstall()
