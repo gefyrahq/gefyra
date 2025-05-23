@@ -10,6 +10,7 @@ from gefyra.bridge.carrier2.utils import (
     stream_exec,
 )
 from gefyra.utils import wait_until_condition
+from gefyra.bridge.carrier2.const import RELOAD_CARRIER2
 
 
 ERROR_LOG_PATH = "/tmp/carrier.error.log"
@@ -89,8 +90,7 @@ class Carrier2Config(BaseModel):
             "cat <<'EOF' > /tmp/config.yaml\n" f"{config_str}",
             "EOF",
             # 2. graceful upgrade of the process
-            "kill -SIGQUIT $(ps | grep '[c]arrier2' | awk ' { print $1 }' | tail -1) && "
-            "carrier2 -c /tmp/config.yaml -u &",
+            RELOAD_CARRIER2,
             # 3. read current config
             "cat /tmp/config.yaml",
         ]

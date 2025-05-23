@@ -60,7 +60,7 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
 
     k3d.load_image(demo_backend_image)
 
-    retries = Retry(total=5, backoff_factor=0.2)
+    retries = Retry(total=25, backoff_factor=0.2)
     session = requests.Session()
     session.mount("http://localhost:8091", HTTPAdapter(max_retries=retries))
 
@@ -82,8 +82,6 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
         namespace="demo",
         timeout=60,
     )
-    # get k8s some time to pick up the endpoint
-    sleep(5)
 
     # test ingress from demo workload
     resp = session.get("http://localhost:8091/color")

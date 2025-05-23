@@ -41,7 +41,7 @@ def reload_carrier2_config(core_api, name: str, namespace: str):
     from kubernetes.stream import stream
 
     commands = [
-        "kill -SIGQUIT $(ps | grep '[c]arrier2' | awk ' { print $1 }' | tail -1) && carrier2 -c /tmp/config.yaml -u &"
+        "RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ]; then carrier2 -c /tmp/config.yaml -u -d; else carrier2 -c /tmp/config.yaml -d; fi"
     ]
     exec_command = ["busybox", "sh"]
 

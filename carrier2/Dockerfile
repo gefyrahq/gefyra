@@ -31,9 +31,8 @@ COPY --from=builder /carrier/target/x86_64-unknown-linux-musl/release/carrier2 /
 COPY config.yaml /tmp/config.yaml
 COPY entrypoint.sh /entrypoint.sh
 COPY etc/ /etc
-RUN touch /tmp/carrier.error.log && touch /tmp/carrier2.sock
 # Fix permission issues
-RUN chmod 777 /tmp/config.yaml /tmp/carrier2.sock /tmp/carrier.error.log
+RUN chmod 777 /tmp/config.yaml
 
 RUN ln -sf /entrypoint.sh /bin/sh \
     && ln -sf /entrypoint.sh /bin/bash \
