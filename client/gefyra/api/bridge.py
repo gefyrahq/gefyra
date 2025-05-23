@@ -1,7 +1,7 @@
 import logging
 
 # from time import sleep
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, Dict, TYPE_CHECKING, Optional
 
 from gefyra.types import MatchHeader
 from gefyra.local.mount import get_gefyrabridgemount
@@ -231,7 +231,8 @@ def wait_for_deletion(gefyra_bridges: List, config: "ClientConfiguration"):
 
 @stopwatch
 def unbridge(
-    name: str,
+    name: Optional[str] = None,
+    mount_name: Optional[str] = None,
     connection_name: str = "",
     wait: bool = False,
 ) -> bool:
@@ -239,12 +240,28 @@ def unbridge(
     from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(connection_name=connection_name)
-
-    gefyra_bridge = handle_delete_gefyrabridge(config, name)
-    if gefyra_bridge:
-        if wait:
-            wait_for_deletion([gefyra_bridge], config=config)
-        logger.info(f"Bridge {name} removed")
+    if name:
+        gefyra_bridge = handle_delete_gefyrabridge(config, name)
+        if gefyra_bridge:
+            if wait:
+                wait_for_deletion([gefyra_bridge], config=config)
+            logger.info(f"Bridge {name} removed")
+    elif mount_name:
+        bridges = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+            "gefyra.dev",
+            "v1",
+            config.NAMESPACE,
+            "gefyrabridges",
+            label_selector=f"gefyra.dev/bridge-mount={mount_name}",
+        )
+        for bridge in bridges["items"]:
+            gefyra_bridge = handle_delete_gefyrabridge(
+                config, bridge["metadata"]["name"]
+            )
+            if gefyra_bridge:
+                if wait:
+                    wait_for_deletion([gefyra_bridge], config=config)
+                logger.info(f"Bridge {bridge['metadata']['name']} removed")
     return True
 
 

@@ -1,6 +1,6 @@
 import dataclasses
 from time import sleep
-from typing import List
+from typing import List, Optional
 import click
 from gefyra.types import MatchHeader
 from gefyra.cli import console
@@ -142,15 +142,30 @@ def create_bridge(
     default=False,
 )
 @click.option(
+    "-m",
+    "--mount",
+    help="Unbridge all bridges for a specific mount",
+    required=False,
+    default=None,
+)
+@click.option(
     "--connection-name", type=str, default="default", callback=check_connection_name
 )
 @standard_error_handler
-def unbridge(name: str, connection_name: str, all: bool = False):
+def unbridge(
+    name: str, connection_name: str, all: bool = False, mount: Optional[str] = None
+):
     from gefyra import api
 
-    if not all and not name:
+    if not all and not name and not mount:
         console.error("Provide a name or use --all flag to unbridge.")
     if all:
         api.unbridge_all(connection_name=connection_name, wait=True)
+    elif mount:
+        api.unbridge(
+            connection_name=connection_name,
+            mount_name=mount,
+            wait=True,
+        )
     else:
         api.unbridge(connection_name=connection_name, name=name, wait=True)
