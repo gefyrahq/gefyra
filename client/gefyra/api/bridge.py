@@ -145,7 +145,7 @@ def bridge(
 
     logger.info(f"Creating bridge for GefyraBridgeMount: {bridge_mount_name}")
     bridge_name_suffix = "".join(
-        random.choices(string.ascii_uppercase + string.digits, k=4)
+        random.choices(string.ascii_lowercase + string.digits, k=4)
     )
     bridge_name = f"{bridge_mount_name[:238]}-bridge-{bridge_name_suffix}"
     bridge_body = get_gbridge_body(
