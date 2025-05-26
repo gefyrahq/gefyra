@@ -1,4 +1,6 @@
 import logging
+import random
+import string
 
 # from time import sleep
 from typing import List, Dict, TYPE_CHECKING, Optional
@@ -142,9 +144,13 @@ def bridge(
     )
 
     logger.info(f"Creating bridge for GefyraBridgeMount: {bridge_mount_name}")
+    bridge_name_suffix = "".join(
+        random.choices(string.ascii_uppercase + string.digits, k=4)
+    )
+    bridge_name = f"{bridge_mount_name[:238]}-bridge-{bridge_name_suffix}"
     bridge_body = get_gbridge_body(
         config,
-        name=bridge_mount_name + "-bridge",
+        name=bridge_name,
         destination_ip=local_container_ip,
         target=bridge_mount_name,
         target_namespace=mount.target_namespace,
