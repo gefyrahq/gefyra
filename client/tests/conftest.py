@@ -7,11 +7,29 @@ from pytest_kubernetes.providers import AClusterManager, select_provider_manager
 from pytest_kubernetes.options import ClusterOptions
 
 
+@pytest.fixture(scope="session")
+def demo_backend_image(request):
+    name = "quay.io/gefyra/pyserver:latest"
+    subprocess.run(
+        ("docker pull quay.io/gefyra/pyserver:latest"),
+        shell=True,
+    )
+    return name
+
+
 @pytest.fixture(scope="module")
 def k3d():
     k8s: AClusterManager = select_provider_manager("k3d")("gefyra")
     # ClusterOptions() forces pytest-kubernetes to always write a new kubeconfig file to disk
-    k8s.create(ClusterOptions())
+    k8s.create(
+        ClusterOptions(),
+        options=[
+            '--port="31820:31820/UDP@agent:0"',
+            "-p",
+            "8080:80@agent:0",
+            "--agents=1",
+        ],
+    )
     k8s.kubectl(["create", "ns", "gefyra"])
     k8s.wait("ns/gefyra", "jsonpath='{.status.phase}'=Active")
     os.environ["KUBECONFIG"] = str(k8s.kubeconfig)
@@ -25,7 +43,7 @@ def operator_image(request):
     name = "operator:pytest"
     subprocess.run(
         (
-            f"docker build -t {name} -f"
+            f"docker build -t {name} --platform linux/amd64 -f"
             f" {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
             f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
         ),

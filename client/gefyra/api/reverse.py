@@ -8,7 +8,6 @@ from gefyra.api.utils import get_workload_type
 from gefyra.exceptions import GefyraBridgeError, WorkloadNotFoundError
 import kubernetes as k8s
 from kubernetes.client.exceptions import ApiException
-from kubernetes.config import load_kube_config
 
 GEFYRA_APP_LABEL = "gefyra.dev/app"
 STOWAWAY_PROXYROUTE_CONFIGMAPNAME = "gefyra-stowaway-proxyroutes"
@@ -25,8 +24,6 @@ STOWAWAY_LABELS = {
     "gefyra.dev/provider": "stowaway",
 }
 CARRIER_IMAGE = "quay.io/gefyra/carrier2:latest"
-
-load_kube_config()
 
 core_v1_api = k8s.client.CoreV1Api()
 apps_v1_api = k8s.client.AppsV1Api()
@@ -339,6 +336,9 @@ def create_reverse_service(
     name: str, ports: Dict[str, str], client_id: str, network: str
 ):
     from docker.errors import NotFound
+    from kubernetes.config import load_kube_config
+
+    load_kube_config()
 
     docker_client = docker.from_env()
 

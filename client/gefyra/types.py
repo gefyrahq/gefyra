@@ -11,6 +11,9 @@ from gefyra.local.clients import handle_get_gefyraclient
 logger = logging.getLogger(__name__)
 
 
+LOCAL_SERVER = "#local#"
+
+
 @dataclass
 class StowawayParameter:
     # the subnet for a client
@@ -28,6 +31,12 @@ class GefyraClientConfig:
     gefyra_server: str
     registry: Optional[str] = None
     wireguard_mtu: Optional[str] = "1340"
+
+    def __getattribute__(self, name):
+        if name == "gefyra_server":
+            if super().__getattribute__(name) == LOCAL_SERVER:
+                return ClientConfiguration().CARGO_ENDPOINT
+        return super().__getattribute__(name)
 
     @property
     def json(self):
