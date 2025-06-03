@@ -32,6 +32,10 @@ def stream_exec_retries(
 def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
     from kubernetes.stream import stream
 
+    logger.info(
+        f"Executing commands on pod {name} in namespace {namespace} with container {container}"
+    )
+
     exec_command = ["busybox", "sh"]
     resp = stream(
         core_v1_api.connect_get_namespaced_pod_exec,
@@ -45,7 +49,7 @@ def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
         tty=False,
         _preload_content=False,
     )
-
+    temp_commands = commands[:]
     last_ouput = None
     while resp.is_open():
         resp.update(timeout=1)
@@ -54,12 +58,15 @@ def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
         if resp.peek_stderr():
             last_ouput = resp.read_stderr()
             logger.error(f"Error from carrier2: {last_ouput}")
-            break
-        if commands:
-            c = commands.pop(0)
+            continue
+        if temp_commands:
+            c = temp_commands.pop(0)
+            logger.info(f"Sending command: {c}")
             resp.write_stdin(c + "\n")
+            time.sleep(0.5)
         else:
             break
+        logger.info(f"Last output: {last_ouput}")
 
     resp.close()
     return last_ouput

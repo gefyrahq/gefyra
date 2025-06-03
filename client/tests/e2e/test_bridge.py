@@ -188,6 +188,7 @@ class GefyraBridgeTest(TestCase):
                 break
             retries -= 1
             sleep(1)
-
+            print("retry")
+        sleep(1000)
         if retries == 0:
             raise AssertionError("Expected response not found in bridge response.")
