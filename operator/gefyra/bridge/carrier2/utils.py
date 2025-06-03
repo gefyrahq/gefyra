@@ -1,7 +1,9 @@
 from typing import List
 import time
 import logging
+from ssl import SSLEOFError
 
+from kopf import TemporaryError
 import kubernetes as k8s
 from websocket import WebSocketConnectionClosedException
 
@@ -11,14 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 def stream_exec_retries(
-    name: str, namespace: str, commands: List[str], retries: int = 30
+    name: str, namespace: str, container: str, commands: List[str], retries: int = 30
 ):
     from kubernetes.client.rest import ApiException
 
     while retries > 0:
         try:
-            return stream_exec(name, namespace, commands)
-        except ApiException:
+            return stream_exec(name, namespace, container, commands)
+        except (ApiException, SSLEOFError) as e:
+            logger.error(
+                f"Failed to exec commands on pod {name} in namespace {namespace} with container {container}: {e}"
+            )
             retries -= 1
             time.sleep(1)
             continue
@@ -26,7 +31,7 @@ def stream_exec_retries(
             raise Exception(
                 f"Failed to exec commands with {retries} retries due to closed connection"
             )
-    raise Exception(f"Failed to exec commands with {retries} retries")
+    raise TemporaryError(f"Failed to exec commands with {retries} retries", delay=10)
 
 
 def stream_exec(name: str, namespace: str, container: str, commands: List[str]):

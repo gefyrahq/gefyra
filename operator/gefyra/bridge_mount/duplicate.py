@@ -1,6 +1,7 @@
-from functools import cached_property, partial
+from functools import partial
 from typing import List
 import uuid
+from kopf import TemporaryError
 import kubernetes as k8s
 from kubernetes.client import (
     V1Deployment,
@@ -159,7 +160,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def prepare(self):
         self._duplicate_deployment()
 
-    @cached_property
+    @property
     def _gefyra_pods(self) -> V1PodList:
         return self._get_pods_workload(
             name=self._gefyra_workload_name,
@@ -265,6 +266,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         # TODO extend to StatefulSet and Pods
         upstream_ports = []
         for pod in self._original_pods.items:
+            if pod.status.phase == "Terminating":
+                continue
             for container in pod.spec.containers:
                 upstream_ports.append(container.ports[0].container_port)
                 if container.name == self.container:
@@ -296,9 +299,15 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             self.logger.info(
                 f"Now patching Pod {pod.metadata.name}; container {self.container} with Carrier2"
             )
-            core_v1_api.patch_namespaced_pod(
-                name=pod.metadata.name, namespace=self.namespace, body=pod
-            )
+            try:
+                core_v1_api.patch_namespaced_pod(
+                    name=pod.metadata.name, namespace=self.namespace, body=pod
+                )
+            except ApiException as e:
+                raise TemporaryError(
+                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e}",
+                    delay=5,
+                )
 
             # wait for the container restart to become effective
             read_func = partial(
@@ -321,6 +330,9 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
             carrier_config = self._set_carrier_upstream(upstream_ports, probes)
             carrier_config = self._set_tls(carrier_config)
+            carrier_config.add_bridge_rules_for_mount(
+                self.name, self.configuration.NAMESPACE
+            )
             self.logger.info(f"Commiting carrier2 config to pod {pod.metadata.name}")
             self.logger.info(f"Carrier2 config: {carrier_config}")
             carrier_config.commit(

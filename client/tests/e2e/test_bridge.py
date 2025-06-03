@@ -75,6 +75,26 @@ class GefyraBridgeTest(TestCase):
             )
         return res
 
+    def assert_get_contains(
+        self, url: str, expected_content: str, retries: int = 10, headers: dict = None
+    ):
+        """
+        Helper function to assert that a GET request to a URL contains expected content.
+        Retries the request if the content is not found.
+        """
+        while retries > 0:
+            try:
+                response = requests.get(url, headers=headers)
+            except Exception:
+                continue
+            if expected_content in response.text:
+                return
+            retries -= 1
+            sleep(1)
+        raise AssertionError(
+            f"Expected content '{expected_content}' not found in response from {url}."
+        )
+
     def test_bridge(self):
         self.cmd("client", ["create", "--client-id", "client-a"])
 
@@ -117,11 +137,9 @@ class GefyraBridgeTest(TestCase):
             ],
         )
 
-        response = requests.get("http://localhost:8080")
-        assert "Welcome to nginx!" in response.text
+        self.assert_get_contains("http://localhost:8000", "Hello from Gefyra.")
 
-        response = requests.get("http://localhost:8000")
-        assert "Hello from Gefyra." in response.text
+        self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         self.cmd(
             "mount",
@@ -140,9 +158,8 @@ class GefyraBridgeTest(TestCase):
             namespace="gefyra",
             timeout=60,
         )
-        # Response should look still the same
-        response = requests.get("http://localhost:8080")
-        assert "Welcome to nginx!" in response.text
+
+        self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         # TODO maybe check the new deployment?
 
@@ -176,19 +193,67 @@ class GefyraBridgeTest(TestCase):
             timeout=60,
         )
 
-        response = requests.get("http://localhost:8080")
-        assert "Welcome to nginx!" in response.text
+        self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
-        retries = 10
-        while retries > 0:
-            response = requests.get(
-                "http://localhost:8080", headers={"x-gefyra": "peer"}
-            )
-            if "Hello from Gefyra." in response.text:
-                break
-            retries -= 1
-            sleep(1)
-            print("retry")
-        sleep(1000)
-        if retries == 0:
-            raise AssertionError("Expected response not found in bridge response.")
+        self.assert_get_contains(
+            "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+        )
+
+    def test_rollout_bridge_is_stable(self):
+        """
+        Test if a deployment rollout is detected and the bridge is updated accordingly.
+        """
+        client_file_path = self.tmp_path / "client-a.json"
+        self.cmd("client", ["config", "-o", client_file_path, "client-a", "--local"])
+
+        self.cmd(
+            "connection",
+            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            "run",
+            [
+                "-i",
+                self.demo_backend_image,
+                "-n",
+                "default",
+                "--connection-name",
+                "pytest-gefyra",
+                "--expose",
+                "127.0.0.1:8000:8000",
+                "--rm",
+                "--name",
+                LOCAL_CONTAINER_NAME,
+                "--command",
+                "python3 local.py",
+            ],
+        )
+
+        self.operator.kubectl(
+            [
+                "rollout",
+                "restart",
+                "deployment/nginx-deployment",
+            ]
+        )
+
+        self.operator.wait(
+            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+            "jsonpath=.state=RESTORING",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        self.operator.wait(
+            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
+
+        self.assert_get_contains(
+            "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+        )

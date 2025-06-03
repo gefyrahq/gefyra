@@ -1,6 +1,6 @@
 from functools import cached_property
 from time import sleep
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from kopf import TemporaryError
 import kubernetes as k8s
 from kubernetes.client import ApiException, V1PodList, V1Pod
@@ -10,9 +10,7 @@ from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import (
     Carrier2Config,
-    CarrierBridge,
     CarrierProbe,
-    CarrierRule,
 )
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
@@ -109,41 +107,6 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # 4. Retrive actual config from running Carrier2 instance, raise TemporaryError on error (retry)
         # 5. Compare constructed config with actual config, return result
 
-    def _get_rules_for_bridge(self, bridge: dict) -> List[CarrierRule]:
-        rules = []
-        self.logger.info(bridge)
-        for rule in bridge["providerParameter"]["rules"]:
-            self.logger.info(rule)
-            if "match" in rule:
-                rules.append(CarrierRule(**rule))
-        return rules
-
-    def _convert_bridge_to_rule(self, bridge: dict) -> CarrierBridge:
-        return CarrierBridge(
-            endpoint=bridge["clusterEndpoint"],
-            rules=self._get_rules_for_bridge(bridge),
-        )
-
-    def _set_bridges(self, config: Carrier2Config) -> Carrier2Config:
-        bridges = custom_object_api.list_namespaced_custom_object(
-            "gefyra.dev",
-            "v1",
-            self.configuration.NAMESPACE,
-            "gefyrabridges",
-            label_selector=f"gefyra.dev/bridge-mount={self.bridge_mount_name}",
-        )
-        self.logger.info(f"gefyra.dev/bridge-mount={self.bridge_mount_name}")
-        self.logger.info(f"BRIDGES {bridges}")
-
-        result = {}
-        for bridge in bridges["items"]:
-            self.logger.info(f"BRIDGE State {bridge['state']}")
-            if bridge["state"] != "REMOVING":
-                bridge_name = bridge["metadata"]["name"]
-                result[bridge_name] = self._convert_bridge_to_rule(bridge)
-        config.bridges = result
-        return config
-
     def _set_cluster_upstream(self, config: Carrier2Config) -> Carrier2Config:
         svc = core_v1_api.read_namespaced_service(
             name=generate_duplicate_svc_name(self._bridge_mount_target, self.container),
@@ -184,7 +147,9 @@ class Carrier2(AbstractGefyraBridgeProvider):
         carrier_config = self._set_own_ports(carrier_config, pod)
         carrier_config = self._set_cluster_upstream(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
-        carrier_config = self._set_bridges(carrier_config)
+        carrier_config.add_bridge_rules_for_mount(
+            self.bridge_mount_name, self.configuration.NAMESPACE
+        )
         carrier_config = self._set_tls(carrier_config)
         carrier_config.commit(
             pod_name=pod.metadata.name,
