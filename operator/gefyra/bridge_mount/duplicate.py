@@ -265,7 +265,14 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def install(self):
         # TODO extend to StatefulSet and Pods
         upstream_ports = []
-        for pod in self._original_pods.items:
+        pods = self._original_pods.items
+        if len(set(pod.metadata.owner_references[0].name for pod in pods)) > 1:
+            # there is probably an update in progress
+            raise TemporaryError(
+                "Cannot install Gefyra Carrier2 on pods controlled by more than one controller.",
+                delay=5,
+            )
+        for pod in pods:
             if pod.status.phase == "Terminating":
                 continue
             for container in pod.spec.containers:
