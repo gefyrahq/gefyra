@@ -199,7 +199,7 @@ class GefyraBridgeTest(TestCase):
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
 
-    def test_rollout_bridge_is_stable(self):
+    def test_rollout_bridge_mount_reconciles(self):
         """
         Test if a deployment rollout is detected and the bridge is updated accordingly.
         """
