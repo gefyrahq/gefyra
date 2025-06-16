@@ -113,8 +113,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         self.logger.warning(
             f"Problem detected. Restoring GefyraBridgeMount '{self.object_name}'"
         )
-        if not self.bridge_mount_provider.prepared():
-            self.send("prepare")
+        self.send("prepare")
         # elif not self.bridge_mount_provider.ready():
         self.send("install")
 

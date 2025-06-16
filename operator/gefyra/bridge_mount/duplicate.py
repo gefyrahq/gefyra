@@ -142,11 +142,31 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         new_svc = self._get_svc_for_deployment(new_deployment)
 
         # Create the new deployment
-        app.create_namespaced_deployment(self.namespace, new_deployment)
-        core_v1_api.create_namespaced_service(
-            self.namespace,
-            new_svc,
-        )
+        try:
+            app.create_namespaced_deployment(self.namespace, new_deployment)
+        except ApiException as e:
+            if e.status == 409:
+                app.patch_namespaced_deployment(
+                    name=new_deployment.metadata.name,
+                    namespace=self.namespace,
+                    body=new_deployment,
+                )
+            else:
+                raise RuntimeError(f"Exception when creating deployment: {e}")
+        try:
+            core_v1_api.create_namespaced_service(
+                self.namespace,
+                new_svc,
+            )
+        except ApiException as e:
+            if e.status == 409:
+                core_v1_api.patch_namespaced_service(
+                    name=new_svc.metadata.name,
+                    namespace=self.namespace,
+                    body=new_svc,
+                )
+            else:
+                raise RuntimeError(f"Exception when creating service: {e}")
 
     def _get_workload(self) -> V1Deployment:
         # TODO extend to pods

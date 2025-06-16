@@ -158,6 +158,12 @@ class GefyraBridgeTest(TestCase):
             namespace="gefyra",
             timeout=60,
         )
+        self.operator.wait(
+            "deployment/nginx-deployment-gefyra",
+            "jsonpath=.spec.template.spec.containers[0].image=nginx:1.14.2",
+            namespace="default",
+            timeout=60,
+        )
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
@@ -188,6 +194,77 @@ class GefyraBridgeTest(TestCase):
 
         self.operator.wait(
             f"gefyrabridges.gefyra.dev/{bridge_name}",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
+
+        self.assert_get_contains(
+            "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+        )
+
+    def test_image_deployment_patches(self):
+        """
+        Test if a deployment image patch is detected and the bridge is updated accordingly.
+        """
+        client_file_path = self.tmp_path / "client-a.json"
+        self.cmd("client", ["config", "-o", client_file_path, "client-a", "--local"])
+
+        self.cmd(
+            "connection",
+            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            "run",
+            [
+                "-i",
+                self.demo_backend_image,
+                "-n",
+                "default",
+                "--connection-name",
+                "pytest-gefyra",
+                "--expose",
+                "127.0.0.1:8000:8000",
+                "--rm",
+                "--name",
+                LOCAL_CONTAINER_NAME,
+                "--command",
+                "python3 local.py",
+            ],
+        )
+
+        self.operator.kubectl(
+            [
+                "patch",
+                "deployment",
+                "nginx-deployment",
+                "-n",
+                "default",
+                "--patch",
+                '\'{"spec":{"template":{"spec":{"containers":[{"name":"nginx","image":"nginx:latest"}]}}}}\'',
+            ]
+        )
+
+        self.operator.wait(
+            "deployment/nginx-deployment-gefyra",
+            "jsonpath=.spec.template.spec.containers[0].image=nginx:latest",
+            namespace="default",
+            timeout=60,
+        )
+
+        # RESTORING state usually lasts just very briefly, so we wait for PREPARING state
+        self.operator.wait(
+            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+            "jsonpath=.state=PREPARING",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        self.operator.wait(
+            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=60,
