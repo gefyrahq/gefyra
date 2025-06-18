@@ -544,14 +544,14 @@ files = [
 
 [[package]]
 name = "kubernetes"
-version = "32.0.1"
+version = "33.1.0"
 description = "Kubernetes python client"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "kubernetes-32.0.1-py2.py3-none-any.whl", hash = "sha256:35282ab8493b938b08ab5526c7ce66588232df00ef5e1dbe88a419107dc10998"},
-    {file = "kubernetes-32.0.1.tar.gz", hash = "sha256:42f43d49abd437ada79a79a16bd48a604d3471a117a8347e87db693f2ba0ba28"},
+    {file = "kubernetes-33.1.0-py2.py3-none-any.whl", hash = "sha256:544de42b24b64287f7e0aa9513c93cb503f7f40eea39b20f66810011a86eabc5"},
+    {file = "kubernetes-33.1.0.tar.gz", hash = "sha256:f64d829843a54c251061a8e7a14523b521f2dc5c896cf6d65ccf348648a88993"},
 ]
 
 [package.dependencies]
@@ -1184,4 +1184,4 @@ test = ["websockets"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.8.1,<4.0.0"
-content-hash = "1e9e6a007c18ab4f40372f86889ae65d31e522d4ef3529a892a28b0b02fe3c51"
+content-hash = "f0b1e499c249d1dc367efffaa4f0764e4cf6f0f1978916fd7d3932f7818934eb"
