@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 def test_client_max_connection_age(
-    operator: AClusterManager,
+    operator_with_max_connection_age: AClusterManager,
     gclient_a: GefyraDockerClient,
 ):
     """
@@ -20,28 +20,7 @@ def test_client_max_connection_age(
     4. Wait for max_connection_age to expire
     5. Verify client returns to waiting state
     """
-    k3d = operator
-
-    # Set max_connection_age to 5 seconds in the gefyra-stowaway-config configmap
-    logger.info("Setting max_connection_age to 5 seconds in configmap")
-    k3d.kubectl(
-        [
-            "patch",
-            "configmap",
-            "gefyra-stowaway-config",
-            "-n",
-            "gefyra",
-            "--type=merge",
-            "--patch='"
-            + json.dumps({"data": {"DEFAULT_MAX_CONNECTION_AGE": "5"}})
-            + "'",
-        ]
-    )
-
-    # Restart the stowaway deployment to pick up the new config
-    logger.info("Restarting stowaway deployment to pick up new config")
-    k3d.kubectl(["rollout", "restart", "sts/gefyra-stowaway", "-n", "gefyra"])
-
+    k3d = operator_with_max_connection_age
     # Apply client configuration
     logger.info("Creating GefyraClient")
     k3d.apply("tests/fixtures/a_gefyra_client.yaml")

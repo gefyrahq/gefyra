@@ -100,8 +100,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     @property
     def max_connection_age(self) -> Optional[int]:
-        # TODO read from where
-        return 5
+        return self.configuration.STOWAWAY_MAX_CONNECTION_AGE
 
     @property
     def should_disable(self) -> bool:

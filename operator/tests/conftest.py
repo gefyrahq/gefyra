@@ -232,3 +232,53 @@ def gclient_b():
         c.delete()
     except Exception:
         pass
+
+
+@pytest.fixture(scope="module")
+def operator_with_max_connection_age(k3d, stowaway_image, carrier_image):
+    from kopf.testing import KopfRunner
+
+    os.environ["GEFYRA_STOWAWAY_IMAGE"] = stowaway_image.split(":")[0]
+    os.environ["GEFYRA_STOWAWAY_TAG"] = stowaway_image.split(":")[1]
+    os.environ["GEFYRA_STOWAWAY_IMAGE_PULLPOLICY"] = "Never"
+    os.environ["GEFYRA_CARRIER_IMAGE"] = carrier_image.split(":")[0]
+    os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier_image.split(":")[1]
+    os.environ["GEFYRA_STOWAWAY_MAX_CONNECTION_AGE"] = "5"
+
+    k3d.load_image(stowaway_image)
+    operator = KopfRunner(["run", "-A", "--dev", "main.py"])
+    operator.__enter__()
+    kopf_logger = logging.getLogger("kopf")
+    kopf_logger.setLevel(logging.INFO)
+    gefyra_logger = logging.getLogger("gefyra")
+    gefyra_logger.setLevel(logging.INFO)
+
+    not_found = True
+    _i = 0
+    try:
+        while not_found and _i < 190:
+            sleep(1)
+            events = k3d.kubectl(["get", "events", "-n", "gefyra"])
+            _i += 1
+            for event in events["items"]:
+                if event["reason"] == "Gefyra-Ready":
+                    not_found = False
+    except Exception:
+        operator.timeout = 10
+        operator.__exit__(None, None, None)
+    if not_found:
+        operator.timeout = 10
+        operator.__exit__(None, None, None)
+        raise Exception("Gefyra-Ready event not found")
+
+    yield k3d
+
+    # Clean up environment variable
+    if "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE" in os.environ:
+        del os.environ["GEFYRA_STOWAWAY_MAX_CONNECTION_AGE"]
+
+    for key in list(sys.modules.keys()):
+        if key.startswith("kopf"):
+            del sys.modules[key]
+    operator.timeout = 10
+    operator.__exit__(None, None, None)
