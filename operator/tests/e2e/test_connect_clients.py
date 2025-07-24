@@ -2,7 +2,7 @@ import json
 import logging
 
 from pytest_kubernetes.providers import AClusterManager
-from .utils import GefyraDockerClient
+from tests.utils import GefyraDockerClient
 
 logger = logging.getLogger(__name__)
 

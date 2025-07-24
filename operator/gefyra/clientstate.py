@@ -1,6 +1,7 @@
 from datetime import datetime
+from logging import Logger
 import tarfile
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import kopf
 import kubernetes as k8s
@@ -63,7 +64,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
         self,
         model: GefyraClientObject,
         configuration: OperatorConfiguration,
-        logger: Any,
+        logger: Logger,
     ):
         super().__init__()
         self.model = model
@@ -98,6 +99,34 @@ class GefyraClient(StateMachine, StateControllerMixin):
             return None
 
     @property
+    def max_connection_age(self) -> Optional[int]:
+        # TODO read from where
+        return 5
+
+    @property
+    def should_disable(self) -> bool:
+        # Check if client is currently active
+        if not self.active.is_active:
+            return False
+        self.logger.info("client active")
+        # Check if max_connection_age is configured
+        max_age_seconds = self.max_connection_age
+        if max_age_seconds is None:
+            return False
+        self.logger.info(f"max_connection_age is set to {max_age_seconds} seconds")
+        # Get the timestamp when client transitioned to active state
+        active_transition_time = self.completed_transition(GefyraClient.active.value)
+        if active_transition_time is None:
+            return False
+        self.logger.info(f"Active transition time: {active_transition_time}")
+        # Calculate time since the active transition
+        active_timestamp = datetime.fromisoformat(active_transition_time.strip("Z"))
+        time_since_active = (datetime.utcnow() - active_timestamp).total_seconds()
+        self.logger.info(f"Time since active: {time_since_active} seconds")
+        # Return True if the connection has exceeded max_connection_age
+        return time_since_active > max_age_seconds
+
+    @property
     def should_terminate(self) -> bool:
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this client because the sunset time is in the past
@@ -113,7 +142,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
         self.logger.info(f"Client '{self.object_name}' is being created")
         self.create_service_account()
 
-    def create_service_account(self):
+    def create_service_account(self) -> None:
         """
         This method is called when the GefyraClient is creating
         :return: None
@@ -191,7 +220,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
                 )
         self._patch_object({"providerConfig": None})
 
-    def cleanup_all_bridges(self):
+    def cleanup_all_bridges(self) -> None:
         bridges = self.custom_api.list_namespaced_custom_object(
             group="gefyra.dev",
             version="v1",
