@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 def test_client_max_connection_age(
-    operator_with_max_connection_age: AClusterManager,
+    short_env,
+    operator: AClusterManager,
     gclient_a: GefyraDockerClient,
 ):
     """
@@ -20,7 +21,7 @@ def test_client_max_connection_age(
     4. Wait for max_connection_age to expire
     5. Verify client returns to waiting state
     """
-    k3d = operator_with_max_connection_age
+    k3d = operator
     # Apply client configuration
     logger.info("Creating GefyraClient")
     k3d.apply("tests/fixtures/a_gefyra_client.yaml")
