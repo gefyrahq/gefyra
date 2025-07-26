@@ -1,5 +1,6 @@
 import logging
 import os
+import platform
 import sys
 from pathlib import Path
 import subprocess
@@ -7,6 +8,8 @@ from time import sleep
 import pytest
 from pytest_kubernetes.providers import AClusterManager, select_provider_manager
 from pytest_kubernetes.options import ClusterOptions
+
+from tests.utils import GefyraDockerClient
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -54,6 +57,11 @@ def k3d():
         sleep(1)
     if not exited:
         raise Exception("K3d cluster did not exit")
+
+
+@pytest.fixture(scope="module")
+def short_env():
+    os.environ["GEFYRA_STOWAWAY_MAX_CONNECTION_AGE"] = "5"
 
 
 @pytest.fixture(scope="module")
@@ -190,3 +198,42 @@ def demo_frontend_image():
         shell=True,
     )
     yield name
+
+
+@pytest.fixture(scope="session")
+def cargo_image(request):
+    name = "cargo:pytest"
+    if sys.platform == "win32" or "microsoft-standard" in platform.release():
+        target = "cargo-win"
+    else:
+        target = "cargo"
+    subprocess.run(
+        (
+            f"docker build --target {target} -t {name} -f"
+            f" {(Path(__file__).parent / Path('../../cargo/Dockerfile')).resolve()}"
+            f" {(Path(__file__).parent / Path('../../cargo/')).resolve()}"
+        ),
+        shell=True,
+    )
+    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    return name
+
+
+@pytest.fixture(scope="session")
+def gclient_a(cargo_image):
+    c = GefyraDockerClient("gclient-a")
+    yield c
+    try:
+        c.delete()
+    except Exception:
+        pass
+
+
+@pytest.fixture(scope="session")
+def gclient_b():
+    c = GefyraDockerClient("gclient-b")
+    yield c
+    try:
+        c.delete()
+    except Exception:
+        pass
