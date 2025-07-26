@@ -35,7 +35,7 @@ class OperatorConfiguration:
         self.STOWAWAY_MAX_CONNECTION_AGE = config(
             "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
             cast=lambda v: int(v) if v else None,
-            default=None,
+            default=-1,
         )
         # Carrier
         self.CARRIER_IMAGE = config(
