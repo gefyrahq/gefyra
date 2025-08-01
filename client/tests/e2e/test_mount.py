@@ -19,7 +19,6 @@ def test_a_write_client_file(operator: AClusterManager):
         kubeconfig=k3d.kubeconfig,
         kubecontext=k3d.context,
         wait=True,
-        provider_parameter={},
         timeout=120,
     )
 

@@ -1,8 +1,3 @@
-from gefyra.cluster.utils import (
-    get_env_from_pod_container,
-    get_v1pod,
-    retrieve_pod_and_container,
-)
 from gefyra.configuration import ClientConfiguration
 from pytest_kubernetes.providers import AClusterManager
 
@@ -71,7 +66,6 @@ def test_get_env_from_pod(k3d: AClusterManager, carrier2_image):
         timeout=60,
     )
     raw_env = get_env_from_pod_container(config, "alpine", "default", "alpine")
-    from time import sleep
 
     assert "distro" in raw_env
     assert "alpine" in raw_env
@@ -83,7 +77,6 @@ def test_get_env_from_pod(k3d: AClusterManager, carrier2_image):
         timeout=60,
     )
     raw_env = get_env_from_pod_container(config, "python", "default", "python")
-    from time import sleep
 
     assert "distro" in raw_env
     assert "python:3-slim" in raw_env

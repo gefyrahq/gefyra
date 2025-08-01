@@ -39,7 +39,6 @@ def add_clients(
         if not bool(client_id):
             generated_uuid = uuid.uuid4()
             client_id = str(generated_uuid).replace("-", "")
-
         logger.info(f"Creating client with id: {client_id}")
         gclient_req = get_gefyraclient_body(config, client_id)
         gclient = handle_create_gefyraclient(config, gclient_req)
