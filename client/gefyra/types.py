@@ -311,7 +311,7 @@ class GefyraInstallOptions:
             help="The storage size for the Stowaway PVC in Mi (default: 64)",
         ),
     )
-    stowaway_max_connection_age: int | None = field(
+    max_client_connection_age: int | None = field(
         default_factory=lambda: None,
         metadata=dict(
             help=(

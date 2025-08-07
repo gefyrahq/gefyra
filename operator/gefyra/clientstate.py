@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from logging import Logger
 import tarfile
 from typing import Optional, Tuple
@@ -112,12 +112,10 @@ class GefyraClient(StateMachine, StateControllerMixin):
         # Check if client is currently active
         if not self.active.is_active:
             return False
-        self.logger.info("client active")
         # Check if max_connection_age is configured
         max_age_seconds = self.max_connection_age
         if max_age_seconds is None:
             return False
-        self.logger.info(f"max_connection_age is set to {max_age_seconds} seconds")
         # Get the timestamp when client transitioned to active state
         active_transition_time = self.completed_transition(GefyraClient.active.value)
         if active_transition_time is None:
@@ -125,7 +123,9 @@ class GefyraClient(StateMachine, StateControllerMixin):
         self.logger.info(f"Active transition time: {active_transition_time}")
         # Calculate time since the active transition
         active_timestamp = datetime.fromisoformat(active_transition_time.strip("Z"))
-        time_since_active = (datetime.utcnow() - active_timestamp).total_seconds()
+        time_since_active = (
+            datetime.now(timezone.utc) - active_timestamp
+        ).total_seconds()
         self.logger.info(f"Time since active: {time_since_active} seconds")
         # Return True if the connection has exceeded max_connection_age
         return time_since_active > max_age_seconds

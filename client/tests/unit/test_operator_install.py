@@ -21,4 +21,4 @@ class GefyraOperatorInstallTest(TestCase):
         mock_deployment_data.assert_called()
         call_args = mock_deployment_data.call_args
         params = call_args[0][0]  # First positional argument should be params
-        assert params.stowaway_max_connection_age == "5"
+        assert params.max_client_connection_age == "5"

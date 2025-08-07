@@ -64,9 +64,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     {
                                         "name": "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
-                                        "value": str(
-                                            params.stowaway_max_connection_age
-                                        ),
+                                        "value": params.max_client_connection_age or -1,
                                     },
                                 ],
                             }
@@ -133,9 +131,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     {
                                         "name": "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
-                                        "value": str(
-                                            params.stowaway_max_connection_age
-                                        ),
+                                        "value": str(params.max_client_connection_age),
                                     },
                                 ],
                                 "livenessProbe": {

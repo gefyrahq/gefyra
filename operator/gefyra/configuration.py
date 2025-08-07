@@ -34,7 +34,7 @@ class OperatorConfiguration:
         )  # see https://github.com/gefyrahq/gefyra/issues/670
         self.STOWAWAY_MAX_CONNECTION_AGE = config(
             "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
-            cast=lambda v: int(v) if v else None,
+            cast=lambda v: int(v) if v else -1,
             default=-1,
         )
         # Carrier
