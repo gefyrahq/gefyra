@@ -13,7 +13,7 @@ class GefyraOperatorInstallTest(TestCase):
         runner = CliRunner()
         runner.invoke(
             cli,
-            ["install", "--apply", "--stowaway-max-connection-age", "5"],
+            ["install", "--apply", "--max-client-connection-age", "5"],
             catch_exceptions=False,
         )
 
