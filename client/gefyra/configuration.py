@@ -1,3 +1,4 @@
+from __future__ import annotations
 from os import path
 import os
 import struct
@@ -9,13 +10,18 @@ from typing import Optional, Union
 from pathlib import Path
 from gefyra.exceptions import ClientConfigurationError
 
-from docker import DockerClient
+
 from gefyra.local import (
     CONNECTION_NAME_LABEL,
     CARGO_ENDPOINT_LABEL,
     ACTIVE_KUBECONFIG_LABEL,
     CLIENT_ID_LABEL,
 )
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from docker import DockerClient
 
 logger = logging.getLogger("gefyra")
 
