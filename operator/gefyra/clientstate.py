@@ -122,7 +122,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
             return False
         self.logger.info(f"Active transition time: {active_transition_time}")
         # Calculate time since the active transition
-        active_timestamp = datetime.fromisoformat(active_transition_time.strip("Z"))
+        active_timestamp = datetime.fromisoformat(active_transition_time)
         time_since_active = (
             datetime.now(timezone.utc) - active_timestamp
         ).total_seconds()
