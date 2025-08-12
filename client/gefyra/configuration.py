@@ -54,7 +54,7 @@ def fix_pywin32_in_frozen_build() -> None:  # pragma: no cover
 class ClientConfiguration(object):
     def __init__(
         self,
-        docker_client: Optional[DockerClient]=None,
+        docker_client: Optional[DockerClient] = None,
         network_name: str = "",
         connection_name: Optional[str] = None,
         cargo_endpoint_host: str = "",
