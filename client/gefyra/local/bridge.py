@@ -168,6 +168,8 @@ def deploy_app_container(
     dns_search: Optional[List[str]] = None,
     pull: Optional[str] = "missing",
     platform: Optional[str] = "linux/amd64",
+    cpus: Optional[str] = None,
+    mem_limit: Optional[str] = None,
 ) -> Container:
     import docker
 
@@ -199,6 +201,8 @@ def deploy_app_container(
         "auto_remove": auto_remove,
         "environment": env,
         "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",  # noqa: E231
+        "cpus": cpus,
+        "mem_limit": mem_limit,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 
