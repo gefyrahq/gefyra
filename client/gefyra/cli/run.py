@@ -116,7 +116,7 @@ def run(
 
     if command:
         command = ast.literal_eval(command)[0]
-    api.run(
+    result = api.run(
         image=image,
         name=name,
         command=command,
@@ -131,3 +131,5 @@ def run(
         platform=platform,
         connection_name=connection_name,
     )
+    if not result:
+        exit(1)

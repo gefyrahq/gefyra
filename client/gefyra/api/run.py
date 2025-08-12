@@ -77,6 +77,9 @@ def run(
         probe_wireguard_connection(config)
     except Exception as e:
         logger.error(e)
+        logger.error(
+            f"\n\033[1m[Hint]\033[0m You may need to run the Cargo Container first."
+        )
         return False
 
     if volumes:
