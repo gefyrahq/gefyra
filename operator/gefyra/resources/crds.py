@@ -127,6 +127,8 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
             ),
             # datetime when this client is to be removed from the cluster
             "sunset": k8s.client.V1JSONSchemaProps(type="string"),
+            # time after which the connection is automatically closed
+            "maxConnectionAge": k8s.client.V1JSONSchemaProps(type="integer"),
             # datetime when this client was last contacted
             "lastClientContact": k8s.client.V1JSONSchemaProps(type="string"),
             "state": k8s.client.V1JSONSchemaProps(type="string", default="REQUESTED"),

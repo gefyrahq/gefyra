@@ -311,6 +311,14 @@ class GefyraInstallOptions:
             help="The storage size for the Stowaway PVC in Mi (default: 64)",
         ),
     )
+    max_client_connection_age: int | None = field(
+        default_factory=lambda: None,
+        metadata=dict(
+            help=(
+                "The maximum age of a Stowaway connection in seconds (default: None)"
+            ),
+        ),
+    )
 
 
 @dataclass

@@ -32,6 +32,11 @@ class OperatorConfiguration:
         self.STOWAWAY_STORAGE = config(
             "GEFYRA_STOWAWAY_STORAGE", cast=int, default=64
         )  # see https://github.com/gefyrahq/gefyra/issues/670
+        self.STOWAWAY_MAX_CONNECTION_AGE = config(
+            "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
+            cast=lambda v: int(v) if v else -1,
+            default=-1,
+        )
         # Carrier
         self.CARRIER_IMAGE = config(
             "GEFYRA_CARRIER_IMAGE", default="quay.io/gefyra/carrier"
