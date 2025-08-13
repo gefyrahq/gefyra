@@ -1,0 +1,11 @@
+@use '../abstracts' as *;
+
+.logo-font {
+  fill: $secondary;
+}
+
+.dark {
+  .logo-font {
+    fill: $white;
+  }
+}

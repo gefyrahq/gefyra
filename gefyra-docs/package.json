@@ -1,0 +1,24 @@
+{
+  "name": "docus-starter",
+  "scripts": {
+    "dev": "nuxt dev --extends docus",
+    "build": "nuxt build --extends docus",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix"
+  },
+  "dependencies": {
+    "@nuxt/eslint": "^1.8.0",
+    "@nuxt/fonts": "^0.11.4",
+    "@nuxt/icon": "^2.0.0",
+    "@nuxt/image": "^1.11.0",
+    "better-sqlite3": "^12.2.0",
+    "docus": "latest",
+    "nuxt": "^4.0.0"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.2.1",
+    "eslint": "^9.33.0",
+    "eslint-plugin-format": "^1.0.1",
+    "sass": "^1.90.0"
+  }
+}

@@ -1,15 +1,5 @@
 {
-    "python.testing.pytestArgs": [
-        "client"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.formatting.provider": "black",
-    "gefyra.up": {
-        "minikube": false
-    },
-
-    // Disable the default formatter, use eslint instead
+  // Disable the default formatter, use eslint instead
   "prettier.enable": false,
   "editor.formatOnSave": false,
 
@@ -32,6 +22,7 @@
     "typescriptreact",
     "vue",
     "html",
+    "markdown",
     "json",
     "json5",
     "jsonc",

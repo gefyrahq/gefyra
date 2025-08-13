@@ -1,0 +1,33 @@
+@theme static {
+  --font-sans: 'Public Sans', sans-serif;
+
+  --breakpoint-3xl: 1920px;
+
+  --color-yellow-50: #ffffea;
+  --color-yellow-100: #fffcc5;
+  --color-yellow-200: #fffa85;
+  --color-yellow-300: #fff046;
+  --color-yellow-400: #ffe21b;
+  --color-yellow-500: #f6bc00;
+  --color-yellow-600: #e29700;
+  --color-yellow-700: #bb6b02;
+  --color-yellow-800: #985308;
+  --color-yellow-900: #7c430b;
+  --color-yellow-950: #482300;
+
+  --color-slate-50: #f3f8f8;
+  --color-slate-100: #e0eced;
+  --color-slate-200: #c4d9dd;
+  --color-slate-300: #9bbfc5;
+  --color-slate-400: #6b9ba5;
+  --color-slate-500: #50808a;
+  --color-slate-600: #456b75;
+  --color-slate-700: #3c5962;
+  --color-slate-800: #374b53;
+  --color-slate-900: #2d3b41;
+  --color-slate-950: #1d2a2f;
+}
+
+$primary: #f6bc00;
+$secondary: #2d3b41;
+$white: #ffffff;
