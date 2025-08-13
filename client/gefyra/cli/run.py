@@ -144,6 +144,16 @@ def run(
 
     if command:
         command = ast.literal_eval(command)[0]
+    # Validate mutually exclusive options
+    if memory and memory_from:
+        raise click.UsageError(
+            "Option conflict: --memory and --memory-from cannot be used together. Please specify only one."
+        )
+    if cpu and cpu_from:
+        raise click.UsageError(
+            "Option conflict: --cpu and --cpu-from cannot be used together. Please specify only one."
+        )
+
     api.run(
         image=image,
         name=name,

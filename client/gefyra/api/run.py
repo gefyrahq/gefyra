@@ -5,7 +5,8 @@ from threading import Thread, Event
 from typing import Dict, List, Optional, TYPE_CHECKING
 from gefyra.cluster.utils import retrieve_pod_and_container
 
-from ..cli.utils import _inherit_resources_from_workload, _parse_k8s_cpu_to_cpus, _parse_k8s_mem_to_bytes
+from .utils import  _parse_k8s_cpu_to_cpu_quota, _parse_k8s_mem_to_bytes
+from ..cli.utils import _inherit_resources_from_workload
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
@@ -114,6 +115,7 @@ def run(
     # Inherit CPU/memory from workloads if requested
     inherited_cpu: Optional[str] = None
     inherited_mem: Optional[str] = None
+    logger.debug("namespace: %s", namespace)
     if cpu_from:
         inherited_cpu, _ = _inherit_resources_from_workload(config, namespace, cpu_from)
     if memory_from:
@@ -126,7 +128,7 @@ def run(
     final_mem_qty = memory if memory is not None else inherited_mem
 
     # Map to Docker-native
-    cpus = _parse_k8s_cpu_to_cpus(final_cpu_qty) if final_cpu_qty else None
+    cpu_quota = _parse_k8s_cpu_to_cpu_quota(final_cpu_qty) if final_cpu_qty else None
     mem_limit = _parse_k8s_mem_to_bytes(final_mem_qty) if final_mem_qty else None
 
     #
@@ -145,7 +147,7 @@ def run(
             volumes=volumes,
             pull=pull,
             platform=platform,
-            cpus=cpus,
+            cpu_quota=cpu_quota,
             mem_limit=mem_limit,
 
         )

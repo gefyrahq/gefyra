@@ -1,7 +1,7 @@
 import logging
 import socket
 import time
-from typing import Any, Dict, Iterable, TYPE_CHECKING, Tuple
+from typing import Any, Dict, Iterable, TYPE_CHECKING, Tuple, Optional
 
 from gefyra.exceptions import GefyraBridgeError
 
@@ -87,3 +87,63 @@ def get_workload_information(target: str) -> Tuple[str, str, str]:
             " <workload_type>/<workload_name>/<container_name>."
         ) from None
     return workload_type, workload_name, container_name
+
+
+def _parse_k8s_cpu_to_cpu_quota(cpu: Optional[str]) -> Optional[int]:
+    """
+    Convert K8s CPU specifications into a Docker/CFS cpu_quota value (in µs), based on the default period of 100000 µs.
+      "100m"  -> 100 * 100 = 10000
+      "500m"  -> 500 * 100 = 50000
+      "1"     -> 1 * 100000 = 100000
+      "1.5"   -> 1.5 * 100000 = 150000
+    """
+    if not cpu:
+        return None
+    v = cpu.strip().lower()
+    try:
+        if v.endswith("m"):
+            m = int(v[:-1])
+            quota = m * 100  # (m/1000) * 100000
+        else:
+            cpus = float(v)
+            quota = int(round(cpus * 100_000))
+        if quota != 0 and quota < 1000:
+            quota = 1000  # mind. 1 ms
+        return quota
+    except Exception as e:
+        logger.debug(f"Failed parsing CPU quantity '{cpu}': {e}")
+        return None
+
+
+
+def _parse_k8s_mem_to_bytes(mem: Optional[str]) -> Optional[int]:
+    if not mem:
+        return None
+    v = mem.strip()
+    try:
+        return int(v)  # already bytes
+    except ValueError:
+        pass
+    units = {
+        "ki": 1024,
+        "mi": 1024**2,
+        "gi": 1024**3,
+        "ti": 1024**4,
+        "k": 1000,
+        "m": 1000**2,
+        "g": 1000**3,
+        "t": 1000**4,
+    }
+    lv = v.lower()
+    for suf, fac in units.items():
+        if lv.endswith(suf):
+            try:
+                num = float(v[: -len(suf)])
+                return int(num * fac)
+            except Exception:
+                return None
+    try:
+        return int(float(v))
+    except Exception as e:
+        logger.debug(f"Failed parsing memory quantity '{mem}': {e}")
+        return None

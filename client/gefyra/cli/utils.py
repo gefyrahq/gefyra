@@ -1,9 +1,21 @@
+from __future__ import annotations
 from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
 from click import ClickException
-
+from typing import TYPE_CHECKING
+import logging
 from gefyra.types import MatchHeader
+
+
+
+if TYPE_CHECKING:
+    from client.gefyra.configuration import ClientConfiguration
+
+
+logger = logging.getLogger(__name__)
+
+
 
 
 def standard_error_handler(func):
@@ -277,51 +289,6 @@ def parse_match_header(ctx, param, match_header_raw: Tuple[str]) -> List[MatchHe
     return res
 
 
-def _parse_k8s_cpu_to_cpus(cpu: Optional[str]) -> Optional[float]:
-    if not cpu:
-        return None
-    v = cpu.strip().lower()
-    try:
-        if v.endswith("m"):
-            return float(v[:-1]) / 1000.0
-        return float(v)
-    except Exception as e:
-        logger.debug(f"Failed parsing CPU quantity '{cpu}': {e}")
-        return None
-
-
-def _parse_k8s_mem_to_bytes(mem: Optional[str]) -> Optional[int]:
-    if not mem:
-        return None
-    v = mem.strip()
-    try:
-        return int(v)  # already bytes
-    except ValueError:
-        pass
-    units = {
-        "ki": 1024,
-        "mi": 1024**2,
-        "gi": 1024**3,
-        "ti": 1024**4,
-        "k": 1000,
-        "m": 1000**2,
-        "g": 1000**3,
-        "t": 1000**4,
-    }
-    lv = v.lower()
-    for suf, fac in units.items():
-        if lv.endswith(suf):
-            try:
-                num = float(v[: -len(suf)])
-                return int(num * fac)
-            except Exception:
-                return None
-    try:
-        return int(float(v))
-    except Exception as e:
-        logger.debug(f"Failed parsing memory quantity '{mem}': {e}")
-        return None
-
 
 def _inherit_resources_from_workload(
     config: ClientConfiguration, namespace: str, ref: str
@@ -349,7 +316,7 @@ def _inherit_resources_from_workload(
 
     try:
         if kind in ("deployment", "deploy", "deployments"):
-            api = k8s_client.AppsV1Api(config.K8S_API_CLIENT)
+            api = config.K8S_APP_API
             dep = api.read_namespaced_deployment(name=name, namespace=namespace)
             containers = dep.spec.template.spec.containers or []
             if containers:
@@ -372,5 +339,5 @@ def _inherit_resources_from_workload(
             logger.debug(f"Unsupported workload kind in reference '{ref}'")
     except Exception as e:
         logger.debug(f"Could not inherit resources from '{ref}' in '{namespace}': {e}")
-
+    logger.debug("Inherit resources from workload '%s': CPU=%s, Memory=%s", ref, cpu_val, mem_val)
     return cpu_val, mem_val
