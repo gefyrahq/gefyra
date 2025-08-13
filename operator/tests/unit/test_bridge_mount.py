@@ -210,3 +210,6 @@ class TestBridgeMountObject(TestCase):
         self.assertEqual(
             args[1]["body"].spec.containers[0].image, "quay.io/gefyra/carrier2:latest"
         )
+
+        mount.uninstall()
+        app.patch_namespaced_deployment.assert_called_once()
