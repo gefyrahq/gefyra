@@ -115,7 +115,6 @@ def run(
     # Inherit CPU/memory from workloads if requested
     inherited_cpu: Optional[str] = None
     inherited_mem: Optional[str] = None
-    logger.debug("namespace: %s", namespace)
     if cpu_from:
         inherited_cpu, _ = _inherit_resources_from_workload(config, namespace, cpu_from)
     if memory_from:
