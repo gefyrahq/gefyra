@@ -326,7 +326,7 @@ def _inherit_resources_from_workload(
                 cpu_val = limits.get("cpu") or requests.get("cpu")
                 mem_val = limits.get("memory") or requests.get("memory")
         elif kind in ("pod", "po", "pods"):
-            api = k8s_client.CoreV1Api(config.K8S_API_CLIENT)
+            api = config.K8S_CORE_API
             pod = api.read_namespaced_pod(name=name, namespace=namespace)
             containers = pod.spec.containers or []
             if containers:
