@@ -125,9 +125,8 @@ def run(
             config, namespace, memory_from
         )
 
-    # Choose final CPU/memory (explicit wins)
-    final_cpu_qty = cpu if cpu is not None else inherited_cpu
-    final_mem_qty = memory if memory is not None else inherited_mem
+    final_cpu_qty = cpu or inherited_cpu
+    final_mem_qty = memory or inherited_mem
 
     # Map to Docker-native
     cpu_quota = _parse_k8s_cpu_to_cpu_quota(final_cpu_qty) if final_cpu_qty else None
