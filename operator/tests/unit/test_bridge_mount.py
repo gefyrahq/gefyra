@@ -264,3 +264,63 @@ class TestBridgeMountObject(TestCase):
         ]
 
         assert mount._upstream_set
+
+    def test_pod_ready_and_healthy(self):
+        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from kubernetes.client import V1ContainerState, V1ContainerStateRunning
+        import datetime
+
+        mount = DuplicateBridgeMount(
+            name="test",
+            configuration=OperatorConfiguration(),
+            target_namespace="default",
+            target="nginx",
+            target_container="nginx",
+            logger=logger,
+        )
+
+        # Test case 1: Pod with no container statuses
+        pod_no_status = NginxPodFactory()
+        pod_no_status.status.container_statuses = None
+        assert not mount.pod_ready_and_healthy(pod_no_status, "nginx")
+
+        # Test case 2: Pod not running
+        pod_not_running = NginxPodFactory()
+        pod_not_running.status.phase = "Pending"
+        assert not mount.pod_ready_and_healthy(pod_not_running, "nginx")
+
+        # Test case 3: Container not ready
+        pod_not_ready = NginxPodFactory()
+        pod_not_ready.status.container_statuses[0].ready = False
+        assert not mount.pod_ready_and_healthy(pod_not_ready, "nginx")
+
+        # Test case 4: Container not started
+        pod_not_started = NginxPodFactory()
+        pod_not_started.status.container_statuses[0].started = False
+        assert not mount.pod_ready_and_healthy(pod_not_started, "nginx")
+
+        # Test case 5: Container state not running
+        pod_state_not_running = NginxPodFactory()
+        pod_state_not_running.status.container_statuses[0].state = V1ContainerState(
+            running=True
+        )
+        assert not mount.pod_ready_and_healthy(pod_state_not_running, "nginx")
+
+        # Test case 6: Container running but no started_at time
+        pod_no_started_at = NginxPodFactory()
+        running_state = V1ContainerStateRunning(started_at=None)
+        pod_no_started_at.status.container_statuses[0].state = V1ContainerState(
+            running=running_state
+        )
+        assert not mount.pod_ready_and_healthy(pod_no_started_at, "nginx")
+
+        # Test case 7: Healthy pod - all conditions met
+        healthy_pod = NginxPodFactory()
+        healthy_pod.status.phase = "Running"
+        healthy_pod.status.container_statuses[0].ready = True
+        healthy_pod.status.container_statuses[0].started = True
+        running_state = V1ContainerStateRunning(started_at=datetime.datetime.now())
+        healthy_pod.status.container_statuses[0].state = V1ContainerState(
+            running=running_state
+        )
+        assert mount.pod_ready_and_healthy(healthy_pod, "nginx")
