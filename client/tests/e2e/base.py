@@ -52,6 +52,8 @@ from gefyra.cluster.resources import (
     owner_reference_consistent,
 )
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+from pytest_kubernetes.providers import AClusterManager
+
 
 default_configuration = ClientConfiguration()
 
@@ -1112,13 +1114,13 @@ class GefyraBaseTest:
         self.assert_namespace_not_found("gefyra")
         self.assert_cargo_not_running()
 
-    def test_u_unsupported_probes_throw_error(self):
+    def test_u_unsupported_probes_throw_error(self, operator: AClusterManager):
         res = self.gefyra_up()
         self.assertTrue(res)
         self.assert_gefyra_connected()
 
         # apply failing workload
-        self.provider.apply(
+        operator.apply(
             "../../operator/tests/fixtures/demo_pods_not_supported.yaml"
         )
 
