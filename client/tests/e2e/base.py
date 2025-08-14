@@ -1120,9 +1120,7 @@ class GefyraBaseTest:
         self.assert_gefyra_connected()
 
         # apply failing workload
-        operator.apply(
-            "../../operator/tests/fixtures/demo_pods_not_supported.yaml"
-        )
+        operator.apply("../../operator/tests/fixtures/demo_pods_not_supported.yaml")
 
         runner = CliRunner()
         res = runner.invoke(
