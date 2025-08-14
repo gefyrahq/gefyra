@@ -1,6 +1,10 @@
 from unittest import TestCase
 from unittest.mock import DEFAULT, MagicMock, patch
 
+from kubernetes.client import (
+    V1Deployment,
+)
+
 import logging
 
 from ..factories import (
@@ -123,3 +127,9 @@ class TestBridgeMountObject(TestCase):
 
         mount.uninstall()
         app.patch_namespaced_deployment.assert_called_once()
+        call_args = app.patch_namespaced_deployment.call_args
+        body: V1Deployment = call_args[1]["body"]
+
+        assert body.spec.template.metadata.annotations[
+            "kubectl.kubernetes.io/restartedAt"
+        ]
