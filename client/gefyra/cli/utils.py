@@ -1,4 +1,3 @@
-from __future__ import annotations
 from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
@@ -290,54 +289,4 @@ def parse_match_header(ctx, param, match_header_raw: Tuple[str]) -> List[MatchHe
 
 
 
-def _inherit_resources_from_workload(
-    config: ClientConfiguration, namespace: str, ref: str
-) -> Tuple[Optional[str], Optional[str]]:
-    """
-    Returns (cpu, memory) quantities as strings from a workload reference like:
-      'pod/<name>' or 'deployment/<name>' (case-insensitive)
-    Falls back to requests if limits are absent.
-    """
-    from kubernetes import client as k8s_client
 
-    if not ref:
-        return None, None
-
-    ref = ref.strip()
-    parts = ref.split("/", 1)
-    if len(parts) == 2:
-        kind, name = parts[0].lower(), parts[1]
-    else:
-        # assume it's a pod name if no kind prefix is provided
-        kind, name = "pod", parts[0]
-
-    cpu_val: Optional[str] = None
-    mem_val: Optional[str] = None
-
-    try:
-        if kind in ("deployment", "deploy", "deployments"):
-            api = config.K8S_APP_API
-            dep = api.read_namespaced_deployment(name=name, namespace=namespace)
-            containers = dep.spec.template.spec.containers or []
-            if containers:
-                res = containers[0].resources
-                limits = (res and res.limits) or {}
-                requests = (res and res.requests) or {}
-                cpu_val = limits.get("cpu") or requests.get("cpu")
-                mem_val = limits.get("memory") or requests.get("memory")
-        elif kind in ("pod", "po", "pods"):
-            api = config.K8S_CORE_API
-            pod = api.read_namespaced_pod(name=name, namespace=namespace)
-            containers = pod.spec.containers or []
-            if containers:
-                res = containers[0].resources
-                limits = (res and res.limits) or {}
-                requests = (res and res.requests) or {}
-                cpu_val = limits.get("cpu") or requests.get("cpu")
-                mem_val = limits.get("memory") or requests.get("memory")
-        else:
-            logger.debug(f"Unsupported workload kind in reference '{ref}'")
-    except Exception as e:
-        logger.debug(f"Could not inherit resources from '{ref}' in '{namespace}': {e}")
-    logger.debug("Inherit resources from workload '%s': CPU=%s, Memory=%s", ref, cpu_val, mem_val)
-    return cpu_val, mem_val

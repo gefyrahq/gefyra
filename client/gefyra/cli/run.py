@@ -42,13 +42,13 @@ from gefyra.cli.utils import (
 )
 @click.option(
     "--cpu-from",
-    help="Inherit CPU limit from a workload, e.g. 'pod/<name>' or 'deployment/<name>'",
+    help="Inherit CPU limit from a workload, e.g. 'pod/<name>', 'deployment/<name>' or 'statefulset/<name>'",
     type=str,
     required=False,
 )
 @click.option(
     "--memory-from",
-    help="Inherit memory limit from a workload, e.g. 'pod/<name>' or 'deployment/<name>'",
+    help="Inherit memory limit from a workload, e.g. 'pod/<name>', 'deployment/<name>' or 'statefulset/<name>'",
     type=str,
     required=False,
 )
