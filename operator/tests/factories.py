@@ -15,6 +15,11 @@ from kubernetes.client import (
     V1PodStatus,
     V1PodCondition,
     V1ContainerStatus,
+    V1Probe,
+    V1HTTPGetAction,
+    V1Service,
+    V1ServiceSpec,
+    V1ServicePort,
 )
 
 
@@ -25,6 +30,7 @@ class V1ObjectMetaFactory(factory.Factory):
     name = factory.Sequence(lambda n: f"test-object-{n}")
     labels = factory.Dict({"app": "nginx"})
     annotations = None
+    namespace = "default"
     owner_references = None
 
 
@@ -33,6 +39,54 @@ class V1ContainerPortFactory(factory.Factory):
         model = V1ContainerPort
 
     container_port = 80
+
+
+class V1HTTPGetActionFactory(factory.Factory):
+    class Meta:
+        model = V1HTTPGetAction
+
+    path = "/health"
+    port = 8080
+
+
+class V1ProbeFactory(factory.Factory):
+    class Meta:
+        model = V1Probe
+
+    initial_delay_seconds = 5
+    period_seconds = 10
+    timeout_seconds = 1
+    success_threshold = 1
+    failure_threshold = 3
+    http_get = factory.SubFactory(V1HTTPGetActionFactory)
+
+
+class V1ServicePortFactory(factory.Factory):
+    class Meta:
+        model = V1ServicePort
+
+    port = 80
+    target_port = 80
+    protocol = "TCP"
+
+
+class V1ServiceSpecFactory(factory.Factory):
+    class Meta:
+        model = V1ServiceSpec
+
+    selector = factory.Dict({"app": "nginx"})
+    ports = factory.List([factory.SubFactory(V1ServicePortFactory)])
+    type = "ClusterIP"
+
+
+class V1ServiceFactory(factory.Factory):
+    class Meta:
+        model = V1Service
+
+    metadata = factory.SubFactory(
+        V1ObjectMetaFactory, name="nginx-service", labels={"app": "nginx"}
+    )
+    spec = factory.SubFactory(V1ServiceSpecFactory)
 
 
 class V1ContainerFactory(factory.Factory):
