@@ -1,24 +1,10 @@
 export default defineNuxtConfig({
-  modules: [
-    '@nuxtjs/i18n',
-    '@nuxt/eslint',
-    '@nuxt/fonts',
-    '@nuxt/icon',
-    '@nuxt/image',
-    '@nuxt/ui-pro',
-  ],
+  modules: ['@nuxtjs/i18n', '@nuxt/eslint'],
   css: ['~/assets/scss/main.scss'],
   eslint: {
     config: {
       standalone: false,
     },
-  },
-  icon: {
-    provider: 'server',
-    customCollections: [{
-      prefix: 'gefyra',
-      dir: './assets/icons',
-    }],
   },
   i18n: {
     defaultLocale: 'en',
@@ -28,6 +14,13 @@ export default defineNuxtConfig({
     }, {
       code: 'fr',
       name: 'Français',
+    }],
+  },
+  icon: {
+    provider: 'iconify',
+    customCollections: [{
+      prefix: 'gefyra',
+      dir: './assets/icons',
     }],
   },
   llms: {

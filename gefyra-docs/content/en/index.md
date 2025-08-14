@@ -155,3 +155,29 @@ Gefyra is a Docker Desktop extension that allows you to run your code directly i
   Check it out
   :::
 ::
+
+:gefyra-use-cases
+
+::u-page-section
+---
+class: "border-t"
+---
+#title
+Let us know about your experience!
+
+#description
+We depend on your feedback - Gefyra's was created out of our own needs and the feedback we received from you, and our community.
+We'd appreciate it if you could take 2 minutes of your time to fill out our [feedback form]{.font-bold}.
+
+#links
+  :::u-button
+  ---
+  color: primary
+  size: xl
+  to: https://forms.gle/AWT9NparpTVk8E978
+  target: _blank
+  trailing-icon: i-lucide-arrow-right
+  ---
+  Give feedback
+  :::
+::
