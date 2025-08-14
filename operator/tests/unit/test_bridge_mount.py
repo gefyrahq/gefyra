@@ -204,3 +204,63 @@ class TestBridgeMountObject(TestCase):
         ]
         assert carrier_config.port == 8080
         assert carrier_config.probes.httpGet[0] == probe.http_get.port
+
+    @patch.multiple(
+        "gefyra.bridge_mount.duplicate",
+        app=DEFAULT,
+        core_v1_api=DEFAULT,
+        read_carrier2_config=DEFAULT,
+    )
+    def test_upstream_set_property(self, app, core_v1_api, read_carrier2_config):
+        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+
+        mount = DuplicateBridgeMount(
+            name="test",
+            configuration=OperatorConfiguration(),
+            target_namespace="default",
+            target="nginx",
+            target_container="nginx",
+            logger=logger,
+        )
+
+        # Mock _original_pods with two test pods
+        pod1 = NginxPodFactory()
+        pod1.metadata.name = "nginx-pod-1"
+        pod2 = NginxPodFactory()
+        pod2.metadata.name = "nginx-pod-2"
+
+        app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
+        core_v1_api.list_namespaced_pod.return_value = V1PodListFactory(
+            items=[pod1, pod2]
+        )
+
+        core_v1_api.read_namespaced_service.return_value = V1ServiceFactory()
+
+        # Test case 1: no clusterUpstream set
+        read_carrier2_config.return_value = [
+            "version: 1",
+            "threads: 4",
+            "pid_file: /tmp/carrier2.pid",
+            "error_log: /tmp/carrier.error.log",
+            "upgrade_sock: /tmp/carrier2.sock",
+            "upstream_keepalive_pool_size: 100",
+            "port: 5002",
+            "clusterUpstream: ",
+        ]
+
+        assert not mount._upstream_set
+
+        # Test case 2: all clusterUpstream set correctly
+        read_carrier2_config.return_value = [
+            "version: 1",
+            "threads: 4",
+            "pid_file: /tmp/carrier2.pid",
+            "error_log: /tmp/carrier.error.log",
+            "upgrade_sock: /tmp/carrier2.sock",
+            "upstream_keepalive_pool_size: 100",
+            "port: 5002",
+            "clusterUpstream: ",
+            "- 'nginx-service.default.svc.cluster.local:80'",
+        ]
+
+        assert mount._upstream_set
