@@ -26,6 +26,7 @@ docker = "^7.0.0"
 coveralls = "^4.0.1"
 types-requests = "^2.32.0.20241016"
 pytest-retry = "^1.7.0"
+factory-boy = "^3.3.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

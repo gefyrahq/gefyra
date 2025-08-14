@@ -3,21 +3,10 @@ from unittest.mock import DEFAULT, MagicMock, patch
 
 import logging
 
-from kubernetes.client import (
-    V1Deployment,
-    V1DeploymentSpec,
-    V1ObjectMeta,
-    V1LabelSelector,
-    V1PodTemplateSpec,
-    V1Pod,
-    V1PodList,
-    V1PodSpec,
-    V1Container,
-    V1ContainerPort,
-    V1OwnerReference,
-    V1PodStatus,
-    V1PodCondition,
-    V1ContainerStatus,
+from ..factories import (
+    NginxDeploymentFactory,
+    NginxPodFactory,
+    V1PodListFactory,
 )
 
 from gefyra.configuration import OperatorConfiguration
@@ -53,17 +42,7 @@ class TestBridgeMountObject(TestCase):
             logger=None,
         )
 
-        deployment = V1Deployment()
-        deployment.metadata = V1ObjectMeta(
-            name="nginx",
-            labels={"app": "nginx"},
-        )
-        deployment.spec = V1DeploymentSpec(
-            selector=V1LabelSelector(match_labels={"app": "nginx"}),
-            template=V1PodTemplateSpec(
-                metadata=V1ObjectMeta(labels={"app": "nginx"}),
-            ),
-        )
+        deployment = NginxDeploymentFactory()
 
         new_deployment = mount._clone_deployment_structure(deployment)
         self.assertEqual(new_deployment.metadata.name, "nginx-gefyra")
@@ -106,79 +85,10 @@ class TestBridgeMountObject(TestCase):
     def test_carrier_patch(self, app, core_v1_api, custom_object_api):
         from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
 
-        app.read_namespaced_deployment.return_value = V1Deployment(
-            metadata=V1ObjectMeta(
-                name="nginx",
-                labels={"app": "nginx"},
-            ),
-            spec=V1DeploymentSpec(
-                selector=V1LabelSelector(match_labels={"app": "nginx"}),
-                template=V1PodTemplateSpec(
-                    metadata=V1ObjectMeta(labels={"app": "nginx"}),
-                    spec=V1PodSpec(
-                        containers=[
-                            V1Container(
-                                name="nginx",
-                                image="nginx",
-                                ports=[
-                                    V1ContainerPort(
-                                        container_port=80,
-                                    )
-                                ],
-                            )
-                        ]
-                    ),
-                ),
-            ),
-        )
-        status = V1PodStatus(
-            phase="Running",
-            conditions=[
-                V1PodCondition(
-                    type="Ready",
-                    status="True",
-                )
-            ],
-            container_statuses=[
-                V1ContainerStatus(
-                    name="nginx",
-                    image="nginx:latest",
-                    image_id="docker://nginx:latest",
-                    ready=True,
-                    restart_count=1,
-                )
-            ],
-        )
-        pod = V1Pod(
-            status=status,
-            metadata=V1ObjectMeta(
-                name="nginx-123",
-                labels={"app": "nginx"},
-                owner_references=[
-                    V1OwnerReference(
-                        api_version="apps/v1",
-                        kind="Deployment",
-                        name="nginx",
-                        uid="12345678-1234-1234-1234-123456789012",
-                    )
-                ],
-            ),
-            spec=V1PodSpec(
-                containers=[
-                    V1Container(
-                        name="nginx",
-                        image="nginx",
-                        ports=[
-                            V1ContainerPort(
-                                container_port=80,
-                            )
-                        ],
-                    )
-                ],
-            ),
-        )
+        app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
+        pod = NginxPodFactory()
         core_v1_api.read_namespaced_pod_status.return_value = pod
-        core_v1_api.list_namespaced_pod.return_value = V1PodList(items=[pod])
+        core_v1_api.list_namespaced_pod.return_value = V1PodListFactory(items=[pod])
         custom_object_api.get_namespaced_custom_object.return_value = {
             "target": "nginx-deployment",
         }
