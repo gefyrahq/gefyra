@@ -458,11 +458,33 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
     def uninstall_service(self) -> None:
         gefyra_svc_name = generate_duplicate_svc_name(self.target, self.container)
-        core_v1_api.delete_namespaced_service(gefyra_svc_name, self.namespace)
+        try:
+            core_v1_api.delete_namespaced_service(gefyra_svc_name, self.namespace)
+        except ApiException as e:
+            if e.status == 404:
+                self.logger.warning(
+                    f"Service {gefyra_svc_name} not found in namespace {self.namespace}."
+                )
+            else:
+                self.logger.error(
+                    f"Exception when deleting service {gefyra_svc_name}: {e}"
+                )
+                raise e
 
     def uninstall_deployment(self) -> None:
         gefyra_deployment_name = self._gefyra_workload_name
-        app.delete_namespaced_deployment(gefyra_deployment_name, self.namespace)
+        try:
+            app.delete_namespaced_deployment(gefyra_deployment_name, self.namespace)
+        except ApiException as e:
+            if e.status == 404:
+                self.logger.warning(
+                    f"Deployment {gefyra_deployment_name} not found in namespace {self.namespace}."
+                )
+            else:
+                self.logger.error(
+                    f"Exception when deleting deployment {gefyra_deployment_name}: {e}"
+                )
+                raise e
 
     def uninstall(self):
         self.uninstall_deployment()
