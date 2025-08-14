@@ -1,3 +1,4 @@
+from __future__ import annotations
 from os import path
 import os
 import struct
@@ -16,6 +17,11 @@ from gefyra.local import (
     ACTIVE_KUBECONFIG_LABEL,
     CLIENT_ID_LABEL,
 )
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from docker import DockerClient
 
 logger = logging.getLogger("gefyra")
 
@@ -54,7 +60,7 @@ def fix_pywin32_in_frozen_build() -> None:  # pragma: no cover
 class ClientConfiguration(object):
     def __init__(
         self,
-        docker_client=None,
+        docker_client: Optional[DockerClient] = None,
         network_name: str = "",
         connection_name: Optional[str] = None,
         cargo_endpoint_host: str = "",
@@ -113,7 +119,7 @@ class ClientConfiguration(object):
         if cargo_image_url:
             logger.debug(f"Using Cargo image (other than default): {cargo_image_url}")
         if docker_client:
-            self.DOCKER = docker_client
+            self.DOCKER: DockerClient = docker_client
 
         self.cargo_endpoint_port = cargo_endpoint_port
 

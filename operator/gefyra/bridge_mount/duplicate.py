@@ -1,3 +1,4 @@
+import datetime
 from functools import partial
 from typing import List
 import uuid
@@ -431,6 +432,16 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self.logger.error("Cannot determine original pods")
         return False
 
+    def restore_original_workload(self) -> V1Deployment:
+        workload = self._get_workload()
+        workload.spec.template.metadata.annotations = {
+            "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
+        }
+        new_workload = app.patch_namespaced_deployment(
+            name=workload.metadata.name, namespace="default", body=workload
+        )
+        return new_workload
+
     def prepared(self):
         return self._duplicated_pods_ready
 
@@ -456,3 +467,4 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
     def uninstall(self):
         self.uninstall_deployment()
         self.uninstall_service()
+        self.restore_original_workload()
