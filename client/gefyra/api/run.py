@@ -5,6 +5,9 @@ from threading import Thread, Event
 from typing import Dict, List, Optional, TYPE_CHECKING
 from gefyra.cluster.utils import retrieve_pod_and_container
 
+from .utils import  _parse_k8s_cpu_to_cpu_quota, _parse_k8s_mem_to_bytes
+from .utils import _inherit_resources_from_workload
+
 if TYPE_CHECKING:
     from docker.models.containers import Container
 
@@ -45,6 +48,11 @@ def run(
     env_from: str = "",
     pull: str = "missing",
     platform: str = "linux/amd64",
+    cpu_from: Optional[str] = None,
+    memory_from: Optional[str] = None,
+    cpu: Optional[str] = None,
+    memory: Optional[str] = None,
+
 ) -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
@@ -107,6 +115,23 @@ def run(
         env_overrides = generate_env_dict_from_strings(env)
         env_dict.update(env_overrides)
 
+    # Inherit CPU/memory from workloads if requested
+    inherited_cpu: Optional[str] = None
+    inherited_mem: Optional[str] = None
+    if cpu_from:
+        inherited_cpu, _ = _inherit_resources_from_workload(config, namespace, cpu_from)
+    if memory_from:
+        _, inherited_mem = _inherit_resources_from_workload(
+            config, namespace, memory_from
+        )
+
+    final_cpu_qty = cpu or inherited_cpu
+    final_mem_qty = memory or inherited_mem
+
+    # Map to Docker-native
+    cpu_quota = _parse_k8s_cpu_to_cpu_quota(final_cpu_qty) if final_cpu_qty else None
+    mem_limit = _parse_k8s_mem_to_bytes(final_mem_qty) if final_mem_qty else None
+
     #
     # 2. deploy the requested container to Gefyra
     #
@@ -123,6 +148,9 @@ def run(
             volumes=volumes,
             pull=pull,
             platform=platform,
+            cpu_quota=cpu_quota,
+            mem_limit=mem_limit,
+
         )
     except APIError as e:
         if e.status_code == 409:

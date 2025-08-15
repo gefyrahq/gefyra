@@ -2,8 +2,19 @@ from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
 from click import ClickException
-
+from typing import TYPE_CHECKING
+import logging
 from gefyra.types import MatchHeader
+
+
+
+if TYPE_CHECKING:
+    from client.gefyra.configuration import ClientConfiguration
+
+
+logger = logging.getLogger(__name__)
+
+
 
 
 def standard_error_handler(func):
@@ -275,3 +286,7 @@ def parse_match_header(ctx, param, match_header_raw: Tuple[str]) -> List[MatchHe
         name, value = match_header.split(":")
         res.append(MatchHeader(name=name, value=value))
     return res
+
+
+
+
