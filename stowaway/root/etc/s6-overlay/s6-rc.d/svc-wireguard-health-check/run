@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv bash
+
+/etc/s6-overlay/s6-rc.d/svc-wireguard-health-check/wg-health-check.py
