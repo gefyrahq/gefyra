@@ -2,19 +2,11 @@ from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
 from click import ClickException
-from typing import TYPE_CHECKING
 import logging
 from gefyra.types import MatchHeader
 
 
-
-if TYPE_CHECKING:
-    from client.gefyra.configuration import ClientConfiguration
-
-
 logger = logging.getLogger(__name__)
-
-
 
 
 def standard_error_handler(func):
@@ -181,6 +173,7 @@ def multi_options(options):
                 required=opt_params["required"],
                 type=map_to_types.get(opt_params["type"], opt_params["type"]),
                 help=opt_params.get("help", ""),
+                is_flag=opt_params.get("is_flag", False),
             )
             if opt_params["type"] == "array":
                 attrs["cls"] = OptionEatAll
@@ -205,6 +198,7 @@ def installoptions_to_cli_options() -> List[Dict[str, Union[bool, str, Any, None
             required=False,
             help=_field.metadata.get("help"),
             type=_field.metadata.get("type") or "string",
+            is_flag=_field.metadata.get("is_flag", False),
         )
         result.append(_data)
     return result
@@ -286,7 +280,3 @@ def parse_match_header(ctx, param, match_header_raw: Tuple[str]) -> List[MatchHe
         name, value = match_header.split(":")
         res.append(MatchHeader(name=name, value=value))
     return res
-
-
-
-

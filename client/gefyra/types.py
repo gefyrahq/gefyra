@@ -319,6 +319,14 @@ class GefyraInstallOptions:
             ),
         ),
     )
+    disable_client_sa_management: bool = field(
+        default=False,
+        metadata=dict(
+            help="Whether to create/manage client service accounts for Gefyra (default: False)",
+            type=bool,
+            is_flag=True,
+        ),
+    )
 
 
 @dataclass

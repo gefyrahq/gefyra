@@ -144,6 +144,8 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     def on_create(self):
         self.logger.info(f"Client '{self.object_name}' is being created")
+        if self.configuration.DISABLE_CLIENT_SA_MANAGEMENT:
+            return
         self.create_service_account()
 
     def create_service_account(self) -> None:
