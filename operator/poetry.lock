@@ -574,18 +574,18 @@ pyflakes = ">=3.4.0,<3.5.0"
 
 [[package]]
 name = "flake8-black"
-version = "0.3.6"
+version = "0.3.7"
 description = "flake8 plugin to call black as a code style validator"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["dev"]
 files = [
-    {file = "flake8-black-0.3.6.tar.gz", hash = "sha256:0dfbca3274777792a5bcb2af887a4cad72c72d0e86c94e08e3a3de151bb41c34"},
-    {file = "flake8_black-0.3.6-py3-none-any.whl", hash = "sha256:fe8ea2eca98d8a504f22040d9117347f6b367458366952862ac3586e7d4eeaca"},
+    {file = "flake8_black-0.3.7-py3-none-any.whl", hash = "sha256:366215fbe9ee3d5a7e72710da9be871f52392e568ebd2821a16cd5f3a046d291"},
+    {file = "flake8_black-0.3.7.tar.gz", hash = "sha256:a77f46d9b20414749d29a8b3c3abdc367b7b41ea977e55629467304c37c3b6ba"},
 ]
 
 [package.dependencies]
-black = ">=22.1.0"
+black = ">=22.1.0,<25.9.0"
 flake8 = ">=3"
 tomli = {version = "*", markers = "python_version < \"3.11\""}
 
@@ -1668,4 +1668,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<3.12"
-content-hash = "3e3df0b6325b55481e2c85862dc4d29689d5fb11d3d2f38cfcdec7f239b17740"
+content-hash = "86862798bab0261b469fc854a26da89ffd1b9acdd45b6842fc12b6f5ca83b105"
