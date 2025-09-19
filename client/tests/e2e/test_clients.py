@@ -13,8 +13,7 @@ def test_a_create_client(operator: AClusterManager):
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
     )
     assert client_a["state"] is not None
-    with pytest.raises(RuntimeError):
-        gclient.get_client_config(gefyra_server="localhost:31820")
+    gclient.get_client_config(gefyra_server="localhost:31820")
     k3d.wait(
         "gefyraclients.gefyra.dev/client-a",
         "jsonpath=.state=WAITING",

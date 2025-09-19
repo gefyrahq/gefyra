@@ -13,7 +13,7 @@ class GefyraOperatorInstallTest(TestCase):
         runner = CliRunner()
         runner.invoke(
             cli,
-            ["install", "--apply", "--max-client-connection-age", "5"],
+            ["install", "--max-client-connection-age", "5"],
             catch_exceptions=False,
         )
 
@@ -30,7 +30,7 @@ class GefyraOperatorInstallTest(TestCase):
         runner = CliRunner()
         runner.invoke(
             cli,
-            ["install", "--apply", "--disable-client-sa-management"],
+            ["install", "--disable-client-sa-management"],
             catch_exceptions=False,
         )
 

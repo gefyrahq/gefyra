@@ -1,6 +1,5 @@
 import subprocess
 from time import sleep
-import unittest
 import docker
 from gefyra.api import status
 from gefyra.types import GefyraClientState, StatusSummary
@@ -24,7 +23,7 @@ from gefyra.cli.main import cli
 from tests.e2e.const import CONNECTION_NAME
 
 
-class GefyraTestMixin(unittest.TestCase):
+class GefyraTestMixin:
     kubeconfig = "~/.kube/config"
 
     def _init_docker(self):

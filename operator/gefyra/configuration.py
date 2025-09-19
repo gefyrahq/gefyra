@@ -55,7 +55,7 @@ class OperatorConfiguration:
         )
 
         self.DISABLE_CLIENT_SA_MANAGEMENT = config(
-            "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT", default=True, cast=bool
+            "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT", default=False, cast=bool
         )
 
     def to_dict(self):

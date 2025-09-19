@@ -5,7 +5,7 @@ from threading import Thread, Event
 from typing import Dict, List, Optional, TYPE_CHECKING
 from gefyra.cluster.utils import retrieve_pod_and_container
 
-from .utils import  _parse_k8s_cpu_to_cpu_quota, _parse_k8s_mem_to_bytes
+from .utils import _parse_k8s_cpu_to_cpu_quota, _parse_k8s_mem_to_bytes
 from .utils import _inherit_resources_from_workload
 
 if TYPE_CHECKING:
@@ -52,7 +52,6 @@ def run(
     memory_from: Optional[str] = None,
     cpu: Optional[str] = None,
     memory: Optional[str] = None,
-
 ) -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
@@ -150,7 +149,6 @@ def run(
             platform=platform,
             cpu_quota=cpu_quota,
             mem_limit=mem_limit,
-
         )
     except APIError as e:
         if e.status_code == 409:

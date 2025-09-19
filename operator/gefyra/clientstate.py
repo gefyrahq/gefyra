@@ -145,8 +145,12 @@ class GefyraClient(StateMachine, StateControllerMixin):
     def on_create(self):
         self.logger.info(f"Client '{self.object_name}' is being created")
         if self.configuration.DISABLE_CLIENT_SA_MANAGEMENT:
-            return
-        self.create_service_account()
+            self.logger.info(
+                f"Skipping the ServiceAccount for GefyraClient '{self.object_name}'"
+            )
+            self.wait()
+        else:
+            self.create_service_account()
 
     def create_service_account(self) -> None:
         """
@@ -154,7 +158,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
         :return: None
         """
         self.logger.info(
-            f"Creating service account for GefyraClient '{self.object_name}'"
+            f"Creating ServiceAccount for GefyraClient '{self.object_name}'"
         )
         sa_name = f"gefyra-client-{self.object_name}"
         handle_create_gefyraclient_serviceaccount(

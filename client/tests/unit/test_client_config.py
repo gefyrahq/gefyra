@@ -43,7 +43,7 @@ def test_read_client_config_no_service_account():
     GefyraClientConfig.from_json_str(json.dumps(payload))
 
 
-@patch("gefyra.configuration.ClientConfiguration")
+@patch("gefyra.api.clients.ClientConfiguration")
 @patch("gefyra.api.clients.get_client")
 def test_client_config_write_with_sa(mock_get_client, mock_client_config):
     mock_get_client.return_value = GefyraClient(
@@ -61,7 +61,9 @@ def test_client_config_write_with_sa(mock_get_client, mock_client_config):
         "client_id": "client-a",
     }
     mock_client_config.get_kubernetes_api_url.return_value = "https://gefyra.dev"
-    mock_client_config.get_stowaway_host.return_value = "https://gefyra.dev"
+    mock_client_config.return_value.get_stowaway_host.return_value = (
+        "https://gefyra.dev"
+    )
     result = write_client_file("client-a")
 
     result = json.loads(result)
@@ -69,7 +71,7 @@ def test_client_config_write_with_sa(mock_get_client, mock_client_config):
     assert result["token"] == "some-token"
 
 
-@patch("gefyra.configuration.ClientConfiguration")
+@patch("gefyra.api.clients.ClientConfiguration")
 @patch("gefyra.api.clients.get_client")
 def test_client_config_write_without_sa(mock_get_client, mock_client_config):
     mock_get_client.return_value = GefyraClient(
@@ -86,7 +88,9 @@ def test_client_config_write_without_sa(mock_get_client, mock_client_config):
         "client_id": "client-a",
     }
     mock_client_config.get_kubernetes_api_url.return_value = "https://gefyra.dev"
-    mock_client_config.get_stowaway_host.return_value = "https://gefyra.dev"
+    mock_client_config.return_value.get_stowaway_host.return_value = (
+        "https://gefyra.dev"
+    )
     result = write_client_file("client-a")
 
     result = json.loads(result)

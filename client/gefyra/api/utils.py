@@ -7,7 +7,6 @@ from typing import Any, Dict, Iterable, TYPE_CHECKING, Tuple, Optional
 from gefyra.exceptions import GefyraBridgeError
 
 
-
 if TYPE_CHECKING:
     from gefyra.types import GefyraBridge
     from client.gefyra.configuration import ClientConfiguration
@@ -119,7 +118,6 @@ def _parse_k8s_cpu_to_cpu_quota(cpu: Optional[str]) -> Optional[int]:
         return None
 
 
-
 def _parse_k8s_mem_to_bytes(mem: Optional[str]) -> Optional[int]:
     if not mem:
         return None
@@ -153,6 +151,7 @@ def _parse_k8s_mem_to_bytes(mem: Optional[str]) -> Optional[int]:
         logger.debug(f"Failed parsing memory quantity '{mem}': {e}")
         return None
 
+
 def _inherit_resources_from_workload(
     config: ClientConfiguration, namespace: str, ref: str
 ) -> Tuple[Optional[str], Optional[str]]:
@@ -161,7 +160,6 @@ def _inherit_resources_from_workload(
       'pod/<name>', 'deployment/<name>' or 'statefulset/<name>' (case-insensitive)
     Falls back to requests if limits are absent.
     """
-
 
     if not ref:
         return None, None
@@ -198,7 +196,9 @@ def _inherit_resources_from_workload(
             logger.debug(f"Unsupported workload kind in reference '{ref}'")
     except Exception as e:
         logger.debug(f"Could not inherit resources from '{ref}' in '{namespace}': {e}")
-    logger.debug("Inherit resources from workload '%s': CPU=%s, Memory=%s", ref, cpu_val, mem_val)
+    logger.debug(
+        "Inherit resources from workload '%s': CPU=%s, Memory=%s", ref, cpu_val, mem_val
+    )
     return cpu_val, mem_val
 
 
