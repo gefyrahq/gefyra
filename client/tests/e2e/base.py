@@ -56,6 +56,7 @@ from gefyra.cluster.resources import (
     owner_reference_consistent,
 )
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+from tests.conftest import purge_gefyra_objects
 from tests.e2e.const import CONNECTION_NAME
 from tests.e2e.mixin import GefyraTestMixin
 
@@ -866,6 +867,22 @@ class GefyraTestCase:
                 + str(traceback.format_exception(res.exception))
             )
         return res
+
+    def run_operator_with_sa(self, operator: AClusterManager) -> bool:
+        no_sa = operator.kubectl(
+            [
+                "-n",
+                "gefyra",
+                "get",
+                "deploy",
+                "gefyra-operator",
+                "-o=jsonpath='{.spec.template.spec.containers[0].env[?(@.name==\"GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT\")].value}'",
+            ],
+            as_dict=False,
+        )
+        if no_sa and no_sa == "True":
+            return True
+        return False
 
     def assert_get_contains(
         self, url: str, expected_content: str, retries: int = 10, headers: dict = None

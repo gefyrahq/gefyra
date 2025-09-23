@@ -2,6 +2,10 @@ from pathlib import Path
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
+pytestmark = pytest.mark.parametrize(
+    "operator", ["operator_no_sa", "operator_with_sa"], indirect=True
+)
+
 
 @pytest.fixture
 def workloads_for_test(operator):

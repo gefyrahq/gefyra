@@ -24,12 +24,6 @@ def workloads_for_bridgetests(operator):
         pass
 
 
-@pytest.fixture(scope="class", autouse=True)
-def clear_gefyra_clients(operator):
-    yield
-    purge_gefyra_objects(operator)
-
-
 class TestGefyraBridge(GefyraTestCase):
     provider = "k3d"
 
