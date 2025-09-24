@@ -356,7 +356,7 @@ jobs:
     needs:
       - test
       - test_minikube
-      - test_python
+      - test_client
       - test_operator
     runs-on: ubuntu-latest
     container: python:3-slim
