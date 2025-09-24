@@ -354,7 +354,6 @@ jobs:
     if: github.repository == 'gefyrahq/gefyra'
     # need secrets.GITHUB_TOKEN
     needs:
-      - test
       - test_minikube
       - test_client
       - test_operator
