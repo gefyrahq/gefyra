@@ -16,7 +16,7 @@ Blazingly-fast, rock-solid, local application development with Kubernetes.
   ---
   color: primary
   size: xl
-  to: /en/getting-started/installation
+  to: /en/quick-start/installation
   trailing-icon: i-lucide-arrow-right
   ---
   Let's try Gefyra

@@ -32,4 +32,13 @@ export default defineNuxtConfig({
       description: 'Gefyra - Kubernetes Development Environment',
     },
   },
+  content: {
+    build: {
+      markdown: {
+        highlight: {
+          langs: ['js', 'jsx', 'json', 'ts', 'tsx', 'vue', 'css', 'html', 'vue', 'bash', 'md', 'mdc', 'yaml', 'dockerfile', 'py', 'mermaid'],
+        },
+      },
+    },
+  },
 })
