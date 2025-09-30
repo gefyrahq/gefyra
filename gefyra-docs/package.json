@@ -7,15 +7,15 @@
     "lint:fix": "eslint --fix"
   },
   "dependencies": {
-    "@nuxt/eslint": "^1.8.0",
-    "better-sqlite3": "^12.2.0",
+    "@nuxt/eslint": "^1.9.0",
+    "better-sqlite3": "^12.4.1",
     "docus": "latest",
     "nuxt": "^4.0.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^5.2.1",
-    "eslint": "^9.33.0",
-    "eslint-plugin-format": "^1.0.1",
+    "@antfu/eslint-config": "^5.4.1",
+    "eslint": "^9.36.0",
+    "eslint-plugin-format": "^1.0.2",
     "sass-embedded": "^1.90.0"
   }
 }
