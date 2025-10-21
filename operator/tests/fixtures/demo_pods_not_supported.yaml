@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-failing
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: frontend
+  namespace: demo-failing
+  labels:
+    app: frontend
+spec:
+  containers:
+    - name: frontend
+      image: quay.io/gefyra/gefyra-demo-frontend
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: web
+          containerPort: 5003
+          protocol: TCP
+      env:
+        - name: SVC_URL
+          value: "backend.demo.svc.cluster.local:5002"
+      livenessProbe:
+        exec:
+          command:
+            - ls
+            - /tmp
+        initialDelaySeconds: 30
+        periodSeconds: 10
+      readinessProbe:
+        exec:
+          command:
+            - ls
+            - /tmp
+        initialDelaySeconds: 5
+        periodSeconds: 5

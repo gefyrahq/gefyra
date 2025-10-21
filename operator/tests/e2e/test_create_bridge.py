@@ -132,3 +132,39 @@ def test_b_cleanup_bridges_routes(
         namespace="gefyra",
         timeout=60,
     )
+
+
+def test_c_fail_create_not_supported_bridges(
+    demo_backend_image, demo_frontend_image, carrier_image, operator: AClusterManager
+):
+    k3d = operator
+    k3d.load_image(demo_backend_image)
+    k3d.load_image(demo_frontend_image)
+    k3d.load_image(carrier_image)
+
+    k3d.kubectl(["create", "namespace", "demo-failing"])
+    k3d.wait("ns/demo-failing", "jsonpath='{.status.phase}'=Active")
+    k3d.apply("tests/fixtures/demo_pods_not_supported.yaml")
+    k3d.wait(
+        "pod/frontend",
+        "condition=ready",
+        namespace="demo-failing",
+        timeout=60,
+    )
+
+    k3d.apply("tests/fixtures/a_gefyra_bridge_failing.yaml")
+    # bridge should be in error state
+    k3d.wait(
+        "gefyrabridges.gefyra.dev/bridge-a",
+        "jsonpath=.state=ERROR",
+        namespace="gefyra",
+        timeout=20,
+    )
+
+    # applying the bridge shouldn't have worked
+    k3d.wait(
+        "pod/frontend",
+        "condition=ready",
+        namespace="demo-failing",
+        timeout=60,
+    )

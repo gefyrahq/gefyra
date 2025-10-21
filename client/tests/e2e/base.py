@@ -779,6 +779,34 @@ class GefyraBaseTest(GefyraTestMixin):
         self.assert_namespace_not_found("gefyra")
         self.assert_cargo_not_running()
 
+    def test_u_unsupported_probes_throw_error(self, operator: AClusterManager):
+        res = self.gefyra_up()
+        self.assertTrue(res)
+        self.assert_gefyra_connected()
+
+        # apply failing workload
+        operator.apply("../../operator/tests/fixtures/demo_pods_not_supported.yaml")
+
+        runner = CliRunner()
+        res = runner.invoke(
+            cli,
+            [
+                "bridge",
+                "-N",
+                "test",
+                "-n",
+                "demo-failing",
+                "--target",
+                "deployment/frontend/frontend",
+                "--ports",
+                "80:8080",
+                "--connection-name",
+                CONNECTION_NAME,
+            ],
+        )
+
+        self.assert_gefyra_client_state("client-a", GefyraClientState.ERROR)
+
     def test_util_for_connection_check(self):
         res = self.gefyra_up()
         self.assertTrue(res)
