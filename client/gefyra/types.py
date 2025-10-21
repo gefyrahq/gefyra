@@ -5,10 +5,12 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration, __VERSION__
-from gefyra.exceptions import ClientConfigurationError
 from gefyra.local.clients import handle_get_gefyraclient
 
 logger = logging.getLogger(__name__)
+
+
+LOCAL_SERVER = "#local#"
 
 
 @dataclass
@@ -22,12 +24,18 @@ class GefyraClientConfig:
     client_id: str
     kubernetes_server: str
     provider: str
-    token: str
     namespace: str
-    ca_crt: str
     gefyra_server: str
+    token: str | None = None
+    ca_crt: str | None = None
     registry: Optional[str] = None
     wireguard_mtu: Optional[str] = "1340"
+
+    def __getattribute__(self, name):
+        if name == "gefyra_server":
+            if super().__getattribute__(name) == LOCAL_SERVER:
+                return ClientConfiguration().CARGO_ENDPOINT
+        return super().__getattribute__(name)
 
     @property
     def json(self):
@@ -99,6 +107,7 @@ class GefyraClient:
     def _init_data(self, _object: dict[str, Any]):
         self.client_id = _object["metadata"]["name"]
         self.uid = _object["metadata"]["uid"]
+        self.namespace = _object["metadata"]["namespace"]
         self.provider = _object.get("provider", "")
         self._state = _object.get("state", "")
         self._state_transitions = _object.get("stateTransitions", {})
@@ -168,23 +177,18 @@ class GefyraClient:
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
-        if self.service_account:
-            return GefyraClientConfig(
-                client_id=self.client_id,
-                kubernetes_server=k8s_server or self._config.get_kubernetes_api_url(),
-                provider=self.provider,
-                token=self.service_account["token"],
-                namespace=self.service_account["namespace"],
-                ca_crt=self.service_account["ca.crt"],
-                gefyra_server=gefyra_server,
-                registry=registry,
-                # if somehow the mtu is not given make sure to have null as json value
-                wireguard_mtu=str(wireguard_mtu) if wireguard_mtu else None,
-            )
-        else:
-            raise ClientConfigurationError(
-                "Cannot get client config, no service account found."
-            )
+        return GefyraClientConfig(
+            client_id=self.client_id,
+            kubernetes_server=k8s_server or self._config.get_kubernetes_api_url(),
+            provider=self.provider,
+            token=self.service_account.get("token"),
+            namespace=self.namespace,
+            ca_crt=self.service_account.get("ca.crt"),
+            gefyra_server=gefyra_server,
+            registry=registry,
+            # if somehow the mtu is not given make sure to have null as json value
+            wireguard_mtu=str(wireguard_mtu) if wireguard_mtu else None,
+        )
 
     def activate_connection(self, subnet: str):
         _state = self.state
@@ -302,6 +306,22 @@ class GefyraInstallOptions:
             help="The storage size for the Stowaway PVC in Mi (default: 64)",
         ),
     )
+    max_client_connection_age: int | None = field(
+        default_factory=lambda: None,
+        metadata=dict(
+            help=(
+                "The maximum age of a Stowaway connection in seconds (default: None)"
+            ),
+        ),
+    )
+    disable_client_sa_management: bool = field(
+        default=False,
+        metadata=dict(
+            help="Whether to create/manage client service accounts for Gefyra (default: False)",
+            type=bool,
+            is_flag=True,
+        ),
+    )
 
 
 @dataclass
@@ -378,6 +398,51 @@ class GefyraBridge:
     port_mappings: List[str]
     target_container: str
     target_namespace: str
-    target_pod: str
+    target: str
     provider: str
     state: str
+
+
+@dataclass
+class GefyraBridgeMount:
+    # the id of the mount
+    mount_id: str
+    # the namespace this cluster runs in the host cluster
+    namespace: str
+    # the uid from Kubernetes for this object
+    uid: str
+    # the labels of this Gefyra object
+    labels: Dict[str, str]
+    # the provider of the mount
+    provider: str
+    # target
+    target: str
+    target_container: str
+    target_namespace: str
+
+    # the state of the mount
+    _state: str
+    _state_transitions: Dict[str, str]
+    provider_parameter: Optional[StowawayParameter] = None
+
+    def __init__(self, gbridgemount: dict[str, Any]):
+        self._init_data(gbridgemount)
+
+    def _init_data(self, _object: dict[str, Any]):
+        self.mount_id = _object["metadata"]["name"]
+        self.name = _object["metadata"]["name"]
+        self.uid = _object["metadata"]["uid"]
+        self.provider = _object.get("provider", "")
+        self._state = _object.get("state", "")
+        self._state_transitions = _object.get("stateTransitions", {})
+        self.target = _object.get("target", "")
+        self.target_container = _object.get("targetContainer", "")
+        self.target_namespace = _object.get("targetNamespace", "")
+        self.namespace = _object["metadata"]["namespace"]
+        self.labels = _object["metadata"].get("labels", {})
+
+
+@dataclass
+class MatchHeader:
+    name: str
+    value: str

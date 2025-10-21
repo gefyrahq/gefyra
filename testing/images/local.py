@@ -14,18 +14,20 @@ else:
 
 
 class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
+    default_request_version = "HTTP/1.1"
+
     def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
         hostname = socket.gethostname()
         now = datetime.utcnow()
-        self.wfile.write(
-            bytes(
-                f"<html><body><h1>Hello from Gefyra. It is {now} on"
-                f" {hostname}.</h1></body></html>".encode("utf-8")
-            )
+        content = bytes(
+            f"<html><body><h1>Hello from Gefyra. It is {now} on"
+            f" {hostname}.</h1></body></html>".encode("utf-8")
         )
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.send_header("Content-Length", str(len(content)))
+        self.end_headers()
+        self.wfile.write(content)
 
 
 my_handler = MyHttpRequestHandler

@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ "**" ]
 
 jobs:
   build_test_image:
@@ -157,7 +157,8 @@ jobs:
         name: cargo
         path: /tmp/cargo.tar
 
-  test_python:
+  test_client:
+    name: Pytest Gefyra Client
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -190,10 +191,10 @@ jobs:
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
-        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
       - name: Run PyTest
         working-directory: ./client
-        run: poetry run coverage run -m pytest tests/unit/
+        run: poetry run coverage run -m pytest tests/
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
@@ -314,119 +315,8 @@ jobs:
           name: coverage_data-${{ matrix.os }}
           path: ./client/.coverage*
 
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        k3d: [v1.25.16-k3s4, v1.26.15-k3s1, v1.27.16-k3s1, v1.28.15-k3s1, v1.29.13-k3s1, v1.30.9-k3s1, v1.31.5-k3s1, v1.32.1-k3s1]
-    needs:
-      - build_cargo
-      - build_operator
-      - build_test_image
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      # https://github.com/docker/setup-qemu-action
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-      - name: Set Gefyra tracking config / fake kubeconfig
-        shell: bash
-        run: |
-          mkdir -p ~/.gefyra
-          mkdir -p ~/.kube
-          cd ~/.gefyra
-          touch config.ini
-          echo "[telemetry]" >> config.ini
-          echo "track = False" >> config.ini
-          cd ~/.kube
-          touch config
-      #
-      # Create a cluster with registry
-      #
-      - uses: AbsaOSS/k3d-action@v2
-        name: Create Single Cluster
-        with:
-          cluster-name: "mycluster"
-          k3d-version: v5.8.1
-          args: >-
-            --agents 1
-            -p "31820:31820/UDP@agent:0"
-            --image docker.io/rancher/k3s:${{ matrix.k3d }}
-            --kubeconfig-update-default
-            --kubeconfig-switch-context
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp
-      - name: Load Operator image
-        run: |
-          docker load --input /tmp/pyserver/pyserver.tar
-          docker load --input /tmp/cargo/cargo.tar
-          docker load --input /tmp/operator/operator.tar
-          docker image ls -a
-          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.1.6
-      - name: Import Operator to k3d
-        run: |
-          k3d image import quay.io/gefyra/operator:2.1.6 -c mycluster --verbose
-      - name: Pytest
-        working-directory: ./client
-        run: poetry install --with dev --no-interaction --no-root
-      # Run the 'Try it yourself'
-      - name: Apply some workload
-        run: |
-          kubectl apply -f testing/workloads/hello.yaml
-
-      - name: Run Gefyra K3D Tests
-        working-directory: ./client
-        run: |
-          poetry run coverage run -m pytest -vvv -s -x --full-trace --timeout=240 tests/e2e/
-      - name: Show gefyra-operator logs
-        working-directory: ./client
-        if: ${{ failure() }}
-        run: |
-          kubectl get pods -n gefyra
-          kubectl describe deployment -n gefyra gefyra-operator
-          kubectl describe deployment -n gefyra gefyra-operator-webhook
-          kubectl logs -n gefyra deployment/gefyra-operator
-          kubectl logs -n gefyra deployment/gefyra-operator-webhook
-          kubectl get -A ValidatingWebhookConfiguration
-          kubectl get cm -n gefyra
-          kubectl describe cm -n gefyra gefyra-stowaway-proxyroutes
-          kubectl describe cm -n gefyra gefyra-stowaway-config
-          kubectl describe pod -n gefyra gefyra-stowaway-0
-          kubectl logs -n gefyra pod/gefyra-stowaway-0
-          kubectl get pvc -A
-          kubectl describe -n gefyra pvc stowaway-config-gefyra-stowaway-0
-      - name: Show coverage report
-        working-directory: ./client
-        run: |
-          poetry run coverage report
-      - name: Upload coverage data to coveralls.io
-        if: github.repository == 'gefyrahq/gefyra'
-        working-directory: ./client
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-          COVERALLS_FLAG_NAME: client
-          COVERALLS_PARALLEL: true
-        run: |
-          poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage_data-${{ matrix.k3d }}
-          path: ./client/.coverage*
   test_operator:
-    name: Test Gefyra Operator
+    name: Pytest Gefyra Operator
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
@@ -464,9 +354,8 @@ jobs:
     if: github.repository == 'gefyrahq/gefyra'
     # need secrets.GITHUB_TOKEN
     needs:
-      - test
       - test_minikube
-      - test_python
+      - test_client
       - test_operator
     runs-on: ubuntu-latest
     container: python:3-slim

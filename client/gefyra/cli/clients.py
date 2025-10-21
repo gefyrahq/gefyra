@@ -127,6 +127,12 @@ def inspect_client(ctx, client_id):
     type=int,
     default=1340,
 )
+@click.option(
+    "--local",
+    is_flag=True,
+    help="Whether the target cluster is a local k8s cluster",
+    default=False,
+)
 @click.pass_context
 @standard_error_handler
 def get_config(
@@ -138,6 +144,7 @@ def get_config(
     output,
     registry,
     mtu,
+    local: bool = False,
 ):
     from gefyra import api
 
@@ -150,6 +157,7 @@ def get_config(
         kubecontext=ctx.obj["context"],
         registry=registry,
         wireguard_mtu=mtu,
+        local=local,
     )
     if output:
         output.write(json_str.encode("utf-8"))

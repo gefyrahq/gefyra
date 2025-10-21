@@ -21,6 +21,7 @@ if mode == "operator":
     from gefyra.handler.startup import *  # noqa
     from gefyra.handler.clients import *  # noqa
     from gefyra.handler.bridges import *  # noqa
+    from gefyra.handler.bridge_mounts import *  # noqa
 elif mode == "webhook":
     logger.info("Gefyra Operator webhook startup")
     import gefyra.handler.configure_webhook  # noqa

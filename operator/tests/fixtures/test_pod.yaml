@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: backend
+  labels:
+    app: backend
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+    - name: backend
+      image: carrier2:pytest
+      imagePullPolicy: Never
+      ports:
+        - name: web
+          containerPort: 5002
+          protocol: TCP

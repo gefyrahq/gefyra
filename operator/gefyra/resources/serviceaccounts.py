@@ -44,6 +44,11 @@ def handle_create_gefyraclient_serviceaccount(
                             verbs=["list", "get", "create", "patch", "delete", "watch"],
                         ),
                         k8s.client.V1PolicyRule(
+                            api_groups=["gefyra.dev"],
+                            resources=["gefyrabridgemounts"],
+                            verbs=["list", "get", "create", "patch", "delete", "watch"],
+                        ),
+                        k8s.client.V1PolicyRule(
                             api_groups=[""],
                             resources=["pods/exec", "pods/status"],
                             verbs=["create", "get"],
