@@ -1,0 +1,13 @@
+version: 1
+threads: 2
+port: 8080
+tls:
+   certificate: "./tests/fixtures/test_cert.pem"
+   key: "./tests/fixtures/test_key.pem"
+   sni: ""
+clusterUpstream: 
+    - "localhost:4444"
+probes: 
+    httpGet:
+        - 8001
+        - 8002

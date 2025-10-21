@@ -3,10 +3,6 @@ from typing import Any, Dict, Optional
 
 
 class AbstractGefyraBridgeProvider(ABC):
-    """The Gefyra bridge provider gets created for each (target Pod plus
-    target container) combination"""
-
-    provider_type = ""
 
     @abstractmethod
     def install(self, parameters: Optional[Dict[Any, Any]] = None):

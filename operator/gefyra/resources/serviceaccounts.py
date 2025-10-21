@@ -44,6 +44,11 @@ def handle_create_gefyraclient_serviceaccount(
                             verbs=["list", "get", "create", "patch", "delete", "watch"],
                         ),
                         k8s.client.V1PolicyRule(
+                            api_groups=["gefyra.dev"],
+                            resources=["gefyrabridgemounts"],
+                            verbs=["list", "get", "create", "patch", "delete", "watch"],
+                        ),
+                        k8s.client.V1PolicyRule(
                             api_groups=[""],
                             resources=["pods/exec", "pods/status"],
                             verbs=["create", "get"],
@@ -101,6 +106,35 @@ def handle_create_gefyraclient_serviceaccount(
         logger.info(f"Created serviceaccount and permissions for GefyraClient: {name}")
     except k8s.client.exceptions.ApiException as e:
         if e.status != 409:
+            raise e
+
+
+def handle_delete_gefyraclient_serviceaccount(
+    logger,
+    name: str,
+    namespace: str,
+) -> None:
+    """
+    Deletes service account, role and role binding for a GefyraClient
+
+    Args:
+        logger (logging): The logger object
+        name (str): Name of the service account
+        namespace (str): Namespace of the service account
+
+    Raises:
+        e: Exception if the service account could not be deleted and the status code is not 404
+    """
+    try:
+        sa = core_v1_api.read_namespaced_service_account(name=name, namespace=namespace)
+        rbac_v1_api.delete_cluster_role_binding(
+            name=f"gefyra-rolebinding-{sa.metadata.name}"
+        )
+        core_v1_api.delete_namespaced_service_account(name=name, namespace=namespace)
+        logger.info(f"Deleted serviceaccount and permissions for GefyraClient: {name}")
+    except k8s.client.exceptions.ApiException as e:
+        logger.warning(f"Could not delete serviceaccount {name}: {e}")
+        if e.status != 404:
             raise e
 
 

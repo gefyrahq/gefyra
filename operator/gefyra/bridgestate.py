@@ -7,9 +7,11 @@ import kopf
 import kubernetes as k8s
 from statemachine import State, StateMachine
 
-
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
+
+from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.exceptions import BridgeException
 
 
 class GefyraBridgeObject(GefyraStateObject):
@@ -91,7 +93,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             BridgeProviderType(self.data.get("provider")),
             self.configuration,
             self.data["targetNamespace"],
-            self.data["targetPod"],
+            self.data["target"],
             self.data["targetContainer"],
             self.logger,
         )
@@ -121,7 +123,11 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         It installs the bridge provider
         :return: Nothing
         """
-        self.bridge_provider.install()
+        try:
+            self.bridge_provider.install()
+        except BridgeInstallException as be:
+            self.logger.debug(f"Encountered: {be}")
+            self.send("impair", exception=be)
 
     def _wait_for_provider(self):
         if not self.bridge_provider.ready():
@@ -152,6 +158,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
                     self.data["client"], destination, int(source_port)
                 )
             proxy_host, proxy_port = proxy_host.split(":", 1)
+            self._patch_object({"clusterEndpoint": f"{proxy_host}:{proxy_port}"})
             if not self.bridge_provider.proxy_route_exists(
                 target_port, proxy_host, proxy_port
             ):
@@ -164,6 +171,9 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.logger.info(f"GefyraBridge '{self.object_name}' is being created")
 
     def on_remove(self):
+        self.send("terminate")
+
+    def on_terminate(self):
         self.logger.info(f"GefyraBridge '{self.object_name}' is being removed")
         destination = self.data["destinationIP"]
         for port_mapping in self.data.get("portMappings"):
@@ -184,8 +194,15 @@ class GefyraBridge(StateMachine, StateControllerMixin):
                 self.connection_provider.remove_destination(
                     self.data["client"], destination, int(source_port)
                 )
-        self.send("set_installed")
 
     def on_restore(self):
         self.bridge_provider.uninstall()
         self.send("terminate")
+
+    def on_impair(self, exception: Optional[BridgeException] = None):
+        self.logger.error(f"Failed from {self.current_state}")
+        self.post_event(
+            reason=f"Failed from {self.current_state}",
+            message=exception.message,
+            _type="Warning",
+        )

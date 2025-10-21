@@ -38,10 +38,25 @@ from gefyra.types import (
 logger = logging.getLogger(__name__)
 
 
+def _get_client_networks(config: ClientConfiguration) -> List[str]:
+    clients = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+        namespace=config.NAMESPACE,
+        plural="gefyraclients",
+        group="gefyra.dev",
+        version="v1",
+    )
+    return [
+        client["providerParameter"]["subnet"]
+        for client in filter(lambda x: x["state"] == "ACTIVE" in x, clients["items"])
+    ]
+
+
 @stopwatch
 def connect(  # noqa: C901
     connection_name: str,
     client_config: Optional[IO],
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
     minikube_profile: Optional[str] = None,
     mtu: Optional[int] = 1340,
     probe_timeout: int = 60,
@@ -67,20 +82,23 @@ def connect(  # noqa: C901
         client_config.close()
         gclient_conf = GefyraClientConfig.from_json_str(file_str)
 
-        # this kubeconfig is being used by the client to operate in the cluster
-        kubeconfig_str = compose_kubeconfig_for_serviceaccount(
-            gclient_conf.kubernetes_server,
-            gclient_conf.ca_crt,
-            "gefyra",
-            base64.b64decode(gclient_conf.token).decode("utf-8"),
-        )
-        loc = os.path.join(
-            get_gefyra_config_location(),
-            f"{connection_name}.yaml",
-        )
-        with open(loc, "w") as f:
-            f.write(kubeconfig_str)
-            logger.info(f"Client kubeconfig saved to {loc}")
+        if not kubeconfig and gclient_conf.ca_crt and gclient_conf.token:
+            # this kubeconfig is being used by the client to operate in the cluster
+            kubeconfig_str = compose_kubeconfig_for_serviceaccount(
+                gclient_conf.kubernetes_server,
+                gclient_conf.ca_crt,
+                "gefyra",
+                base64.b64decode(gclient_conf.token).decode("utf-8"),
+            )
+            loc = os.path.join(
+                get_gefyra_config_location(),
+                f"{connection_name}.yaml",
+            )
+            with open(loc, "w") as f:
+                f.write(kubeconfig_str)
+                logger.info(f"Client kubeconfig saved to {loc}")
+            kubeconfig = loc
+            kubecontext = None
 
         if minikube_profile:
             logger.debug(f"Minikube profile detected: {minikube_profile}")
@@ -92,7 +110,8 @@ def connect(  # noqa: C901
 
         config = ClientConfiguration(
             connection_name=connection_name,
-            kube_config_file=Path(loc),
+            kube_config_file=Path(kubeconfig) if kubeconfig else None,
+            kube_context=kubecontext,
             client_id=gclient_conf.client_id,
             cargo_endpoint_host=gclient_conf.gefyra_server.split(":")[0],
             cargo_endpoint_port=gclient_conf.gefyra_server.split(":")[1],
@@ -106,8 +125,10 @@ def connect(  # noqa: C901
         config.CARGO_PROBE_TIMEOUT = probe_timeout
 
     _retry = 0
+    occupied_networks = _get_client_networks(config)
+
     while _retry < 10:
-        gefyra_network = get_or_create_gefyra_network(config)
+        gefyra_network = get_or_create_gefyra_network(config, occupied_networks)
         try:
             client.activate_connection(
                 gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]

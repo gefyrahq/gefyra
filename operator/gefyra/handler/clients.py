@@ -90,3 +90,5 @@ async def client_reconcile(body, logger, **kwargs):
             )
         except k8s.client.ApiException:
             pass
+    if client.should_disable:
+        client.disable()

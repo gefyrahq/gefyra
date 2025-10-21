@@ -1,18 +1,24 @@
 import json
 from typing import Any, Dict, List, Optional
+from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.utils import exec_command_pod
 import kubernetes as k8s
 
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.configuration import OperatorConfiguration
 
+from gefyra.bridge.carrier2 import (
+    CARRIER_CONFIGURE_COMMAND_BASE,
+    CARRIER_CONFIGURE_PROBE_COMMAND_BASE,
+)
+
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_object_api = k8s.client.CustomObjectsApi()
 
 BUSYBOX_COMMAND = "/bin/busybox"
-CARRIER_CONFIGURE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setroute.sh"]
-CARRIER_CONFIGURE_PROBE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setprobe.sh"]
+
+
 CARRIER_ORIGINAL_CONFIGMAP = "gefyra-carrier-restore-configmap"
 
 
@@ -139,11 +145,9 @@ class Carrier(AbstractGefyraBridgeProvider):
                             self._get_all_probes(container),
                         )
                     ):
-                        self.logger.error(
-                            "Not all of the probes to be handled are currently"
-                            " supported by Gefyra"
+                        raise BridgeInstallException(
+                            message="Not all of the probes to be handled are currently supported by Gefyra"
                         )
-                        return False, pod
                 if (
                     container.image
                     == f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
@@ -157,8 +161,8 @@ class Carrier(AbstractGefyraBridgeProvider):
                 container.image = f"{self.configuration.CARRIER_IMAGE}:{self.configuration.CARRIER_IMAGE_TAG}"
                 break
         else:
-            raise RuntimeError(
-                f"Could not found container {self.container} in Pod {self.pod}"
+            raise BridgeInstallException(
+                message=f"Could not found container {self.container} in Pod {self.pod}"
             )
         self.logger.info(
             f"Now patching Pod {self.pod}; container {self.container} with Carrier"

@@ -1,10 +1,13 @@
 import dataclasses
 from time import sleep
+from typing import List, Optional
 import click
+from gefyra.types import MatchHeader
 from gefyra.cli import console
 from gefyra.cli.utils import (
     check_connection_name,
     parse_ip_port_map,
+    parse_match_header,
     standard_error_handler,
 )
 from tabulate import tabulate
@@ -23,10 +26,11 @@ from tabulate import tabulate
     callback=parse_ip_port_map,
 )
 @click.option(
-    "-n",
-    "--namespace",
-    #   help=namespace_help_text,
-    default="default",
+    "--match-header",
+    help="Match header to forward traffic based to this client. E.g.: --matchHeader name:x-gefyra:peer",
+    required=True,
+    multiple=True,
+    callback=parse_match_header,
 )
 @click.option(
     "-P",
@@ -50,7 +54,13 @@ from tabulate import tabulate
 @click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
 def create_bridge(
-    name, ports, target, namespace, no_probe_handling, connection_name, timeout
+    name,
+    ports,
+    target,
+    match_header: List[MatchHeader],
+    no_probe_handling,
+    connection_name,
+    timeout,
 ):
     from alive_progress import alive_bar
     from gefyra import api
@@ -60,18 +70,18 @@ def create_bridge(
         "port_mappings": "PORTS",
         "local_container_ip": "LOCAL ADDRESS",
         "target_container": "TARGET CONTAINER",
-        "target_pod": "TARGET POD",
+        "target": "TARGET",
         "target_namespace": "NAMESPACE",
     }
     # we are not blocking this call
     _created_bridges = api.bridge(
         name=name,
         ports=ports,
-        target=target,
-        namespace=namespace,
+        bridge_mount_name=target,
         handle_probes=no_probe_handling,
         wait=False,
         connection_name=connection_name,
+        match_header=match_header,
     )
     with alive_bar(
         total=None,
@@ -132,15 +142,30 @@ def create_bridge(
     default=False,
 )
 @click.option(
+    "-m",
+    "--mount",
+    help="Unbridge all bridges for a specific mount",
+    required=False,
+    default=None,
+)
+@click.option(
     "--connection-name", type=str, default="default", callback=check_connection_name
 )
 @standard_error_handler
-def unbridge(name: str, connection_name: str, all: bool = False):
+def unbridge(
+    name: str, connection_name: str, all: bool = False, mount: Optional[str] = None
+):
     from gefyra import api
 
-    if not all and not name:
+    if not all and not name and not mount:
         console.error("Provide a name or use --all flag to unbridge.")
     if all:
         api.unbridge_all(connection_name=connection_name, wait=True)
+    elif mount:
+        api.unbridge(
+            connection_name=connection_name,
+            mount_name=mount,
+            wait=True,
+        )
     else:
         api.unbridge(connection_name=connection_name, name=name, wait=True)
