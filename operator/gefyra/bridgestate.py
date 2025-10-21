@@ -93,7 +93,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             BridgeProviderType(self.data.get("provider")),
             self.configuration,
             self.data["targetNamespace"],
-            self.data["targetPod"],
+            self.data["target"],
             self.data["targetContainer"],
             self.logger,
         )
@@ -158,6 +158,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
                     self.data["client"], destination, int(source_port)
                 )
             proxy_host, proxy_port = proxy_host.split(":", 1)
+            self._patch_object({"clusterEndpoint": f"{proxy_host}:{proxy_port}"})
             if not self.bridge_provider.proxy_route_exists(
                 target_port, proxy_host, proxy_port
             ):
@@ -170,6 +171,9 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.logger.info(f"GefyraBridge '{self.object_name}' is being created")
 
     def on_remove(self):
+        self.send("terminate")
+
+    def on_terminate(self):
         self.logger.info(f"GefyraBridge '{self.object_name}' is being removed")
         destination = self.data["destinationIP"]
         for port_mapping in self.data.get("portMappings"):
@@ -190,7 +194,6 @@ class GefyraBridge(StateMachine, StateControllerMixin):
                 self.connection_provider.remove_destination(
                     self.data["client"], destination, int(source_port)
                 )
-        self.send("set_installed")
 
     def on_restore(self):
         self.bridge_provider.uninstall()

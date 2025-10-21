@@ -1,8 +1,11 @@
 import click
 
+from gefyra.cli.reverse import reverse
+from gefyra.cli.duplicate import duplicate
 from gefyra.cli.operator import operator
 from gefyra.cli.self import _self
 from gefyra.cli.version import version
+from gefyra.cli.mount import mount
 from gefyra.cli.run import run
 from gefyra.cli.bridge import create_bridge, unbridge
 from gefyra.cli.clients import clients
@@ -75,6 +78,9 @@ cli.add_command(cmd=version, name="version")
 cli.add_command(cmd=list, name="list")
 cli.add_command(cmd=_self, name="self")
 cli.add_command(cmd=operator, name="operator")
+cli.add_command(cmd=duplicate, name="duplicate")
+cli.add_command(cmd=reverse, name="reverse")
+cli.add_command(cmd=mount, name="mount")
 
 
 def main():

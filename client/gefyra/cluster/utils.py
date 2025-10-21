@@ -1,7 +1,6 @@
 import logging
 from time import sleep
 from typing import Tuple, TYPE_CHECKING
-from gefyra.api.utils import get_workload_type
 
 if TYPE_CHECKING:
     from kubernetes.client.models import V1Pod
@@ -38,6 +37,23 @@ def get_env_from_pod_container(
         except ApiException as e:
             # e.status is 0 for some reason
             if "500 Internal Server Error" in e.reason:
+                # this could be a faulty K8s call, or Carrier/2 is running already
+                try:
+                    resp = stream(
+                        config.K8S_CORE_API.connect_get_namespaced_pod_exec,
+                        pod_name,
+                        namespace,
+                        container=container_name,
+                        command=["busybox", "env"],
+                        stderr=True,
+                        stdin=False,
+                        stdout=True,
+                        tty=False,
+                    )
+                    return resp
+                except ApiException:
+                    pass
+
                 sleep(interval)
                 counter += 1
                 logger.debug(
@@ -121,6 +137,7 @@ def retrieve_pod_and_container(
         get_pods_and_containers_for_workload,
         get_pods_and_containers_for_pod_name,
     )
+    from gefyra.api.utils import get_workload_type
 
     container_name = ""
     workload_type, workload_name = workload.split("/", 1)

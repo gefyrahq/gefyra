@@ -1,0 +1,17 @@
+version: 1
+threads: 2
+port: 8080
+clusterUpstream: 
+    - "localhost:4443"
+bridges:
+    user-1:
+        endpoint: "localhost:5442"
+        rules:
+            - match:
+                - matchPath: 
+                    path: "/what/a/path"
+                    type: "prefix"
+            - match:
+                - matchHeader:
+                    name: "x-gefyra"
+                    value: "peer"

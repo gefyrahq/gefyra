@@ -93,7 +93,7 @@ def list(
                         "PORTS",
                         "TARGET CONTAINER",
                         "NAMESPACE",
-                        "TARGET POD",
+                        "TARGET",
                         "PROVIDER",
                         "STATE",
                     ],

@@ -2,7 +2,9 @@ import logging
 import select
 import tarfile
 from tempfile import TemporaryFile
-from typing import List
+import time
+import traceback
+from typing import Any, Callable, List
 
 import kubernetes as k8s
 
@@ -142,3 +144,29 @@ def exec_command_pod(
         tty=False,
     )
     return resp
+
+
+def wait_until_condition(
+    read_func: Callable, cond_func: Callable, timeout: float = 5, backoff: float = 0.5
+) -> Any:
+    """
+    Busy wait until condition is fulfilled or timeout exception raised
+    :param read_func: a repeaditly called input function
+    :param cond_func: a function that evaluates the response of the read_func
+    :param timeout: the timeout in seconds after which an exception is raised
+    :param backoff: the waiting time in seconds between recalls
+    :return: the result of the read_func
+    """
+    start = time.time()
+
+    while start + timeout > time.time():
+        try:
+            resp = read_func()
+            if cond_func(resp):
+                return resp
+        except k8s.client.ApiException:
+            logging.warning(f"Failed read_func: {traceback.format_exc()}")
+
+        time.sleep(backoff)
+
+    raise RuntimeError("Failed to fulfill wait condition")

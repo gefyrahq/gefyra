@@ -1,0 +1,38 @@
+version: 1
+threads: 2
+port: 8080
+error_log: "error.log"
+tls:
+   certificate: "./tests/fixtures/test_cert.pem"
+   key: "./tests/fixtures/test_key.pem"
+   sni: ""
+clusterUpstream: 
+    - "localhost:4444"
+probes: 
+    httpGet:
+        - 8019
+        - 8020
+        - 8021
+bridges:
+    user-1:
+        endpoint: "localhost:5443"
+        rules:
+            - match:
+                - matchHeader:
+                    name: "x-gefyra"
+                    value: "user-1"
+    user-2:
+        endpoint: "localhost:5444"
+        rules:
+            - match:
+                - matchHeader:
+                    name: "x-gefyra"
+                    value: "user-2"
+    user-3:  
+        endpoint: "localhost:5442"
+        tls: false  # this client does not run with TLS
+        rules:
+            - match:
+                - matchHeader:
+                    name: "x-gefyra"
+                    value: "user-3"

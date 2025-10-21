@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: carrier-1000
+  namespace: default
+  labels:
+    app: carrier
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  containers:
+    - name: carrier
+      image: carrier2:pytest
+      imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: carrier-500
+  namespace: default
+  labels:
+    app: carrier
+spec:
+  securityContext:
+    runAsUser: 500
+    runAsGroup: 500
+  containers:
+    - name: carrier
+      image: carrier2:pytest
+      imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: carrier-12
+  namespace: default
+  labels:
+    app: carrier
+spec:
+  securityContext:
+    runAsUser: 12
+    runAsGroup: 12
+  containers:
+    - name: carrier
+      image: carrier2:pytest
+      imagePullPolicy: Never
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: carrier-nosec
+  namespace: default
+  labels:
+    app: carrier
+spec:
+  containers:
+    - name: carrier
+      image: carrier2:pytest
+      imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: carrier-cmd
+  namespace: default
+  labels:
+    app: carrier
+spec:
+  containers:
+    - name: carrier
+      image: carrier2:pytest
+      command: ["bin/bash", "-c"]
+      args: ["echo 0"]
+      imagePullPolicy: Never
+
+---

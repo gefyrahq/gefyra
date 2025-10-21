@@ -89,7 +89,7 @@ def reflect(
         res = bridge(
             name=name,
             namespace=namespace,
-            target=workload,
+            bridge_mount_name=workload,
             ports=ports,
             connection_name=connection_name,
             wait=True,

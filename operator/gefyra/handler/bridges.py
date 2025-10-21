@@ -4,9 +4,12 @@ from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 from gefyra.configuration import configuration
 
 
+RECONCILIATION_INTERVAL = 10
+
+
 @kopf.on.create("gefyrabridges.gefyra.dev")
 @kopf.on.resume("gefyrabridges.gefyra.dev")
-async def client_created(body, logger, **kwargs):
+async def bridge_create(body, logger, **kwargs):
     obj = GefyraBridgeObject(body)
     bridge = GefyraBridge(obj, configuration, logger)
     if bridge.requested.is_active:
@@ -18,7 +21,7 @@ async def client_created(body, logger, **kwargs):
 
 
 @kopf.on.delete("gefyrabridges.gefyra.dev")
-async def client_deleting(body, logger, **kwargs):
+async def bridge_delete(body, logger, **kwargs):
     obj = GefyraBridgeObject(body)
     bridge = GefyraBridge(obj, configuration, logger)
     if (

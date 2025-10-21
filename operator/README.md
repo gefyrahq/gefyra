@@ -77,12 +77,10 @@ Operator performs the following steps:
 
 Once the route has been established, Operator gets back to the standby phase. 
 
-   
+## Testing
 
+Run unit tests via:
 
-
-
-
-
-
-
+```sh
+poetry run pytest tests/unit
+```

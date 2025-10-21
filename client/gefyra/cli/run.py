@@ -41,6 +41,30 @@ from gefyra.cli.utils import (
     callback=parse_workload,
 )
 @click.option(
+    "--cpu-from",
+    help="Inherit CPU limit from a workload, e.g. 'pod/<name>', 'deployment/<name>' or 'statefulset/<name>'",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--memory-from",
+    help="Inherit memory limit from a workload, e.g. 'pod/<name>', 'deployment/<name>' or 'statefulset/<name>'",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--cpu",
+    help="CPU limit for the container (e.g. '500m' or '2')",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--memory",
+    help="Memory limit for the container (e.g. '512Mi', '1Gi', or '1g')",
+    type=str,
+    required=False,
+)
+@click.option(
     "-v",
     "--volume",
     help=(
@@ -102,6 +126,10 @@ def run(
     auto_remove,
     expose,
     env_from,
+    cpu_from,
+    memory_from,
+    cpu,
+    memory,
     volume,
     env,
     namespace,
@@ -116,12 +144,26 @@ def run(
 
     if command:
         command = ast.literal_eval(command)[0]
-    api.run(
+    # Validate mutually exclusive options
+    if memory and memory_from:
+        raise click.UsageError(
+            "Option conflict: --memory and --memory-from cannot be used together. Please specify only one."
+        )
+    if cpu and cpu_from:
+        raise click.UsageError(
+            "Option conflict: --cpu and --cpu-from cannot be used together. Please specify only one."
+        )
+
+    result = api.run(
         image=image,
         name=name,
         command=command,
         namespace=namespace,
         env_from=env_from,
+        cpu_from=cpu_from,
+        memory_from=memory_from,
+        cpu=cpu,
+        memory=memory,
         env=env,
         ports=expose,
         auto_remove=auto_remove,
@@ -131,3 +173,5 @@ def run(
         platform=platform,
         connection_name=connection_name,
     )
+    if not result:
+        exit(1)

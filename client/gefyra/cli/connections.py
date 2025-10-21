@@ -91,8 +91,10 @@ def connections(ctx):
     type=int,
     default=1340,
 )
+@click.pass_context
 @standard_error_handler
 def connect_client(
+    ctx,
     client_config,
     connection_name: str,
     minikube: Optional[str] = None,
@@ -122,6 +124,8 @@ def connect_client(
     ):
         api.connect(
             connection_name=connection_name,
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
             client_config=client_config,
             minikube_profile=minikube,
             mtu=mtu,

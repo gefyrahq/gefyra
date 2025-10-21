@@ -7,7 +7,7 @@ from docker.models.containers import Container
 from gefyra.cli import console
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
-from gefyra.types import GefyraLocalContainer
+from gefyra.types import GefyraLocalContainer, MatchHeader
 
 from .utils import handle_docker_run_container
 
@@ -102,15 +102,36 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
     return container_information
 
 
+def get_match_header_rules(
+    match_header: List[MatchHeader] = [],
+) -> List[Dict[str, Dict[str, str]]]:
+    return [
+        {
+            "matchHeader": {
+                "name": header.name,
+                "value": header.value,
+            }
+        }
+        for header in match_header
+    ]
+
+
+def get_bridge_rules(
+    match_header: List[MatchHeader] = [],
+) -> List[Dict[str, List[Dict[str, Dict[str, str]]]]]:
+    return [{"match": get_match_header_rules(match_header)}]
+
+
 def get_gbridge_body(
     config: ClientConfiguration,
     name: str,
     destination_ip,
-    target_pod,
+    target,
     target_namespace,
     target_container,
     port_mappings,
     handle_probes,
+    match_header: List[MatchHeader] = [],
 ):
     return {
         "apiVersion": "gefyra.dev/v1",
@@ -118,12 +139,16 @@ def get_gbridge_body(
         "metadata": {
             "name": name,
             "namespace": config.NAMESPACE,
+            "labels": {
+                "gefyra.dev/bridge-mount": target,
+            },
         },
-        "provider": "carrier",
+        "provider": "carrier2",
         "connectionProvider": "stowaway",
+        "providerParameter": {"rules": get_bridge_rules(match_header)},
         "client": config.CLIENT_ID,
         "destinationIP": destination_ip,
-        "targetPod": target_pod,
+        "target": target,
         "targetNamespace": target_namespace,
         "targetContainer": target_container,
         "portMappings": port_mappings,
@@ -143,6 +168,8 @@ def deploy_app_container(
     dns_search: Optional[List[str]] = None,
     pull: Optional[str] = "missing",
     platform: Optional[str] = "linux/amd64",
+    cpu_quota: Optional[str] = None,
+    mem_limit: Optional[str] = None,
 ) -> Container:
     import docker
 
@@ -174,6 +201,8 @@ def deploy_app_container(
         "auto_remove": auto_remove,
         "environment": env,
         "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",  # noqa: E231
+        "cpu_quota": cpu_quota,
+        "mem_limit": mem_limit,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 

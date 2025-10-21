@@ -1,0 +1,16 @@
+apiVersion: gefyra.dev/v1
+kind: gefyrabridgemount
+metadata:
+  name: bridgemount-a
+  namespace: gefyra
+provider: carrier
+targetNamespace: default
+target: nginx-deployment 
+targetContainer: nginx
+state: REQUESTED
+providerParameter:
+  tls:
+    certificate: "./tests/fixtures/test_cert.pem"
+    key: "./tests/fixtures/test_key.pem"
+    sni: "test.gefyra.dev"
+
