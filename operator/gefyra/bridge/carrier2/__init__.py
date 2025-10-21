@@ -290,7 +290,12 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # 1. Call self.ready() (retry)
         # 2. Retrive actual config to running Carrier2 instance, raise TemporaryError on error (retry)
         # 3. Check this brige (client-id) is in the config, return the result
-        pod: V1Pod = self.pods.items[0]
+        try:
+            pod: V1Pod = self.pods.items[0]
+        except Exception as e:
+            # if the deployment, pod, etc. does not exist anymore
+            self.logger.error(e)
+            return False
         config_str_list = read_carrier2_config(
             core_v1_api, pod.metadata.name, pod.metadata.namespace
         )

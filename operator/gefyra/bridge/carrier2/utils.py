@@ -66,12 +66,12 @@ def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
             continue
         if temp_commands:
             c = temp_commands.pop(0)
-            logger.info(f"Sending command: {c}")
+            logger.debug(f"Sending command: {c}")
             resp.write_stdin(c + "\n")
             time.sleep(0.5)
         else:
             break
-        logger.info(f"Last output: {last_ouput}")
+        logger.debug(f"Last output: {last_ouput}")
 
     resp.close()
     return last_ouput

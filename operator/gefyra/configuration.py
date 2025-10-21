@@ -54,6 +54,10 @@ class OperatorConfiguration:
             "GEFYRA_CARRIER_RUNNING_TIMEOUT", cast=int, default=30
         )
 
+        self.DISABLE_CLIENT_SA_MANAGEMENT = config(
+            "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT", default=False, cast=bool
+        )
+
     def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if k.isupper()}
 

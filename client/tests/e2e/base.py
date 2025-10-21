@@ -1,3 +1,4 @@
+from pathlib import Path
 from time import sleep
 from typing import List
 import docker
@@ -55,6 +56,7 @@ from gefyra.cluster.resources import (
     owner_reference_consistent,
 )
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+from tests.conftest import purge_gefyra_objects
 from tests.e2e.const import CONNECTION_NAME
 from tests.e2e.mixin import GefyraTestMixin
 
@@ -805,59 +807,82 @@ class GefyraBaseTest(GefyraTestMixin):
 LOCAL_CONTAINER_NAME = "gefyra-new-backend"
 
 
-@pytest.mark.usefixtures("operator")
-@pytest.mark.usefixtures("tmp_path")
-@pytest.mark.usefixtures("demo_backend_image")
-class GefyraTestCase(TestCase):
+@pytest.mark.parametrize(
+    "operator", ["operator_no_sa", "operator_with_sa"], indirect=True
+)
+class GefyraTestCase:
     provider = "k3d"
 
     @pytest.fixture(autouse=True)
     def _capture_request(self, request):
         self._request = request
 
+    @pytest.fixture(scope="class", autouse=True)
     def _init_docker(self):
         self.DOCKER_API = docker.from_env()
+        return self.DOCKER_API
 
-    def _init_kube_api(self):
-        load_kube_config(self.kubeconfig)
+    @pytest.fixture(autouse=True)
+    def _init_kube_api(self, operator: AClusterManager):
+        load_kube_config(str(operator.kubeconfig))
         self.K8S_CORE_API = CoreV1Api()
         self.K8S_RBAC_API = RbacAuthorizationV1Api()
         self.K8S_APP_API = AppsV1Api()
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
 
-    def setUp(self):
-        self.operator: AClusterManager = self._request.getfixturevalue("operator")
-        self.tmp_path = self._request.getfixturevalue("tmp_path")
-        self.demo_backend_image = self._request.getfixturevalue("demo_backend_image")
-        self.kubeconfig = str(self.operator.kubeconfig)
-        self._init_kube_api()
-        self._init_docker()
-        self.operator.apply("tests/fixtures/nginx_exposed.yaml")
-
-    def tearDown(self):
+    @pytest.fixture(autouse=True)
+    def _remove_containers(self, _init_docker):
+        yield
         containers = ["gefyra-cargo-pytest-gefyra", LOCAL_CONTAINER_NAME]
         for container in containers:
             try:
-                self.DOCKER_API.containers.get(container).remove(force=True)
+                _init_docker.containers.get(container).remove(force=True)
             except docker.errors.NotFound:
                 pass
-        return super().tearDown()
 
-    def cmd(self, command: str, params: List[str]) -> Result:
-        load_kube_config(self.kubeconfig)
+    def cmd(self, kubeconfig: Path, command: str, params: List[str]) -> Result:
+        load_kube_config(str(kubeconfig))
         from gefyra.cli.main import cli
 
         runner = CliRunner()
-        res = runner.invoke(
-            cli,
-            ["--kubeconfig", str(self.operator.kubeconfig), command, *params],
-            catch_exceptions=True,
-        )
+        if kubeconfig:
+            res = runner.invoke(
+                cli,
+                ["--kubeconfig", str(kubeconfig), command, *params],
+                catch_exceptions=True,
+            )
+        else:
+            res = runner.invoke(
+                cli,
+                [command, *params],
+                catch_exceptions=True,
+            )
         if res.exit_code != 0:
+            import traceback
+
             raise AssertionError(
-                f"Command failed: {res.output}\nExit code: " + str(res.exit_code)
+                f"Command failed: {res.output}\nExit code: "
+                + str(res.exit_code)
+                + "\nTrace: "
+                + str(traceback.format_exception(res.exception))
             )
         return res
+
+    def run_operator_with_sa(self, operator: AClusterManager) -> bool:
+        no_sa = operator.kubectl(
+            [
+                "-n",
+                "gefyra",
+                "get",
+                "deploy",
+                "gefyra-operator",
+                "-o=jsonpath='{.spec.template.spec.containers[0].env[?(@.name==\"GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT\")].value}'",
+            ],
+            as_dict=False,
+        )
+        if no_sa and no_sa == "True":
+            return True
+        return False
 
     def assert_get_contains(
         self, url: str, expected_content: str, retries: int = 10, headers: dict = None

@@ -48,6 +48,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         requested.to(terminated)
         | installing.to(terminated)
         | active.to(terminated)
+        | preparing.to(terminated)
         | restoring.to(terminated)
         | error.to(terminated)
         | terminated.to.itself()
@@ -105,13 +106,18 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
 
     @property
     def is_intact(self) -> bool:
-        return (
-            self.bridge_mount_provider.prepared() and self.bridge_mount_provider.ready()
-        )
+        try:
+            return (
+                self.bridge_mount_provider.prepared()
+                and self.bridge_mount_provider.ready()
+            )
+        except Exception as e:
+            self.logger.error(f"Bridge Mount '{self.object_name}' not intact: {e}")
+            return False
 
     def on_restore(self):
         self.logger.warning(
-            f"Problem detected. Restoring GefyraBridgeMount '{self.object_name}'"
+            f"Problem detected. Restoring Bridge Mount '{self.object_name}'"
         )
         self.send("prepare")
         # elif not self.bridge_mount_provider.ready():
@@ -135,4 +141,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
 
     def on_terminate(self):
         self.logger.info(f"GefyraBridgeMount '{self.object_name}' is being removed")
-        self.bridge_mount_provider.uninstall()
+        try:
+            self.bridge_mount_provider.uninstall()
+        except Exception as e:
+            self.logger.error(f"Cannot uninstall BridgeMount due to: {e}")

@@ -5,7 +5,6 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration, __VERSION__
-from gefyra.exceptions import ClientConfigurationError
 from gefyra.local.clients import handle_get_gefyraclient
 
 logger = logging.getLogger(__name__)
@@ -25,10 +24,10 @@ class GefyraClientConfig:
     client_id: str
     kubernetes_server: str
     provider: str
-    token: str
     namespace: str
-    ca_crt: str
     gefyra_server: str
+    token: str | None = None
+    ca_crt: str | None = None
     registry: Optional[str] = None
     wireguard_mtu: Optional[str] = "1340"
 
@@ -108,6 +107,7 @@ class GefyraClient:
     def _init_data(self, _object: dict[str, Any]):
         self.client_id = _object["metadata"]["name"]
         self.uid = _object["metadata"]["uid"]
+        self.namespace = _object["metadata"]["namespace"]
         self.provider = _object.get("provider", "")
         self._state = _object.get("state", "")
         self._state_transitions = _object.get("stateTransitions", {})
@@ -177,23 +177,18 @@ class GefyraClient:
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
-        if self.service_account:
-            return GefyraClientConfig(
-                client_id=self.client_id,
-                kubernetes_server=k8s_server or self._config.get_kubernetes_api_url(),
-                provider=self.provider,
-                token=self.service_account["token"],
-                namespace=self.service_account["namespace"],
-                ca_crt=self.service_account["ca.crt"],
-                gefyra_server=gefyra_server,
-                registry=registry,
-                # if somehow the mtu is not given make sure to have null as json value
-                wireguard_mtu=str(wireguard_mtu) if wireguard_mtu else None,
-            )
-        else:
-            raise ClientConfigurationError(
-                "Cannot get client config, no service account found."
-            )
+        return GefyraClientConfig(
+            client_id=self.client_id,
+            kubernetes_server=k8s_server or self._config.get_kubernetes_api_url(),
+            provider=self.provider,
+            token=self.service_account.get("token"),
+            namespace=self.namespace,
+            ca_crt=self.service_account.get("ca.crt"),
+            gefyra_server=gefyra_server,
+            registry=registry,
+            # if somehow the mtu is not given make sure to have null as json value
+            wireguard_mtu=str(wireguard_mtu) if wireguard_mtu else None,
+        )
 
     def activate_connection(self, subnet: str):
         _state = self.state
@@ -317,6 +312,14 @@ class GefyraInstallOptions:
             help=(
                 "The maximum age of a Stowaway connection in seconds (default: None)"
             ),
+        ),
+    )
+    disable_client_sa_management: bool = field(
+        default=False,
+        metadata=dict(
+            help="Whether to create/manage client service accounts for Gefyra (default: False)",
+            type=bool,
+            is_flag=True,
         ),
     )
 
