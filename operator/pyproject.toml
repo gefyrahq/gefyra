@@ -8,7 +8,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = ">=3.9,<3.12"
 kopf = "^1.38.0"
-kubernetes = "^33.1.0"
+kubernetes = "^34.1.0"
 python-decouple = "^3.8"
 python-statemachine = "^2.5.0"
 
