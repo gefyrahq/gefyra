@@ -1,6 +1,6 @@
 {
     "python.testing.pytestArgs": [
-        "client"
+        "operator"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
