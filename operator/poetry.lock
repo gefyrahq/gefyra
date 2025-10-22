@@ -1401,7 +1401,7 @@ pyyaml = "^6.0"
 type = "git"
 url = "https://github.com/Blueshoe/pytest-kubernetes/"
 reference = "feat/#3"
-resolved_reference = "f00d12dee124620e4332a77111d3df772f874c4c"
+resolved_reference = "61820c3e5f7b2d894b2a8745691a475786050374"
 
 [[package]]
 name = "pytest-retry"

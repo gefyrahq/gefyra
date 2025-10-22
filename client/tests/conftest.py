@@ -3,8 +3,7 @@ from pathlib import Path
 import subprocess
 from time import sleep
 import pytest
-from pytest_kubernetes.providers import AClusterManager, select_provider_manager
-from pytest_kubernetes.options import ClusterOptions
+from pytest_kubernetes.providers import AClusterManager
 
 
 @pytest.fixture(scope="session")

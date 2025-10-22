@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 from time import sleep
 import pytest
-from pytest_kubernetes.providers import AClusterManager, select_provider_manager
+from pytest_kubernetes.providers import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
 
 from tests.utils import GefyraDockerClient
@@ -24,39 +24,50 @@ def reload_kubernetes():
 
 
 @pytest.fixture(scope="module")
-def k3d():
-    k8s: AClusterManager = select_provider_manager("k3d")("gefyra")
+def k3d(k8s_manager):
+    k8s: AClusterManager = k8s_manager("k3d")("gefyra")
     # ClusterOptions() forces pytest-kubernetes to always write a new kubeconfig file to disk
-    k8s.create(
-        ClusterOptions(api_version="1.29.5"),
-        options=[
-            "--agents",
-            "1",
-            "-p",
-            "8080:80@agent:0",
-            "-p",
-            "31820:31820/UDP@agent:0",
-            "--agents-memory",
-            "8G",
-        ],
-    )
-    k8s.kubectl(["create", "ns", "gefyra"])
-    k8s.wait("ns/gefyra", "jsonpath='{.status.phase}'=Active")
+    cluster_exists = k8s.ready(timeout=1)
+    if not cluster_exists:
+        k8s.create(
+            ClusterOptions(api_version="1.29.5"),
+            options=[
+                "--agents",
+                "1",
+                "-p",
+                "8080:80@agent:0",
+                "-p",
+                "31820:31820/UDP@agent:0",
+                "--agents-memory",
+                "8G",
+            ],
+        )
+    if "gefyra" not in k8s.kubectl(["get", "ns"], as_dict=False):
+        k8s.kubectl(["create", "ns", "gefyra"])
+        k8s.wait("ns/gefyra", "jsonpath='{.status.phase}'=Active")
+    else:
+        purge_gefyra_objects(k8s)
     os.environ["KUBECONFIG"] = str(k8s.kubeconfig)
     print(f"This test run's kubeconfig location: {k8s.kubeconfig}")
     yield k8s
-    k8s.delete()
-    timeout = 0
-    exited = False
-    while not exited and timeout < 60:
-        try:
-            k8s._exec(["cluster", "get", k8s.cluster_name], timeout=5)
-        except subprocess.CalledProcessError:
-            exited = True
-        timeout += 1
-        sleep(1)
-    if not exited:
-        raise Exception("K3d cluster did not exit")
+    if cluster_exists:
+        # delete existing bridges
+        purge_gefyra_objects(k8s)
+        k8s.kubectl(["delete", "ns", "gefyra"], as_dict=False)
+    else:
+        # we delete this cluster only when created during this run
+        k8s.delete()
+        timeout = 0
+        exited = False
+        while not exited and timeout < 60:
+            try:
+                k8s._exec(["cluster", "get", k8s.cluster_name], timeout=5)
+            except subprocess.CalledProcessError:
+                exited = True
+            timeout += 1
+            sleep(1)
+        if not exited:
+            raise Exception("K3d cluster did not exit")
 
 
 @pytest.fixture(scope="module")
@@ -73,13 +84,18 @@ def operator(k3d, stowaway_image, carrier_image):
     os.environ["GEFYRA_STOWAWAY_IMAGE_PULLPOLICY"] = "Never"
     os.environ["GEFYRA_CARRIER_IMAGE"] = carrier_image.split(":")[0]
     os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier_image.split(":")[1]
-    k3d.load_image(stowaway_image)
+    loaded_images = subprocess.check_output(
+        f"docker exec k3d-{k3d.cluster_name}-server-0 crictl images", shell=True
+    ).decode("utf-8")
+    if "docker.io/library/stowaway" not in loaded_images:
+        k3d.load_image(stowaway_image)
     operator = KopfRunner(["run", "-A", "--dev", "main.py"])
     operator.__enter__()
     kopf_logger = logging.getLogger("kopf")
     kopf_logger.setLevel(logging.INFO)
     gefyra_logger = logging.getLogger("gefyra")
     gefyra_logger.setLevel(logging.INFO)
+    purge_gefyra_objects(k3d)
 
     not_found = True
     _i = 0
@@ -100,6 +116,7 @@ def operator(k3d, stowaway_image, carrier_image):
         raise Exception("Gefyra-Ready event not found")
 
     yield k3d
+    purge_gefyra_objects(k3d)
     for key in list(sys.modules.keys()):
         if key.startswith("kopf"):
             del sys.modules[key]
@@ -118,7 +135,7 @@ def stowaway_image(request):
         ),
         shell=True,
     )
-    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
 
@@ -133,7 +150,7 @@ def operator_image(request):
         ),
         shell=True,
     )
-    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
 
@@ -148,7 +165,7 @@ def carrier_image(request):
         ),
         shell=True,
     )
-    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
 
@@ -163,7 +180,7 @@ def carrier2_image(request):
         ),
         shell=True,
     )
-    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
 
@@ -215,7 +232,7 @@ def cargo_image(request):
         ),
         shell=True,
     )
-    request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
+    # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
 
@@ -236,4 +253,69 @@ def gclient_b():
     try:
         c.delete()
     except Exception:
+        pass
+
+
+def purge_gefyra_objects(k8s):
+    # delete existing bridges
+    try:
+        # delete existing bridges
+        bridges = k8s.kubectl(
+            [
+                "-n",
+                "gefyra",
+                "get",
+                "gefyrabridges",
+                "-o",
+                "jsonpath='{.items[*].metadata.name}'",
+            ],
+            as_dict=False,
+        ).split("\n")
+        for bridge in bridges:
+            if bridge and "No resources" not in bridge:
+                k8s.kubectl(
+                    ["-n", "gefyra", "delete", "gefyrabridge", bridge], as_dict=False
+                )
+    except RuntimeError:
+        pass
+    # delete existing bridge mounts
+    try:
+        mounts = k8s.kubectl(
+            [
+                "-n",
+                "gefyra",
+                "get",
+                "gefyrabridgemounts",
+                "-o",
+                "jsonpath='{.items[*].metadata.name}'",
+            ],
+            as_dict=False,
+        ).split("\n")
+        for mount in mounts:
+            if mount and "No resources" not in mount:
+                k8s.kubectl(
+                    ["-n", "gefyra", "delete", "gefyrabridgemount", mount],
+                    as_dict=False,
+                )
+    except RuntimeError:
+        pass
+    # delete existing clients
+    try:
+        clients = k8s.kubectl(
+            [
+                "-n",
+                "gefyra",
+                "get",
+                "gefyraclients",
+                "-o",
+                "jsonpath='{.items[*].metadata.name}'",
+            ],
+            as_dict=False,
+        ).split("\n")
+        for client in clients:
+            if client and "No resources" not in client:
+                k8s.kubectl(
+                    ["-n", "gefyra", "delete", "gefyraclient", client], as_dict=False
+                )
+    except (RuntimeError, subprocess.TimeoutExpired):
         pass

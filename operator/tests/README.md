@@ -31,3 +31,17 @@ Patch the Stowaway config (client to return to WAITING state):
 
 Delete the Gefyra client ("client-a"):  
 `kubectl -n gefyra delete gefyraclient client-a`
+
+
+## Run tests and with an external cluster on k3d (for faster iterations / development)
+Create a k3d cluster:
+`k3d cluster create --config tests/k3d_cluster.yaml`
+
+Write kubeconfig to file:
+`k3d kubeconfig get gefyra > mycluster.yaml`
+
+Run the tests:
+`poetry run pytest --k8s-kubeconfig-override mycluster.yaml --k8s-cluster-name gefyra --k8s-provider k3d -s -x tests/`
+
+
+

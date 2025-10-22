@@ -151,6 +151,6 @@ class GefyraDockerClient:
             raise RuntimeError("Failed to connect to wireguard client")
 
     def delete(self):
-        if hasattr(self, "container"):
+        if hasattr(self, "container") and self.container:
             self.container.stop()
             self.container = None

@@ -34,7 +34,7 @@ def test_a_create_bridge_mount(operator: AClusterManager):
     pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
     assert (
         pod["items"][0]["spec"]["containers"][0]["image"]
-        == "quay.io/gefyra/carrier2:test"  # TODO change to latest
+        == "quay.io/gefyra/carrier2:latest"
     )
 
     k3d.apply("tests/fixtures/a_gefyra_bridge_carrier2.yaml")
