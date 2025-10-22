@@ -20,8 +20,17 @@ class TestBridgeMountStateMachine:
             Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()
         )
         gefyra_crd.apply(file_path)
+
         name = "nginx-deployment"
         namespace = "default"
+
+        gefyra_crd.wait(
+            "deployment/" + name,
+            "jsonpath='{.status.readyReplicas}'=1",
+            namespace=namespace,
+            timeout=120,
+        )
+
         bridge_mount_object = GefyraBridgeMountObject(
             data={
                 "metadata": {"name": name, "namespace": namespace},

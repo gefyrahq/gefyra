@@ -18,6 +18,7 @@ class TestBridgeMountObject:
 
         mount = DuplicateBridgeMount(
             configuration=None,
+            name=name,
             target_namespace=namespace,
             target=name,
             target_container="nginx",
@@ -47,6 +48,7 @@ class TestBridgeMountObject:
 
         mount = DuplicateBridgeMount(
             configuration=None,
+            name=name,
             target_namespace=namespace,
             target=name,
             target_container="nginx",

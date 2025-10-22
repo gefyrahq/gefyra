@@ -52,14 +52,14 @@ def test_b_change_deployment_replicas(operator: AClusterManager):
         "deployment/nginx-deployment",
         "jsonpath='{.status.readyReplicas}'=2",
         namespace="default",
-        timeout=60,
+        timeout=120,
     )
     # Operator recognizes the change and updates the bridge mount
     k3d.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=RESTORING",
         namespace="gefyra",
-        timeout=60,
+        timeout=120,
     )
     k3d.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",

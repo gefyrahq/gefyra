@@ -55,9 +55,10 @@ def get_ports_for_deployment(
     ports = []
     for container in deployment.spec.template.spec.containers:
         if container.name == container_name:
-            for port in container.ports:
+            for idx, port in enumerate(container.ports):
                 ports.append(
                     V1ServicePort(
+                        name=f"{port.container_port}-{idx}",
                         port=port.container_port,
                         target_port=port.container_port,
                     )
