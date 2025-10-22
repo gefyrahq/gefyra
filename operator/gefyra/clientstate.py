@@ -82,7 +82,10 @@ class GefyraClient(StateMachine, StateControllerMixin):
         It returns the name of the GefyraClient
         :return: The name of the GefyraClient.
         """
-        return self.model.name
+        if self.model and hasattr(self.model, "name"):
+            return self.model.name
+        else:
+            return "unknown"
 
     @property
     def namespace(self) -> str:

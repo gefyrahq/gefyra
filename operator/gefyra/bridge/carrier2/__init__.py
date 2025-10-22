@@ -62,7 +62,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
 
         # 1. Call self.ready() (retry), return result
-        self.ready()
+        return self.ready()
 
     def ready(self) -> bool:
         """
@@ -95,7 +95,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         if not self.ready():
             raise RuntimeError(
-                f"Not able to configure Carrier in Pod {self.pod}. See error above."
+                "Not able to configure Carrier in Pods. See error above."
             )
         for pod in self.pods.items:
             self.update_carrier_config(pod)
@@ -275,7 +275,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         if not self.ready():
             raise RuntimeError(
-                f"Not able to configure Carrier in Pod {self.pod}. See error above."
+                f"Not able to configure Carrier in Pods. See error above."
             )
         for pod in self.pods.items:
             self.update_carrier_config(pod)

@@ -203,6 +203,6 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.logger.error(f"Failed from {self.current_state}")
         self.post_event(
             reason=f"Failed from {self.current_state}",
-            message=exception.message,
+            message=exception.message if exception else "",
             _type="Warning",
         )

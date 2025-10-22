@@ -111,21 +111,3 @@ def read_carrier2_config(core_api, name: str, namespace: str) -> List[str]:
 
     resp.close()
     return res
-
-
-# https://github.com/kubernetes-client/python/issues/476
-def send_carrier2_config(name: str, namespace: str, content):
-    # Calling exec interactively.
-    commands = [
-        "cat <<'EOF' >" + "/tmp/config.yaml" + "\n",
-        content,
-        "\n",
-    ]
-    stream_exec_retries(name, namespace, commands)
-
-
-def reload_carrier2_config(name: str, namespace: str):
-    commands = [
-        "kill -SIGQUIT $(ps | grep '[c]arrier2' | awk ' { print $1 }' | tail -1) && carrier2 -c /tmp/config.yaml -u &"
-    ]
-    stream_exec_retries(name, namespace, commands)
