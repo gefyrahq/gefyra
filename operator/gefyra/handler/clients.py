@@ -49,6 +49,7 @@ async def client_connection_changed(new, body, logger, **kwargs):
         if client.disabling.is_active:
             # this is called in case of retry
             client.wait()
+        client._patch_object({"status": {"wireguard": None}})
 
 
 @kopf.on.delete("gefyraclients.gefyra.dev")

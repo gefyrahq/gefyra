@@ -57,7 +57,9 @@ class TestBridgeMountStateMachine:
                 if bridge_mount_machine.preparing.is_active:
                     try:
                         bridge_mount_machine.install()
-                    except TemporaryError:
+                    except (
+                        Exception
+                    ):  #  Catch Temporary 'Cannot install Gefyra Carrier2 on pods ...'
                         pass
                 elif bridge_mount_machine.requested.is_active:
                     bridge_mount_machine.prepare()

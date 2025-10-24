@@ -11,12 +11,13 @@ from gefyra.bridge.carrier2.utils import (
     stream_exec_retries,
 )
 from gefyra.utils import wait_until_condition
-from gefyra.bridge.carrier2.const import RELOAD_CARRIER2
+from gefyra.bridge.carrier2.const import RELOAD_CARRIER2_DEBUG, RELOAD_CARRIER2_INFO
+from gefyra.bridge.exceptions import BridgeInstallException
 
 
 logger = logging.getLogger(__name__)
 
-ERROR_LOG_PATH = "/tmp/carrier.error.log"
+ERROR_LOG_PATH = "/tmp/carrier.log"
 
 
 class CarrierMatchHeader(BaseModel):
@@ -70,8 +71,9 @@ class Carrier2Config(BaseModel):
             self.model_dump(by_alias=True, exclude_none=True), sort_keys=False
         )
 
-    def commit(self, pod_name: str, container_name: str, namespace: str):
-
+    def commit(
+        self, pod_name: str, container_name: str, namespace: str, debug: bool = False
+    ):
         core_v1 = k8s.client.CoreV1Api()
         read_func = partial(core_v1.read_namespaced_pod_status, pod_name, namespace)
 
@@ -93,9 +95,9 @@ class Carrier2Config(BaseModel):
             "cat <<'EOF' > /tmp/config.yaml\n" f"{config_str}",
             "EOF",
             # 2. graceful upgrade of the process
-            RELOAD_CARRIER2,
-            # 3. read current config
-            "cat /tmp/config.yaml",
+            RELOAD_CARRIER2_DEBUG if debug else RELOAD_CARRIER2_INFO,
+            # 3. read current log
+            f"cat {ERROR_LOG_PATH}",
         ]
 
         read_func = partial(
@@ -106,10 +108,18 @@ class Carrier2Config(BaseModel):
             config_commands,
             10,
         )
+
         # TODO raise TemporaryError to handle longer Carrier2 pulls via async
+        def _check_carrier2_output(s):
+            return (
+                isinstance(s, str)
+                and "Daemonizing the server" in s
+                and "thread 'main' panicked" not in s
+            )
+
         wait_until_condition(
             read_func,
-            lambda s: isinstance(s, str) and config_str in s,
+            _check_carrier2_output,
             timeout=30,
             backoff=1,
         )
@@ -130,7 +140,7 @@ class Carrier2Config(BaseModel):
             label_selector=f"gefyra.dev/bridge-mount={bridge_mount_name}",
         )
         logger.info(f"gefyra.dev/bridge-mount={bridge_mount_name}")
-        logger.info(f"BRIDGES {bridges}")
+        logger.debug(f"BRIDGES {bridges}")
 
         result = {}
         for bridge in bridges["items"]:

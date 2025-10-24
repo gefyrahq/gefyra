@@ -1,4 +1,5 @@
 from datetime import datetime
+from functools import partial
 from typing import Optional
 
 import kubernetes as k8s
@@ -9,6 +10,7 @@ from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
 from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+from gefyra.bridge.exceptions import BridgeInstallException
 
 
 class GefyraBridgeMountObject(GefyraStateObject):
@@ -43,7 +45,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     activate = installing.to(active) | active.to.itself()
 
     restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
-    impair = error.from_(requested, installing, active, active, error)
+    impair = error.from_(preparing, requested, installing, active, active, error)
     terminate = (
         requested.to(terminated)
         | installing.to(terminated)
@@ -81,6 +83,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             target=self.data["target"],
             target_container=self.data["targetContainer"],
             name=self.data["metadata"]["name"],
+            post_event_function=self.post_event,
             logger=self.logger,
             provider_parameter=self.data.get("providerParameter"),
         )
@@ -112,36 +115,71 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
                 and self.bridge_mount_provider.ready()
             )
         except Exception as e:
-            self.logger.error(f"Bridge Mount '{self.object_name}' not intact: {e}")
+            self.post_event(
+                reason="Not intact",
+                message=f"GefyraBridgeMount '{self.object_name}' not intact: {e}",
+                type="Warning",
+            )
             return False
 
     def on_restore(self):
-        self.logger.warning(
-            f"Problem detected. Restoring Bridge Mount '{self.object_name}'"
+        self.post_event(
+            reason="Change detected",
+            message=f"Restoring GefyraBridgeMount '{self.object_name}'",
+            type="Warning",
         )
         self.send("prepare")
         # elif not self.bridge_mount_provider.ready():
-        self.send("install")
+        # self.send("install")
 
     def on_prepare(self):
         self.logger.info(f"Preparing GefyraBridgeMount '{self.object_name}'")
-        self.bridge_mount_provider.prepare()
+        try:
+            #  TODO self.bridge_mount_provider.check_mount_conditions()
+            self.bridge_mount_provider.prepare()
+        except BridgeInstallException as e:
+            self.post_event(
+                reason=f"Failed to install GefyraBridgeMount",
+                message=str(e),
+                type="Warning",
+            )
+            self.impair()
 
     @install.cond
     def _bridge_mount_prepared(self):
         return self.bridge_mount_provider.prepared()
 
     def on_install(self):
-        self.bridge_mount_provider.install()
-        self.activate()
+        try:
+            self.bridge_mount_provider.install()
+        except BridgeInstallException as e:
+            self.post_event(
+                reason=f"Failed to install GefyraBridgeMount",
+                message=str(e),
+                type="Warning",
+            )
+            self.impair()
+        else:
+            self.activate()
 
     @activate.cond
     def _bridge_mount_finished(self):
-        return self.bridge_mount_provider.ready()
+        _ready = self.bridge_mount_provider.ready()
+        if _ready:
+            self.post_event(
+                reason="Ready",
+                message=f"GefyraBridgeMount '{self.object_name}' is ready",
+            )
+        return _ready
 
     def on_terminate(self):
-        self.logger.info(f"GefyraBridgeMount '{self.object_name}' is being removed")
+        self.post_event(
+            reason="Deleting",
+            message=f"GefyraBridgeMount '{self.object_name}' is being removed",
+        )
         try:
             self.bridge_mount_provider.uninstall()
         except Exception as e:
-            self.logger.error(f"Cannot uninstall BridgeMount due to: {e}")
+            self.logger.error(
+                f"Cannot uninstall GefyraBridgeMount '{self.object_name}' due to: {e}"
+            )

@@ -84,6 +84,7 @@ def operator(k3d, stowaway_image, carrier_image):
     os.environ["GEFYRA_STOWAWAY_IMAGE_PULLPOLICY"] = "Never"
     os.environ["GEFYRA_CARRIER_IMAGE"] = carrier_image.split(":")[0]
     os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier_image.split(":")[1]
+    os.environ["GEFYRA_CARRIER2_DEBUG"] = "True"
     loaded_images = subprocess.check_output(
         f"docker exec k3d-{k3d.cluster_name}-server-0 crictl images", shell=True
     ).decode("utf-8")

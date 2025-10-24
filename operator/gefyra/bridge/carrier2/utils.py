@@ -57,12 +57,13 @@ def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
     temp_commands = commands[:]
     last_ouput = None
     while resp.is_open():
-        resp.update(timeout=1)
+        resp.update(timeout=5)
         if resp.peek_stdout():
             last_ouput = resp.read_stdout()
+            logger.debug(f"[carrier2] {last_ouput}")
         if resp.peek_stderr():
             last_ouput = resp.read_stderr()
-            logger.error(f"Error from carrier2: {last_ouput}")
+            logger.debug(f"[carrier2] {last_ouput}")
             continue
         if temp_commands:
             c = temp_commands.pop(0)

@@ -1,6 +1,6 @@
 import datetime
 from functools import partial
-from typing import List
+from typing import Callable, List
 import uuid
 from kopf import TemporaryError
 import kubernetes as k8s
@@ -30,6 +30,7 @@ from gefyra.bridge_mount.utils import (
 )
 from gefyra.utils import wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
+from gefyra.bridge.exceptions import BridgeInstallException
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -46,6 +47,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         target_namespace: str,
         target: str,
         target_container: str,
+        post_event_function: Callable[[str, str, str], None],
         logger,
         **kwargs,
     ) -> None:
@@ -54,6 +56,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self.target = target
         self.container = target_container
         self.name = name
+        self.post_event = post_event_function
         self.logger = logger
         self.params = kwargs.get("provider_parameter", {})
 
@@ -143,6 +146,12 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         # Create the new deployment
         try:
             app.create_namespaced_deployment(self.namespace, new_deployment)
+            self.post_event(
+                "Cluster upstream",
+                f"Created cluster upstream '{new_deployment.metadata.name}' "
+                f"for target workload '{deployment.metadata.name}' in namespace '{self.namespace}'.",
+                "Normal",
+            )
         except ApiException as e:
             if e.status == 409:
                 app.patch_namespaced_deployment(
@@ -156,6 +165,12 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             core_v1_api.create_namespaced_service(
                 self.namespace,
                 new_svc,
+            )
+            self.post_event(
+                "Cluster upstream service",
+                f"Created cluster upstream service '{new_svc.metadata.name}' "
+                f"in namespace '{self.namespace}'.",
+                "Normal",
             )
         except ApiException as e:
             if e.status == 409:
@@ -177,7 +192,10 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             raise RuntimeError(f"Exception when calling Kubernetes API: {e}")
 
     def prepare(self):
-        self._duplicate_deployment()
+        try:
+            self._duplicate_deployment()
+        except Exception as e:
+            raise BridgeInstallException(e)
 
     @property
     def _gefyra_pods(self) -> V1PodList:
@@ -322,8 +340,9 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 raise RuntimeError(
                     f"Could not found container {self.container} in Pod {pod}"
                 )
-            self.logger.info(
-                f"Now patching Pod {pod.metadata.name}; container {self.container} with Carrier2"
+            self.post_event(
+                "Patching target pod",
+                f"Now patching Pod {pod.metadata.name}; container {self.container} with Carrier2",
             )
             try:
                 core_v1_api.patch_namespaced_pod(
@@ -359,13 +378,23 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             carrier_config.add_bridge_rules_for_mount(
                 self.name, self.configuration.NAMESPACE
             )
-            self.logger.info(f"Commiting carrier2 config to pod {pod.metadata.name}")
-            self.logger.info(f"Carrier2 config: {carrier_config}")
-            carrier_config.commit(
-                pod.metadata.name,
-                self.container,
-                self.namespace,
+            self.post_event(
+                "Update Carrier2",
+                f"Commiting carrier2 config to Pod {pod.metadata.name}",
             )
+            self.logger.debug(f"Carrier2 config: {carrier_config}")
+            try:
+                carrier_config.commit(
+                    pod.metadata.name,
+                    self.container,
+                    self.namespace,
+                    debug=self.configuration.CARRIER2_DEBUG,
+                )
+            except RuntimeError:
+                raise BridgeInstallException(
+                    f"Could not install GefyraBridgeMount successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
+                    f"and container '{self.container}' in namespace '{self.namespace}' for more information."
+                )
 
     @property
     def _carrier_installed(self):
@@ -451,8 +480,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             and self._upstream_set
         )
 
-    def validate(self, brige_request):
-        return super().validate(brige_request)
+    def validate(self, bridge_request):
+        return super().validate(bridge_request)
 
     def uninstall_service(self) -> None:
         gefyra_svc_name = generate_duplicate_svc_name(self.target, self.container)

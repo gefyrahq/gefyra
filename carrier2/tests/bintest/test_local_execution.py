@@ -133,7 +133,7 @@ def test_f_simple_probes_tls_upstream_all(carrier2, https_upstream):
 
     p.join()
     res = queue.get(timeout=1)
-    assert "running with tls config" in res
+    assert "Running with tls config" in res
     assert "Server starting" in res
 
 

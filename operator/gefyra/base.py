@@ -106,39 +106,50 @@ class StateControllerMixin:
         else:
             return None
 
-    def post_event(self, reason: str, message: str, _type: str = "Normal") -> None:
+    def post_event(self, reason: str, message: str, type: str = "Normal") -> None:
         """
         It creates an event object and posts it to the Kubernetes API
         :param reason: The reason for the event
         :type reason: str
         :param message: The message to be displayed in the event
         :type message: str
-        :param _type: The type of event, defaults to Normal
-        :type _type: str (optional)
+        :param type: The type of event, defaults to Normal
+        :type type: str (optional)
         """
+        if type == "Normal":
+            self.logger.info(message)
+        else:
+            self.logger.error(message)
         now = _get_now()
         event = k8s.client.EventsV1Event(
             metadata=k8s.client.V1ObjectMeta(
                 name=f"{self.object_name}-{uuid.uuid4()}",
                 namespace=self.configuration.NAMESPACE,
             ),
-            reason=reason.capitalize(),
+            reason=reason,
             note=message[:1024],  # maximum message length
             event_time=now,
             action=f"{self.__class__.__name__}-State",
-            type=_type,
+            type=type,
             reporting_instance="gefyra-operator",
             reporting_controller="gefyra-operator",
             regarding=k8s.client.V1ObjectReference(
-                kind=self.kind,
-                name=self.object_name,
-                namespace=self.configuration.NAMESPACE,
+                api_version=self.data["apiVersion"],
+                kind=self.data["kind"],
+                name=self.data["metadata"]["name"],
+                namespace=self.data["metadata"]["namespace"],
                 uid=self.data["metadata"]["uid"],
+                resource_version=self.data["metadata"]["resourceVersion"],
             ),
         )
-        self.events_api.create_namespaced_event(
-            namespace=self.configuration.NAMESPACE, body=event
-        )
+        try:
+            self.events_api.create_namespaced_event(
+                namespace=self.configuration.NAMESPACE, body=event
+            )
+        except Exception as e:
+            self.logger.error(
+                f"Could not post event to object '{self.data['kind']}/{self.data['metadata']['name']}': {e}"
+            )
 
     def _patch_object(self, data: dict):
         self.custom_api.patch_namespaced_custom_object(

@@ -25,6 +25,22 @@ impl ProxyHttp for Carrier2 {
         ()
     }
 
+    async fn logging(
+        &self,
+        session: &mut Session,
+        _e: Option<&pingora::Error>,
+        ctx: &mut Self::CTX,
+    ) {
+        let response_code = session
+            .response_written()
+            .map_or(0, |resp| resp.status.as_u16());
+        // access log
+        info!(
+            "{} response code: {response_code}",
+            self.request_summary(session, ctx)
+        );
+    }
+
     async fn upstream_peer(&self, _session: &mut Session, _ctx: &mut ()) -> Result<Box<HttpPeer>> {
         let client_idx = self
             .gefyra_clients
@@ -43,7 +59,12 @@ impl ProxyHttp for Carrier2 {
                 self.cluster_tls,
                 self.cluster_sni.clone(),
             ));
-            info!("Selected cluster upstream peer");
+            if self.gefyra_clients.len() == 0 {
+                info!("Selected cluster upstream peer (no GefyraClient loaded)");
+            } else {
+                info!("Selected cluster upstream peer (no matching rule hit)");
+            }
+
             return Ok(peer);
         }
         Err(Box::new(pingora::Error {
@@ -85,7 +106,7 @@ fn main() {
         my_server.bootstrap();
 
         debug!("{:?}", my_server.configuration);
-        debug!("GefyraBrige config: {:?}", carrier_config);
+        debug!("GefyraBridge config: {:?}", carrier_config);
         let carrier_config = carrier_config.as_mapping().unwrap();
         let mut cert_path: Option<String> = None;
         let mut key_path: Option<String> = None;
@@ -154,8 +175,8 @@ fn main() {
             let listening = format!("0.0.0.0:{}", carrier_config["port"].as_u64().unwrap());
             if cert_path.is_some() && key_path.is_some() {
                 // add tls setting
-                debug!(
-                    "running with tls config: key {:?} cert {:?}",
+                info!(
+                    "Running with tls config: key {:?} cert {:?}",
                     key_path, cert_path
                 );
                 http_dispatcher
@@ -175,7 +196,7 @@ fn main() {
             // httpGet probe
             if let Some(http_get_ports) = carrier_config["probes"].get("httpGet") {
                 let ports = http_get_ports.as_sequence().unwrap();
-                debug!("probe ports: {:?}", ports);
+                info!("Configured probe ports: {:?}", ports);
                 for port in ports {
                     let mut httpget_probe_handler = Service::new(
                         format!("httpGet probe handler {}", port.as_u64().unwrap()),

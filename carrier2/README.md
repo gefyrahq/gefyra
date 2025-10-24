@@ -60,7 +60,7 @@ bridges:
 ```
 
 ## Run a dev version with debug ouput
-`RUST_LOG=debug cargo run -- -c conf.yaml`
+`RUST_LOG=debug cargo run -- -c config.yaml`
 
 
 ## Create a self-signed local certificate for testing
@@ -78,7 +78,7 @@ openssl x509 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -i
 ### Manually
 A graceful upgrade is performed with (in a buybox container):
 ```
-kill -SIGQUIT $(ps | grep "[c]arrier2" | awk ' { print $1 }' | tail -1) && carrier2 -c /tmp/config.yaml -u &
+RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ]; then carrier2 -c /tmp/config.yaml -u -d; else carrier2 -c /tmp/config.yaml -d; fi
 ```
 
 1. Sending `SIGQUIT` to the currently running instance

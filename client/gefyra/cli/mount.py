@@ -6,7 +6,7 @@ from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from tabulate import tabulate
 
 
-@click.group("mount", cls=AliasedGroup, help="Manage mounts for a Gefyra installation")
+@click.group("mount", cls=AliasedGroup, help="Manage GefyraBridgeMounts for a Gefyra installation")
 @click.pass_context
 def mount(ctx):
     # for management of mounts we always sourcing the kubeconfig and context from env if not passed

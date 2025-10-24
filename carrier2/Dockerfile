@@ -29,10 +29,12 @@ LABEL gefyra.dev/provider="carrier2"
 COPY --from=builder /carrier/target/x86_64-unknown-linux-musl/release/carrier2 /bin/carrier2
 # Add default config
 COPY config.yaml /tmp/config.yaml
+RUN touch /tmp/carrier.log
 COPY entrypoint.sh /entrypoint.sh
 COPY etc/ /etc
 # Fix permission issues
 RUN chmod 777 /tmp/config.yaml
+RUN chmod 777 /tmp/carrier.log
 
 RUN ln -sf /entrypoint.sh /bin/sh \
     && ln -sf /entrypoint.sh /bin/bash \

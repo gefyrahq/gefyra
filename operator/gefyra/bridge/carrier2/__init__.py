@@ -155,6 +155,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
             pod_name=pod.metadata.name,
             container_name=self.container,
             namespace=self.namespace,
+            debug=self.configuration.CARRIER2_DEBUG,
         )
 
     def _get_pods_workload(

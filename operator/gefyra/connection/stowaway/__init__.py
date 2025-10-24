@@ -37,6 +37,7 @@ from .components import (
     remove_stowaway_statefulset,
 )
 
+
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_api = k8s.client.CustomObjectsApi()
@@ -66,6 +67,19 @@ class Stowaway(AbstractGefyraConnectionProvider):
     ):
         self.configuration = configuration
         self.logger = logger
+
+    def read_wireguard_status(self) -> str | None:
+        pod = self._get_stowaway_pod()
+        if pod is None:
+            return None
+        output = exec_command_pod(
+            core_v1_api,
+            pod.metadata.name,
+            pod.metadata.namespace,
+            "stowaway",
+            ["wg"],
+        )
+        return output
 
     def install(self, config: Optional[Dict[Any, Any]] = None):
         handle_serviceaccount(self.logger, self.configuration)
@@ -463,26 +477,42 @@ class Stowaway(AbstractGefyraConnectionProvider):
             f"peer_{self._translate_peer_name(peer_id)}",
             f"peer_{self._translate_peer_name(peer_id)}.conf",
         )
+        peer_public_key = path.join(
+            self.configuration.STOWAWAY_PEER_CONFIG_PATH,
+            f"peer_{self._translate_peer_name(peer_id)}",
+            f"publickey-peer_{self._translate_peer_name(peer_id)}",
+        )
         self.logger.info(
             f"Copy peer {peer_id} connection details from Pod "
             f"{pod.metadata.name}:{peer_config_file}"
         )
-        tmpfile_location = f"/tmp/peer_{self._translate_peer_name(peer_id)}.conf"
+        tmpfile_conf = f"/tmp/peer_{self._translate_peer_name(peer_id)}.conf"
+        tmpfile_pubkey = f"/tmp/peer_{self._translate_peer_name(peer_id)}.pubkey"
         stream_copy_from_pod(
             pod.metadata.name,
             self.configuration.NAMESPACE,
             peer_config_file,
-            tmpfile_location,
+            tmpfile_conf,
+        )
+        stream_copy_from_pod(
+            pod.metadata.name,
+            self.configuration.NAMESPACE,
+            peer_public_key,
+            tmpfile_pubkey,
         )
 
         # Wireguard config is unfortunately no valid TOML
-        with open(tmpfile_location, "r") as f:
+        with open(tmpfile_conf, "r") as f:
             peer_connection_details_raw = f.read()
-        os.remove(tmpfile_location)
+        os.remove(tmpfile_conf)
+        with open(tmpfile_pubkey, "r") as f:
+            peer_connection_pubkey = f.read()
+        os.remove(tmpfile_pubkey)
 
         peer_connection_details = self._read_wireguard_config(
             peer_connection_details_raw
         )
+        peer_connection_details["Interface.PublicKey"] = peer_connection_pubkey.strip()
         return peer_connection_details
 
     def _read_wireguard_config(self, raw: str) -> dict[str, str]:
@@ -524,3 +554,6 @@ class StowawayBuilder:
             logger=logger,
         )
         return instance
+
+
+import gefyra.connection.stowaway.handler  # noqa

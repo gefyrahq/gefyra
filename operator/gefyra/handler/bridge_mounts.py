@@ -56,8 +56,9 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             bridge_mount.install()
         elif bridge_mount.installing.is_active:
             bridge_mount.install()
-        elif bridge_mount.error.is_active:
-            bridge_mount.restore()
+        # TODO if Error is recoverable at all
+        # elif bridge_mount.error.is_active:
+        #    bridge_mount.restore()
         elif bridge_mount.restoring.is_active:
             bridge_mount.restore()
         elif bridge_mount.active.is_active:

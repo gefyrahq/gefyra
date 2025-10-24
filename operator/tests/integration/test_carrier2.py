@@ -35,7 +35,12 @@ class TestCarrier2:
         config.clusterUpstream = ["blueshoe.io:443"]
         config.port = 5000
         start = time.time()
-        config.commit(pod_name="backend", container_name="backend", namespace="default")
+        config.commit(
+            pod_name="backend",
+            container_name="backend",
+            namespace="default",
+            debug=True,
+        )
         end = time.time()
         # print(f"commit time: {end - start}")
 
@@ -45,7 +50,7 @@ class TestCarrier2:
         config = read_carrier2_config(core_v1, "backend", "default")
         config = config[0].replace("\n", "").replace(" ", "")
         assert (
-            "version:1threads:4port:5000error_log:/tmp/carrier.error.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100clusterUpstream:-blueshoe.io:443"
+            "version:1threads:4port:5000error_log:/tmp/carrier.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100clusterUpstream:-blueshoe.io:443"
             in config
         )
 

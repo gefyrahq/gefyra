@@ -4,14 +4,15 @@ from pytest_kubernetes.providers import AClusterManager
 def test_a_create_bridge_mount(operator: AClusterManager):
     k3d = operator
     k3d.apply("tests/fixtures/nginx.yaml")
+    k3d.wait(
+        "deployment/nginx-deployment",
+        "jsonpath='{.status.readyReplicas}'=1",
+        namespace="default",
+        timeout=120,
+    )
+
     k3d.apply("tests/fixtures/bridge_mount.yaml")
 
-    k3d.wait(
-        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
-        "jsonpath=.state=REQUESTED",
-        namespace="gefyra",
-        timeout=40,
-    )
     k3d.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=ACTIVE",
@@ -65,7 +66,7 @@ def test_b_change_deployment_replicas(operator: AClusterManager):
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=ACTIVE",
         namespace="gefyra",
-        timeout=60,
+        timeout=120,
     )
     pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
     assert (

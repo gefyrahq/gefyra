@@ -1,1 +1,2 @@
 ::once:carrier2 -c /tmp/config.yaml -d
+::respawn:tail -F /tmp/carrier.log
