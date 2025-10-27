@@ -41,6 +41,8 @@ def mount(
     _, workload_name, container_name = get_workload_information(target)
     if not mount_name:
         mount_name = f"{workload_name[:25]}-{namespace[:20]}-{random_string(5)}"
+    if len(mount_name) > 63:
+        raise RuntimeError("The name must be no more than 63 characters")
     bridge_mount_body = get_gbridgemount_body(
         config,
         mount_name,
