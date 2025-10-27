@@ -56,8 +56,10 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
             version="v1",
         )
     except ApiException as e:
-        if e.status in [404, 403]:
-            raise GefyraClientNotFound(f"Client {client_id} does not exist.")
+        if e.status in [401, 404, 403]:
+            raise GefyraClientNotFound(
+                f"GefyraClient '{client_id}' does not exist or the Gefyra client file is stale. Please check with your Gefyra administrator."
+            )
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
@@ -67,7 +69,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
         # this connection does not work (at the moment)
         raise GefyraConnectionError(
             f"This connection does not work. Is the cluster at {e.pool.host}:{e.pool.port} reachable? "
-            f"Is the client '{client_id}' stale (e.g. from an old connection)? "
+            f"Is the GefyraClient '{client_id}' stale (e.g. from an old connection)? "
             f"Remove it with 'gefyra connection remove {client_id}' and try again."
         )
 

@@ -25,6 +25,22 @@ async def periodic(interval_sec, coro_name, *args, **kwargs):
 async def read_wireguard_status(logger):
     from gefyra.clientstate import GefyraClientObject, GefyraClient
 
+    try:
+        raw_gefyra_clients = custom_object_api.list_namespaced_custom_object(
+            group="gefyra.dev",
+            version="v1",
+            plural="gefyraclients",
+            namespace=configuration.NAMESPACE,
+        )
+    except Exception as e:
+        logger.error(f"Could not read clients from Stowaway watcher: {e}")
+        return
+    else:
+        if len(raw_gefyra_clients["items"]) == 0:
+            logger.info("Skipping Wireguard connection status on Stowaway (no GefyraClients available)")
+            return
+    
+    # there are some GefyraClients
     stowaway = Stowaway(configuration, logger)
     if not stowaway.ready():
         return
@@ -39,17 +55,6 @@ async def read_wireguard_status(logger):
         wg_data = parse_wg_output(wg_status)
     except Exception as e:
         logger.error(f"Could not parse Wireguard status: {e}")
-        return
-
-    try:
-        raw_gefyra_clients = custom_object_api.list_namespaced_custom_object(
-            group="gefyra.dev",
-            version="v1",
-            plural="gefyraclients",
-            namespace=configuration.NAMESPACE,
-        )
-    except Exception as e:
-        logger.error(f"Could not read clients from Stowaway watcher: {e}")
         return
     else:
         peer_data = wg_data["peers"]

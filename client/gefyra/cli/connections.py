@@ -121,7 +121,7 @@ def connect_client(
         spinner="classic",
         stats=False,
         dual_line=True,
-    ):
+    ) as bar:
         api.connect(
             connection_name=connection_name,
             kubeconfig=ctx.obj["kubeconfig"],
@@ -129,6 +129,7 @@ def connect_client(
             client_config=client_config,
             minikube_profile=minikube,
             mtu=mtu,
+            update_callback=bar.text,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "

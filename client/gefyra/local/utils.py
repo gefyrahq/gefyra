@@ -169,6 +169,7 @@ class WatchEventsMixin:
             if (
                 "object" in event
                 and event["object"].involved_object
+                and event["object"].event_time
                 and event["object"].event_time > created
             ):
                 if self.name in event["object"].involved_object.name:

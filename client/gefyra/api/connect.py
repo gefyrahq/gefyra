@@ -60,6 +60,7 @@ def connect(  # noqa: C901
     minikube_profile: Optional[str] = None,
     mtu: Optional[int] = 1340,
     probe_timeout: int = 60,
+    update_callback: Optional[callable] = None,
 ) -> bool:
     import kubernetes
     import docker
@@ -68,6 +69,8 @@ def connect(  # noqa: C901
     # if this connection already exists, just restore it
     if connection_name in [conns.name for conns in list_connections()]:
         logger.debug(f"Restoring existing connection {connection_name}")
+        if update_callback:
+            update_callback(f"Restoring existing connection {connection_name}")
         config = ClientConfiguration(connection_name=connection_name)
         cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
         client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)
@@ -78,6 +81,8 @@ def connect(  # noqa: C901
                 "Connection is not yet created and no client configuration has been provided."
             )
         logger.debug(f"Creating new connection {connection_name}")
+        if update_callback:
+            update_callback(f"Creating new connection {connection_name}")
         file_str = client_config.read()
         client_config.close()
         gclient_conf = GefyraClientConfig.from_json_str(file_str)
@@ -130,6 +135,10 @@ def connect(  # noqa: C901
     while _retry < 10:
         gefyra_network = get_or_create_gefyra_network(config, occupied_networks)
         try:
+            if update_callback:
+                update_callback(
+                    f"Activating connection with appointed local Gefyra network {gefyra_network.attrs['IPAM']['Config'][0]['Subnet']} ..."
+                )
             client.activate_connection(
                 gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
             )
@@ -148,6 +157,8 @@ def connect(  # noqa: C901
     _i = 0
     while _i < config.CONNECTION_TIMEOUT:
         if client.state == GefyraClientState.ACTIVE:
+            if update_callback:
+                update_callback(f"Cluster connection activated")
             break
         else:
             _i += 1
@@ -199,6 +210,10 @@ def connect(  # noqa: C901
 
     try:
         if not cargo_container:
+            if update_callback:
+                update_callback(
+                    f"Pulling and starting local Cargo container (client-side Wireguard endpoint)"
+                )
             cargo_container = handle_docker_get_or_create_container(
                 config,
                 f"{config.CARGO_CONTAINER_NAME}",
@@ -234,6 +249,8 @@ def connect(  # noqa: C901
 
     # Confirm the wireguard connection working
     logger.debug("Checking wireguard connection")
+    if update_callback:
+        update_callback(f"Checking Wireguard connectivity...")
     probe_wireguard_connection(config)
     return True
 

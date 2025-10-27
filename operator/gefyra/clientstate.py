@@ -377,6 +377,3 @@ class GefyraClient(StateMachine, StateControllerMixin):
             return latest_state, latest_timestamp  # type: ignore
         else:
             return None
-
-    def probe(self):
-        self.connection_provider.probe(self.model)
