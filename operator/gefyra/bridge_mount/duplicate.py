@@ -309,7 +309,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 "Cannot install Gefyra Carrier2 on pods controlled by more than one controller.",
                 delay=5,
             )
-        for pod in pods:
+        for idx, pod in enumerate(pods):
             if pod.status.phase == "Terminating":
                 continue
             for container in pod.spec.containers:
@@ -342,7 +342,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 )
             self.post_event(
                 "Patching target pod",
-                f"Now patching Pod {pod.metadata.name}; container {self.container} with Carrier2",
+                f"Now patching Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s)); container {self.container} with Carrier2",
             )
             try:
                 core_v1_api.patch_namespaced_pod(
@@ -380,7 +380,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             )
             self.post_event(
                 "Update Carrier2",
-                f"Commiting carrier2 config to Pod {pod.metadata.name}",
+                f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s))",
             )
             self.logger.debug(f"Carrier2 config: {carrier_config}")
             try:

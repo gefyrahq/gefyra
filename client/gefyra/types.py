@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field, fields
+import datetime
 from enum import Enum
 import json
 import logging
@@ -6,6 +7,8 @@ from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration, __VERSION__
 from gefyra.local.clients import handle_get_gefyraclient
+from gefyra.local.mount import get_gefyrabridgemount
+from gefyra.local.utils import WatchEventsMixin
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +83,7 @@ class GefyraClientState(Enum):
 
 
 @dataclass
-class GefyraClient:
+class GefyraClient(WatchEventsMixin):
     # the id of the client
     client_id: str
     # the namespace this cluster runs in the host cluster
@@ -95,6 +98,9 @@ class GefyraClient:
     # the state of the client
     _state: str
     _state_transitions: Dict[str, str]
+    _wg_status: Optional[Dict[str, str]] = None
+    _wg_handshake: Optional[Dict[str, str]] = None
+    _created: Optional[str] = None
     provider_parameter: Optional[StowawayParameter] = None
     provider_config: Optional[StowawayConfig] = None
     service_account_name: Optional[str] = None
@@ -106,10 +112,23 @@ class GefyraClient:
 
     def _init_data(self, _object: dict[str, Any]):
         self.client_id = _object["metadata"]["name"]
+        self.name = _object["metadata"]["name"]
         self.uid = _object["metadata"]["uid"]
         self.namespace = _object["metadata"]["namespace"]
         self.provider = _object.get("provider", "")
         self._state = _object.get("state", "")
+        if _object.get("status", None) and "wireguard" in _object["status"]:
+            try:
+                self.wg_status = _object["status"]["wireguard"]
+                if "latest_handshake" in self.wg_status:
+                    self._wg_handshake = self.wg_status["latest_handshake"]
+                else:
+                    self._wg_handshake = "No handshake"
+            except Exception as p:
+                pass
+        else:
+            self.wg_status = None
+        self._created = _object["metadata"].get("creationTimestamp", "")
         self._state_transitions = _object.get("stateTransitions", {})
         self.service_account_name = _object.get("serviceAccountName")
         self.service_account = _object.get("serviceAccountData", {})
@@ -404,7 +423,7 @@ class GefyraBridge:
 
 
 @dataclass
-class GefyraBridgeMount:
+class GefyraBridgeMount(WatchEventsMixin):
     # the id of the mount
     mount_id: str
     # the namespace this cluster runs in the host cluster
@@ -423,10 +442,12 @@ class GefyraBridgeMount:
     # the state of the mount
     _state: str
     _state_transitions: Dict[str, str]
+    _created: Optional[str]
     provider_parameter: Optional[StowawayParameter] = None
 
-    def __init__(self, gbridgemount: dict[str, Any]):
+    def __init__(self, config: ClientConfiguration, gbridgemount: dict[str, Any]):
         self._init_data(gbridgemount)
+        self._config = config
 
     def _init_data(self, _object: dict[str, Any]):
         self.mount_id = _object["metadata"]["name"]
@@ -435,11 +456,17 @@ class GefyraBridgeMount:
         self.provider = _object.get("provider", "")
         self._state = _object.get("state", "")
         self._state_transitions = _object.get("stateTransitions", {})
+        self._created = _object["metadata"].get("creationTimestamp", None)
         self.target = _object.get("target", "")
         self.target_container = _object.get("targetContainer", "")
         self.target_namespace = _object.get("targetNamespace", "")
         self.namespace = _object["metadata"]["namespace"]
         self.labels = _object["metadata"].get("labels", {})
+
+    def update(self):
+        logger.debug(f"Fetching object GefyraBridgeMount {self.mount_id}")
+        gbm = get_gefyrabridgemount(self._config, self.mount_id)
+        self._init_data(gbm)
 
 
 @dataclass

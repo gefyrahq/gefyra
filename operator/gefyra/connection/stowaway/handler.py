@@ -72,14 +72,17 @@ async def read_wireguard_status(logger):
                         )
                         continue
                     else:
-                        if peer_status == client.data["status"]["wireguard"]:
+                        if (
+                            "wireguard" in client.data["status"]
+                            and peer_status == client.data["status"]["wireguard"]
+                        ):
                             continue
                         else:
                             client._patch_object({"status": {"wireguard": peer_status}})
-                            client.post_event(
-                                reason="GefyraClient connection",
-                                message="Updated Wireguard status (see .status.wireguard field)",
-                            )
+                            # client.post_event(
+                            #     reason="GefyraClient connection",
+                            #     message="Updated Wireguard status (see .status.wireguard field)",
+                            # )
             except Exception as e:
                 logger.error(f"Error processing Wireguard status for GefyraClient: {e}")
 

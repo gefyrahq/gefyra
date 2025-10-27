@@ -139,7 +139,7 @@ class Carrier2Config(BaseModel):
             "gefyrabridges",
             label_selector=f"gefyra.dev/bridge-mount={bridge_mount_name}",
         )
-        logger.info(f"gefyra.dev/bridge-mount={bridge_mount_name}")
+        logger.debug(f"gefyra.dev/bridge-mount={bridge_mount_name}")
         logger.debug(f"BRIDGES {bridges}")
 
         result = {}

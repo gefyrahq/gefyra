@@ -210,7 +210,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
     def on_waiting(self):
         self.post_event(
-            reason="GefyraClient state change",
+            reason="Ready",
             message=f"GefyraClient '{self.object_name}' is ready to accept a client connection request",
         )
 

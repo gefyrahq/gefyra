@@ -21,8 +21,6 @@ def parse_wg_output(output_string: str) -> dict:
 
     # Regex to parse the transfer line
     transfer_re = re.compile(r"([\d.]+)\s+(.+?)\s+received,\s+([\d.]+)\s+(.+?)\s+sent")
-    # Regex for latest handshake
-    handshake_re = re.compile(r"(\d+)\s+(second|minute|hour)s?\s+ago")
     # Regex for persistent keepalive
     keepalive_re = re.compile(r"(\d+)\s+seconds")
 
@@ -87,16 +85,7 @@ def parse_wg_output(output_string: str) -> dict:
                         current_context[key] = value  # type: ignore
 
                 elif key == "latest_handshake":
-                    # Parse latest handshake
-                    match = handshake_re.match(value)
-                    if match:
-                        val = int(match.group(1))
-                        current_context[key] = {  # type: ignore
-                            "value": val,
-                            "unit": match.group(2) + ("s" if val != 1 else ""),
-                        }
-                    else:
-                        current_context[key] = value  # type: ignore
+                    current_context[key] = value  # type: ignore
 
                 elif key == "persistent_keepalive":
                     # Parse persistent keepalive

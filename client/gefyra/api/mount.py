@@ -30,7 +30,7 @@ def mount(
     tls_certificate: Optional[str] = None,
     tls_key: Optional[str] = None,
     tls_sni: Optional[str] = None,
-):
+) -> GefyraBridgeMount:
     from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(
@@ -68,7 +68,7 @@ def mount(
         waiting_time -= 1
         if timeout and waiting_time <= 0:
             raise CommandTimeoutError("Timeout for bridging operation exceeded")
-    return bridge_mount
+    return GefyraBridgeMount(config, bridge_mount)
 
 
 @stopwatch
@@ -89,7 +89,7 @@ def get_mount(
         config_params.update({"kube_context": kubecontext})
     config = ClientConfiguration(**config_params)  # type: ignore
     mount = get_gefyrabridgemount(config, mount_name)
-    return GefyraBridgeMount(mount)
+    return GefyraBridgeMount(config, mount)
 
 
 @stopwatch
@@ -133,4 +133,7 @@ def list_mounts(
     except ApiException as e:
         logger.error(f"Error listing GefyraBridgeMounts: {e}")
         exit(1)
-    return [GefyraBridgeMount(bridge_mount) for bridge_mount in bridge_mounts["items"]]
+    return [
+        GefyraBridgeMount(config, bridge_mount)
+        for bridge_mount in bridge_mounts["items"]
+    ]

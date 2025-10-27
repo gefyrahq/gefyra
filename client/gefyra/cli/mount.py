@@ -1,8 +1,10 @@
 import os
 from typing import Optional
+from alive_progress import alive_bar
 import click
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
+from gefyra.types import GefyraBridgeMount
 from tabulate import tabulate
 
 
@@ -56,7 +58,9 @@ def mount(ctx):
 )
 @click.option("--tls-sni", help="SNI for tls traffic", type=str, required=False)
 @click.option("--connection-name", type=str, default="default")
-@click.option("--wait", is_flag=True, help="Wait for the mount to be ready")
+@click.option(
+    "--nowait", is_flag=True, help="Do not wait for the GefyraBridgeMount to be ready"
+)
 @click.option("--timeout", type=int, default=60, required=False)
 @click.pass_context
 def create(
@@ -65,7 +69,7 @@ def create(
     target: str,
     provider: str,
     connection_name: str = "",
-    wait: bool = False,
+    nowait: bool = False,
     timeout: int = 0,
     name: Optional[str] = None,
     tls_certificate: Optional[str] = None,
@@ -75,30 +79,40 @@ def create(
     from gefyra import api
 
     try:
-        mount = api.mount(
-            namespace=namespace,
-            target=target,
-            provider=provider,
-            connection_name=connection_name,
-            wait=wait,
-            timeout=timeout,
-            kubeconfig=ctx.obj["kubeconfig"],
-            kubecontext=ctx.obj["context"],
-            mount_name=name,
-            tls_certificate=tls_certificate,
-            tls_key=tls_key,
-            tls_sni=tls_sni,
-        )
+        with alive_bar(
+            total=None,
+            length=20,
+            title=f"Creating the requested GefyraBridgeMount (timeout={timeout}))",
+            bar="smooth",
+            spinner="classic",
+            stats=False,
+            dual_line=True,
+        ) as bar:
+
+            mount: GefyraBridgeMount = api.mount(
+                namespace=namespace,
+                target=target,
+                provider=provider,
+                connection_name=connection_name,
+                wait=False,
+                timeout=timeout,
+                kubeconfig=ctx.obj["kubeconfig"],
+                kubecontext=ctx.obj["context"],
+                mount_name=name,
+                tls_certificate=tls_certificate,
+                tls_key=tls_key,
+                tls_sni=tls_sni,
+            )
+            bar.text(f"GefyraBridgeMount requested")
+            if not nowait:
+                mount.watch_events(bar.text, timeout)
+
     except RuntimeError as e:
         console.error(f"Could not create GefyraBridgeMount: {e}")
-    else:
-        console.success(
-            f"GefyraBridgeMount '{mount['metadata']['name']}' successfully requested"
-        )
 
 
 @mount.command(
-    "delete", alias=["rm", "remove"], help="Mark a Gefyra mount for deletion"
+    "delete", alias=["rm", "remove"], help="Mark a GefyraBridgeMount for deletion"
 )
 @click.argument("mount_name", nargs=-1, required=True)
 @click.pass_context
@@ -111,10 +125,10 @@ def delete_mount(ctx, mount_name):
             _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
         )
         if deleted:
-            console.success(f"Client {_del} marked for deletion")
+            console.success(f"GefyraBridgeMount {_del} marked for deletion")
 
 
-@mount.command("list", alias=["ls"], help="List all Gefyra mounts")
+@mount.command("list", alias=["ls"], help="List all GefyraBridgeMounts")
 @click.pass_context
 @standard_error_handler
 def list_mounts(ctx):
@@ -123,11 +137,15 @@ def list_mounts(ctx):
     bridge_mounts = api.list_mounts(
         kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
-    clients = [[c.name, c._state, c.target] for c in bridge_mounts]
-    click.echo(tabulate(clients, headers=["ID", "STATE", "TARGET"], tablefmt="plain"))
+    clients = [[c.name, c._state, c.target, c.target_namespace] for c in bridge_mounts]
+    click.echo(
+        tabulate(
+            clients, headers=["ID", "STATE", "TARGET", "NAMESPACE"], tablefmt="plain"
+        )
+    )
 
 
-@mount.command("describe", alias=["show", "get"], help="Describe a Gefyra mount")
+@mount.command("describe", alias=["show", "get"], help="Describe a GefyraBridgeMount")
 @click.argument("mount_name")
 @click.pass_context
 @standard_error_handler
