@@ -99,9 +99,10 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     def should_terminate(self) -> bool:
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this shadow because the sunset time is in the past
-            self.logger.warning(
-                f"Bridge Mount '{self.object_name}' should be terminated "
-                "due to reached sunset date"
+            self.post_event(
+                reason="GefyraBridgeMount state change",
+                message=f"Bridge Mount '{self.object_name}' should be terminated "
+                "due to reached sunset date",
             )
             return True
         else:
@@ -133,7 +134,10 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         # self.send("install")
 
     def on_prepare(self):
-        self.logger.info(f"Preparing GefyraBridgeMount '{self.object_name}'")
+        self.post_event(
+            reason="GefyraBridgeMount state change",
+            message=f"GefyraBridgeMount '{self.object_name}' is being prepared",
+        )
         try:
             #  TODO self.bridge_mount_provider.check_mount_conditions()
             self.bridge_mount_provider.prepare()
@@ -150,6 +154,10 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         return self.bridge_mount_provider.prepared()
 
     def on_install(self):
+        self.post_event(
+            reason="GefyraBridgeMount state change",
+            message=f"GefyraBridgeMount '{self.object_name}' is being installed",
+        )
         try:
             self.bridge_mount_provider.install()
         except BridgeInstallException as e:

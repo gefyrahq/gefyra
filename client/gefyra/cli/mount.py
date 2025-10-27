@@ -6,7 +6,11 @@ from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from tabulate import tabulate
 
 
-@click.group("mount", cls=AliasedGroup, help="Manage GefyraBridgeMounts for a Gefyra installation")
+@click.group(
+    "mount",
+    cls=AliasedGroup,
+    help="Manage GefyraBridgeMounts for a Gefyra installation",
+)
 @click.pass_context
 def mount(ctx):
     # for management of mounts we always sourcing the kubeconfig and context from env if not passed
@@ -16,9 +20,18 @@ def mount(ctx):
         )
 
 
-@mount.command("create", help="Create a new Gefyra mount")
+@mount.command("create", help="Create a new GefyraBridgeMount")
 @click.option(
-    "--namespace", help="The mount's target namespace", type=str, default="default"
+    "--namespace",
+    help="The GefyraBridgeMount's target namespace",
+    type=str,
+    default="default",
+)
+@click.option(
+    "--name",
+    help="Assign a custom name to this GefyraBridgeMount",
+    type=str,
+    required=False,
 )
 @click.option(
     "--target",
@@ -54,25 +67,34 @@ def create(
     connection_name: str = "",
     wait: bool = False,
     timeout: int = 0,
+    name: Optional[str] = None,
     tls_certificate: Optional[str] = None,
     tls_key: Optional[str] = None,
     tls_sni: Optional[str] = None,
 ):
     from gefyra import api
 
-    api.mount(
-        namespace=namespace,
-        target=target,
-        provider=provider,
-        connection_name=connection_name,
-        wait=wait,
-        timeout=timeout,
-        kubeconfig=ctx.obj["kubeconfig"],
-        kubecontext=ctx.obj["context"],
-        tls_certificate=tls_certificate,
-        tls_key=tls_key,
-        tls_sni=tls_sni,
-    )
+    try:
+        mount = api.mount(
+            namespace=namespace,
+            target=target,
+            provider=provider,
+            connection_name=connection_name,
+            wait=wait,
+            timeout=timeout,
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            mount_name=name,
+            tls_certificate=tls_certificate,
+            tls_key=tls_key,
+            tls_sni=tls_sni,
+        )
+    except RuntimeError as e:
+        console.error(f"Could not create GefyraBridgeMount: {e}")
+    else:
+        console.success(
+            f"GefyraBridgeMount '{mount['metadata']['name']}' successfully requested"
+        )
 
 
 @mount.command(

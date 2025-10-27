@@ -3,7 +3,7 @@ from pathlib import Path
 from time import sleep
 from typing import List, Optional
 
-from gefyra.api.utils import get_workload_information, stopwatch
+from gefyra.api.utils import get_workload_information, random_string, stopwatch
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import CommandTimeoutError
 from gefyra.local.mount import (
@@ -26,6 +26,7 @@ def mount(
     connection_name: str = "",
     wait: bool = False,
     timeout: int = 0,
+    mount_name: str | None = None,
     tls_certificate: Optional[str] = None,
     tls_key: Optional[str] = None,
     tls_sni: Optional[str] = None,
@@ -37,8 +38,9 @@ def mount(
         kube_context=kubecontext,
         connection_name=connection_name,
     )
-    workload_type, workload_name, container_name = get_workload_information(target)
-    mount_name = f"{workload_name}-gefyra"
+    _, workload_name, container_name = get_workload_information(target)
+    if not mount_name:
+        mount_name = f"{workload_name[:25]}-{namespace[:20]}-{random_string(5)}"
     bridge_mount_body = get_gbridgemount_body(
         config,
         mount_name,
@@ -64,7 +66,7 @@ def mount(
         waiting_time -= 1
         if timeout and waiting_time <= 0:
             raise CommandTimeoutError("Timeout for bridging operation exceeded")
-    return True
+    return bridge_mount
 
 
 @stopwatch

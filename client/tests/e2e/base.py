@@ -865,6 +865,7 @@ class GefyraBaseTest(GefyraTestMixin):
 
         self.assertEqual(applied_config.WIREGUARD_MTU, "1200")
 
+
 LOCAL_CONTAINER_NAME = "gefyra-new-backend"
 
 

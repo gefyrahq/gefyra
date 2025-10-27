@@ -1,6 +1,8 @@
 from __future__ import annotations
 import logging
+import random
 import socket
+import string
 import time
 from typing import Any, Dict, Iterable, TYPE_CHECKING, Tuple, Optional
 
@@ -218,3 +220,9 @@ def _extract_cpu_mem_from_containers(containers) -> Tuple[Optional[str], Optiona
     cpu_val = limits.get("cpu") or requests.get("cpu")
     mem_val = limits.get("memory") or requests.get("memory")
     return cpu_val, mem_val
+
+
+def random_string(size: int = 5):
+    return "".join(
+        random.choice(string.ascii_lowercase + string.digits) for _ in range(size)
+    )
