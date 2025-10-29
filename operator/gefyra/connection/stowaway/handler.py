@@ -9,7 +9,7 @@ from gefyra.configuration import configuration
 from gefyra.connection.stowaway.utils import parse_wg_output
 
 
-CLIENT_RECONCILIATION = 60
+WIREGUARD_RECONCILIATION = 60
 custom_object_api = k8s.client.CustomObjectsApi()
 
 
@@ -37,12 +37,17 @@ async def read_wireguard_status(logger):
         return
     else:
         if len(raw_gefyra_clients["items"]) == 0:
-            logger.info("Skipping Wireguard connection status on Stowaway (no GefyraClients available)")
+            logger.info(
+                "Skipping Wireguard connection status on Stowaway: no GefyraClients available"
+            )
             return
-    
+
     # there are some GefyraClients
     stowaway = Stowaway(configuration, logger)
     if not stowaway.ready():
+        logger.info(
+            "Skipping Wireguard connection status on Stowaway: currently not ready"
+        )
         return
     logger.info("Checking Wireguard connection status on Stowaway")
     wg_status = stowaway.read_wireguard_status()
@@ -73,9 +78,13 @@ async def read_wireguard_status(logger):
                         )
                     except StopIteration:
                         logger.error(
-                            f"Found active GefyraClient '{client.client_name}', which has no Wireguard peer entry"
+                            f"Found active GefyraClient '{client.client_name}', which has no Wireguard peer entry. Setting to waiting."
                         )
+                        client.disable()
                         continue
+                    except KeyError:
+                        # there is at least one client which has not yet set the "Interface.PublicKey", probably old
+                        pass
                     else:
                         if (
                             "wireguard" in client.data["status"]
@@ -89,14 +98,16 @@ async def read_wireguard_status(logger):
                             #     message="Updated Wireguard status (see .status.wireguard field)",
                             # )
             except Exception as e:
-                logger.error(f"Error processing Wireguard status for GefyraClient: {e}")
+                logger.error(
+                    f"Error processing Wireguard status for GefyraClient '{body['metadata']['name']}': {e}"
+                )
 
 
 @kopf.on.startup()
 async def register_stowaway_watch(logger, retry, **kwargs) -> None:
     # configure the periodic task
     task = asyncio.create_task(
-        periodic(CLIENT_RECONCILIATION, read_wireguard_status, logger)
+        periodic(WIREGUARD_RECONCILIATION, read_wireguard_status, logger)
     )
 
     def shutdown(*args, **kwargs):

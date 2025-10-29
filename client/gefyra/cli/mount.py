@@ -45,9 +45,6 @@ def mount(ctx):
     required=True,
 )
 @click.option(
-    "--provider", help="Provider for the bridge", type=str, default="carrier2"
-)
-@click.option(
     "--tls-key", help="Path to key file for tls traffic", type=str, required=False
 )
 @click.option(
@@ -67,7 +64,6 @@ def create(
     ctx,
     namespace: str,
     target: str,
-    provider: str,
     connection_name: str = "",
     nowait: bool = False,
     timeout: int = 0,
@@ -82,7 +78,7 @@ def create(
         with alive_bar(
             total=None,
             length=20,
-            title=f"Creating the requested GefyraBridgeMount (timeout={timeout}))",
+            title=f"Creating the requested GefyraBridgeMount (timeout={timeout}s))",
             bar="smooth",
             spinner="classic",
             stats=False,
@@ -92,7 +88,7 @@ def create(
             mount: GefyraBridgeMount = api.mount(
                 namespace=namespace,
                 target=target,
-                provider=provider,
+                provider="duplicate",
                 connection_name=connection_name,
                 wait=False,
                 timeout=timeout,
@@ -105,7 +101,7 @@ def create(
             )
             bar.text(f"GefyraBridgeMount requested")
             if not nowait:
-                mount.watch_events(bar.text, timeout)
+                mount.watch_events(bar.text, timeout=timeout)
 
     except RuntimeError as e:
         console.error(f"Could not create GefyraBridgeMount: {e}")
@@ -137,15 +133,18 @@ def list_mounts(ctx):
     bridge_mounts = api.list_mounts(
         kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
-    clients = [[c.name, c._state, c.target, c.target_namespace] for c in bridge_mounts]
-    click.echo(
-        tabulate(
-            clients, headers=["ID", "STATE", "TARGET", "NAMESPACE"], tablefmt="plain"
+    mounts = [[c.name, c._state, c.target, c.target_namespace] for c in bridge_mounts]
+    if mounts:
+        click.echo(
+            tabulate(
+                mounts, headers=["ID", "STATE", "TARGET", "NAMESPACE"], tablefmt="plain"
+            )
         )
-    )
+    else:
+        console.info("No GefyraBridgeMounts found")
 
 
-@mount.command("describe", alias=["show", "get"], help="Describe a GefyraBridgeMount")
+@mount.command("inspect", alias=["describe", "show", "get"], help="Describe a GefyraBridgeMount")
 @click.argument("mount_name")
 @click.pass_context
 @standard_error_handler
@@ -158,3 +157,5 @@ def inspect_mount(ctx, mount_name):
     console.heading(mount_obj.name)
     console.info(f"uid: {mount_obj.uid}")
     console.info(f"States: {mount_obj._state_transitions}")
+    console.heading("Events")
+    mount_obj.watch_events(console.info, None, 1)

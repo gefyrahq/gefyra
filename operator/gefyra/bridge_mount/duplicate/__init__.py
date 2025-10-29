@@ -473,12 +473,14 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         return self._duplicated_pods_ready
 
     def ready(self):
-        return (
+        ready = (
             self._duplicated_pods_ready
             and self._carrier_installed
             and self._original_pods_ready
             and self._upstream_set
         )
+        # consider down scaling & up scaling
+        return ready and len(self._gefyra_pods.items) == len(self._original_pods.items)
 
     def validate(self, bridge_request):
         return super().validate(bridge_request)
@@ -517,3 +519,4 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self.uninstall_deployment()
         self.uninstall_service()
         self.restore_original_workload()
+        # TODO Delete all bridges

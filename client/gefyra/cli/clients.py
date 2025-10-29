@@ -21,11 +21,11 @@ def clients(ctx):
 
 
 @clients.command("create", help="Create a new GefyraClient")
-@click.option("--client-id", help="The client id", type=str)
+@click.option("--client-id", "--name", help="The client id/name of the GefyraClient", type=str)
 @click.option(
     "-n",
     "quantity",
-    help="Number of GefyraClient to be generated (not allowed with explicit client-id)",
+    help="Number of GefyraClient to be generated (not allowed with explicit --client-id/--name)",
     type=int,
     default=1,
 )
@@ -102,13 +102,16 @@ def list_client(ctx):
         ]
         for c in gefyraclients
     ]
-    click.echo(
-        tabulate(
-            clients,
-            headers=["ID", "STATE", "CREATED", "WIREGUARD HANDSHAKE"],
-            tablefmt="plain",
+    if clients:
+        click.echo(
+            tabulate(
+                clients,
+                headers=["ID", "STATE", "CREATED", "WIREGUARD HANDSHAKE"],
+                tablefmt="plain",
+            )
         )
-    )
+    else:
+        console.info("No GefyraClients found")
 
 
 @clients.command(
@@ -127,7 +130,7 @@ def disconnect_client(ctx, client_id):
     console.success(f"GefyraClient {client.name} marked for disconnection")
 
 
-@clients.command("inspect", alias=["show", "get"], help="Describe a GefyraClient")
+@clients.command("inspect", alias=["describe", "show", "get"], help="Describe a GefyraClient")
 @click.argument("client_id")
 @click.pass_context
 @standard_error_handler
@@ -142,7 +145,8 @@ def inspect_client(ctx, client_id):
     console.info("States:\n" + pprint.pformat(client.state_transitions, width=60))
     if client.wg_status:
         console.info("Wireguard: \n" + pprint.pformat(client.wg_status, width=60))
-
+    console.heading("Events")
+    client.watch_events(console.info, None, 0.1)
 
 @clients.command(
     "config", alias=["write"], help="Get a Gefyra connection config for a client"

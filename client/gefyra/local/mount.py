@@ -102,6 +102,7 @@ def get_gbridgemount_body(
     config: ClientConfiguration,
     name: str,
     target: str,
+    provider: str,
     target_namespace: str,
     target_container: str,
     tls_certificate: Optional[str] = None,
@@ -118,7 +119,7 @@ def get_gbridgemount_body(
         "targetNamespace": target_namespace,
         "target": target,
         "targetContainer": target_container,
-        "provider": "carrier2",
+        "provider": provider,
         "providerParameter": get_tls_config(
             tls_certificate=tls_certificate,
             tls_key=tls_key,

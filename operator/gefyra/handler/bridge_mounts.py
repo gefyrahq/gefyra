@@ -34,7 +34,7 @@ async def bridgemount_deleted(body, logger, **kwargs):
 async def bridge_mount_reconcile(body, logger, **kwargs):
     obj = GefyraBridgeMountObject(body)
     bridge_mount = GefyraBridgeMount(obj, configuration, logger)
-    logger.info("Reconciliation for GefyraBridgeMount.")
+    logger.debug("Reconciliation for GefyraBridgeMount.")
     if bridge_mount.should_terminate:
         # terminate this client
         bridge_mount.terminate()
@@ -56,9 +56,8 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             bridge_mount.install()
         elif bridge_mount.installing.is_active:
             bridge_mount.install()
-        # TODO if Error is recoverable at all
-        # elif bridge_mount.error.is_active:
-        #    bridge_mount.restore()
+        elif bridge_mount.error.is_active:
+            bridge_mount.restore()
         elif bridge_mount.restoring.is_active:
             bridge_mount.restore()
         elif bridge_mount.active.is_active:

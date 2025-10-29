@@ -86,7 +86,7 @@ def create_bridge(
     with alive_bar(
         total=None,
         length=20,
-        title=f"Creating the requested bridge(s) (timeout={timeout}))",
+        title=f"Creating the requested bridge(s) (timeout={timeout}s))",
         bar="smooth",
         spinner="classic",
         stats=False,

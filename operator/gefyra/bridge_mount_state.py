@@ -9,7 +9,10 @@ from statemachine import State, StateMachine
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+from gefyra.bridge_mount.factory import (
+    BridgeMountProviderType,
+    bridge_mount_provider_factory,
+)
 from gefyra.bridge.exceptions import BridgeInstallException
 
 
@@ -74,19 +77,21 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     @property
     def bridge_mount_provider(self) -> AbstractGefyraBridgeMountProvider:
         """
-        It creates a Gefyra bridge mount provider object based on the provider type
-        :return: The bridge mount provider is being returned.
+        It creates a GefyraBridgeMount provider object based on the provider type
+        :return: The GefyraBridgeMount provider is being returned.
         """
-        return DuplicateBridgeMount(
+        provider = bridge_mount_provider_factory.get(
+            provider_type=BridgeMountProviderType(self.data["provider"]),
             configuration=self.configuration,
             target_namespace=self.data["targetNamespace"],
             target=self.data["target"],
             target_container=self.data["targetContainer"],
             name=self.data["metadata"]["name"],
             post_event_function=self.post_event,
+            parameter=self.data.get("providerParameter"),
             logger=self.logger,
-            provider_parameter=self.data.get("providerParameter"),
         )
+        return provider
 
     @property
     def sunset(self) -> Optional[datetime]:
@@ -130,8 +135,6 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             type="Warning",
         )
         self.send("prepare")
-        # elif not self.bridge_mount_provider.ready():
-        # self.send("install")
 
     def on_prepare(self):
         self.post_event(
@@ -141,7 +144,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         try:
             #  TODO self.bridge_mount_provider.check_mount_conditions()
             self.bridge_mount_provider.prepare()
-        except BridgeInstallException as e:
+        except (BridgeInstallException, ValueError) as e:
             self.post_event(
                 reason=f"Failed to install GefyraBridgeMount",
                 message=str(e),

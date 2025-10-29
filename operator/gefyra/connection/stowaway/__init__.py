@@ -72,14 +72,19 @@ class Stowaway(AbstractGefyraConnectionProvider):
         pod = self._get_stowaway_pod()
         if pod is None:
             return None
-        output = exec_command_pod(
-            core_v1_api,
-            pod.metadata.name,
-            pod.metadata.namespace,
-            "stowaway",
-            ["wg"],
-        )
-        return output
+        try:
+            output = exec_command_pod(
+                core_v1_api,
+                pod.metadata.name,
+                pod.metadata.namespace,
+                "stowaway",
+                ["wg"],
+            )
+        except Exception as e:
+            self.logger.error(f"Unable to read Wireguard status: {e}")
+            return None
+        else:
+            return output
 
     def install(self, config: Optional[Dict[Any, Any]] = None):
         handle_serviceaccount(self.logger, self.configuration)
