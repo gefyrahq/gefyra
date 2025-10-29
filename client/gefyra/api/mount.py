@@ -17,7 +17,7 @@ from gefyra.types import GefyraBridgeMount
 logger = logging.getLogger(__name__)
 
 
-def mount(
+def create_mount(
     namespace: str,
     target: str,
     kubeconfig: Path,

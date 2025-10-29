@@ -3,20 +3,27 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
 from click import ClickException
 import logging
-from gefyra.types import MatchHeader
+from gefyra.types import ExactMatchHeader
 
 
 logger = logging.getLogger(__name__)
 
 
+# def standard_error_handler(func):
+#     def wrapper(*args, **kwargs):
+#         try:
+#             result = func(*args, **kwargs)
+#             return result
+#         except Exception as e:  # noqa
+#             ce = ClickException(message=str(e))
+#             raise ce
+
+#     return wrapper
+
+
 def standard_error_handler(func):
     def wrapper(*args, **kwargs):
-        try:
-            result = func(*args, **kwargs)
-            return result
-        except Exception as e:  # noqa
-            ce = ClickException(message=str(e))
-            raise ce
+        return func(*args, **kwargs)
 
     return wrapper
 
@@ -274,9 +281,11 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
         return connection_name
 
 
-def parse_match_header(ctx, param, match_header_raw: Tuple[str]) -> List[MatchHeader]:
+def parse_match_header(
+    ctx, param, match_header_raw: Tuple[str]
+) -> List[ExactMatchHeader]:
     res = []
     for match_header in match_header_raw:
         name, value = match_header.split(":")
-        res.append(MatchHeader(name=name, value=value))
+        res.append(ExactMatchHeader(name=name, value=value))
     return res

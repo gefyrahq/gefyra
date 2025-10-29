@@ -41,7 +41,7 @@ from gefyra.local.bridge import handle_delete_gefyrabridge
 from gefyra.types import GefyraClientState
 
 from gefyra.api import (
-    bridge,
+    create_bridge,
     reflect,
     run,
     status,
@@ -254,7 +254,7 @@ class GefyraBaseTest(GefyraTestMixin):
         with self.assertRaises(RuntimeError) as rte:
             bridge_params = self.default_bridge_params
             bridge_params["target"] = "deployment/hello-nginxdemo-not/hello-nginx"
-            bridge(**bridge_params)
+            create_bridge(**bridge_params)
         self.assertIn("not found", str(rte.exception))
         self._stop_container(self.default_run_params["name"])
 
@@ -266,7 +266,7 @@ class GefyraBaseTest(GefyraTestMixin):
         with self.assertRaises(RuntimeError) as rte:
             bridge_params = self.default_bridge_params
             bridge_params["target"] = "deployment/hello-nginxdemo/hello-nginx-not"
-            bridge(**bridge_params)
+            create_bridge(**bridge_params)
         self.assertIn("Could not find container", str(rte.exception))
         self._stop_container(self.default_run_params["name"])
 
@@ -282,7 +282,7 @@ class GefyraBaseTest(GefyraTestMixin):
                 "deployment/hello-nginxdemo-command/hello-nginx-command"
             )
             bridge_params["namespace"] = "commands"
-            bridge(**bridge_params)
+            create_bridge(**bridge_params)
         self.assertIn("Cannot bridge pod", str(rte.exception))
         self.assertIn("since it has a `command` defined", str(rte.exception))
         self._stop_container(self.default_run_params["name"])
@@ -293,7 +293,7 @@ class GefyraBaseTest(GefyraTestMixin):
         run_params = self.default_run_params
         del run_params["env_from"]
         run(**run_params)
-        res = bridge(**self.default_bridge_params)
+        res = create_bridge(**self.default_bridge_params)
         self.assertTrue(res)
         self.assert_deployment_ready(
             self.default_bridge_params["namespace"],
@@ -326,7 +326,7 @@ class GefyraBaseTest(GefyraTestMixin):
         run(**run_params)
         bridge_params = self.default_bridge_params
         bridge_params["target"] = "deploy/hello-nginxdemo/hello-nginx"
-        res = bridge(**bridge_params)
+        res = create_bridge(**bridge_params)
         self.assertTrue(res)
 
     def test_h_run_gefyra_unbridge_with_name(self):
@@ -364,7 +364,7 @@ class GefyraBaseTest(GefyraTestMixin):
         run(**run_params)
         bridge_params = self.default_bridge_params
         bridge_params["target"] = "deployment/hello-nginxdemo"
-        res_bridge = bridge(**bridge_params)
+        res_bridge = create_bridge(**bridge_params)
         self.assertTrue(res_bridge)
         res_unbridge = unbridge_all(
             wait=True,
@@ -384,7 +384,7 @@ class GefyraBaseTest(GefyraTestMixin):
         )
         pod_name = list(pod_container_dict.keys())[0]
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
-        res_bridge = bridge(**bridge_params)
+        res_bridge = create_bridge(**bridge_params)
         self.assertTrue(res_bridge)
 
     def test_l_run_gefyra_bridge_with_pod_again_fails(self):
@@ -395,7 +395,7 @@ class GefyraBaseTest(GefyraTestMixin):
         pod_name = list(pod_container_dict.keys())[0]
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         with self.assertRaises(RuntimeError) as rte:
-            bridge(**bridge_params)
+            create_bridge(**bridge_params)
 
         self.assertIn("already bridged", str(rte.exception))
 

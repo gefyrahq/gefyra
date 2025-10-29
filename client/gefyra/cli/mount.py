@@ -22,7 +22,7 @@ def mount(ctx):
         )
 
 
-@mount.command("create", help="Create a new GefyraBridgeMount")
+@mount.command("create", help="Create a new GefyraBridgeMount in the cluster")
 @click.option(
     "--namespace",
     help="The GefyraBridgeMount's target namespace",
@@ -85,7 +85,7 @@ def create(
             dual_line=True,
         ) as bar:
 
-            mount: GefyraBridgeMount = api.mount(
+            mount: GefyraBridgeMount = api.create_mount(
                 namespace=namespace,
                 target=target,
                 provider="duplicate",
@@ -102,6 +102,9 @@ def create(
             bar.text(f"GefyraBridgeMount requested")
             if not nowait:
                 mount.watch_events(bar.text, timeout=timeout)
+        console.success(
+            f"Successfully created GefyraBridgeMount '{mount.name}'. You can now create a GefyraBridge to intercept traffic."
+        )
 
     except RuntimeError as e:
         console.error(f"Could not create GefyraBridgeMount: {e}")
@@ -121,7 +124,7 @@ def delete_mount(ctx, mount_name):
             _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
         )
         if deleted:
-            console.success(f"GefyraBridgeMount {_del} marked for deletion")
+            console.success(f"GefyraBridgeMount '{_del}' marked for deletion")
 
 
 @mount.command("list", alias=["ls"], help="List all GefyraBridgeMounts")
@@ -144,7 +147,9 @@ def list_mounts(ctx):
         console.info("No GefyraBridgeMounts found")
 
 
-@mount.command("inspect", alias=["describe", "show", "get"], help="Describe a GefyraBridgeMount")
+@mount.command(
+    "inspect", alias=["describe", "show", "get"], help="Describe a GefyraBridgeMount"
+)
 @click.argument("mount_name")
 @click.pass_context
 @standard_error_handler

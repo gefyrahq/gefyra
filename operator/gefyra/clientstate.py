@@ -14,6 +14,7 @@ from gefyra.resources.serviceaccounts import (
     handle_create_gefyraclient_serviceaccount,
     handle_delete_gefyraclient_serviceaccount,
 )
+from gefyra.bridgestate import GefyraBridgeObject, GefyraBridge
 
 
 class GefyraClientObject(GefyraStateObject):
@@ -227,6 +228,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
 
         sa_name = f"gefyra-client-{self.object_name}"
         handle_delete_gefyraclient_serviceaccount(self.logger, sa_name, self.namespace)
+        self.cleanup_all_bridges()
 
     def can_add_client(self):
         if self.connection_provider.peer_exists(self.object_name):
@@ -292,13 +294,21 @@ class GefyraClient(StateMachine, StateControllerMixin):
             version="v1",
             plural="gefyrabridges",
             namespace=self.configuration.NAMESPACE,
+            label_selector=f"gefyra.dev/client={self.client_name}",
         )
         for bridge in bridges.get("items"):
             if bridge.get("client") == self.client_name:
                 self.logger.warning(
-                    "Now going to delete remaining Gefyra bridge "
+                    "Now going to delete remaining GefyraBridge "
                     f"'{bridge['metadata']['name']}' for client {self.client_name}"
                 )
+                obj = GefyraBridgeObject(bridge)
+                bridge_obj = GefyraBridge(obj, self.configuration, self.logger)
+                bridge_obj.post_event(
+                    "Client deleted",
+                    f"This GefyraBridge will be removed since the related GefyraClient '{self.client_name}' is currently being removed",
+                )
+
                 self.custom_api.delete_namespaced_custom_object(
                     group="gefyra.dev",
                     version="v1",

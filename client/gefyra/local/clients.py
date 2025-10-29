@@ -59,7 +59,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
         if e.status in [401, 404, 403]:
             raise GefyraClientNotFound(
                 f"GefyraClient '{client_id}' does not exist or the Gefyra client file is stale. Please check with your Gefyra administrator."
-            )
+            ) from None
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"

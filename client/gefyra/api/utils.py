@@ -58,7 +58,7 @@ def wrap_bridge(bridge: Dict[Any, Any]) -> "GefyraBridge":
     return GefyraBridge(
         provider=bridge["provider"],
         name=bridge["metadata"]["name"],
-        client_id=bridge["client"],
+        client=bridge["client"],
         local_container_ip=bridge["destinationIP"],
         port_mappings=bridge["portMappings"] or [],
         target_container=bridge["targetContainer"],

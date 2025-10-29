@@ -1,6 +1,6 @@
 from functools import cached_property
 from time import sleep
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 from kopf import TemporaryError
 import kubernetes as k8s
 from kubernetes.client import ApiException, V1PodList, V1Pod
@@ -37,14 +37,19 @@ class Carrier2(AbstractGefyraBridgeProvider):
         target_namespace: str,
         target: str,
         target_container: str,
+        post_event_function: Callable[[str, str, str], None],
         logger,
     ) -> None:
         self.configuration = configuration
-        self.namespace = target_namespace
+
         self.bridge_mount_name = target  # BridgeMount
-        self.container = target_container
+        bridge_mount = self._bridge_mount_resource
+        self.namespace = bridge_mount["targetNamespace"]
+        self.container = bridge_mount["targetContainer"]
+        self.target = bridge_mount["target"]
         self.logger = logger
         self.carrier_config = Carrier2Config()
+        self.post_event = post_event_function
 
     provider_type = "carrier2"
 
@@ -97,7 +102,12 @@ class Carrier2(AbstractGefyraBridgeProvider):
             raise RuntimeError(
                 "Not able to configure Carrier in Pods. See error above."
             )
-        for pod in self.pods.items:
+        pods = self.pods.items
+        for idx, pod in enumerate(pods):
+            self.post_event(
+                "Updating routing rules",
+                f"Now updating routing rules in Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s))",
+            )
             self.update_carrier_config(pod)
 
         # 1. Call self.ready() (retry)
@@ -215,14 +225,14 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     @property
     def _bridge_mount_target(self) -> str:
-        return self._bridge_mount_resource["target"]
+        return self.target
 
     def _get_pods_from_bridge_mount(self) -> str:
         """
         Get the pods from the bridge mount
         """
         return self._get_pods_workload(
-            name=self._bridge_mount_target,
+            name=self.target,
             namespace=self.namespace,
             workload_type="deployment",  # TODO
         )
@@ -304,13 +314,13 @@ class Carrier2(AbstractGefyraBridgeProvider):
         pod_config = Carrier2Config.from_string(config_str)
         if not pod_config.bridges:
             return False
-        self.logger.info(f"{destination_host}:{destination_port}")
+        self.logger.debug(f"{destination_host}:{destination_port}")
 
         bridge_exists = any(
             bridge.endpoint == f"{destination_host}:{destination_port}"
             for bridge in pod_config.bridges.values()
         )
-        self.logger.info(f"Bridge exists: {bridge_exists}")
+        self.logger.debug(f"Bridge exists: {bridge_exists}")
         return bridge_exists
         # raise NotImplementedError
 
@@ -337,6 +347,7 @@ class Carrier2Builder:
         target_namespace: str,
         target: str,
         target_container: str,
+        post_event_function: Callable[[str, str, str], None],
         logger,
         **_ignored,
     ):
@@ -345,6 +356,7 @@ class Carrier2Builder:
             target_namespace=target_namespace,
             target=target,
             target_container=target_container,
+            post_event_function=post_event_function,
             logger=logger,
         )
         return instance

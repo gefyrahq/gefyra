@@ -28,7 +28,7 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
                 _del = True
             if _del:
                 for gbridges in _bridges[0][1]:
-                    api.unbridge(
+                    api.delete_bridge(
                         name=gbridges.name,
                         connection_name=connection_name,
                     )
@@ -57,7 +57,7 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
 @click.group(
     "connections",
     cls=AliasedGroup,
-    help="Manage connections to clusters for this Gefyra installation",
+    help="Manage connections to Kubernetes clusters for a GefyraClient on this machine",
 )
 @click.pass_context
 def connections(ctx):
@@ -87,7 +87,7 @@ def connections(ctx):
 )
 @click.option(
     "--mtu",
-    help="The MTU for the Wireguard interface",
+    help="The MTU (Maximum Transmission Unit) for the Wireguard interface",
     type=int,
     default=1340,
 )

@@ -1,21 +1,46 @@
 import dataclasses
+import os
 from time import sleep
 from typing import List, Optional
+from alive_progress import alive_bar
 import click
-from gefyra.types import MatchHeader
+from gefyra.types import ExactMatchHeader
 from gefyra.cli import console
 from gefyra.cli.utils import (
+    AliasedGroup,
     check_connection_name,
     parse_ip_port_map,
     parse_match_header,
     standard_error_handler,
 )
+from gefyra.types.bridge import GefyraBridge
 from tabulate import tabulate
 
 
-@click.command("bridge", help="Establish a Gefyra bridge to a container in the cluster")
+@click.group(
+    "bridge",
+    cls=AliasedGroup,
+    help="Manage GefyraBridge for a Gefyra installation",
+)
+@click.pass_context
+def bridge(ctx):
+    # for management of bridges we always sourcing the kubeconfig and context from env if not passed
+    if ctx.obj["kubeconfig"] is None:
+        ctx.obj["kubeconfig"] = os.environ.get("KUBECONFIG") or os.path.expanduser(
+            "~/.kube/config"
+        )
+
+
+@bridge.command(
+    "create",
+    help="Establish a GefyraBridge from a GefyraBridgeMount in the cluster to a local container",
+)
 @click.option(
-    "-N", "--name", help="The name of the container running in Gefyra", required=True
+    "-N",
+    "--name",
+    "--target",
+    help="The name of the local container running in Gefyra",
+    required=True,
 )
 @click.option(
     "-p",
@@ -40,103 +65,61 @@ from tabulate import tabulate
     default=False,
 )
 @click.option(
-    "--target",
-    help=(
-        "Intercept the container given in the notation 'resource/name/container'. "
-        "Resource can be one of 'deployment', 'statefulset' or 'pod'. "
-        "E.g.: --target deployment/hello-nginx/nginx"
-    ),
+    "--mount",
+    help="The target GefyraBridgeMount to install this GefyraBridge on",
     required=True,
 )
 @click.option(
     "--connection-name", type=str, default="default", callback=check_connection_name
+)
+@click.option(
+    "--nowait", is_flag=True, help="Do not wait for the GefyraBridgeMount to be ready"
 )
 @click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
 def create_bridge(
     name,
     ports,
-    target,
-    match_header: List[MatchHeader],
+    mount,
+    match_header: List[ExactMatchHeader],
     no_probe_handling,
     connection_name,
+    nowait,
     timeout,
 ):
-    from alive_progress import alive_bar
     from gefyra import api
 
-    print_keys = {
-        "name": "NAME",
-        "port_mappings": "PORTS",
-        "local_container_ip": "LOCAL ADDRESS",
-        "target_container": "TARGET CONTAINER",
-        "target": "TARGET",
-        "target_namespace": "NAMESPACE",
-    }
-    # we are not blocking this call
-    _created_bridges = api.bridge(
-        name=name,
-        ports=ports,
-        bridge_mount_name=target,
-        handle_probes=no_probe_handling,
-        wait=False,
-        connection_name=connection_name,
-        match_header=match_header,
-    )
     with alive_bar(
         total=None,
         length=20,
-        title=f"Creating the requested bridge(s) (timeout={timeout}s))",
+        title=f"Creating the requested GefyraBridge (timeout={timeout}s))",
         bar="smooth",
         spinner="classic",
         stats=False,
         dual_line=True,
     ) as bar:
-        for _i in range(timeout):
-            all_bridges = api.list_gefyra_bridges(connection_name=connection_name)[0][1]
-            _created_bridges = [
-                bridge
-                for bridge in all_bridges
-                if bridge.name in [_bridge.name for _bridge in _created_bridges]
-            ]
-            bar.text(
-                "\n".join(
-                    [f"{bridge.name}: {bridge.state}" for bridge in _created_bridges]
-                )
-            )
-            if all(bridge.state == "ACTIVE" for bridge in _created_bridges):
-                break
-            else:
-                sleep(1)
-        bar.text(f"{len(_created_bridges)} bridge(s) active")
 
-    if _created_bridges:
-        bridges_print = [
-            {
-                k: v
-                for k, v in dataclasses.asdict(bridge).items()
-                if k in print_keys.keys()
-            }
-            for bridge in _created_bridges
-        ]
-        console.success(
-            "The following bridges have been created. Run 'gefyra list --bridges' to see all bridges."
+        bridge: GefyraBridge = api.create_bridge(
+            name=name,
+            ports=ports,
+            bridge_mount_name=mount,
+            connection_name=connection_name,
+            match_header=match_header,
         )
-        click.echo(
-            tabulate(
-                bridges_print,
-                headers=print_keys,
-                tablefmt="plain",
-            )
-        )
+        bar.text(f"GefyraBridge requested")
+        if not nowait:
+            bridge.watch_events(bar.text, timeout=timeout)
+    console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
 
 
-@click.command("unbridge", help="Remove a Gefyra bridge (from 'gefyra list --bridges')")
+@bridge.command(
+    "delete", alias=["rm", "remove"], help="Mark a GefyraBridge for deletion"
+)
 @click.argument("name", required=False)
 @click.option(
     "-A",
     "--all",
-    help="Unbridge all bridges",
+    help="Unbridge all GefyraBridges with local target containers",
     required=False,
     is_flag=True,
     default=False,
@@ -152,7 +135,7 @@ def create_bridge(
     "--connection-name", type=str, default="default", callback=check_connection_name
 )
 @standard_error_handler
-def unbridge(
+def delete_bridge(
     name: str, connection_name: str, all: bool = False, mount: Optional[str] = None
 ):
     from gefyra import api
@@ -162,10 +145,69 @@ def unbridge(
     if all:
         api.unbridge_all(connection_name=connection_name, wait=True)
     elif mount:
-        api.unbridge(
+        deleted = api.delete_bridge(
             connection_name=connection_name,
             mount_name=mount,
-            wait=True,
+            wait=False,
+        )
+        if deleted:
+            console.success(f"GefyraBridge '{name}' marked for deletion")
+    else:
+        deleted = api.delete_bridge(
+            connection_name=connection_name, name=name, wait=False
+        )
+        if deleted:
+            console.success(f"GefyraBridge '{name}' marked for deletion")
+
+
+@bridge.command(
+    "list", alias=["ls"], help="List all GefyraBridges with local target containers"
+)
+@click.option(
+    "-A",
+    "--all",
+    help="List all GefyraBridges from all GefyraClients",
+    required=False,
+    is_flag=True,
+    default=False,
+)
+@click.pass_context
+@standard_error_handler
+def list_bridges(ctx, all):
+    from gefyra import api
+
+    bridges = api.list_bridges(
+        kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+    )
+    mounts = [[c.name, c._state, c.target, c.client, c.port_mappings] for c in bridges]
+    if mounts:
+        click.echo(
+            tabulate(
+                mounts,
+                headers=["ID", "STATE", "BRIDGEMOUNT", "CLIENT", "PORT MAPPING"],
+                tablefmt="plain",
+            )
         )
     else:
-        api.unbridge(connection_name=connection_name, name=name, wait=True)
+        console.info("No GefyraBridges found")
+
+
+@bridge.command(
+    "inspect", alias=["describe", "show", "get"], help="Describe a GefyraBridge"
+)
+@click.argument("bridge_name")
+@click.pass_context
+@standard_error_handler
+def inspect_bridge(ctx, bridge_name):
+    from gefyra import api
+
+    console.error("This CLI command is not yet implemented")
+
+    # bridge_obj = api.get_bridge(
+    #     bridge_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+    # )
+    # console.heading(bridge_obj.name)
+    # console.info(f"uid: {bridge_obj.uid}")
+    # console.info(f"States: {bridge_obj._state_transitions}")
+    # console.heading("Events")
+    # bridge_obj.watch_events(console.info, None, 1)

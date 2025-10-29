@@ -1,20 +1,24 @@
 import logging
+from pathlib import Path
 import random
 import string
 
 # from time import sleep
 from typing import List, Dict, TYPE_CHECKING, Optional
 
-from gefyra.types import MatchHeader
+from gefyra.types import ExactMatchHeader
 from gefyra.local.mount import get_gefyrabridgemount
-from gefyra.exceptions import GefyraBridgeError  # , CommandTimeoutError
+from gefyra.exceptions import GefyraBridgeError
+from gefyra.types.bridge_mount import GefyraBridgeMount  # , CommandTimeoutError
+from gefyra.types import GefyraBridge
+from gefyra.configuration import ClientConfiguration
 
-if TYPE_CHECKING:
-    from gefyra.configuration import ClientConfiguration
-    from gefyra.types import GefyraBridge
 
-
-from gefyra.api.utils import stopwatch, wrap_bridge  # get_workload_information
+from gefyra.api.utils import (
+    random_string,
+    stopwatch,
+    wrap_bridge,
+)  # get_workload_information
 
 logger = logging.getLogger(__name__)
 
@@ -112,7 +116,7 @@ def check_workloads(
 
 
 @stopwatch
-def bridge(
+def create_bridge(
     name: str,
     ports: dict,
     bridge_mount_name: str,
@@ -120,19 +124,33 @@ def bridge(
     timeout: int = 0,
     wait: bool = False,
     connection_name: str = "",
-    match_header: List[MatchHeader] = [],
-) -> List["GefyraBridge"]:
+    match_header: List[ExactMatchHeader] = [],
+) -> "GefyraBridge":
+    """
+    Create a GefyraBridge object
+    :param name: The name of the local running container, target of the traffic
+    :param ports: Mapping remote ports to local ports
+    :param bridge_mount_name: The name of the GefyraBridgeMount that is target of that GefyraBridge
+    :param handle_probes: (Legacy) Handle probes on this Pod
+    :param connection_name: The name of the local connection to set this bridge up for
+    :param match_header: A list of rules to match and intercept traffic
+
+    :return: The GefyraBridge object that was created.
+    """
     from docker.errors import NotFound
 
     # from gefyra.local.bridge import get_all_gefyrabridges
     from gefyra.configuration import ClientConfiguration
+    from gefyra.local.bridge import (
+        handle_create_gefyrabridge,
+    )
 
     config = ClientConfiguration(connection_name=connection_name)
 
     try:
         container = config.DOCKER.containers.get(name)
     except NotFound:
-        raise GefyraBridgeError(f"Could not find target container '{name}'")
+        raise GefyraBridgeError(f"Could not find local target container '{name}'")
 
     port_mappings = [f"{key}:{value}" for key, value in ports.items()]
 
@@ -143,116 +161,42 @@ def bridge(
     except KeyError:
         raise GefyraBridgeError(
             f"The target container '{name}' is not in Gefyra's network"
-            f" {config.NETWORK_NAME}. Did you run 'gefyra up'?"
+            f" {config.NETWORK_NAME}. Did you set up a connection for it?"
         ) from None
 
-    # workload_type, workload_name, container_name = get_workload_information(target)
+    try:
+        mount = get_gefyrabridgemount(
+            config=config,
+            name=bridge_mount_name,
+        )
+        bridge_mount = GefyraBridgeMount(config, mount)
+    except Exception as e:
+        GefyraBridgeError(f"Could not find GefyraBridgeMount '{bridge_mount_name}'")
 
-    # pods_to_intercept = get_pods_to_intercept(
-    #     workload_name=workload_name,
-    #     workload_type=workload_type,
-    #     namespace=namespace,
-    #     config=config,
-    # )
-    # if not container_name:
-    #     container_name = pods_to_intercept[list(pods_to_intercept.keys())[0]][0]
+    bridge_name = f"{config.CLIENT_ID[:25]}-{bridge_mount.target[:20]}-{bridge_mount.target_container[:20]}-{random_string(5)}"
+    if len(bridge_name) > 63:
+        raise RuntimeError(
+            "The name of the GefyraBridge must be no more than 63 characters"
+        )
 
-    # ireq_base_name = f"{name}-to-{namespace}.{workload_type}.{workload_name}"
+    logger.debug(f"Creating bridge for GefyraBridgeMount: {bridge_mount_name}")
 
-    # check_workloads(
-    #     pods_to_intercept,
-    #     workload_type=workload_type,
-    #     workload_name=workload_name,
-    #     container_name=container_name,
-    #     namespace=namespace,
-    #     config=config,
-    # )
-
-    # if len(pods_to_intercept.keys()) > 1:
-    #     use_index = True
-    # else:
-    #     use_index = False
-
-    from gefyra.local.bridge import (
-        get_gbridge_body,
-        handle_create_gefyrabridge,
-    )
-
-    mount = get_gefyrabridgemount(
-        config=config,
-        name=bridge_mount_name,
-    )
-
-    logger.info(f"Creating bridge for GefyraBridgeMount: {bridge_mount_name}")
-    bridge_name_suffix = "".join(
-        random.choices(string.ascii_lowercase + string.digits, k=4)
-    )
-    bridge_name = f"{bridge_mount_name[:238]}-bridge-{bridge_name_suffix}"
-    bridge_body = get_gbridge_body(
-        config,
+    bridge_body = GefyraBridge(
         name=bridge_name,
-        destination_ip=local_container_ip,
-        target=bridge_mount_name,
-        target_namespace=mount.target_namespace,
-        target_container=mount.target_container,
+        local_container_ip=local_container_ip,
         port_mappings=port_mappings,
-        handle_probes=handle_probes,
-        match_header=match_header,
-    )
+        target=bridge_mount_name,
+        exact_match_headers=match_header,
+        client=config.CLIENT_ID,
+    ).get_k8s_bridge_body(config)
+
     bridge = handle_create_gefyrabridge(config, bridge_body, bridge_mount_name)
     logger.debug(f"Bridge {bridge['metadata']['name']} created")
     #
     # block until all bridges are in place
     #
-    logger.info("Waiting for the bridge(s) to become active")
-    return [wrap_bridge(bridge)]
-    # bridges = {str(ireq["metadata"]["uid"]): False for ireq in ireqs}
-    # waiting_time = 0
-    # timeout = 0  means no timeout
-    # if timeout:
-    #     waiting_time = timeout
-    # while True and wait:
-    #     # watch whether all relevant bridges have been established
-    #     gefyra_bridges = get_all_gefyrabridges(config)
-    #     for gefyra_bridge in gefyra_bridges:
-    #         if (
-    #             gefyra_bridge["metadata"]["uid"] in bridges.keys()
-    #             and gefyra_bridge.get("state", "") == "ACTIVE"
-    #         ):
-    #             bridges[str(gefyra_bridge["metadata"]["uid"])] = True
-    #             logger.info(
-    #                 f"Bridge {gefyra_bridge['metadata']['name']} "
-    #                 f"({sum(bridges.values())}/1) established."
-    #             )
-    #     if all(bridges.values()):
-    #         break
-    #     sleep(1)
-    #     # Raise exception in case timeout is reached
-    #     waiting_time -= 1
-    #     if timeout and waiting_time <= 0:
-    #         raise CommandTimeoutError("Timeout for bridging operation exceeded")
-    # if not wait:
-    #     gefyra_bridges = get_all_gefyrabridges(config)
-    #     return list(map(wrap_bridge, gefyra_bridges))
-    # else:
-    #     logger.info("Following bridges have been established:")
-    #     _bridges = list(map(wrap_bridge, gefyra_bridges))
-    #     for gefyra_bridge in gefyra_bridges:
-    #         for port in port_mappings:
-    #             (
-    #                 pod_name,
-    #                 ns,
-    #             ) = (
-    #                 gefyra_bridge["targetPod"],
-    #                 gefyra_bridge["targetNamespace"],
-    #             )
-    #             bridge_ports = port.split(":")
-    #             container_port, pod_port = bridge_ports[0], bridge_ports[1]
-    #             logger.info(
-    #                 f"Bridge for pod {pod_name} in namespace {ns} on port {pod_port} "
-    #                 f"to local container {container_name} on port {container_port}"
-    #             )
-    #     return _bridges
+    logger.debug("Waiting for the bridge(s) to become active")
+    return GefyraBridge.from_raw(bridge, config)
 
 
 def wait_for_deletion(gefyra_bridges: List, config: "ClientConfiguration"):
@@ -276,7 +220,7 @@ def wait_for_deletion(gefyra_bridges: List, config: "ClientConfiguration"):
 
 
 @stopwatch
-def unbridge(
+def delete_bridge(
     name: Optional[str] = None,
     mount_name: Optional[str] = None,
     connection_name: str = "",
@@ -292,6 +236,7 @@ def unbridge(
             if wait:
                 wait_for_deletion([gefyra_bridge], config=config)
             logger.info(f"Bridge {name} removed")
+        return gefyra_bridge
     elif mount_name:
         bridges = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             "gefyra.dev",
@@ -332,3 +277,28 @@ def unbridge_all(
     if wait:
         wait_for_deletion(config=config, gefyra_bridges=gefyra_bridges)
     return True
+
+
+@stopwatch
+def list_bridges(
+    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
+) -> List[GefyraBridge]:
+    """
+    Retrieve all GefyraBridge objects
+    """
+    from kubernetes.client import ApiException
+
+    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    try:
+        bridges = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+            namespace=config.NAMESPACE,
+            group="gefyra.dev",
+            plural="gefyrabridges",
+            version="v1",
+        )
+    except ApiException as e:
+        logger.error(f"Error listing GefyraBridgeMounts: {e}")
+        exit(1)
+    return [
+        GefyraBridge.from_raw(raw_bridge, config) for raw_bridge in bridges["items"]
+    ]

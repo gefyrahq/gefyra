@@ -20,9 +20,9 @@ def workloads_for_test(operator):
 def test_a_create_simple_mount(operator: AClusterManager, workloads_for_test):
     k3d = operator
     k3d.kubeconfig
-    from gefyra.api.mount import mount
+    from gefyra.api.mount import create_mount
 
-    res = mount(
+    res = create_mount(
         namespace="default",
         target="deploy/nginx-deployment/nginx",
         provider="carrier2",

@@ -7,7 +7,7 @@ from docker.models.containers import Container
 from gefyra.cli import console
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
-from gefyra.types import GefyraLocalContainer, MatchHeader
+from gefyra.types import GefyraLocalContainer, ExactMatchHeader
 
 from .utils import handle_docker_run_container
 
@@ -49,9 +49,9 @@ def handle_delete_gefyrabridge(config: ClientConfiguration, name: str) -> bool:
         return ireq
     except ApiException as e:
         if e.status == 404:
-            logger.debug(f"InterceptRequest {name} not found")
+            logger.debug(f"GefyraBridge {name} not found")
         else:
-            logger.debug("Error removing InterceptRequest: " + str(e))
+            logger.debug("Error removing GefyraBridge: " + str(e))
         return False
 
 
@@ -103,7 +103,7 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
 
 
 def get_match_header_rules(
-    match_header: List[MatchHeader] = [],
+    match_header: List[ExactMatchHeader] = [],
 ) -> List[Dict[str, Dict[str, str]]]:
     return [
         {
@@ -117,7 +117,7 @@ def get_match_header_rules(
 
 
 def get_bridge_rules(
-    match_header: List[MatchHeader] = [],
+    match_header: List[ExactMatchHeader] = [],
 ) -> List[Dict[str, List[Dict[str, Dict[str, str]]]]]:
     return [{"match": get_match_header_rules(match_header)}]
 
@@ -131,7 +131,7 @@ def get_gbridge_body(
     target_container,
     port_mappings,
     handle_probes,
-    match_header: List[MatchHeader] = [],
+    match_header: List[ExactMatchHeader] = [],
 ):
     return {
         "apiVersion": "gefyra.dev/v1",

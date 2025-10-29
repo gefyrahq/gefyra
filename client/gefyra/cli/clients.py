@@ -21,7 +21,9 @@ def clients(ctx):
 
 
 @clients.command("create", help="Create a new GefyraClient")
-@click.option("--client-id", "--name", help="The client id/name of the GefyraClient", type=str)
+@click.option(
+    "--client-id", "--name", help="The client id/name of the GefyraClient", type=str
+)
 @click.option(
     "-n",
     "quantity",
@@ -130,7 +132,9 @@ def disconnect_client(ctx, client_id):
     console.success(f"GefyraClient {client.name} marked for disconnection")
 
 
-@clients.command("inspect", alias=["describe", "show", "get"], help="Describe a GefyraClient")
+@clients.command(
+    "inspect", alias=["describe", "show", "get"], help="Describe a GefyraClient"
+)
 @click.argument("client_id")
 @click.pass_context
 @standard_error_handler
@@ -147,6 +151,7 @@ def inspect_client(ctx, client_id):
         console.info("Wireguard: \n" + pprint.pformat(client.wg_status, width=60))
     console.heading("Events")
     client.watch_events(console.info, None, 0.1)
+
 
 @clients.command(
     "config", alias=["write"], help="Get a Gefyra connection config for a client"

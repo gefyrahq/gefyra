@@ -95,6 +95,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             self.data["targetNamespace"],
             self.data["target"],
             self.data["targetContainer"],
+            self.post_event,
             self.logger,
         )
         return provider
@@ -143,7 +144,10 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             self.send("set_installed")
 
     def on_activate(self):
-        self.logger.info(f"GefryaBridge '{self.object_name}' is being activated")
+        self.post_event(
+            "GefyraBridge state changed",
+            f"GefryaBridge '{self.object_name}' is being activated",
+        )
         destination = self.data["destinationIP"]
         for port_mapping in self.data.get("portMappings"):
             source_port, target_port = port_mapping.split(":")
@@ -168,13 +172,23 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.send("establish")
 
     def on_create(self):
-        self.logger.info(f"GefyraBridge '{self.object_name}' is being created")
+        self.post_event(
+            "GefyraBridge state changed",
+            f"GefyraBridge '{self.object_name}' is being created",
+        )
 
     def on_remove(self):
+        self.post_event(
+            "GefyraBridge state changed",
+            f"GefyraBridge '{self.object_name}' is being removed",
+        )
         self.send("terminate")
 
     def on_terminate(self):
-        self.logger.info(f"GefyraBridge '{self.object_name}' is being removed")
+        self.post_event(
+            "GefyraBridge state changed",
+            f"GefyraBridge '{self.object_name}' is being removed",
+        )
         destination = self.data["destinationIP"]
         for port_mapping in self.data.get("portMappings"):
             source_port, target_port = port_mapping.split(":")
@@ -200,9 +214,14 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.send("terminate")
 
     def on_impair(self, exception: Optional[BridgeException] = None):
-        self.logger.error(f"Failed from {self.current_state}")
         self.post_event(
             reason=f"Failed from {self.current_state}",
             message=exception.message if exception else "",
             type="Warning",
+        )
+
+    def on_establish(self):
+        self.post_event(
+            "Ready",
+            f"GefyraBridge '{self.object_name}' is now active",
         )

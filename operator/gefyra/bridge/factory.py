@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Callable
 
 from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
@@ -25,6 +26,7 @@ class GefyraBridgeFactory:
         target_namespace: str,
         target_pod: str,
         target_container: str,
+        post_event_function: Callable[[str, str, str], None],
         logger,
         **kwargs
     ):
@@ -36,6 +38,7 @@ class GefyraBridgeFactory:
             target_namespace,
             target_pod,
             target_container,
+            post_event_function,
             logger,
             **kwargs
         )
@@ -47,6 +50,7 @@ class GefyraBridgeFactory:
         target_namespace: str,
         target_pod: str,
         target_container: str,
+        post_event_function: Callable[[str, str, str], None],
         logger,
         **kwargs
     ) -> AbstractGefyraBridgeProvider:
@@ -56,6 +60,7 @@ class GefyraBridgeFactory:
             target_namespace,
             target_pod,
             target_container,
+            post_event_function,
             logger,
             **kwargs
         )

@@ -6,7 +6,7 @@ from gefyra.cli.self import _self
 from gefyra.cli.version import version
 from gefyra.cli.mount import mount
 from gefyra.cli.run import run
-from gefyra.cli.bridge import create_bridge, unbridge
+from gefyra.cli.bridge import bridge
 from gefyra.cli.clients import clients
 from gefyra.cli.connections import connections
 from gefyra.cli.installation import install, uninstall
@@ -70,8 +70,7 @@ cli.add_command(cmd=uninstall, name="uninstall")
 cli.add_command(cmd=cluster_up, name="up")
 cli.add_command(cmd=cluster_down, name="down")
 cli.add_command(cmd=status_command, name="status")
-cli.add_command(cmd=create_bridge, name="bridge")
-cli.add_command(cmd=unbridge, name="unbridge")
+cli.add_command(cmd=bridge, name="bridge")
 cli.add_command(cmd=run, name="run")
 cli.add_command(cmd=version, name="version")
 cli.add_command(cmd=list, name="list")

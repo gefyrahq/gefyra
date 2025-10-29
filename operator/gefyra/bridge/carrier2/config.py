@@ -144,7 +144,7 @@ class Carrier2Config(BaseModel):
 
         result = {}
         for bridge in bridges["items"]:
-            logger.info(f"BRIDGE State {bridge['state']}")
+            logger.debug(f"BRIDGE State {bridge['state']}")
             if bridge["state"] != "REMOVING":
                 bridge_name = bridge["metadata"]["name"]
                 result[bridge_name] = self._convert_bridge_to_rule(bridge)

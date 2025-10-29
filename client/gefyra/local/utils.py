@@ -161,21 +161,28 @@ class WatchEventsMixin:
 
         created = datetime.datetime.fromisoformat(self._created)
         w = k8s.watch.Watch()
-        for event in w.stream(
-            core_api.list_namespaced_event,
-            namespace=self.namespace,
-            timeout_seconds=timeout,
-        ):
-            if (
-                "object" in event
-                and event["object"].involved_object
-                and event["object"].event_time
-                and event["object"].event_time > created
+        try:
+            for event in w.stream(
+                core_api.list_namespaced_event,
+                namespace=self._config.NAMESPACE,
+                timeout_seconds=timeout,
             ):
-                if self.name in event["object"].involved_object.name:
-                    if update_callback:
-                        if event["object"].message:
-                            update_callback(event["object"].message)
+                if (
+                    "object" in event
+                    and event["object"].involved_object
+                    and event["object"].event_time
+                    and event["object"].event_time > created
+                ):
+                    if self.name in event["object"].involved_object.name:
+                        if update_callback:
+                            if event["object"].message:
+                                update_callback(event["object"].message)
 
-                if event["object"].reason == stop_reason:
-                    w.stop()
+                    if event["object"].reason == stop_reason:
+                        w.stop()
+        except k8s.client.exceptions.ApiException as e:
+            print(e)
+            if e.status == 403:
+                raise RuntimeError(
+                    f"Cannot 'watch' events in namespace '{self._config.NAMESPACE}'"
+                ) from None

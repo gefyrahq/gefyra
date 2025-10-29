@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.utils import exec_command_pod
 import kubernetes as k8s
@@ -29,6 +29,7 @@ class Carrier(AbstractGefyraBridgeProvider):
         target_namespace: str,
         target_pod: str,
         target_container: str,
+        post_event_function: Callable[[str, str, str], None],
         logger,
     ) -> None:
         self.configuration = configuration

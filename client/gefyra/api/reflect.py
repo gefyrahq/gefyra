@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List, Optional
 
-from gefyra.api.bridge import bridge
+from gefyra.api.bridge import create_bridge
 from gefyra.api.run import run
 from gefyra.api.utils import is_port_free
 from gefyra.cluster.utils import (
@@ -86,7 +86,7 @@ def reflect(
     )
 
     if do_bridge:
-        res = bridge(
+        res = create_bridge(
             name=name,
             namespace=namespace,
             bridge_mount_name=workload,
