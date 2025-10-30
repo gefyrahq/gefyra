@@ -92,15 +92,19 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
     # filter out gefyra-cargo container as well as fields other than name and ip
     for container in containers:
         if not container.name.startswith("gefyra-cargo"):
+            try:
+                address = container.attrs["NetworkSettings"]["Networks"][
+                    config.NETWORK_NAME
+                ]["IPAddress"].split("/")[0]
+            except Exception:
+                address = "unknown"
+            try:
+                namespace = container.attrs["HostConfig"]["DnsSearch"][0].split(".")[0]
+            except Exception:
+                namespace = "unknown"
             container_information.append(
                 GefyraLocalContainer(
-                    name=container.name,
-                    address=container.attrs["NetworkSettings"]["Networks"][
-                        config.NETWORK_NAME
-                    ]["IPAddress"].split("/")[0],
-                    namespace=container.attrs["HostConfig"]["DnsSearch"][0].split(".")[
-                        0
-                    ],
+                    name=container.name, address=address, namespace=namespace
                 )
             )
     return container_information
