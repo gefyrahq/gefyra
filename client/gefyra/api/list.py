@@ -42,15 +42,19 @@ def list_gefyra_bridges(
     from gefyra import api
 
     conns = api.list_connections()
+    config = ClientConfiguration(connection_name=connection_name)
     if connection_name:
         if connection_name not in [conns.name for conns in conns]:
             raise ClientConfigurationError(
                 f"Connection {connection_name} does not exist. Please create it first."
             )
-        obridges = get_all_gefyrabridges(
-            ClientConfiguration(connection_name=connection_name)
-        )
-        return [(connection_name, list(map(wrap_bridge, obridges)))]
+        obridges = get_all_gefyrabridges(config)
+        return [
+            (
+                connection_name,
+                list(GefyraBridge.from_raw(obridge, config) for obridge in obridges),
+            )
+        ]
     else:
         bridges = []
         for conn in conns:

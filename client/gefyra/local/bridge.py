@@ -68,16 +68,9 @@ def get_all_gefyrabridges(config: ClientConfiguration) -> list:
             group="gefyra.dev",
             plural="gefyrabridges",
             version="v1",
+            label_selector=f"gefyra.dev/client={config.CLIENT_ID}",
         )
-        if ireq_list:
-            # filter bridges for this client
-            return list(
-                item
-                for item in ireq_list.get("items")
-                if item["client"] == config.CLIENT_ID
-            )
-        else:
-            return []
+        return ireq_list.get("items", [])
     except ApiException as e:
         if e.status != 404:
             logger.warning("Error getting GefyraBridges: " + str(e))

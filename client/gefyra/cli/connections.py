@@ -20,7 +20,7 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
         _bridges = api.list_gefyra_bridges(connection_name)
         if _bridges and len(_bridges[0][1]) > 0:
             console.info(
-                f"There is {len(_bridges[0][1])} Gefyra bridge(s) running with connection '{connection_name}'."
+                f"There is {len(_bridges[0][1])} GefyraBridge(s) running with connection '{connection_name}'."
             )
             if force:
                 _del = True
