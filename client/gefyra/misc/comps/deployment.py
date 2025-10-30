@@ -64,7 +64,9 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     {
                                         "name": "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
-                                        "value": params.max_client_connection_age or -1,
+                                        "value": str(
+                                            params.max_client_connection_age or -1
+                                        ),
                                     },
                                     {
                                         "name": "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT",
@@ -137,7 +139,9 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     {
                                         "name": "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
-                                        "value": params.max_client_connection_age or -1,
+                                        "value": str(
+                                            params.max_client_connection_age or -1
+                                        ),
                                     },
                                     {
                                         "name": "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT",

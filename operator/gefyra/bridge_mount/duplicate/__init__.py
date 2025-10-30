@@ -3,6 +3,7 @@ from functools import partial
 from typing import Callable, List
 import uuid
 from kopf import TemporaryError
+import kopf
 import kubernetes as k8s
 from kubernetes.client import (
     V1Deployment,
@@ -482,8 +483,39 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         # consider down scaling & up scaling
         return ready and len(self._gefyra_pods.items) == len(self._original_pods.items)
 
-    def validate(self, bridge_request):
-        return super().validate(bridge_request)
+    def validate(self, bridge_request, hints):
+
+        required_fields = ["target", "targetNamespace", "targetContainer"]
+        for required_field in required_fields:
+            if (
+                required_field not in bridge_request
+                or bridge_request[required_field] == ""
+            ):
+                raise kopf.AdmissionError(
+                    f"The field '{required_field}' must not be empty"
+                )
+
+        # we cannot allow more GefyraBridgeMounts for the same workload
+        target = bridge_request["target"]
+        target_namespace = bridge_request["targetNamespace"]
+        try:
+            bridge_mounts = custom_object_api.list_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                plural="gefyrabridgemounts",
+                namespace=self.configuration.NAMESPACE,
+            )
+        except Exception as e:
+            raise kopf.AdmissionError(f"Cannot read GefyraBridgeMounts: {e}")
+        for bridge_mount in bridge_mounts.get("items"):
+            if (
+                bridge_mount["target"] == target
+                and bridge_mount["targetNamespace"] == target_namespace
+            ):
+                raise kopf.AdmissionError(
+                    f"A GefyraBridgeMount already exists for target '{target}' in namespace '{target_namespace}':"
+                    f"'{bridge_mount['metadata']['name']}' in state '{bridge_mount['state']}'"
+                )
 
     def uninstall_service(self) -> None:
         gefyra_svc_name = generate_duplicate_svc_name(self.target, self.container)

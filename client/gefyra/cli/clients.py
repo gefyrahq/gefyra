@@ -150,7 +150,7 @@ def inspect_client(ctx, client_id):
     if client.wg_status:
         console.info("Wireguard: \n" + pprint.pformat(client.wg_status, width=60))
     console.heading("Events")
-    client.watch_events(console.info, None, 0.1)
+    client.watch_events(console.info, None, 1)
 
 
 @clients.command(

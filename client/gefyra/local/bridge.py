@@ -28,6 +28,10 @@ def handle_create_gefyrabridge(config: ClientConfiguration, body, target: str):
     except ApiException as e:
         if e.status == 409:
             raise RuntimeError(f"Workload {target} already bridged.")
+        elif e.status == 500:
+            import json
+
+            raise RuntimeError(str(json.loads(e.body).get("message")))
         logger.error(
             f"A Kubernetes API Error occured. \nReason: {e.reason} \nBody: {e.body}"
         )

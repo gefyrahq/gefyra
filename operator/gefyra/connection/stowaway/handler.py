@@ -1,3 +1,4 @@
+import os
 import asyncio, signal
 
 import kopf
@@ -103,14 +104,20 @@ async def read_wireguard_status(logger):
                 )
 
 
-@kopf.on.startup()
-async def register_stowaway_watch(logger, retry, **kwargs) -> None:
-    # configure the periodic task
-    task = asyncio.create_task(
-        periodic(WIREGUARD_RECONCILIATION, read_wireguard_status, logger)
-    )
+if os.getenv("OP_MODE", default="Operator").lower() == "operator":
 
-    def shutdown(*args, **kwargs):
-        task.cancel()
+    @kopf.on.startup()
+    async def register_stowaway_watch(logger, retry, **kwargs) -> None:
+        # configure the periodic task
+        task = asyncio.create_task(
+            periodic(WIREGUARD_RECONCILIATION, read_wireguard_status, logger)
+        )
 
-    signal.signal(signal.SIGINT, shutdown)
+        def shutdown(*args, **kwargs):
+            task.cancel()
+
+        try:
+            signal.signal(signal.SIGINT, shutdown)
+        except ValueError:
+            # this happens during test runs, we can just pass
+            pass

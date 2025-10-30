@@ -109,7 +109,8 @@ def create_bridge(
         bar.text(f"GefyraBridge requested")
         if not nowait:
             bridge.watch_events(bar.text, timeout=timeout)
-    console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
+    # TODO check bridge state
+    # console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
 
 
 @bridge.command(

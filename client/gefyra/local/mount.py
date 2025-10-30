@@ -11,7 +11,6 @@ def handle_create_gefyrabridgemount(config: ClientConfiguration, body, target: s
     from kubernetes.client import ApiException
 
     try:
-        # TODO check if target already exists
         mount = config.K8S_CUSTOM_OBJECT_API.create_namespaced_custom_object(
             namespace=config.NAMESPACE,
             body=body,
@@ -24,6 +23,10 @@ def handle_create_gefyrabridgemount(config: ClientConfiguration, body, target: s
             raise RuntimeError(
                 f"GefyraBridgeMount '{body['metadata']['name']}' already exists"
             )
+        elif e.status == 500:
+            import json
+
+            raise RuntimeError(str(json.loads(e.body).get("message")))
         logger.error(
             f"A Kubernetes API Error occured. \nReason: {e.reason} \nBody: {e.body}"
         )

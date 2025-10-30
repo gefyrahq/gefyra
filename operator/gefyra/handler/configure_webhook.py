@@ -11,6 +11,14 @@ from gefyra.connection.factory import (
     ConnectionProviderType,
     connection_provider_factory,
 )
+from gefyra.bridge_mount.factory import (
+    BridgeMountProviderType,
+    bridge_mount_provider_factory,
+)
+from gefyra.bridge.factory import (
+    BridgeProviderType,
+    bridge_provider_factory,
+)
 
 from gefyra.resources.events import create_operator_webhook_ready_event
 
@@ -87,4 +95,75 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
         except ValueError as e:
             raise kopf.AdmissionError(f"Cannot parse 'sunset': {e}")
     provider.validate(body, hints)
+    return True
+
+
+@kopf.on.validate("gefyrabridgemount.gefyra.dev", id="mount-parameters")  # type: ignore
+def check_validate_bridgemount_parameters(body, diff, logger, operation, **_):
+
+    name = body["metadata"]["name"]
+    logger.info(f"Validating provider parameters for GefyraBridgeMount {name}")
+
+    if operation == "UPDATE":
+        changeset = {field[0]: new for op, field, old, new in diff}
+        if (
+            "target" in changeset
+            or "targetNamespace" in changeset
+            or "targetContainer" in changeset
+        ):
+            raise kopf.AdmissionError(
+                f"Cannot update fields {list(changeset.keys())}. Please create a new GefyraBridgeMount."
+            )
+    if operation == "CREATE":
+        provider_parameter = body["provider"]
+        provider = bridge_mount_provider_factory.get(
+            BridgeMountProviderType(provider_parameter),
+            configuration,
+            body.get("targetNamespace"),
+            body.get("target"),
+            body.get("targetContainer"),
+            body["metadata"]["name"],
+            None,
+            body.get("providerParameter"),
+            logger,
+        )
+        provider.validate(body, {})
+    return True
+
+
+@kopf.on.validate("gefyrabridge.gefyra.dev", id="bridge-parameters")  # type: ignore
+def check_validate_bridge_parameters(body, diff, logger, operation, **_):
+
+    name = body["metadata"]["name"]
+    logger.info(f"Validating provider parameters for GefyraBridge {name}")
+
+    if operation == "UPDATE":
+        changeset = {field[0]: new for op, field, old, new in diff}
+        if (
+            "target" in changeset
+            or "connectionProvider" in changeset
+            or "destinationIP" in changeset
+            or "portMappings" in changeset
+        ):
+            raise kopf.AdmissionError(
+                f"Cannot update fields {list(changeset.keys())}. Please create a new GefyraBridge."
+            )
+
+    if operation == "CREATE":
+        try:
+            provider_parameter = body["provider"]
+            target = body["target"]
+        except KeyError as e:
+            raise kopf.AdmissionError(f"Missing field {e}")
+
+        provider = provider = bridge_provider_factory.get(
+            BridgeProviderType(provider_parameter),
+            configuration,
+            body.get("targetNamespace"),
+            target,
+            body.get("targetContainer"),
+            None,
+            logger,
+        )
+        provider.validate(body, {})
     return True

@@ -66,7 +66,7 @@ class AbstractGefyraBridgeProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def validate(self, brige_request: dict):
+    def validate(self, bridge_request: dict, hints: dict | None):
         """
         Validate the bridge request
         """

@@ -2,6 +2,7 @@ from functools import cached_property
 from time import sleep
 from typing import Any, Callable, Dict, Optional
 from kopf import TemporaryError
+import kopf
 import kubernetes as k8s
 from kubernetes.client import ApiException, V1PodList, V1Pod
 
@@ -43,10 +44,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
         self.configuration = configuration
 
         self.bridge_mount_name = target  # BridgeMount
-        bridge_mount = self._bridge_mount_resource
-        self.namespace = bridge_mount["targetNamespace"]
-        self.container = bridge_mount["targetContainer"]
-        self.target = bridge_mount["target"]
+        _ = self._bridge_mount_resource
+
         self.logger = logger
         self.carrier_config = Carrier2Config()
         self.post_event = post_event_function
@@ -208,13 +207,17 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         Get the bridge mount resource
         """
-        return custom_object_api.get_namespaced_custom_object(
+        bridge_mount = custom_object_api.get_namespaced_custom_object(
             "gefyra.dev",
             "v1",
             self.configuration.NAMESPACE,
             "gefyrabridgemounts",
             self.bridge_mount_name,
         )
+        self.namespace = bridge_mount["targetNamespace"]
+        self.container = bridge_mount["targetContainer"]
+        self.target = bridge_mount["target"]
+        return bridge_mount
 
     @cached_property
     def _bridge_mount_provider_parameter(self) -> Optional[dict]:
@@ -324,17 +327,61 @@ class Carrier2(AbstractGefyraBridgeProvider):
         return bridge_exists
         # raise NotImplementedError
 
-    def validate(self, brige_request: dict):
+    def validate(self, bridge_request: dict, hints: dict | None):
         """
         Validate the bridge request
         """
+        # check if labels set
+        if (
+            "labels" not in bridge_request["metadata"]
+            or "gefyra.dev/bridge-mount"
+            not in bridge_request["metadata"]["labels"].keys()
+            or "gefyra.dev/client" not in bridge_request["metadata"]["labels"].keys()
+        ):
+            raise kopf.AdmissionError(
+                f"The requested GefyraBridge does not set the labels 'gefyra.dev/bridge-mount' and 'gefyra.dev/client'"
+            )
 
-        # 1. Select all currently active GefyraBridges for this target
-        # 2. Validate parameter structure
-        # 3. Perform a check if these traffic matching rules are already taken
-        # 4. Error if postive check, otherwise none
+        try:
+            bridge_mount = custom_object_api.get_namespaced_custom_object(
+                "gefyra.dev",
+                "v1",
+                self.configuration.NAMESPACE,
+                "gefyrabridgemounts",
+                bridge_request["target"],
+            )
+        except Exception as e:
+            raise kopf.AdmissionError(
+                f"The target GefyraBridgeMounts does not exist or cannot be read"
+            ) from None
 
-        raise NotImplementedError
+        if bridge_mount["state"] != "ACTIVE":
+            raise kopf.AdmissionError(
+                f"The target GefyraBridgeMounts is not in ACTIVE state. Please try again soon."
+            ) from None
+
+        try:
+            bridges = custom_object_api.list_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                plural="gefyrabridges",
+                namespace=self.configuration.NAMESPACE,
+            )
+        except Exception as e:
+            raise kopf.AdmissionError(f"Cannot read GefyraBridges: {e}")
+
+        for existing_bridge in bridges.get("items"):
+            if (
+                existing_bridge["target"] == bridge_request["target"]
+                and existing_bridge["metadata"]["labels"]
+                == bridge_request["metadata"]["labels"]
+                and existing_bridge["destinationIP"] == bridge_request["destinationIP"]
+                and existing_bridge["providerParameter"]
+                == bridge_request["providerParameter"]
+            ):
+                raise kopf.AdmissionError(
+                    f"A GefyraBridge with these target parameters already exists."
+                )
 
 
 class Carrier2Builder:

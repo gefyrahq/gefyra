@@ -171,7 +171,9 @@ def create_bridge(
         )
         bridge_mount = GefyraBridgeMount(config, mount)
     except Exception as e:
-        GefyraBridgeError(f"Could not find GefyraBridgeMount '{bridge_mount_name}'")
+        raise GefyraBridgeError(
+            f"Could not find GefyraBridgeMount '{bridge_mount_name}'"
+        )
 
     bridge_name = f"{config.CLIENT_ID[:25]}-{bridge_mount.target[:20]}-{bridge_mount.target_container[:20]}-{random_string(5)}"
     if len(bridge_name) > 63:
