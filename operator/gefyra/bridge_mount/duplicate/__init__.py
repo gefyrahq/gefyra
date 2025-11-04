@@ -466,7 +466,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
         }
         new_workload = app.patch_namespaced_deployment(
-            name=workload.metadata.name, namespace="default", body=workload
+            name=workload.metadata.name, namespace=self.namespace, body=workload
         )
         return new_workload
 
