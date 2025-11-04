@@ -177,6 +177,8 @@ def delete_bridge(
 def list_bridges(ctx, all):
     from gefyra import api
 
+    console.info(ctx.obj["mode"])
+
     bridges = api.list_bridges(
         kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )

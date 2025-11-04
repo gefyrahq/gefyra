@@ -299,8 +299,9 @@ def list_bridges(
             version="v1",
         )
     except ApiException as e:
-        logger.error(f"Error listing GefyraBridgeMounts: {e}")
-        exit(1)
+        raise RuntimeError(
+            f"Cannot list GefyraBridges: {e}Is Gefyra installed and running in this cluster?"
+        ) from None
     return [
         GefyraBridge.from_raw(raw_bridge, config) for raw_bridge in bridges["items"]
     ]

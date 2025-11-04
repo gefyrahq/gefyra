@@ -132,8 +132,10 @@ def list_mounts(
             version="v1",
         )
     except ApiException as e:
-        logger.error(f"Error listing GefyraBridgeMounts: {e}")
-        exit(1)
+        raise RuntimeError(
+            f"Error listing GefyraBridgeMounts: {e}Is Gefyra installed and running in this cluster?"
+        ) from None
+
     return [
         GefyraBridgeMount(config, bridge_mount)
         for bridge_mount in bridge_mounts["items"]

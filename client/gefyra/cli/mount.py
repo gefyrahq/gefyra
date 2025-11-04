@@ -38,23 +38,31 @@ def mount(ctx):
 @click.option(
     "--target",
     help=(
-        "Intercept the container given in the notation 'resource/name/container'. "
+        "Install a GefyraBridgeMount to workloads following the notion 'resource/name/container'. "
         "Resource can be one of 'deployment' or 'pod'. "
         "E.g.: --target deployment/hello-nginx/nginx"
     ),
     required=True,
 )
 @click.option(
-    "--tls-key", help="Path to key file for tls traffic", type=str, required=False
-)
-@click.option(
-    "--tls-certificate",
-    help="Path to certificate file for tls traffic",
+    "--tls-key",
+    help="Path to key file for tls traffic (within the target container).",
     type=str,
     required=False,
 )
-@click.option("--tls-sni", help="SNI for tls traffic", type=str, required=False)
-@click.option("--connection-name", type=str, default="default")
+@click.option(
+    "--tls-certificate",
+    help="Path to certificate file for tls traffic (within the target container).",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--tls-sni",
+    help="SNI for tls traffic (within the target container).",
+    type=str,
+    required=False,
+)
+@click.option("--connection-name", "-c", type=str, default="default")
 @click.option(
     "--nowait", is_flag=True, help="Do not wait for the GefyraBridgeMount to be ready"
 )

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Gefyra Operator"
-version = "2.3.2"
+version = "2.4.0"
 description = "Gefyra Operator runs all cluster-side components of Gefyra's Kubernetes-based development system"
 authors = ["Michael Schilonka <michael@blueshoe.io>"]
 package-mode = false
@@ -21,7 +21,7 @@ flake8-black = "^0.3.6"
 coverage = "<8"
 pytest-asyncio = "^0.23.8"
 mypy = "^1.17.1"
-pytest-kubernetes = {git = "https://github.com/Blueshoe/pytest-kubernetes/", branch = "feat/#3"}
+pytest-kubernetes = "^0.7.2"
 docker = "^7.0.0"
 coveralls = "^4.0.1"
 types-requests = "^2.32.4.20250809"

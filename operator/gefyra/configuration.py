@@ -1,5 +1,4 @@
 from decouple import config
-import os
 
 
 class OperatorConfiguration:

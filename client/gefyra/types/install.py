@@ -87,3 +87,11 @@ class GefyraInstallOptions:
             is_flag=True,
         ),
     )
+    bridge_debug: bool = field(
+        default=False,
+        metadata=dict(
+            help="Enable debug logging for GefyraBridgeMounts/GefyraBridges (default: False)",
+            type=bool,
+            is_flag=True,
+        ),
+    )

@@ -38,7 +38,7 @@ def update(
                             "containers": [
                                 {
                                     "name": "gefyra",
-                                    "image": config.OPERATOR_IMAGE,
+                                    "image": f"{config.OPERATOR_IMAGE.split(':')[0]}:{version}",
                                 }
                             ]
                         }

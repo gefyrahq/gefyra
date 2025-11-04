@@ -245,6 +245,8 @@ def parse_workload(ctx, param, workload: str) -> str:
 
 
 def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
+    if ctx.obj["mode"] == "adm":
+        return ""
     from gefyra import api
 
     if not selected:
