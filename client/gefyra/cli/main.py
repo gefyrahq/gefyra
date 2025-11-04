@@ -1,4 +1,5 @@
 import click
+import urllib3
 
 from gefyra.cli.reverse import reverse
 from gefyra.cli.operator import operator
@@ -49,6 +50,7 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
         logger.addHandler(handler)
         logging.getLogger("gefyra").setLevel(logging.DEBUG)
     else:
+        urllib3.disable_warnings()
         logging.getLogger("gefyra").setLevel(logging.ERROR)
 
     ctx.ensure_object(dict)

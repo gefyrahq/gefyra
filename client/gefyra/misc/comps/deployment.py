@@ -68,6 +68,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                             params.max_client_connection_age or -1
                                         ),
                                     },
+                                    # TODO Carrier2 settings, incl. debug
                                     {
                                         "name": "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT",
                                         "value": str(
