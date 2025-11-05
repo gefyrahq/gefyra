@@ -4,6 +4,7 @@ from time import sleep
 from typing import List, Optional
 from alive_progress import alive_bar
 import click
+from gefyra.local.bridge import get_all_containers
 from gefyra.types import ExactMatchHeader
 from gefyra.cli import console
 from gefyra.cli.utils import (
@@ -20,7 +21,7 @@ from tabulate import tabulate
 @click.group(
     "bridge",
     cls=AliasedGroup,
-    help="Manage GefyraBridge for a Gefyra installation",
+    help="Manage your GefyraBridges to redirect traffic from a GefyraBridgeMount target",
 )
 @click.pass_context
 def bridge(ctx):
@@ -172,27 +173,69 @@ def delete_bridge(
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--connection-name", type=str, default="default", callback=check_connection_name
+)
 @click.pass_context
 @standard_error_handler
-def list_bridges(ctx, all):
+def list_bridges(ctx, all: bool, connection_name: str):
     from gefyra import api
 
-    console.info(ctx.obj["mode"])
-
-    bridges = api.list_bridges(
-        kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
-    )
-    mounts = [[c.name, c._state, c.target, c.client, c.port_mappings] for c in bridges]
-    if mounts:
-        click.echo(
-            tabulate(
-                mounts,
-                headers=["ID", "STATE", "BRIDGEMOUNT", "CLIENT", "PORT MAPPING"],
-                tablefmt="plain",
-            )
+    if not all and ctx.obj["mode"] == "client":
+        bridges = api.list_bridges(
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            connection_name=connection_name,
+            filter_client=True,
+            get_containers=True,
         )
+        bridges = [
+            [
+                b.name,
+                b._state,
+                b.target,
+                b.port_mappings,
+                c.short_id if c else "-",
+                c.name if c else "-",
+            ]
+            for c, b in bridges
+        ]
+        if bridges:
+            click.echo(
+                tabulate(
+                    bridges,
+                    headers=[
+                        "ID",
+                        "STATE",
+                        "BRIDGEMOUNT",
+                        "PORT MAPPING",
+                        "TARGET CONTAINER",
+                        "TARGET CONTAINER NAME",
+                    ],
+                    tablefmt="plain",
+                )
+            )
+        else:
+            console.info("No GefyraBridges found")
     else:
-        console.info("No GefyraBridges found")
+        bridges = api.list_bridges(
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            filter_client=False,
+        )
+        bridges = [
+            [c.name, c._state, c.target, c.client, c.port_mappings] for c in bridges
+        ]
+        if bridges:
+            click.echo(
+                tabulate(
+                    bridges,
+                    headers=["ID", "STATE", "BRIDGEMOUNT", "CLIENT", "PORT MAPPING"],
+                    tablefmt="plain",
+                )
+            )
+        else:
+            console.info("No GefyraBridges found")
 
 
 @bridge.command(
@@ -204,13 +247,12 @@ def list_bridges(ctx, all):
 def inspect_bridge(ctx, bridge_name):
     from gefyra import api
 
-    console.error("This CLI command is not yet implemented")
-
-    # bridge_obj = api.get_bridge(
-    #     bridge_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
-    # )
-    # console.heading(bridge_obj.name)
-    # console.info(f"uid: {bridge_obj.uid}")
-    # console.info(f"States: {bridge_obj._state_transitions}")
-    # console.heading("Events")
-    # bridge_obj.watch_events(console.info, None, 1)
+    bridge_obj = api.get_bridge(
+        bridge_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+    )
+    console.heading(bridge_obj.name)
+    console.info(f"States: {bridge_obj._state_transitions}")
+    console.info(f"GefyraBridgeMount: {bridge_obj.target}")
+    console.info(f"Provider Parameters: {bridge_obj.exact_match_headers}")
+    console.heading("Events")
+    bridge_obj.watch_events(console.info, None, 1)

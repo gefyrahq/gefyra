@@ -3,7 +3,7 @@ import click
 
 @click.group(
     "self",
-    help="Manage local Gefyra client installation",
+    help="Manage this Gefyra executable",
 )
 @click.pass_context
 def _self(ctx: click.Context):

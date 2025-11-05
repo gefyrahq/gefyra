@@ -1,7 +1,10 @@
+import os
+import click
+from gefyra.cli.utils import AliasedGroup
 from .context import cli
 
 from gefyra.cli.clients import clients
-from gefyra.cli.bridge import bridge
+from gefyra.cli.bridge import list_bridges, delete_bridge, inspect_bridge
 from gefyra.cli.operator import operator
 from gefyra.cli.installation import install, uninstall
 from gefyra.cli.mount import mount
@@ -9,6 +12,25 @@ from gefyra.cli.status import status_command
 from gefyra.cli.version import version
 from gefyra.cli.self import _self
 from gefyra.cli.telemetry import telemetry
+
+
+@click.group(
+    "bridge",
+    cls=AliasedGroup,
+    help="List and remove GefyraBridges",
+)
+@click.pass_context
+def bridge(ctx):
+    # for management of bridges we always sourcing the kubeconfig and context from env if not passed
+    if ctx.obj["kubeconfig"] is None:
+        ctx.obj["kubeconfig"] = os.environ.get("KUBECONFIG") or os.path.expanduser(
+            "~/.kube/config"
+        )
+
+
+bridge.add_command(list_bridges)
+bridge.add_command(delete_bridge)
+bridge.add_command(inspect_bridge)
 
 cli.add_command(cmd=bridge, name="bridge")
 cli.add_command(cmd=clients, name="clients")

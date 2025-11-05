@@ -78,6 +78,25 @@ def get_all_gefyrabridges(config: ClientConfiguration) -> list:
         return []
 
 
+def get_gefyrabridge(config: ClientConfiguration, name: str):
+    from kubernetes.client import ApiException
+
+    try:
+        bridge = config.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(
+            name=name,
+            namespace=config.NAMESPACE,
+            group="gefyra.dev",
+            plural="gefyrabridges",
+            version="v1",
+        )
+        return bridge
+    except ApiException as e:
+        if e.status != 404:
+            logger.warning("Error getting GefyraBridge: " + str(e))
+            raise e from None
+        raise e
+
+
 def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer]:
     container_information = []
     gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
@@ -97,7 +116,11 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
                 namespace = "unknown"
             container_information.append(
                 GefyraLocalContainer(
-                    name=container.name, address=address, namespace=namespace
+                    id=container.id,
+                    short_id=container.short_id,
+                    name=container.name,
+                    address=address,
+                    namespace=namespace,
                 )
             )
     return container_information

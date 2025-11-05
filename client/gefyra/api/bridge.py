@@ -4,9 +4,10 @@ import random
 import string
 
 # from time import sleep
-from typing import List, Dict, TYPE_CHECKING, Optional
+from typing import List, Dict, TYPE_CHECKING, Optional, Tuple
 
-from gefyra.types import ExactMatchHeader
+from gefyra.local.bridge import get_all_containers, get_gefyrabridge
+from gefyra.types import ExactMatchHeader, GefyraLocalContainer
 from gefyra.local.mount import get_gefyrabridgemount
 from gefyra.exceptions import GefyraBridgeError
 from gefyra.types.bridge_mount import GefyraBridgeMount  # , CommandTimeoutError
@@ -181,7 +182,7 @@ def create_bridge(
             "The name of the GefyraBridge must be no more than 63 characters"
         )
 
-    logger.debug(f"Creating bridge for GefyraBridgeMount: {bridge_mount_name}")
+    logger.debug(f"Creating GefyraBridge for GefyraBridgeMount: {bridge_mount_name}")
 
     bridge_body = GefyraBridge(
         name=bridge_name,
@@ -283,25 +284,77 @@ def unbridge_all(
 
 @stopwatch
 def list_bridges(
-    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
-) -> List[GefyraBridge]:
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+    connection_name: str = "",
+    filter_client: bool = True,
+    get_containers: bool = False,
+) -> List[GefyraBridge] | List[Tuple[GefyraLocalContainer | None, GefyraBridge]]:
     """
     Retrieve all GefyraBridge objects
     """
     from kubernetes.client import ApiException
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        connection_name=connection_name,
+    )
     try:
         bridges = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             namespace=config.NAMESPACE,
             group="gefyra.dev",
             plural="gefyrabridges",
             version="v1",
+            label_selector=(
+                f"gefyra.dev/client={config.CLIENT_ID}" if filter_client else None
+            ),
         )
     except ApiException as e:
         raise RuntimeError(
             f"Cannot list GefyraBridges: {e}Is Gefyra installed and running in this cluster?"
         ) from None
-    return [
-        GefyraBridge.from_raw(raw_bridge, config) for raw_bridge in bridges["items"]
-    ]
+    if get_containers:
+        all_containers = get_all_containers(config=config)
+        all_bridges = [
+            GefyraBridge.from_raw(raw_bridge, config) for raw_bridge in bridges["items"]
+        ]
+        result = []
+        for bridge in all_bridges:
+            for container in all_containers:
+                if container.address == bridge.local_container_ip:
+                    result.append(
+                        (
+                            container,
+                            bridge,
+                        )
+                    )
+                    break
+                else:
+                    result.append(None, bridge)
+        return result
+    else:
+        return [
+            GefyraBridge.from_raw(raw_bridge, config) for raw_bridge in bridges["items"]
+        ]
+
+
+@stopwatch
+def get_bridge(
+    bridge_name: str,
+    connection_name: str = "",
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+) -> GefyraBridge:
+    """
+    Get a GefyraBridge object
+    """
+    config_params = {"connection_name": connection_name}
+    if kubeconfig:
+        config_params.update({"kube_config_file": str(kubeconfig)})
+
+    if kubecontext:
+        config_params.update({"kube_context": kubecontext})
+    config = ClientConfiguration(**config_params)  # type: ignore
+    bridge = get_gefyrabridge(config, bridge_name)
+    return GefyraBridge.from_raw(bridge, config)
