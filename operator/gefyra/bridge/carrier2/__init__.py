@@ -11,6 +11,7 @@ from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import (
     Carrier2Config,
+    Carrier2Proxy,
     CarrierProbe,
 )
 from gefyra.bridge_mount.utils import (
@@ -126,6 +127,21 @@ class Carrier2(AbstractGefyraBridgeProvider):
         )
         return config
 
+    def _cluster_upstream(self, proxy: Carrier2Proxy, rport: int) -> Carrier2Proxy:
+        svc = core_v1_api.read_namespaced_service(
+            name=generate_duplicate_svc_name(self._bridge_mount_target, self.container),
+            namespace=self.namespace,
+        )
+        proxy.clusterUpstream = get_upstreams_for_svc(svc=svc, rport=rport)
+        return proxy
+
+    def _tls(self, proxy: Carrier2Proxy, rport: int) -> Carrier2Proxy:
+        if self._bridge_mount_provider_parameter:
+            proxy.tls = _get_tls_from_provider_parameters(
+                self._bridge_mount_provider_parameter, rport
+            )
+        return proxy
+
     def _set_probes(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
         for container in pod.spec.containers:
             if container.name == self.container:
@@ -133,6 +149,20 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 self.carrier_config.probes = CarrierProbe(
                     httpGet=[probe.http_get.port for probe in probes]
                 )
+        return config
+
+    def _set_proxies(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
+        proxies = []
+        for container in pod.spec.containers:
+            if container.name == self.container:
+                for cport in container.ports:
+                    proxy = Carrier2Proxy(port=cport.container_port)
+                    proxy = self._cluster_upstream(
+                        proxy=proxy, rport=cport.container_port
+                    )
+                    proxy = self._tls(proxy=proxy, rport=cport.container_port)
+                    proxies.append(proxy)
+        config.proxy = proxies
         return config
 
     def _set_own_ports(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
@@ -153,13 +183,11 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     def update_carrier_config(self, pod: V1Pod):
         carrier_config = Carrier2Config()
-        carrier_config = self._set_own_ports(carrier_config, pod)
-        carrier_config = self._set_cluster_upstream(carrier_config)
+        carrier_config = self._set_proxies(carrier_config)
         carrier_config = self._set_probes(carrier_config, pod)
         carrier_config.add_bridge_rules_for_mount(
             self.bridge_mount_name, self.configuration.NAMESPACE
         )
-        carrier_config = self._set_tls(carrier_config)
         carrier_config.commit(
             pod_name=pod.metadata.name,
             container_name=self.container,

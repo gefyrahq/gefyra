@@ -13,12 +13,15 @@ from gefyra.bridge.carrier2.config import CarrierTLS
 core_v1_api = k8s.client.CoreV1Api()
 
 
-def get_upstreams_for_svc(svc: V1Service) -> list[str]:
+def get_upstreams_for_svc(svc: V1Service, rport: int | None = None) -> list[str]:
     res = []
     name = svc.metadata.name
     namespace = svc.metadata.namespace
     for port in svc.spec.ports:
-        res.append(f"{name}.{namespace}.svc.cluster.local:{port.port}")
+        if rport and port.port == rport:
+            res.append(f"{name}.{namespace}.svc.cluster.local:{port.port}")
+        else:
+            res.append(f"{name}.{namespace}.svc.cluster.local:{port.port}")
     return res
 
 
@@ -66,14 +69,23 @@ def get_ports_for_deployment(
     return ports
 
 
-def _get_tls_from_provider_parameters(params: dict):
-    if "tls" not in params:
+def _get_tls_from_provider_parameters(
+    params: dict, rport: int | None = None
+) -> CarrierTLS | None:
+    if rport and str(rport) in params and "tls" in params[str(rport)]:
+        return CarrierTLS(
+            certificate=params[str(rport)]["tls"]["certificate"],
+            key=params[str(rport)]["tls"]["key"],
+            sni=params[str(rport)]["tls"].get("sni", None),
+        )
+    elif "tls" in params:
+        return CarrierTLS(
+            certificate=params["tls"]["certificate"],
+            key=params["tls"]["key"],
+            sni=params["tls"].get("sni", None),
+        )
+    else:
         return None
-    return CarrierTLS(
-        certificate=params["tls"]["certificate"],
-        key=params["tls"]["key"],
-        sni=params["tls"].get("sni", None),
-    )
 
 
 def get_all_probes(container: V1Container) -> List[V1Probe]:

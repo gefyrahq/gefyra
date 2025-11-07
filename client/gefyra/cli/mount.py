@@ -141,18 +141,12 @@ def delete_mount(ctx, mount_name):
 def list_mounts(ctx):
     from gefyra import api
 
-    if ctx.obj["mode"] == "client":
-        bridge_mounts = api.list_mounts(
-            kubeconfig=ctx.obj["kubeconfig"],
-            kubecontext=ctx.obj["context"],
-            filter_client=True,
-        )
-    else:
-        bridge_mounts = api.list_mounts(
-            kubeconfig=ctx.obj["kubeconfig"],
-            kubecontext=ctx.obj["context"],
-            filter_client=False,
-        )
+
+    bridge_mounts = api.list_mounts(
+        kubeconfig=ctx.obj["kubeconfig"],
+        kubecontext=ctx.obj["context"],
+    )
+
     mounts = [[c.name, c._state, c.target, c.target_namespace] for c in bridge_mounts]
     if mounts:
         click.echo(

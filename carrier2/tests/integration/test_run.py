@@ -83,6 +83,7 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
         timeout=60,
     )
 
+    sleep(5)
     # test ingress from demo workload
     resp = session.get("http://localhost:8091/color")
     assert resp.status_code == 200
@@ -134,9 +135,10 @@ def test_c_configure_cluster_upstream(k3d: AClusterManager):
     error_log: /tmp/carrier.error.log
     upgrade_sock: /tmp/carrier2.sock
     upstream_keepalive_pool_size: 100
-    port: 5002
-    clusterUpstream: 
-        - \"{ip}:5002\"
+    proxy:
+      - port: 5002
+        clusterUpstream: 
+            - \"{ip}:5002\"
     """
     )
 

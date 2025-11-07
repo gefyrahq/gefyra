@@ -34,11 +34,19 @@ class TestBridgeMountStateMachine:
 
         bridge_mount_object = GefyraBridgeMountObject(
             data={
-                "metadata": {"name": name, "namespace": namespace},
+                "apiVersion": "gefyra.dev/v1",
+                "metadata": {
+                    "name": name,
+                    "namespace": namespace,
+                    "uid": "123",
+                    "resourceVersion": "123456",
+                },
+                "kind": "gefyrabridgemount",
                 "state": "REQUESTED",
                 "targetNamespace": namespace,
                 "target": name,
                 "targetContainer": "nginx",
+                "provider": "duplicate",
             }
         )
         bridge_mount_object._write_state = MagicMock()
@@ -55,12 +63,9 @@ class TestBridgeMountStateMachine:
             print(bridge_mount_machine.current_state)
             try:
                 if bridge_mount_machine.preparing.is_active:
-                    try:
-                        bridge_mount_machine.install()
-                    except (
-                        Exception
-                    ):  #  Catch Temporary 'Cannot install Gefyra Carrier2 on pods ...'
-                        pass
+
+                    bridge_mount_machine.install()
+
                 elif bridge_mount_machine.requested.is_active:
                     bridge_mount_machine.prepare()
                 elif bridge_mount_machine.installing.is_active:

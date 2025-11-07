@@ -108,87 +108,97 @@ fn main() {
         debug!("{:?}", my_server.configuration);
         debug!("GefyraBridge config: {:?}", carrier_config);
         let carrier_config = carrier_config.as_mapping().unwrap();
-        let mut cert_path: Option<String> = None;
-        let mut key_path: Option<String> = None;
-        let mut local_sni: Option<String> = None;
+        
 
         // GefyraBridge data given, run the proxy process
+        if carrier_config.contains_key("proxy") {
+            // init mutliple proxies on different ports
+            if let Some(proxy) = carrier_config.get("proxy") {
+                let proxies = proxy.as_sequence().unwrap();
+                info!("Configure {:?} proxy", proxies.len());
+                for proxy in proxies {
+                    let mut cert_path: Option<String> = None;
+                    let mut key_path: Option<String> = None;
+                    let mut local_sni: Option<String> = None;
+                    let proxy = proxy.as_mapping().unwrap();
+                    // read the cluster upstream
+                    let cluster_upstreams = if proxy.contains_key("clusterUpstream") {
+                        let addresss: Vec<String> = proxy["clusterUpstream"]
+                            .as_sequence()
+                            .unwrap()
+                            .iter()
+                            .map(|a| a.as_str().unwrap().to_string())
+                            .collect();
+                        Some(Arc::new(LoadBalancer::try_from_iter(addresss).unwrap()))
+                    } else {
+                        None
+                    };
+                    
+                    if proxy.contains_key("tls") {
+                        cert_path = match proxy["tls"]["certificate"].as_str() {
+                            Some(path) => Some(path.into()),
+                            None => {
+                                warn!("'tls' is set, but 'certificate' is missing");
+                                None
+                            }
+                        };
+                        key_path = match proxy["tls"]["key"].as_str() {
+                            Some(path) => Some(path.into()),
+                            None => {
+                                warn!("'tls' is set, but 'key' is missing");
+                                None
+                            }
+                        };
+                        local_sni = match proxy["tls"]["sni"].as_str() {
+                            Some(path) => Some(path.into()),
+                            None => {
+                                warn!("'tls' is set, but 'sni' is missing");
+                                None
+                            }
+                        };
+                    }
 
-        // read the cluster upstream
-        let cluster_upstreams = if carrier_config.contains_key("clusterUpstream") {
-            let addresss: Vec<String> = carrier_config["clusterUpstream"]
-                .as_sequence()
-                .unwrap()
-                .iter()
-                .map(|a| a.as_str().unwrap().to_string())
-                .collect();
-            Some(Arc::new(LoadBalancer::try_from_iter(addresss).unwrap()))
-        } else {
-            None
-        };
+                    let clients = if proxy.contains_key("bridges") {
+                        GefyraClient::from_yaml(
+                            proxy["bridges"].as_mapping().unwrap(),
+                            cert_path.is_some() && key_path.is_some(),
+                            local_sni.clone().unwrap_or_else(|| "".to_string()),
+                        )
+                    } else {
+                        Vec::new()
+                    };
 
-        if carrier_config.contains_key("tls") {
-            cert_path = match carrier_config["tls"]["certificate"].as_str() {
-                Some(path) => Some(path.into()),
-                None => {
-                    warn!("'tls' is set, but 'certificate' is missing");
-                    None
+                    let carrier2_http_router = Carrier2 {
+                        cluster_upstream: cluster_upstreams,
+                        gefyra_clients: Arc::new(clients),
+                        cluster_tls: cert_path.is_some(),
+                        cluster_sni: local_sni.unwrap_or_else(|| "".to_string()),
+                    };
+
+                    let mut http_dispatcher =
+                        http_proxy_service(&my_server.configuration, carrier2_http_router);
+                    // set listening addr
+                    if proxy.contains_key("port") {
+                        let listening = format!("0.0.0.0:{}", proxy["port"].as_u64().unwrap());
+                        if cert_path.is_some() && key_path.is_some() {
+                            // add tls setting
+                            info!(
+                                "Running with tls config: key {:?} cert {:?}",
+                                key_path, cert_path
+                            );
+                            http_dispatcher
+                                .add_tls(&listening, &cert_path.unwrap(), &key_path.unwrap())
+                                .unwrap();
+                        } else {
+                            // add listening port (no tls)
+                            http_dispatcher.add_tcp(&listening);
+                        }
+
+                        // add http dispatcher server
+                        my_server.add_service(http_dispatcher);
+                    }
                 }
-            };
-            key_path = match carrier_config["tls"]["key"].as_str() {
-                Some(path) => Some(path.into()),
-                None => {
-                    warn!("'tls' is set, but 'key' is missing");
-                    None
-                }
-            };
-            local_sni = match carrier_config["tls"]["sni"].as_str() {
-                Some(path) => Some(path.into()),
-                None => {
-                    warn!("'tls' is set, but 'sni' is missing");
-                    None
-                }
-            };
-        }
-
-        let clients = if carrier_config.contains_key("bridges") {
-            GefyraClient::from_yaml(
-                carrier_config["bridges"].as_mapping().unwrap(),
-                cert_path.is_some() && key_path.is_some(),
-                local_sni.clone().unwrap_or_else(|| "".to_string()),
-            )
-        } else {
-            Vec::new()
-        };
-
-        let carrier2_http_router = Carrier2 {
-            cluster_upstream: cluster_upstreams,
-            gefyra_clients: Arc::new(clients),
-            cluster_tls: cert_path.is_some(),
-            cluster_sni: local_sni.unwrap_or_else(|| "".to_string()),
-        };
-
-        let mut http_dispatcher =
-            http_proxy_service(&my_server.configuration, carrier2_http_router);
-        // set listening addr
-        if carrier_config.contains_key("port") {
-            let listening = format!("0.0.0.0:{}", carrier_config["port"].as_u64().unwrap());
-            if cert_path.is_some() && key_path.is_some() {
-                // add tls setting
-                info!(
-                    "Running with tls config: key {:?} cert {:?}",
-                    key_path, cert_path
-                );
-                http_dispatcher
-                    .add_tls(&listening, &cert_path.unwrap(), &key_path.unwrap())
-                    .unwrap();
-            } else {
-                // add listening port (no tls)
-                http_dispatcher.add_tcp(&listening);
             }
-
-            // add http dispatcher server
-            my_server.add_service(http_dispatcher);
         }
 
         // configure probes

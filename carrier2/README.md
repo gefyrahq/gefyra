@@ -78,7 +78,7 @@ openssl x509 -req -extfile <(printf "subjectAltName=DNS:localhost") -days 365 -i
 ### Manually
 A graceful upgrade is performed with (in a buybox container):
 ```
-RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ]; then carrier2 -c /tmp/config.yaml -u -d; else carrier2 -c /tmp/config.yaml -d; fi
+"RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ]; then RUST_LOG=debug carrier2 -c /tmp/config.yaml -u -d; else RUST_LOG=debug carrier2 -c /tmp/config.yaml -d; fi"
 ```
 
 1. Sending `SIGQUIT` to the currently running instance

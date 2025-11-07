@@ -197,6 +197,7 @@ def test_h_probes_three_peer_mixed_https(
     session.mount("http://localhost:8021", HTTPAdapter(max_retries=retries))
     # cluster upstream
     session.mount("https://localhost:8080", HTTPAdapter(max_retries=retries))
+    session.mount("https://localhost:8081", HTTPAdapter(max_retries=retries))
 
     for req in [8019, 8020, 8021]:
         res = session.get(f"http://localhost:{req}")
@@ -204,6 +205,11 @@ def test_h_probes_three_peer_mixed_https(
 
     # this request gets upstreamed to https://localhost:4443
     res = session.get("https://localhost:8080", verify="./tests/fixtures/test_ca.pem")
+    assert res.status_code == 200
+    assert "Gefyra upstream rockz" in res.text
+
+    # there is a second port (identical config)
+    res = session.get("https://localhost:8081", verify="./tests/fixtures/test_ca.pem")
     assert res.status_code == 200
     assert "Gefyra upstream rockz" in res.text
 
@@ -227,6 +233,14 @@ def test_h_probes_three_peer_mixed_https(
     # rule: header match x-gefyra:user-2
     res = session.get(
         "https://localhost:8080/gefyra/",
+        headers={"x-gefyra": "user-2"},
+        verify="./tests/fixtures/test_ca.pem",
+    )
+    assert res.status_code == 200
+    assert "Gefyra peer with different output, here!" in res.text
+
+    res = session.get(
+        "https://localhost:8081/gefyra/",
         headers={"x-gefyra": "user-2"},
         verify="./tests/fixtures/test_ca.pem",
     )

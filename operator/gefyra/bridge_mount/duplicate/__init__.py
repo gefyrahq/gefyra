@@ -19,7 +19,7 @@ from kubernetes.client import (
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
 from gefyra.configuration import OperatorConfiguration
 
-from gefyra.bridge.carrier2.config import Carrier2Config, CarrierProbe
+from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
     generate_duplicate_deployment_name,
@@ -250,35 +250,31 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         )
         return pods
 
-    @property
-    def _default_upstream(self) -> List[str]:
+    def _default_upstream(self, rport: int) -> List[str]:
         svc_name = generate_duplicate_svc_name(
             workload_name=self.target, container_name=self.container
         )
         svc = core_v1_api.read_namespaced_service(svc_name, self.namespace)
-        return get_upstreams_for_svc(
-            svc=svc,
-        )
+        return get_upstreams_for_svc(svc=svc, rport=rport)
 
     def _set_carrier_upstream(
         self, upstream_ports: list[int], probes: List[V1Probe]
     ) -> Carrier2Config:
         carrier_config = Carrier2Config()
 
-        # TODO what about multiple ports?
         for upstream_port in upstream_ports:
-            carrier_config.port = upstream_port  # TODO currently only last port working
+            carrier_config.proxy.append(
+                Carrier2Proxy(
+                    port=upstream_port,
+                    clusterUpstream=self._default_upstream(upstream_port),
+                    tls=_get_tls_from_provider_parameters(self.params),
+                )
+            )
 
-        carrier_config.clusterUpstream = self._default_upstream
         if probes:
             carrier_config.probes = CarrierProbe(
                 httpGet=[probe.http_get.port for probe in probes]
             )
-        return carrier_config
-
-    def _set_tls(self, carrier_config: Carrier2Config) -> Carrier2Config:
-        if self.params and self.params.get("tls"):
-            carrier_config.tls = _get_tls_from_provider_parameters(self.params)
         return carrier_config
 
     def _check_probe_compatibility(self, probe: k8s.client.V1Probe) -> bool:
@@ -375,7 +371,6 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             )
 
             carrier_config = self._set_carrier_upstream(upstream_ports, probes)
-            carrier_config = self._set_tls(carrier_config)
             carrier_config.add_bridge_rules_for_mount(
                 self.name, self.configuration.NAMESPACE
             )
@@ -449,14 +444,10 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             )
             config_str = "\n".join(config_str_list)
             pod_config = Carrier2Config.from_string(config_str)
-            if not pod_config.clusterUpstream:
+            if not any(p.clusterUpstream for p in pod_config.proxy):
                 return False
-            return all(
-                [
-                    upstream in pod_config.clusterUpstream
-                    for upstream in self._default_upstream
-                ]
-            )
+            ## TODO check container of pod and port
+            return True
         self.logger.error("Cannot determine original pods")
         return False
 

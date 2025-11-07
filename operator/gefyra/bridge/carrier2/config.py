@@ -50,20 +50,25 @@ class CarrierTLS(BaseModel):
     sni: Optional[str] = None
 
 
+class Carrier2Proxy(BaseModel):
+    port: Optional[int] = None
+    tls: Optional[CarrierTLS] = None
+    clusterUpstream: Optional[list[str]] = None
+    bridges: Optional[dict[str, CarrierBridge]] = None
+
+
 class Carrier2Config(BaseModel):
     version: int = 1
     threads: int = 4
-    port: Optional[int] = None
     error_log: str = Field(
         default=ERROR_LOG_PATH,
     )
     pid_file: str = "/tmp/carrier2.pid"
     upgrade_sock: str = "/tmp/carrier2.sock"
     upstream_keepalive_pool_size: int = 100
-    tls: Optional[CarrierTLS] = None
-    clusterUpstream: Optional[list[str]] = None
     probes: Optional[CarrierProbe] = None
-    bridges: Optional[dict[str, CarrierBridge]] = None
+    proxy: List[Carrier2Proxy] = []
+
     model_config = ConfigDict(coerce_numbers_to_str=True)
 
     def model_dump_yaml(self) -> str:
@@ -142,13 +147,27 @@ class Carrier2Config(BaseModel):
         logger.debug(f"gefyra.dev/bridge-mount={bridge_mount_name}")
         logger.debug(f"BRIDGES {bridges}")
 
-        result = {}
         for bridge in bridges["items"]:
             logger.debug(f"BRIDGE State {bridge['state']}")
-            if bridge["state"] != "REMOVING":
+            if bridge["state"] != "REMOVING" and bridge["portMappings"]:
                 bridge_name = bridge["metadata"]["name"]
-                result[bridge_name] = self._convert_bridge_to_rule(bridge)
-        self.bridges = result
+                try:
+                    rport = bridge["portMappings"][0].split(":")[1]
+                    proxy_idx = next(
+                        (
+                            index
+                            for (index, d) in enumerate(self.proxy)
+                            if d.port == rport
+                        ),
+                        None,
+                    )
+                    self.proxy[proxy_idx].bridges.update(
+                        {bridge_name: self._convert_bridge_to_rule(bridge)}
+                    )
+                except Exception as e:
+                    raise RuntimeError(
+                        "Could not match requested port from GefyraBridge"
+                    )
         return self
 
     def _convert_bridge_to_rule(self, bridge: dict) -> CarrierBridge:
