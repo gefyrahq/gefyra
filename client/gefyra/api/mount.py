@@ -26,7 +26,7 @@ def create_mount(
     wait: bool = False,
     timeout: int = 0,
     mount_name: str | None = None,
-    provider: str = "duplicate",
+    provider: str = "carrier2mount",
     tls_certificate: Optional[str] = None,
     tls_key: Optional[str] = None,
     tls_sni: Optional[str] = None,

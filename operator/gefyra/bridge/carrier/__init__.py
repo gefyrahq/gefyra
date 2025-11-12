@@ -121,7 +121,7 @@ class Carrier(AbstractGefyraBridgeProvider):
         else:
             return False
 
-    def validate(self, brige_request: Optional[Dict[Any, Any]] = None):
+    def validate(self, bridge_request: dict, hints: dict | None):
         raise NotImplementedError
 
     def _patch_pod_with_carrier(
@@ -305,6 +305,7 @@ class CarrierBuilder:
         target_namespace: str,
         target_pod: str,
         target_container: str,
+        post_event_function,
         logger,
         **_ignored,
     ):
@@ -313,6 +314,7 @@ class CarrierBuilder:
             target_namespace=target_namespace,
             target_pod=target_pod,
             target_container=target_container,
+            post_event_function=post_event_function,
             logger=logger,
         )
         return instance

@@ -21,6 +21,8 @@ from gefyra.bridge_mount.utils import (
     get_upstreams_for_svc,
 )
 from gefyra.bridge.carrier2.utils import read_carrier2_config
+from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+from gefyra.bridge.exceptions import BridgeInstallException
 
 app_api = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -36,6 +38,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
     def __init__(
         self,
         configuration: OperatorConfiguration,
+        name: str,
         target_namespace: str,
         target: str,
         target_container: str,
@@ -43,13 +46,23 @@ class Carrier2(AbstractGefyraBridgeProvider):
         logger,
     ) -> None:
         self.configuration = configuration
-
+        self.bridge_name = name
         self.bridge_mount_name = target  # BridgeMount
-        _ = self._bridge_mount_resource
+        bridge_mount = self._bridge_mount_resource
 
         self.logger = logger
         self.carrier_config = Carrier2Config()
         self.post_event = post_event_function
+        self.bridge_mount = Carrier2BridgeMount(
+            self.configuration,
+            self.bridge_mount_name,
+            bridge_mount["targetNamespace"],
+            bridge_mount["target"],
+            bridge_mount["targetContainer"],
+            post_event_function,
+            self.logger,
+            provider_parameter=bridge_mount.get("providerParameter"),
+        )
 
     provider_type = "carrier2"
 
@@ -73,6 +86,10 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         Check if this Gefyra bridge provider is ready for bridges
         """
+        if not self.bridge_mount.ready():
+            raise TemporaryError(
+                f"GefyraBridgeMount '{self.bridge_mount.name}' is not yet ready"
+            )
         if not all(
             [self.pod_ready_and_healthy(pod, self.container) for pod in self.pods.items]
         ):
@@ -107,6 +124,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
             self.post_event(
                 "Updating routing rules",
                 f"Now updating routing rules in Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s))",
+                "Normal",
             )
             self.update_carrier_config(pod)
 
@@ -117,19 +135,9 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # 4. Retrive actual config from running Carrier2 instance, raise TemporaryError on error (retry)
         # 5. Compare constructed config with actual config, return result
 
-    def _set_cluster_upstream(self, config: Carrier2Config) -> Carrier2Config:
-        svc = core_v1_api.read_namespaced_service(
-            name=generate_duplicate_svc_name(self._bridge_mount_target, self.container),
-            namespace=self.namespace,
-        )
-        config.clusterUpstream = get_upstreams_for_svc(
-            svc=svc,
-        )
-        return config
-
     def _cluster_upstream(self, proxy: Carrier2Proxy, rport: int) -> Carrier2Proxy:
         svc = core_v1_api.read_namespaced_service(
-            name=generate_duplicate_svc_name(self._bridge_mount_target, self.container),
+            name=self.bridge_mount.gefyra_svc_name(),
             namespace=self.namespace,
         )
         proxy.clusterUpstream = get_upstreams_for_svc(svc=svc, rport=rport)
@@ -165,28 +173,12 @@ class Carrier2(AbstractGefyraBridgeProvider):
         config.proxy = proxies
         return config
 
-    def _set_own_ports(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
-        for container in pod.spec.containers:
-            if container.name == self.container:
-                config.port = container.ports[0].container_port
-        return config
-
-    def _set_tls(self, config: Carrier2Config):
-        if (
-            self._bridge_mount_provider_parameter
-            and "tls" in self._bridge_mount_provider_parameter
-        ):
-            config.tls = _get_tls_from_provider_parameters(
-                self._bridge_mount_provider_parameter
-            )
-        return config
-
     def update_carrier_config(self, pod: V1Pod):
         carrier_config = Carrier2Config()
-        carrier_config = self._set_proxies(carrier_config)
+        carrier_config = self._set_proxies(carrier_config, pod)
         carrier_config = self._set_probes(carrier_config, pod)
         carrier_config.add_bridge_rules_for_mount(
-            self.bridge_mount_name, self.configuration.NAMESPACE
+            self.bridge_mount_name, self.configuration.NAMESPACE, self.bridge_name
         )
         carrier_config.commit(
             pod_name=pod.metadata.name,
@@ -262,10 +254,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         Get the pods from the bridge mount
         """
-        return self._get_pods_workload(
-            name=self.target,
-            namespace=self.namespace,
-            workload_type="deployment",  # TODO
+        return self.bridge_mount.get_pods_workload(
+            self.bridge_mount.target, self.bridge_mount.namespace
         )
 
     def pod_ready_and_healthy(self, pod: V1Pod, container_name: str) -> bool:
@@ -343,15 +333,20 @@ class Carrier2(AbstractGefyraBridgeProvider):
         )
         config_str = "\n".join(config_str_list)
         pod_config = Carrier2Config.from_string(config_str)
-        if not pod_config.bridges:
+        if not any([bool(proxy.bridges) for proxy in pod_config.proxy]):
             return False
-        self.logger.debug(f"{destination_host}:{destination_port}")
+
+        proxy = next(
+            (proxy for proxy in pod_config.proxy if proxy.port == int(container_port)),
+            None,
+        )
+        if proxy is None:
+            return False
 
         bridge_exists = any(
             bridge.endpoint == f"{destination_host}:{destination_port}"
-            for bridge in pod_config.bridges.values()
+            for bridge in proxy.bridges.values()
         )
-        self.logger.debug(f"Bridge exists: {bridge_exists}")
         return bridge_exists
         # raise NotImplementedError
 
@@ -419,6 +414,7 @@ class Carrier2Builder:
     def __call__(
         self,
         configuration: OperatorConfiguration,
+        name: str,
         target_namespace: str,
         target: str,
         target_container: str,
@@ -428,6 +424,7 @@ class Carrier2Builder:
     ):
         instance = Carrier2(
             configuration=configuration,
+            name=name,
             target_namespace=target_namespace,
             target=target,
             target_container=target_container,

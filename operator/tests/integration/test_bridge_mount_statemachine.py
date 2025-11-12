@@ -46,7 +46,7 @@ class TestBridgeMountStateMachine:
                 "targetNamespace": namespace,
                 "target": name,
                 "targetContainer": "nginx",
-                "provider": "duplicate",
+                "provider": "carrier2mount",
             }
         )
         bridge_mount_object._write_state = MagicMock()

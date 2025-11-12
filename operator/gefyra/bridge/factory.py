@@ -23,6 +23,7 @@ class GefyraBridgeFactory:
         self,
         provider_type: BridgeProviderType,
         configuration: OperatorConfiguration,
+        name: str,
         target_namespace: str,
         target_pod: str,
         target_container: str,
@@ -35,6 +36,7 @@ class GefyraBridgeFactory:
             raise ValueError(provider_type)
         return builder(
             configuration,
+            name,
             target_namespace,
             target_pod,
             target_container,
@@ -47,6 +49,7 @@ class GefyraBridgeFactory:
         self,
         provider_type: BridgeProviderType,
         configuration: OperatorConfiguration,
+        name: str,
         target_namespace: str,
         target_pod: str,
         target_container: str,
@@ -57,6 +60,7 @@ class GefyraBridgeFactory:
         return self.__create(
             provider_type,
             configuration,
+            name,
             target_namespace,
             target_pod,
             target_container,

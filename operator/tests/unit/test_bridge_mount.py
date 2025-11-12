@@ -20,9 +20,9 @@ logger = logging.getLogger(__name__)
 
 class TestBridgeMountObject(TestCase):
     def test_bridge_mount_label_duplication(self):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=None,
             target_namespace="default",
@@ -35,9 +35,9 @@ class TestBridgeMountObject(TestCase):
         self.assertEqual(labels, {"app": "nginx-gefyra"})
 
     def test_bridge_mount_deployment_cloning(self):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=None,
             target_namespace="default",
@@ -48,7 +48,7 @@ class TestBridgeMountObject(TestCase):
 
         deployment = NginxDeploymentFactory()
 
-        new_deployment = mount._clone_deployment_structure(deployment)
+        new_deployment = mount._clone_workload_structure(deployment)
         self.assertEqual(new_deployment.metadata.name, "nginx-gefyra")
         self.assertEqual(new_deployment.metadata.labels, {"app": "nginx-gefyra"})
         self.assertEqual(
@@ -60,9 +60,9 @@ class TestBridgeMountObject(TestCase):
         )
 
     def test_cleaning_annotations(self):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=None,
             target_namespace="default",
@@ -87,7 +87,7 @@ class TestBridgeMountObject(TestCase):
         custom_object_api=DEFAULT,
     )
     def test_carrier_patch(self, app, core_v1_api, custom_object_api):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
         pod = NginxPodFactory()
@@ -97,7 +97,7 @@ class TestBridgeMountObject(TestCase):
             "target": "nginx-deployment",
         }
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
@@ -143,7 +143,7 @@ class TestBridgeMountObject(TestCase):
     def test_duplicate_already_exists_patches(
         self, app, core_v1_api, custom_object_api
     ):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
         pod = NginxPodFactory()
@@ -152,7 +152,7 @@ class TestBridgeMountObject(TestCase):
         custom_object_api.get_namespaced_custom_object.return_value = {
             "target": "nginx-deployment",
         }
-        from gefyra.bridge_mount import duplicate as duplicate_mod
+        from gefyra.bridge_mount import carrier2mount as duplicate_mod
 
         app.create_namespaced_deployment.side_effect = duplicate_mod.ApiException(
             status=409
@@ -163,7 +163,7 @@ class TestBridgeMountObject(TestCase):
         )
         core_v1_api.patch_namespaced_service.return_value = True
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
@@ -180,9 +180,9 @@ class TestBridgeMountObject(TestCase):
         core_v1_api=DEFAULT,
     )
     def test_carrier_upstream(self, core_v1_api):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
@@ -212,9 +212,9 @@ class TestBridgeMountObject(TestCase):
         read_carrier2_config=DEFAULT,
     )
     def test_upstream_set_property(self, app, core_v1_api, read_carrier2_config):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
@@ -266,11 +266,11 @@ class TestBridgeMountObject(TestCase):
         assert mount._upstream_set
 
     def test_pod_ready_and_healthy(self):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from kubernetes.client import V1ContainerState, V1ContainerStateRunning
         import datetime
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",

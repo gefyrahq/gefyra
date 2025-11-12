@@ -1,13 +1,13 @@
 from enum import Enum
+from typing import Any, Callable
 
 from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
-from gefyra.bridge_mount.duplicate.builder import DuplicateBuilder
+from gefyra.bridge_mount.carrier2mount.builder import Carrier2BridgeMountBuilder
 
 
 class BridgeMountProviderType(Enum):
-    DUPLICATE = "duplicate"
+    CARRIER2MOUNT = "carrier2mount"
 
 
 class GefyraBridgeMountFactory:
@@ -25,8 +25,8 @@ class GefyraBridgeMountFactory:
         target_namespace: str,
         target: str,
         target_container: str,
-        post_event_function: callable,
-        parameter: dict,
+        post_event_function: Callable,
+        parameter: Any | None,
         logger,
         **kwargs
     ):
@@ -53,8 +53,8 @@ class GefyraBridgeMountFactory:
         target_namespace: str,
         target: str,
         target_container: str,
-        post_event_function: callable,
-        parameter: dict,
+        post_event_function: Callable,
+        parameter: Any | None,
         logger,
         **kwargs
     ) -> AbstractGefyraBridgeMountProvider:
@@ -74,5 +74,5 @@ class GefyraBridgeMountFactory:
 
 bridge_mount_provider_factory = GefyraBridgeMountFactory()
 bridge_mount_provider_factory.register_builder(
-    BridgeMountProviderType.DUPLICATE, DuplicateBuilder()
+    BridgeMountProviderType.CARRIER2MOUNT, Carrier2BridgeMountBuilder()
 )

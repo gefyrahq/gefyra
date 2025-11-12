@@ -201,6 +201,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             self.configuration,
             create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
             stowaway_port,
+            f"{destination_ip}_{destination_port}",
             peer_id,
         )
         stowaway_pod = self._get_stowaway_pod()
@@ -226,6 +227,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                     "gefyra.dev/app": "stowaway",
                     "gefyra.dev/role": "proxy",
                     "gefyra.dev/client-id": peer_id,
+                    "gefyra.dev/destination": f"{destination_ip}_{destination_port}",
                 }
             ),
         )
@@ -247,6 +249,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         proxy_svc = create_stowaway_proxy_service(
             create_stowaway_statefulset(STOWAWAY_LABELS, self.configuration),
             stowaway_port,
+            destinantion=f"{destination_ip}_{destination_port}",
             client_id=peer_id,
         )
         try:

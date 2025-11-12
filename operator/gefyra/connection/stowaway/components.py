@@ -267,10 +267,11 @@ def handle_stowaway_proxy_service(
     configuration: OperatorConfiguration,
     deployment_stowaway: k8s.client.V1Deployment,
     port: int,
+    destination: str,
     client_id: str,
 ) -> k8s.client.V1Service:
     proxy_service_stowaway = create_stowaway_proxy_service(
-        deployment_stowaway, port, client_id
+        deployment_stowaway, port, destination, client_id
     )
     try:
         core_v1_api.create_namespaced_service(

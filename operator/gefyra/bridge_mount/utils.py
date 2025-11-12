@@ -2,6 +2,8 @@ from typing import List
 import kubernetes as k8s
 from kubernetes.client import (
     V1Deployment,
+    V1StatefulSet,
+    V1Pod,
     V1ServicePort,
     V1Service,
     V1Container,
@@ -18,9 +20,7 @@ def get_upstreams_for_svc(svc: V1Service, rport: int | None = None) -> list[str]
     name = svc.metadata.name
     namespace = svc.metadata.namespace
     for port in svc.spec.ports:
-        if rport and port.port == rport:
-            res.append(f"{name}.{namespace}.svc.cluster.local:{port.port}")
-        else:
+        if not rport or (rport and port.port == rport):
             res.append(f"{name}.{namespace}.svc.cluster.local:{port.port}")
     return res
 
@@ -41,7 +41,7 @@ def generate_duplicate_svc_name(workload_name: str, container_name: str) -> str:
     return generate_k8s_conform_name(base, suffix)
 
 
-def generate_duplicate_deployment_name(workload_name: str):
+def generate_duplicate_workload_name(workload_name: str):
     suffix = "-gefyra"
     return generate_k8s_conform_name(workload_name, suffix)
 
@@ -52,11 +52,11 @@ def get_duplicate_svc_fqdn(
     return f"{generate_duplicate_svc_name(workload_name, container_name)}.{namespace}.svc.cluster.local"
 
 
-def get_ports_for_deployment(
-    deployment: V1Deployment, container_name: str
+def get_ports_for_workload(
+    workload: V1Deployment | V1StatefulSet | V1Pod, container_name: str
 ) -> list[V1ServicePort]:
     ports = []
-    for container in deployment.spec.template.spec.containers:
+    for container in workload.spec.template.spec.containers:
         if container.name == container_name:
             for idx, port in enumerate(container.ports):
                 ports.append(

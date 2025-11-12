@@ -3,7 +3,7 @@ kind: gefyrabridgemount
 metadata:
   name: bridgemount-a
   namespace: gefyra
-provider: duplicate
+provider: carrier2mount
 targetNamespace: default
-target: nginx-deployment 
+target: deploy/nginx-deployment 
 targetContainer: nginx

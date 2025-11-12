@@ -13,7 +13,8 @@ from gefyra.bridge_mount.factory import (
     BridgeMountProviderType,
     bridge_mount_provider_factory,
 )
-from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.bridge_mount.exceptions import BridgeMountInstallException
+from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 
 
 class GefyraBridgeMountObject(GefyraStateObject):
@@ -144,7 +145,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         try:
             #  TODO self.bridge_mount_provider.check_mount_conditions()
             self.bridge_mount_provider.prepare()
-        except (BridgeInstallException, ValueError) as e:
+        except (BridgeMountInstallException, ValueError) as e:
             self.post_event(
                 reason=f"Failed to install GefyraBridgeMount",
                 message=str(e),
@@ -163,7 +164,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         )
         try:
             self.bridge_mount_provider.install()
-        except BridgeInstallException as e:
+        except BridgeMountInstallException as e:
             self.post_event(
                 reason=f"Failed to install GefyraBridgeMount",
                 message=str(e),
@@ -193,4 +194,36 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         except Exception as e:
             self.logger.error(
                 f"Cannot uninstall GefyraBridgeMount '{self.object_name}' due to: {e}"
+            )
+        try:
+            self.cleanup_all_bridges()
+        except Exception as e:
+            self.logger.error(f"Cannot cleanup remaining GefyraBridges due to: {e}")
+
+    def cleanup_all_bridges(self) -> None:
+        bridges = self.custom_api.list_namespaced_custom_object(
+            group="gefyra.dev",
+            version="v1",
+            plural="gefyrabridges",
+            namespace=self.configuration.NAMESPACE,
+            label_selector=f"gefyra.dev/bridge-mount={self.object_name}",
+        )
+        for bridge in bridges.get("items"):
+            self.logger.warning(
+                "Now going to delete remaining GefyraBridge "
+                f"'{bridge['metadata']['name']}' for GefyraBridgeMount {self.object_name}"
+            )
+            obj = GefyraBridgeObject(bridge)
+            bridge_obj = GefyraBridge(obj, self.configuration, self.logger)
+            bridge_obj.post_event(
+                "GefyraBridgeMount deleted",
+                f"GefyraBridge '{bridge_obj.object_name}' will be removed since the related GefyraBridgeMount '{self.object_name}' is currently being removed",
+            )
+
+            self.custom_api.delete_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                plural="gefyrabridges",
+                namespace=self.configuration.NAMESPACE,
+                name=bridge["metadata"]["name"],
             )

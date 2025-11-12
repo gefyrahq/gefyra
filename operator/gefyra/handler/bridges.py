@@ -24,11 +24,7 @@ async def bridge_create(body, logger, **kwargs):
 async def bridge_delete(body, logger, **kwargs):
     obj = GefyraBridgeObject(body)
     bridge = GefyraBridge(obj, configuration, logger)
-    if (
-        bridge.active.is_active
-        or bridge.creating.is_active
-        or bridge.removing.is_active
-    ):
+    try:
         bridge.remove()
-    if bridge.installed.is_active:
-        bridge.restore()
+    except Exception as e:
+        logger.error(f"Unexpected error removing this GefyraBridge: {e}")

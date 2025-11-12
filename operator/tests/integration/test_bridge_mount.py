@@ -7,7 +7,7 @@ logger = logging.getLogger()
 
 class TestBridgeMountObject:
     def test_a_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         file_path = str(
             Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()
@@ -16,7 +16,7 @@ class TestBridgeMountObject:
         name = "nginx-deployment"
         namespace = "default"
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             configuration=None,
             name=name,
             target_namespace=namespace,
@@ -42,12 +42,12 @@ class TestBridgeMountObject:
         )
 
     def test_b_removal_of_bridge_mount(self, gefyra_crd: AClusterManager):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         name = "nginx-deployment"
         namespace = "default"
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             configuration=None,
             name=name,
             target_namespace=namespace,
@@ -66,7 +66,7 @@ class TestBridgeMountObject:
         )
 
     def test_c_duplication_by_bridge_mount_namespace(self, gefyra_crd: AClusterManager):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         namespace = "aaaaaaabbbbbbbbbcccccccdddddddeeeeee-test-432-bb"
         gefyra_crd.kubectl(["create", "ns", namespace])
@@ -79,7 +79,7 @@ class TestBridgeMountObject:
         gefyra_crd.apply(file_path)
         name = "nginx-deployment"
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             configuration=None,
             name=name,
             target_namespace=namespace,
@@ -105,12 +105,12 @@ class TestBridgeMountObject:
         )
 
     def test_d_removal_of_bridge_mount_namespace(self, gefyra_crd: AClusterManager):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         name = "nginx-deployment"
         namespace = "aaaaaaabbbbbbbbbcccccccdddddddeeeeee-test-432-bb"
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             configuration=None,
             name=name,
             target_namespace=namespace,

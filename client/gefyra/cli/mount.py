@@ -96,7 +96,7 @@ def create(
             mount: GefyraBridgeMount = api.create_mount(
                 namespace=namespace,
                 target=target,
-                provider="duplicate",
+                provider="carrier2mount",
                 connection_name=connection_name,
                 wait=False,
                 timeout=timeout,

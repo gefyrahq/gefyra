@@ -1,9 +1,10 @@
+from typing import Callable
 from gefyra.configuration import OperatorConfiguration
 
-from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
 
-class DuplicateBuilder:
+class Carrier2BridgeMountBuilder:
     def __init__(self):
         self._instances = {}
 
@@ -14,12 +15,12 @@ class DuplicateBuilder:
         target_namespace: str,
         target: str,
         target_container: str,
-        post_event_function: callable,
+        post_event_function: Callable,
         parameter: dict,
         logger,
         **_ignored,
     ):
-        instance = DuplicateBridgeMount(
+        instance = Carrier2BridgeMount(
             configuration=configuration,
             target_namespace=target_namespace,
             target=target,

@@ -84,7 +84,7 @@ def test_b_gefyrabridgemount_validator(operator: AClusterManager):
     logger = logging.getLogger()
     operation = "CREATE"
     diff = {}
-    base_body = {"metadata": {"name": "test1"}, "provider": "duplicate"}
+    base_body = {"metadata": {"name": "test1"}, "provider": "carrier2mount"}
     with pytest.raises(kopf.AdmissionError):
         check_validate_bridgemount_parameters(base_body, diff, logger, operation)
 
@@ -114,7 +114,7 @@ def test_b_gefyrabridgemount_validator(operator: AClusterManager):
     operation = "CREATE"
     body = {
         "metadata": {"name": "test1"},
-        "provider": "duplicate",
+        "provider": "carrier2mount",
         "target": "nginx-deployment",
         "targetNamespace": "default",
         "targetContainer": "nginx",

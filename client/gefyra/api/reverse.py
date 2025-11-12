@@ -112,7 +112,7 @@ def _edit_proxyroutes_configmap(
 
 
 def create_stowaway_proxy_service(
-    stowaway_deployment: k8s.client.V1Deployment, port: int, client_id: str = "unknown"
+    stowaway_deployment: k8s.client.V1Deployment, port: int, forwarded_port: int, client_id: str = "unknown"
 ) -> k8s.client.V1Service:
     print(f"Creating stowaway proxy service for port {port}")
     spec = k8s.client.V1ServiceSpec(
@@ -139,6 +139,7 @@ def create_stowaway_proxy_service(
                 "gefyra.dev/role": "proxy",
                 "gefyra.dev/proxy-port": str(port),
                 "gefyra.dev/client-id": client_id,
+                "gefyra.dev/forwarded-port": forwarded_port,
             },
         ),
         spec=spec,

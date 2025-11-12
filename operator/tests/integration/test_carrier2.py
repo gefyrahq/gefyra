@@ -55,7 +55,7 @@ class TestCarrier2:
         )
 
     def test_carrier2_duplicated_svc_available(self, gefyra_crd: AClusterManager):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from gefyra.configuration import OperatorConfiguration
 
         nginx_fixture = str(
@@ -76,7 +76,7 @@ class TestCarrier2:
         configuration = OperatorConfiguration()
         namespace = "default"
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="bridgemount-a",
             configuration=configuration,
             target_namespace=namespace,

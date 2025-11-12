@@ -1,12 +1,14 @@
+from copy import deepcopy
 import datetime
 from functools import partial
-from typing import Callable, List
+from typing import Callable, List, Tuple, Union
 import uuid
 from kopf import TemporaryError
 import kopf
 import kubernetes as k8s
 from kubernetes.client import (
     V1Deployment,
+    V1StatefulSet,
     V1PodList,
     V1Pod,
     ApiException,
@@ -22,24 +24,29 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
-    generate_duplicate_deployment_name,
+    generate_duplicate_workload_name,
     generate_duplicate_svc_name,
     generate_k8s_conform_name,
     get_all_probes,
-    get_ports_for_deployment,
+    get_ports_for_workload,
     get_upstreams_for_svc,
 )
 from gefyra.utils import wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
 from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.bridge_mount.exceptions import (
+    BridgeMountException,
+    BridgeMountInstallException,
+    BridgeMountTargetException,
+)
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_object_api = k8s.client.CustomObjectsApi()
 
 
-class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
-    provider_type = "duplicate"
+class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
+    provider_type = "carrier2mount"
 
     def __init__(
         self,
@@ -86,82 +93,171 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
     @property
     def _gefyra_workload_name(self) -> str:
-        return f"{self.target}-gefyra"
+        name, _ = self._split_target_type_name(self.target)
+        return f"{name}-gefyra"
 
-    def _clone_deployment_structure(self, deployment: V1Deployment) -> V1Deployment:
-        new_deployment = deployment
+    @property
+    def _gefyra_workload_type(self) -> str:
+        _, type_ = self._split_target_type_name(self.target)
+        if type_ is V1Deployment:
+            return "deployment"
+        elif type_ is V1StatefulSet:
+            return "statefulset"
+        else:
+            return "pod"
+
+    def _read_namespaced_(self, type_) -> Callable:
+        func = {
+            V1Deployment: app.read_namespaced_deployment,
+            V1StatefulSet: app.read_namespaced_stateful_set,
+            V1Pod: core_v1_api.read_namespaced_pod,
+        }.get(type_)
+        if not func:
+            raise BridgeMountTargetException(
+                f"Cannont select correct Kubernetes API read-op for type '{type_}'"
+            )
+        return func
+
+    def _create_namespaced_(self, type_) -> Callable:
+        func = {
+            V1Deployment: app.create_namespaced_deployment,
+            V1StatefulSet: app.create_namespaced_stateful_set,
+            V1Pod: core_v1_api.create_namespaced_pod,
+        }.get(type_)
+        if not func:
+            raise BridgeMountInstallException(
+                f"Cannont select correct Kubernetes API create-op for type '{type_}'"
+            )
+        return func
+
+    def _patch_namespaced_(self, type_) -> Callable:
+        func = {
+            V1Deployment: app.patch_namespaced_deployment,
+            V1StatefulSet: app.patch_namespaced_stateful_set,
+            V1Pod: core_v1_api.patch_namespaced_pod,
+        }.get(type_)
+        if not func:
+            raise BridgeMountInstallException(
+                f"Cannont select correct Kubernetes API patch-op for type '{type_}'"
+            )
+        return func
+
+    def _delete_namespaced_(self, type_) -> Callable:
+        func = {
+            V1Deployment: app.delete_namespaced_deployment,
+            V1StatefulSet: app.delete_namespaced_stateful_set,
+            V1Pod: core_v1_api.delete_namespaced_pod,
+        }.get(type_)
+        if not func:
+            raise BridgeMountInstallException(
+                f"Cannont select correct Kubernetes API delete-op for type '{type_}'"
+            )
+        return func
+
+    def _split_target_type_name(
+        self, target
+    ) -> Tuple[str, Union["V1Deployment", "V1StatefulSet", "V1Pod"]]:
+        parts = target.split("/", 1)
+        if len(parts) == 2:
+            kind, name = parts[0].lower(), parts[1]
+        else:
+            # assume it's a pod name if no kind prefix is provided
+            kind, name = "pod", parts[0]
+
+        if kind in ("deployment", "deploy", "deployments"):
+            type_ = V1Deployment
+        elif kind in ("statefulset", "sts", "statefulsets"):
+            type_ = V1StatefulSet
+        elif kind in ("pod", "po", "pods"):
+            type_ = V1Pod
+        else:
+            raise BridgeMountException(
+                f"Unsupported workload kind '{kind}' in reference {target}"
+            )
+        return name, type_
+
+    def _clone_workload_structure(
+        self, workload: V1Deployment | V1StatefulSet | V1Pod
+    ) -> V1Deployment | V1StatefulSet | V1Pod:
+        new_workload = deepcopy(workload)
 
         # Update labels to add -gefyra suffix
-        labels = self._get_duplication_labels(new_deployment.metadata.labels or {})
-        new_deployment.metadata.labels = labels
-        new_deployment.metadata.resource_version = None
-        new_deployment.metadata.uid = None
+        labels = self._get_duplication_labels(new_workload.metadata.labels or {})
+        new_workload.metadata.labels = labels
+        new_workload.metadata.resource_version = None
+        new_workload.metadata.uid = None
 
-        new_deployment.metadata.name = generate_duplicate_deployment_name(
-            deployment.metadata.name
+        new_workload.metadata.name = generate_duplicate_workload_name(
+            workload.metadata.name
         )
 
         pod_labels = self._get_duplication_labels(
-            new_deployment.spec.template.metadata.labels or {}
+            new_workload.spec.template.metadata.labels or {}
         )
         # we use this for svc selector
         pod_labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
-        new_deployment.spec.template.metadata.labels = pod_labels
+        new_workload.spec.template.metadata.labels = pod_labels
 
-        match_labels = self._get_duplication_labels(
-            new_deployment.spec.selector.match_labels or {}
+        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+            match_labels = self._get_duplication_labels(
+                new_workload.spec.selector.match_labels or {}
+            )
+            new_workload.spec.selector.match_labels = match_labels
+        new_workload.metadata.annotations = self._clean_annotations(
+            new_workload.metadata.annotations or {}
         )
-        new_deployment.spec.selector.match_labels = match_labels
-        new_deployment.metadata.annotations = self._clean_annotations(
-            new_deployment.metadata.annotations or {}
-        )
-        return new_deployment
+        return new_workload
 
-    def _get_svc_for_deployment(self, deployment: V1Deployment) -> V1Service:
+    def _get_svc_for_workload(
+        self, worload: V1Deployment | V1StatefulSet | V1Pod
+    ) -> V1Service:
+        name, _ = self._split_target_type_name(self.target)
         return V1Service(
             metadata=V1ObjectMeta(
                 name=generate_duplicate_svc_name(
-                    workload_name=self.target, container_name=self.container
+                    workload_name=name, container_name=self.container
                 ),
-                labels=deployment.metadata.labels,
+                labels=worload.metadata.labels,
             ),
             spec=V1ServiceSpec(
                 selector={
-                    "bridge.gefyra.dev/duplication-id": deployment.spec.template.metadata.labels[
+                    "bridge.gefyra.dev/duplication-id": worload.spec.template.metadata.labels[
                         "bridge.gefyra.dev/duplication-id"
                     ]
                 },
-                ports=get_ports_for_deployment(
-                    deployment=deployment, container_name=self.container
+                ports=get_ports_for_workload(
+                    workload=worload, container_name=self.container
                 ),
             ),
         )
 
-    def _duplicate_deployment(self) -> None:
-        deployment = self._get_workload()
+    def _duplicate_workload(self) -> None:
+        workload = self._get_workload(self.target, self.namespace)
 
-        # Create a copy of the deployment
-        new_deployment = self._clone_deployment_structure(deployment)
-        new_svc = self._get_svc_for_deployment(new_deployment)
+        # Create a copy of the workload
 
-        # Create the new deployment
+        new_workload = self._clone_workload_structure(workload)
+        new_svc = self._get_svc_for_workload(new_workload)
+
+        # Create the new workload
         try:
-            app.create_namespaced_deployment(self.namespace, new_deployment)
+
+            self._create_namespaced_(workload.__class__)(self.namespace, new_workload)
             self.post_event(
                 "Cluster upstream",
-                f"Created cluster upstream '{new_deployment.metadata.name}' "
-                f"for target workload '{deployment.metadata.name}' in namespace '{self.namespace}'.",
+                f"Created cluster upstream '{new_workload.metadata.name}' "
+                f"for target workload '{workload.metadata.name}' in namespace '{self.namespace}'.",
                 "Normal",
             )
         except ApiException as e:
             if e.status == 409:
-                app.patch_namespaced_deployment(
-                    name=new_deployment.metadata.name,
+                self._patch_namespaced_(workload.__class__)(
+                    name=new_workload.metadata.name,
                     namespace=self.namespace,
-                    body=new_deployment,
+                    body=new_workload,
                 )
             else:
-                raise RuntimeError(f"Exception when creating deployment: {e}")
+                raise BridgeInstallException(f"Exception when creating workload: {e}")
         try:
             core_v1_api.create_namespaced_service(
                 self.namespace,
@@ -181,58 +277,51 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                     body=new_svc,
                 )
             else:
-                raise RuntimeError(f"Exception when creating service: {e}")
+                raise BridgeInstallException(f"Exception when creating service: {e}")
 
-    def _get_workload(self) -> V1Deployment:
-        # TODO extend to pods
+    def _get_workload(
+        self, target: str, namespace: str
+    ) -> V1Deployment | V1StatefulSet | V1Pod:
+
+        name, type_ = self._split_target_type_name(target)
         try:
-            return app.read_namespaced_deployment(self.target, self.namespace)
+            return self._read_namespaced_(type_)(name, namespace)
         except ApiException as e:
             if e.status == 404:
-                raise Exception(f"Deployment {self.target} not found.")
+                raise BridgeMountTargetException(
+                    f"Workload target {target} (type '{type_.__name__}') in namespace '{namespace}' not found."
+                )
             raise RuntimeError(f"Exception when calling Kubernetes API: {e}")
 
     def prepare(self):
         try:
-            self._duplicate_deployment()
+            self._duplicate_workload()
         except Exception as e:
-            raise BridgeInstallException(e)
+            raise BridgeMountInstallException(e)
 
     @property
     def _gefyra_pods(self) -> V1PodList:
-        return self._get_pods_workload(
-            name=self._gefyra_workload_name,
+        _, type_ = self._split_target_type_name(self.target)
+        return self.get_pods_workload(
+            name=f"{self._gefyra_workload_type}/{self._gefyra_workload_name}",
             namespace=self.namespace,
-            workload_type="deployment",
         )
 
     @property
     def _original_pods(self) -> V1PodList:
-        return self._get_pods_workload(
+        return self.get_pods_workload(
             name=self.target,
             namespace=self.namespace,
-            workload_type="deployment",
         )
 
-    # TODO this also exists in the client, should be moved to a shared location
-    def _get_pods_workload(
-        self, name: str, namespace: str, workload_type: str
-    ) -> V1PodList:
+    def get_pods_workload(self, name: str, namespace: str) -> V1PodList:
         API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
-        NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."
+        NOT_FOUND_MSG = f"Target {name} not found in namespace '{namespace}'."
         try:
-            if workload_type == "deployment":
-                workload = app.read_namespaced_deployment(
-                    name=name, namespace=namespace
-                )
-            elif workload_type == "statefulset":
-                workload = app.read_namespaced_stateful_set(
-                    name=name, namespace=namespace
-                )
+            workload = self._get_workload(name, namespace)
         except ApiException as e:
             if e.status == 404:
-                # TODO better exception typing here
-                raise Exception(NOT_FOUND_MSG)
+                raise BridgeMountTargetException(NOT_FOUND_MSG)
             raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
         # use workloads metadata uuid for owner references with field selector to get pods
@@ -244,15 +333,16 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
         if not label_selector:
             # TODO better exception typing here
-            raise Exception(f"No label selector set for {workload_type} - {name}.")
+            raise Exception(f"No label selector set for {self.target}.")
         pods = core_v1_api.list_namespaced_pod(
             namespace=namespace, label_selector=label_selector
         )
         return pods
 
     def _default_upstream(self, rport: int) -> List[str]:
+        name, _ = self._split_target_type_name(self.target)
         svc_name = generate_duplicate_svc_name(
-            workload_name=self.target, container_name=self.container
+            workload_name=name, container_name=self.container
         )
         svc = core_v1_api.read_namespaced_service(svc_name, self.namespace)
         return get_upstreams_for_svc(svc=svc, rport=rport)
@@ -297,7 +387,6 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             return True
 
     def install(self):
-        # TODO extend to StatefulSet and Pods
         upstream_ports = []
         pods = self._original_pods.items
         if len(set(pod.metadata.owner_references[0].name for pod in pods)) > 1:
@@ -310,8 +399,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
             if pod.status.phase == "Terminating":
                 continue
             for container in pod.spec.containers:
-                upstream_ports.append(container.ports[0].container_port)
                 if container.name == self.container:
+                    upstream_ports = [port.container_port for port in container.ports]
                     probes = get_all_probes(container)
                     if not all(
                         map(
@@ -334,8 +423,8 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                     container.image = self._carrier_image
                     break
             else:
-                raise RuntimeError(
-                    f"Could not found container {self.container} in Pod {pod}"
+                raise BridgeInstallException(
+                    f"Container {self.container} not found in Pod {pod}"
                 )
             self.post_event(
                 "Patching target pod",
@@ -357,7 +446,6 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 pod.metadata.name,
                 self.namespace,
             )
-            # TODO better check for the image under s.status.container_statuses instead of restart count
             wait_until_condition(
                 read_func,
                 lambda s: next(
@@ -372,7 +460,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
 
             carrier_config = self._set_carrier_upstream(upstream_ports, probes)
             carrier_config.add_bridge_rules_for_mount(
-                self.name, self.configuration.NAMESPACE
+                self.name, self.configuration.NAMESPACE, None
             )
             self.post_event(
                 "Update Carrier2",
@@ -451,12 +539,15 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
         self.logger.error("Cannot determine original pods")
         return False
 
-    def restore_original_workload(self) -> V1Deployment:
-        workload = self._get_workload()
+    def restore_original_workload(
+        self,
+    ) -> Union["V1Deployment", "V1StatefulSet", "V1Pod"]:
+        _, type_ = self._split_target_type_name(self.target)
+        workload = self._get_workload(self.target, self.namespace)
         workload.spec.template.metadata.annotations = {
             "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
         }
-        new_workload = app.patch_namespaced_deployment(
+        new_workload = self._patch_namespaced_(type_)(
             name=workload.metadata.name, namespace=self.namespace, body=workload
         )
         return new_workload
@@ -487,9 +578,12 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 )
 
         # we cannot allow more GefyraBridgeMounts for the same workload
-        target = bridge_request["target"]
-        target_namespace = bridge_request["targetNamespace"]
+        # e.g. deploy/a deployment/a sts/b and others
         try:
+            target = bridge_request["target"]
+            self._split_target_type_name(target)  # expect RuntimeError if malformed
+            target_namespace = bridge_request["targetNamespace"]
+
             bridge_mounts = custom_object_api.list_namespaced_custom_object(
                 group="gefyra.dev",
                 version="v1",
@@ -509,7 +603,7 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 )
 
     def uninstall_service(self) -> None:
-        gefyra_svc_name = generate_duplicate_svc_name(self.target, self.container)
+        gefyra_svc_name = self.gefyra_svc_name()
         try:
             core_v1_api.delete_namespaced_service(gefyra_svc_name, self.namespace)
         except ApiException as e:
@@ -523,23 +617,29 @@ class DuplicateBridgeMount(AbstractGefyraBridgeMountProvider):
                 )
                 raise e
 
-    def uninstall_deployment(self) -> None:
+    def gefyra_svc_name(self):
+        name, _ = self._split_target_type_name(self.target)
+        gefyra_svc_name = generate_duplicate_svc_name(name, self.container)
+        return gefyra_svc_name
+
+    def uninstall_duplicated_workload(self) -> None:
+        _, type_ = self._split_target_type_name(self.target)
         gefyra_deployment_name = self._gefyra_workload_name
         try:
-            app.delete_namespaced_deployment(gefyra_deployment_name, self.namespace)
+            self._delete_namespaced_(type_)(gefyra_deployment_name, self.namespace)
         except ApiException as e:
             if e.status == 404:
                 self.logger.warning(
-                    f"Deployment {gefyra_deployment_name} not found in namespace {self.namespace}."
+                    f"Workload {type_.__name__}/{gefyra_deployment_name} not found in namespace {self.namespace}."
                 )
             else:
                 self.logger.error(
-                    f"Exception when deleting deployment {gefyra_deployment_name}: {e}"
+                    f"Exception when deleting workload {type_.__name__}/{gefyra_deployment_name}: {e}"
                 )
                 raise e
 
     def uninstall(self):
-        self.uninstall_deployment()
+        self.uninstall_duplicated_workload()
         self.uninstall_service()
         self.restore_original_workload()
         # TODO Delete all bridges

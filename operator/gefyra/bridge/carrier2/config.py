@@ -54,7 +54,7 @@ class Carrier2Proxy(BaseModel):
     port: Optional[int] = None
     tls: Optional[CarrierTLS] = None
     clusterUpstream: Optional[list[str]] = None
-    bridges: Optional[dict[str, CarrierBridge]] = None
+    bridges: dict[str, CarrierBridge] = {}
 
 
 class Carrier2Config(BaseModel):
@@ -134,7 +134,7 @@ class Carrier2Config(BaseModel):
         return Carrier2Config(**yaml.safe_load(content_str))
 
     def add_bridge_rules_for_mount(
-        self, bridge_mount_name: str, namespace: str
+        self, bridge_mount_name: str, namespace: str, current_bridge: str | None
     ) -> "Carrier2Config":
         custom_object_api = k8s.client.CustomObjectsApi()
         bridges = custom_object_api.list_namespaced_custom_object(
@@ -151,8 +151,9 @@ class Carrier2Config(BaseModel):
             logger.debug(f"BRIDGE State {bridge['state']}")
             if bridge["state"] != "REMOVING" and bridge["portMappings"]:
                 bridge_name = bridge["metadata"]["name"]
+                rport = -1
                 try:
-                    rport = bridge["portMappings"][0].split(":")[1]
+                    rport = int(bridge["portMappings"][0].split(":")[1])
                     proxy_idx = next(
                         (
                             index
@@ -161,13 +162,25 @@ class Carrier2Config(BaseModel):
                         ),
                         None,
                     )
-                    self.proxy[proxy_idx].bridges.update(
-                        {bridge_name: self._convert_bridge_to_rule(bridge)}
-                    )
+                    if proxy_idx is None:
+                        raise BridgeInstallException(
+                            f"No proxy found that serves port '{rport}'"
+                        )
+                    if self.proxy[proxy_idx].bridges:
+                        self.proxy[proxy_idx].bridges.update(
+                            {bridge_name: self._convert_bridge_to_rule(bridge)}
+                        )
+                    else:
+                        self.proxy[proxy_idx].bridges = {
+                            bridge_name: self._convert_bridge_to_rule(bridge)
+                        }
                 except Exception as e:
-                    raise RuntimeError(
-                        "Could not match requested port from GefyraBridge"
-                    )
+                    if current_bridge and bridge_name == current_bridge:
+                        raise BridgeInstallException(
+                            f"Could not install GefyraBridge: {e}"
+                        ) from None
+                    else:
+                        continue
         return self
 
     def _convert_bridge_to_rule(self, bridge: dict) -> CarrierBridge:
@@ -178,9 +191,7 @@ class Carrier2Config(BaseModel):
 
     def _get_rules_for_bridge(self, bridge: dict) -> List[CarrierRule]:
         rules = []
-        logger.info(bridge)
         for rule in bridge["providerParameter"]["rules"]:
-            logger.info(rule)
             if "match" in rule:
                 rules.append(CarrierRule(**rule))
         return rules
