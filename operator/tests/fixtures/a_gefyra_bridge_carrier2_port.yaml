@@ -18,5 +18,6 @@ targetNamespace: default
 target: bridgemount-a
 targetContainer: nginx
 portMappings:
-  - "9090:8081"
+  - "9090:8080"
+  - "8080:80"
 destinationIP: "192.168.101.1"

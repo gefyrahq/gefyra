@@ -82,7 +82,7 @@ def connect(  # noqa: C901
             )
         logger.debug(f"Creating new connection {connection_name}")
         if update_callback:
-            update_callback(f"Creating new connection {connection_name}")
+            update_callback(f"Creating new connection '{connection_name}'")
         file_str = client_config.read()
         client_config.close()
         gclient_conf = GefyraClientConfig.from_json_str(file_str)

@@ -4,12 +4,13 @@ import random
 import string
 
 # from time import sleep
-from typing import List, Dict, TYPE_CHECKING, Optional, Tuple
+from typing import List, Dict, TYPE_CHECKING, Optional, Tuple, Union
 
 from gefyra.local.bridge import get_all_containers, get_gefyrabridge
 from gefyra.types import ExactMatchHeader, GefyraLocalContainer
 from gefyra.local.mount import get_gefyrabridgemount
 from gefyra.exceptions import GefyraBridgeError
+from gefyra.types.bridge import PrefixMatchHeader, RegexMatchHeader
 from gefyra.types.bridge_mount import GefyraBridgeMount  # , CommandTimeoutError
 from gefyra.types import GefyraBridge
 from gefyra.configuration import ClientConfiguration
@@ -125,7 +126,9 @@ def create_bridge(
     timeout: int = 0,
     wait: bool = False,
     connection_name: str = "",
-    match_header: List[ExactMatchHeader] = [],
+    rules: List[
+        List[Union[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]]
+    ] = [],
 ) -> "GefyraBridge":
     """
     Create a GefyraBridge object
@@ -134,7 +137,7 @@ def create_bridge(
     :param bridge_mount_name: The name of the GefyraBridgeMount that is target of that GefyraBridge
     :param handle_probes: (Legacy) Handle probes on this Pod
     :param connection_name: The name of the local connection to set this bridge up for
-    :param match_header: A list of rules to match and intercept traffic
+    :param rules: The rules to match traffic
 
     :return: The GefyraBridge object that was created.
     """
@@ -176,7 +179,7 @@ def create_bridge(
             f"Could not find GefyraBridgeMount '{bridge_mount_name}'"
         )
 
-    bridge_name = f"{config.CLIENT_ID[:25]}-{bridge_mount.target[:20]}-{bridge_mount.target_container[:20]}-{random_string(5)}"
+    bridge_name = f"{config.CLIENT_ID[:25]}-{bridge_mount.target[:20].replace('/', '-')}-{bridge_mount.target_container[:20]}-{random_string(5)}"
     if len(bridge_name) > 63:
         raise RuntimeError(
             "The name of the GefyraBridge must be no more than 63 characters"

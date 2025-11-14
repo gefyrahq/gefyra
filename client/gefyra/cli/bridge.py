@@ -12,9 +12,17 @@ from gefyra.cli.utils import (
     check_connection_name,
     parse_ip_port_map,
     parse_match_header,
+    parse_match_path,
     standard_error_handler,
 )
-from gefyra.types.bridge import GefyraBridge
+from gefyra.types.bridge import (
+    ExactMatchPath,
+    GefyraBridge,
+    PrefixMatchHeader,
+    PrefixMatchPath,
+    RegexMatchHeader,
+    RegexMatchPath,
+)
 from tabulate import tabulate
 
 
@@ -52,11 +60,46 @@ def bridge(ctx):
     callback=parse_ip_port_map,
 )
 @click.option(
-    "--match-header",
-    help="Match header to forward traffic based to this client. E.g.: --matchHeader name:x-gefyra:peer",
-    required=True,
+    "--match-header-exact",
+    help="Match header exactly to forward traffic to this client. E.g.: --match-header-exact x-gefyra:peer",
+    required=False,
     multiple=True,
     callback=parse_match_header,
+)
+@click.option(
+    "--match-header-regex",
+    help="Match header regex expression to forward traffic to this client. E.g.: --match-header-regex x-gefyra:(.*))",
+    required=False,
+    multiple=True,
+    callback=parse_match_header,
+)
+@click.option(
+    "--match-header-prefix",
+    help="Match header value prefix (and name exactly) to forward traffic to this client. E.g.: --match-header-prefix x-gefyra:peer1,",
+    required=False,
+    multiple=True,
+    callback=parse_match_header,
+)
+@click.option(
+    "--match-path-prefix",
+    help="Match path prefix to forward traffic to this client. E.g.: --match-path-prefix myroute/",
+    required=False,
+    multiple=True,
+    callback=parse_match_path,
+)
+@click.option(
+    "--match-path-regex",
+    help="Match patch regex to forward traffic to this client. E.g.: --match-path-regex myroute/(.*)/all",
+    required=False,
+    multiple=True,
+    callback=parse_match_path,
+)
+@click.option(
+    "--match-path-exact",
+    help="Match path exactly to forward traffic to this client. E.g.: --match-path-exact /only/this",
+    required=False,
+    multiple=True,
+    callback=parse_match_path,
 )
 @click.option(
     "-P",
@@ -82,13 +125,31 @@ def create_bridge(
     name,
     ports,
     mount,
-    match_header: List[ExactMatchHeader],
+    match_header_exact: List[ExactMatchHeader],
+    match_header_prefix: List[PrefixMatchHeader],
+    match_header_regex: List[RegexMatchHeader],
+    match_path_exact: List[ExactMatchPath],
+    match_path_prefix: List[PrefixMatchPath],
+    match_path_regex: List[RegexMatchPath],
     no_probe_handling,
     connection_name,
     nowait,
     timeout,
 ):
     from gefyra import api
+
+    rules = [
+        match_header_exact,
+        match_header_regex,
+        match_header_prefix,
+        match_path_exact,
+        match_path_prefix,
+        match_path_regex,
+    ]
+    if not any(rules):
+        raise click.MissingParameter(
+            "You have to pass at least one rule to match traffic in the target GefyraBridgeMount"
+        )
 
     with alive_bar(
         total=None,
@@ -105,7 +166,7 @@ def create_bridge(
             ports=ports,
             bridge_mount_name=mount,
             connection_name=connection_name,
-            match_header=match_header,
+            rules=rules,
         )
         bar.text(f"GefyraBridge requested")
         if not nowait:
@@ -173,15 +234,14 @@ def delete_bridge(
     is_flag=True,
     default=False,
 )
-@click.option(
-    "--connection-name", type=str, default="default", callback=check_connection_name
-)
+@click.option("--connection-name", type=str, default="default")
 @click.pass_context
 @standard_error_handler
 def list_bridges(ctx, all: bool, connection_name: str):
     from gefyra import api
 
-    if not all and ctx.obj["mode"] == "client":
+    if not all and connection_name:
+        check_connection_name(None, None, connection_name)
         bridges = api.list_bridges(
             kubeconfig=ctx.obj["kubeconfig"],
             kubecontext=ctx.obj["context"],
@@ -247,6 +307,7 @@ def list_bridges(ctx, all: bool, connection_name: str):
 def inspect_bridge(ctx, bridge_name):
     from gefyra import api
 
+    # TODO add connection-name support
     bridge_obj = api.get_bridge(
         bridge_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )

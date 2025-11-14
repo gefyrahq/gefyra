@@ -158,21 +158,35 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             f"GefryaBridge '{self.object_name}' is being activated",
         )
         try:
+            # TODO refactor this code
             destination = self.data["destinationIP"]
             for port_mapping in self.data.get("portMappings"):
-                source_port, target_port = port_mapping.split(":")
+                local_port, target_port = port_mapping.split(":")
                 if not self.connection_provider.destination_exists(
-                    self.data["client"], destination, int(source_port)
+                    self.data["client"], destination, int(local_port)
                 ):
                     proxy_host = self.connection_provider.add_destination(
-                        self.data["client"], destination, int(source_port)
+                        self.data["client"], destination, int(local_port)
                     )
                 else:
                     proxy_host = self.connection_provider.get_destination(
-                        self.data["client"], destination, int(source_port)
+                        self.data["client"], destination, int(local_port)
                     )
                 proxy_host, proxy_port = proxy_host.split(":", 1)
-                self._patch_object({"clusterEndpoint": f"{proxy_host}:{proxy_port}"})
+                self._patch_object(
+                    {"clusterEndpoint": {target_port: f"{proxy_host}:{proxy_port}"}}
+                )
+                self.post_event(
+                    "GefyraBridge connection",
+                    f"Added cluster endpoint '{proxy_host}:{proxy_port}' for local port '{local_port}'",
+                )
+
+            for port_mapping in self.data.get("portMappings"):
+                local_port, target_port = port_mapping.split(":")
+                proxy_host = self.connection_provider.get_destination(
+                    self.data["client"], destination, int(local_port)
+                )
+                proxy_host, proxy_port = proxy_host.split(":", 1)
                 if not self.bridge_provider.proxy_route_exists(
                     target_port, proxy_host, proxy_port
                 ):
@@ -239,9 +253,14 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.send("terminate")
 
     def on_impair(self, exception: Optional[BridgeException] = None):
+        message = (
+            exception.message
+            if exception and hasattr(exception, "message")
+            else str(exception or "")
+        )
         self.post_event(
             reason=f"Failed in state {self.current_state}",
-            message=exception.message if exception else "",
+            message=message,
             type="Warning",
         )
 

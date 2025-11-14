@@ -115,6 +115,9 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         Add a new proxy_route to the bridge provider
         """
+        # if the bridge has been added already (through a loop in the statemachine), skip another update for this bridge object
+        if hasattr(self, "updated") and self.updated:
+            return
         if not self.ready():
             raise RuntimeError(
                 "Not able to configure Carrier in Pods. See error above."
@@ -127,6 +130,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 "Normal",
             )
             self.update_carrier_config(pod)
+        self.updated = True
 
         # 1. Call self.ready() (retry)
         # 2. Select all currently active GefyraBridges for this target

@@ -4,6 +4,12 @@ import click
 from click import ClickException
 import logging
 from gefyra.types import ExactMatchHeader
+from gefyra.types.bridge import (
+    ExactMatchPath,
+    PrefixMatchHeader,
+    PrefixMatchPath,
+    RegexMatchHeader,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -245,8 +251,6 @@ def parse_workload(ctx, param, workload: str) -> str:
 
 
 def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
-    if ctx.obj["mode"] == "adm":
-        return ""
     from gefyra import api
 
     if not selected:
@@ -278,9 +282,33 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
 
 def parse_match_header(
     ctx, param, match_header_raw: Tuple[str]
-) -> List[ExactMatchHeader]:
+) -> List[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]:
     res = []
     for match_header in match_header_raw:
-        name, value = match_header.split(":")
-        res.append(ExactMatchHeader(name=name, value=value))
+        try:
+            name, value = match_header.split(":")
+        except ValueError:
+            raise click.BadParameter(
+                "Please provide the header matching like <name>:<value>"
+            )
+        if param.name == "match_header_exact":
+            res.append(ExactMatchHeader(name=name, value=value))
+        if param.name == "match_header_prefix":
+            res.append(PrefixMatchHeader(name=name, value=value))
+        if param.name == "match_header_regex":
+            res.append(RegexMatchHeader(name=name, value=value))
+    return res
+
+
+def parse_match_path(
+    ctx, param, match_path_raw: Tuple[str]
+) -> List[ExactMatchPath | PrefixMatchPath | RegexMatchHeader]:
+    res = []
+    for match_path in match_path_raw:
+        if param.name == "match_path_exact":
+            res.append(ExactMatchPath(path=match_path))
+        if param.name == "match_path_prefix":
+            res.append(PrefixMatchPath(path=match_path))
+        if param.name == "match_path_regex":
+            res.append(RegexMatchHeader(path=match_path))
     return res

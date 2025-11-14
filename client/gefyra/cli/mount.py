@@ -127,6 +127,7 @@ def create(
 def delete_mount(ctx, mount_name):
     from gefyra import api
 
+    # TODO add connection-name support
     for _del in list(mount_name):
         deleted = api.delete_mount(
             _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
@@ -141,17 +142,28 @@ def delete_mount(ctx, mount_name):
 def list_mounts(ctx):
     from gefyra import api
 
-
+    # TODO add connection-name support
     bridge_mounts = api.list_mounts(
         kubeconfig=ctx.obj["kubeconfig"],
         kubecontext=ctx.obj["context"],
     )
 
-    mounts = [[c.name, c._state, c.target, c.target_namespace] for c in bridge_mounts]
+    mounts = [
+        [c.name, c._state, c.target, c.target_container, c.target_namespace]
+        for c in bridge_mounts
+    ]
     if mounts:
         click.echo(
             tabulate(
-                mounts, headers=["ID", "STATE", "TARGET", "NAMESPACE"], tablefmt="plain"
+                mounts,
+                headers=[
+                    "ID",
+                    "STATE",
+                    "TARGET",
+                    "TARGET CONTAINER",
+                    "TARGET NAMESPACE",
+                ],
+                tablefmt="plain",
             )
         )
     else:
@@ -167,6 +179,7 @@ def list_mounts(ctx):
 def inspect_mount(ctx, mount_name):
     from gefyra import api
 
+    # TODO add connection-name support
     mount_obj = api.get_mount(
         mount_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )

@@ -1,6 +1,7 @@
 from copy import deepcopy
 import datetime
 from functools import partial
+import json
 from typing import Callable, List, Tuple, Union
 import uuid
 from kopf import TemporaryError
@@ -43,6 +44,8 @@ from gefyra.bridge_mount.exceptions import (
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_object_api = k8s.client.CustomObjectsApi()
+
+CARRIER2_ORIGINAL_CONFIGMAP = "gefyra-carrier2-restore-configmap"
 
 
 class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
@@ -191,42 +194,58 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             workload.metadata.name
         )
 
-        pod_labels = self._get_duplication_labels(
-            new_workload.spec.template.metadata.labels or {}
-        )
-        # we use this for svc selector
-        pod_labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
-        new_workload.spec.template.metadata.labels = pod_labels
-
         if isinstance(workload, (V1Deployment, V1StatefulSet)):
+            pod_labels = self._get_duplication_labels(
+                new_workload.spec.template.metadata.labels or {}
+            )
+            # we use this for svc selector
+            pod_labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
+            new_workload.spec.template.metadata.labels = pod_labels
+
             match_labels = self._get_duplication_labels(
                 new_workload.spec.selector.match_labels or {}
             )
             new_workload.spec.selector.match_labels = match_labels
+        else:
+            pod_labels = self._get_duplication_labels(
+                new_workload.metadata.labels or {}
+            )
+            # we use this for svc selector
+            pod_labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
+            new_workload.metadata.labels = pod_labels
+
         new_workload.metadata.annotations = self._clean_annotations(
             new_workload.metadata.annotations or {}
         )
         return new_workload
 
     def _get_svc_for_workload(
-        self, worload: V1Deployment | V1StatefulSet | V1Pod
+        self, workload: V1Deployment | V1StatefulSet | V1Pod
     ) -> V1Service:
         name, _ = self._split_target_type_name(self.target)
+        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+            selector_ = {
+                "bridge.gefyra.dev/duplication-id": workload.spec.template.metadata.labels[
+                    "bridge.gefyra.dev/duplication-id"
+                ]
+            }
+        else:
+            selector_ = {
+                "bridge.gefyra.dev/duplication-id": workload.metadata.labels[
+                    "bridge.gefyra.dev/duplication-id"
+                ]
+            }
         return V1Service(
             metadata=V1ObjectMeta(
                 name=generate_duplicate_svc_name(
                     workload_name=name, container_name=self.container
                 ),
-                labels=worload.metadata.labels,
+                labels=workload.metadata.labels,
             ),
             spec=V1ServiceSpec(
-                selector={
-                    "bridge.gefyra.dev/duplication-id": worload.spec.template.metadata.labels[
-                        "bridge.gefyra.dev/duplication-id"
-                    ]
-                },
+                selector=selector_,
                 ports=get_ports_for_workload(
-                    workload=worload, container_name=self.container
+                    workload=workload, container_name=self.container
                 ),
             ),
         )
@@ -325,7 +344,10 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
         # use workloads metadata uuid for owner references with field selector to get pods
-        v1_label_selector = workload.spec.selector.match_labels
+        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+            v1_label_selector = workload.spec.selector.match_labels
+        else:
+            v1_label_selector = workload.metadata.labels
 
         label_selector = ",".join(
             [f"{key}={value}" for key, value in v1_label_selector.items()]
@@ -389,7 +411,16 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     def install(self):
         upstream_ports = []
         pods = self._original_pods.items
-        if len(set(pod.metadata.owner_references[0].name for pod in pods)) > 1:
+        if (
+            len(
+                set(
+                    pod.metadata.owner_references[0].name
+                    for pod in pods
+                    if pod.metadata.owner_references
+                )
+            )
+            > 1
+        ):
             # there is probably an update in progress
             raise TemporaryError(
                 "Cannot install Gefyra Carrier2 on pods controlled by more than one controller.",
@@ -419,7 +450,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             f"The container {self.container} in Pod {pod.metadata.name} is already"
                             " running Carrier2"
                         )
-                    # self._store_pod_original_config(container)
+                    self._store_pod_original_config(container, pod.metadata.name)
                     container.image = self._carrier_image
                     break
             else:
@@ -544,12 +575,15 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     ) -> Union["V1Deployment", "V1StatefulSet", "V1Pod"]:
         _, type_ = self._split_target_type_name(self.target)
         workload = self._get_workload(self.target, self.namespace)
-        workload.spec.template.metadata.annotations = {
-            "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
-        }
-        new_workload = self._patch_namespaced_(type_)(
-            name=workload.metadata.name, namespace=self.namespace, body=workload
-        )
+        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+            workload.spec.template.metadata.annotations = {
+                "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
+            }
+            new_workload = self._patch_namespaced_(type_)(
+                name=workload.metadata.name, namespace=self.namespace, body=workload
+            )
+        else:
+            new_workload = self._patch_pod_with_original_config(workload.metadata.name)
         return new_workload
 
     def prepared(self):
@@ -638,8 +672,77 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 )
                 raise e
 
+    def _store_pod_original_config(
+        self, container: k8s.client.V1Container, pod_name: str
+    ) -> None:
+        """
+        Store the original configuration of that Container in order to restore it once the intercept request is ended
+        :param container: V1Container of the Pod in question
+        :param ireq_object: the InterceptRequest object
+        :return: None
+        """
+        data = json.dumps(
+            {
+                "originalConfig": {
+                    "image": container.image,
+                    "command": container.command,
+                    "args": container.args,
+                }
+            }
+        )
+        config = [
+            {"op": "add", "path": f"/data/{self.namespace}-{pod_name}", "value": data}
+        ]
+        try:
+            core_v1_api.patch_namespaced_config_map(
+                name=CARRIER2_ORIGINAL_CONFIGMAP,
+                namespace=self.configuration.NAMESPACE,
+                body=config,
+            )
+        except k8s.client.exceptions.ApiException as e:
+            if e.status == 404:
+                core_v1_api.create_namespaced_config_map(
+                    namespace=self.configuration.NAMESPACE,
+                    body=k8s.client.V1ConfigMap(
+                        metadata=k8s.client.V1ObjectMeta(
+                            name=CARRIER2_ORIGINAL_CONFIGMAP
+                        ),
+                        data={
+                            f"{self.namespace}-{pod_name}": data,
+                        },
+                    ),
+                )
+            else:
+                raise e
+
+    def _patch_pod_with_original_config(self, pod_name: str) -> V1Pod:
+        pod = core_v1_api.read_namespaced_pod(name=pod_name, namespace=self.namespace)
+        configmap = core_v1_api.read_namespaced_config_map(
+            name=CARRIER2_ORIGINAL_CONFIGMAP,
+            namespace=self.configuration.NAMESPACE,
+        )
+        data = json.loads(configmap.data.get(f"{self.namespace}-{pod_name}"))
+
+        for container in pod.spec.containers:
+            if container.name == self.container:
+                for k, v in data.get("originalConfig").items():
+                    setattr(container, k, v)
+                break
+        else:
+            raise RuntimeError(
+                f"Could not found container {self.container} in Pod {pod_name}: cannot"
+                " patch with original state"
+            )
+
+        self.logger.info(
+            f"Now patching Pod {pod_name}; container {self.container} with original"
+            " state"
+        )
+        return core_v1_api.patch_namespaced_pod(
+            name=pod_name, namespace=self.namespace, body=pod
+        )
+
     def uninstall(self):
         self.uninstall_duplicated_workload()
         self.uninstall_service()
         self.restore_original_workload()
-        # TODO Delete all bridges

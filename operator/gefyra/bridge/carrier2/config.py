@@ -1,3 +1,4 @@
+from enum import StrEnum
 from functools import partial
 import logging
 import yaml
@@ -20,19 +21,37 @@ logger = logging.getLogger(__name__)
 ERROR_LOG_PATH = "/tmp/carrier.log"
 
 
-class CarrierMatchHeader(BaseModel):
+class CarrierMatchType(StrEnum):
+    ExactLookup = ("exact",)
+    PrefixLookup = ("prefix",)
+    RegexLookup = "regex"
+
+
+class CarrierHeaderMatch(BaseModel):
     name: str
     value: str
+    type: CarrierMatchType = CarrierMatchType.ExactLookup
 
 
-class CarrierMatch(BaseModel):
-    match_header: CarrierMatchHeader = Field(
+class CarrierPathMatch(BaseModel):
+    path: str
+    type: CarrierMatchType = CarrierMatchType.ExactLookup
+
+
+class CarrierMatchHeader(BaseModel):
+    match_header: CarrierHeaderMatch = Field(
         alias="matchHeader",
     )
 
 
+class CarrierMatchPath(BaseModel):
+    match_path: CarrierPathMatch = Field(
+        alias="matchPath",
+    )
+
+
 class CarrierRule(BaseModel):
-    match: list[CarrierMatch]
+    match: list[CarrierMatchHeader | CarrierMatchPath]
 
 
 class CarrierBridge(BaseModel):
@@ -153,27 +172,32 @@ class Carrier2Config(BaseModel):
                 bridge_name = bridge["metadata"]["name"]
                 rport = -1
                 try:
-                    rport = int(bridge["portMappings"][0].split(":")[1])
-                    proxy_idx = next(
-                        (
-                            index
-                            for (index, d) in enumerate(self.proxy)
-                            if d.port == rport
-                        ),
-                        None,
-                    )
-                    if proxy_idx is None:
-                        raise BridgeInstallException(
-                            f"No proxy found that serves port '{rport}'"
+                    for port in bridge["portMappings"]:
+                        rport = int(port.split(":")[1])
+                        proxy_idx = next(
+                            (
+                                index
+                                for (index, d) in enumerate(self.proxy)
+                                if d.port == rport
+                            ),
+                            None,
                         )
-                    if self.proxy[proxy_idx].bridges:
-                        self.proxy[proxy_idx].bridges.update(
-                            {bridge_name: self._convert_bridge_to_rule(bridge)}
-                        )
-                    else:
-                        self.proxy[proxy_idx].bridges = {
-                            bridge_name: self._convert_bridge_to_rule(bridge)
-                        }
+                        if proxy_idx is None:
+                            raise BridgeInstallException(
+                                f"No proxy found that serves port '{rport}'"
+                            )
+                        if self.proxy[proxy_idx].bridges:
+                            self.proxy[proxy_idx].bridges.update(
+                                {
+                                    bridge_name: self._convert_bridge_to_rule(
+                                        bridge, rport
+                                    )
+                                }
+                            )
+                        else:
+                            self.proxy[proxy_idx].bridges = {
+                                bridge_name: self._convert_bridge_to_rule(bridge, rport)
+                            }
                 except Exception as e:
                     if current_bridge and bridge_name == current_bridge:
                         raise BridgeInstallException(
@@ -183,9 +207,9 @@ class Carrier2Config(BaseModel):
                         continue
         return self
 
-    def _convert_bridge_to_rule(self, bridge: dict) -> CarrierBridge:
+    def _convert_bridge_to_rule(self, bridge: dict, target_port: int) -> CarrierBridge:
         return CarrierBridge(
-            endpoint=bridge["clusterEndpoint"],
+            endpoint=bridge["clusterEndpoint"][str(target_port)],
             rules=self._get_rules_for_bridge(bridge),
         )
 

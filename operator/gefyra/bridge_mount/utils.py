@@ -56,7 +56,11 @@ def get_ports_for_workload(
     workload: V1Deployment | V1StatefulSet | V1Pod, container_name: str
 ) -> list[V1ServicePort]:
     ports = []
-    for container in workload.spec.template.spec.containers:
+    if isinstance(workload, (V1Deployment, V1StatefulSet)):
+        spec_ = workload.spec.template.spec
+    else:
+        spec_ = workload.spec
+    for container in spec_.containers:
         if container.name == container_name:
             for idx, port in enumerate(container.ports):
                 ports.append(

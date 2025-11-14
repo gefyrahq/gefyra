@@ -6,11 +6,47 @@ from gefyra.local.utils import WatchEventsMixin
 
 
 @dataclass
-class ExactMatchHeader:
+class CarrierHeaderMatchBase:
     # the name of the header to match
     name: str
     # the exact header value to match
     value: str
+
+
+@dataclass
+class CarrierPathMatchBase:
+    # the path to match
+    path: str
+
+
+@dataclass
+class ExactMatchHeader(CarrierHeaderMatchBase):
+    type: str = "exact"
+
+
+@dataclass
+class PrefixMatchHeader(CarrierHeaderMatchBase):
+    type: str = "prefix"
+
+
+@dataclass
+class RegexMatchHeader(CarrierHeaderMatchBase):
+    type: str = "regex"
+
+
+@dataclass
+class ExactMatchPath(CarrierPathMatchBase):
+    type: str = "exact"
+
+
+@dataclass
+class PrefixMatchPath(CarrierPathMatchBase):
+    type: str = "prefix"
+
+
+@dataclass
+class RegexMatchPath(CarrierPathMatchBase):
+    type: str = "regex"
 
 
 @dataclass
