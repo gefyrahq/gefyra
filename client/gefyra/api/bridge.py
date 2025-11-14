@@ -120,6 +120,7 @@ def check_workloads(
 @stopwatch
 def create_bridge(
     name: str,
+    local: str,
     ports: dict,
     bridge_mount_name: str,
     handle_probes: bool = True,
@@ -132,7 +133,8 @@ def create_bridge(
 ) -> "GefyraBridge":
     """
     Create a GefyraBridge object
-    :param name: The name of the local running container, target of the traffic
+    :param name: The requested name for this GefyraBridge object
+    :param local: The name of the local running container, target of the traffic
     :param ports: Mapping remote ports to local ports
     :param bridge_mount_name: The name of the GefyraBridgeMount that is target of that GefyraBridge
     :param handle_probes: (Legacy) Handle probes on this Pod
@@ -152,9 +154,9 @@ def create_bridge(
     config = ClientConfiguration(connection_name=connection_name)
 
     try:
-        container = config.DOCKER.containers.get(name)
+        container = config.DOCKER.containers.get(local)
     except NotFound:
-        raise GefyraBridgeError(f"Could not find local target container '{name}'")
+        raise GefyraBridgeError(f"Could not find local target container '{local}'")
 
     port_mappings = [f"{key}:{value}" for key, value in ports.items()]
 
@@ -164,7 +166,7 @@ def create_bridge(
         ]["IPAddress"]
     except KeyError:
         raise GefyraBridgeError(
-            f"The target container '{name}' is not in Gefyra's network"
+            f"The target container '{local}' is not in Gefyra's network"
             f" {config.NETWORK_NAME}. Did you set up a connection for it?"
         ) from None
 
@@ -179,7 +181,10 @@ def create_bridge(
             f"Could not find GefyraBridgeMount '{bridge_mount_name}'"
         )
 
-    bridge_name = f"{config.CLIENT_ID[:25]}-{bridge_mount.target[:20].replace('/', '-')}-{bridge_mount.target_container[:20]}-{random_string(5)}"
+    if not name:
+        bridge_name = f"{config.CLIENT_ID[:25]}-{bridge_mount.target[:20].replace('/', '-')}-{bridge_mount.target_container[:20]}-{random_string(5)}"
+    else:
+        bridge_name = name
     if len(bridge_name) > 63:
         raise RuntimeError(
             "The name of the GefyraBridge must be no more than 63 characters"
@@ -192,7 +197,7 @@ def create_bridge(
         local_container_ip=local_container_ip,
         port_mappings=port_mappings,
         target=bridge_mount_name,
-        exact_match_headers=match_header,
+        rules=rules,
         client=config.CLIENT_ID,
     ).get_k8s_bridge_body(config)
 

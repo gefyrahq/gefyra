@@ -45,11 +45,17 @@ def bridge(ctx):
     help="Establish a GefyraBridge from a GefyraBridgeMount in the cluster to a local container",
 )
 @click.option(
-    "-N",
-    "--name",
+    "-t",
+    "--local",
     "--target",
     help="The name of the local container running in Gefyra",
     required=True,
+)
+@click.option(
+    "-N",
+    "--name",
+    help="Assign a custom name to this GefyraBridge",
+    required=False,
 )
 @click.option(
     "-p",
@@ -123,6 +129,7 @@ def bridge(ctx):
 @standard_error_handler
 def create_bridge(
     name,
+    local,
     ports,
     mount,
     match_header_exact: List[ExactMatchHeader],
@@ -163,6 +170,7 @@ def create_bridge(
 
         bridge: GefyraBridge = api.create_bridge(
             name=name,
+            local=local,
             ports=ports,
             bridge_mount_name=mount,
             connection_name=connection_name,
@@ -314,6 +322,6 @@ def inspect_bridge(ctx, bridge_name):
     console.heading(bridge_obj.name)
     console.info(f"States: {bridge_obj._state_transitions}")
     console.info(f"GefyraBridgeMount: {bridge_obj.target}")
-    console.info(f"Provider Parameters: {bridge_obj.exact_match_headers}")
+    console.info(f"Provider Parameters: {bridge_obj.rules}")
     console.heading("Events")
     bridge_obj.watch_events(console.info, None, 1)

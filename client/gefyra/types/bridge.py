@@ -12,11 +12,19 @@ class CarrierHeaderMatchBase:
     # the exact header value to match
     value: str
 
+    def to_dict(self):
+        return {
+            "matchHeader": {"name": self.name, "value": self.value, "type": self.type}
+        }
+
 
 @dataclass
 class CarrierPathMatchBase:
     # the path to match
     path: str
+
+    def to_dict(self):
+        return {"matchPath": {"path": self.path, "type": self.type}}
 
 
 @dataclass
@@ -78,7 +86,7 @@ class GefyraBridge(WatchEventsMixin):
     # the connection provider, needed to create a reverse path beweet cluster and local {stowaway}
     connection_provider: str = "stowaway"
     # additional provider parameters for this bridge
-    exact_match_headers: List[ExactMatchHeader] | None = None
+    rules: List[ExactMatchHeader] | None = None
 
     # legacy (global bridge)
     target_namespace: str = ""
@@ -97,7 +105,7 @@ class GefyraBridge(WatchEventsMixin):
             target_container=bridge_raw["targetContainer"],
             target_namespace=bridge_raw["targetNamespace"],
             target=bridge_raw["target"],
-            exact_match_headers=bridge_raw.get("providerParameter"),
+            rules=bridge_raw.get("providerParameter"),
         )
         bridge._state = bridge_raw["state"]
         bridge._state_transitions = bridge_raw.get("stateTransitions", None)
@@ -108,8 +116,8 @@ class GefyraBridge(WatchEventsMixin):
     def get_k8s_bridge_body(self, config: ClientConfiguration):
         from gefyra.local.bridge import get_bridge_rules
 
-        if self.exact_match_headers:
-            params = {"rules": get_bridge_rules(self.exact_match_headers)}
+        if self.rules:
+            params = {"rules": get_bridge_rules(self.rules)}
         else:
             params = {}
         return {

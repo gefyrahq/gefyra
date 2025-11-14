@@ -22,8 +22,8 @@ ERROR_LOG_PATH = "/tmp/carrier.log"
 
 
 class CarrierMatchType(StrEnum):
-    ExactLookup = ("exact",)
-    PrefixLookup = ("prefix",)
+    ExactLookup = "exact"
+    PrefixLookup = "prefix"
     RegexLookup = "regex"
 
 
@@ -32,10 +32,16 @@ class CarrierHeaderMatch(BaseModel):
     value: str
     type: CarrierMatchType = CarrierMatchType.ExactLookup
 
+    class Config:
+        use_enum_values = True
+
 
 class CarrierPathMatch(BaseModel):
     path: str
     type: CarrierMatchType = CarrierMatchType.ExactLookup
+
+    class Config:
+        use_enum_values = True
 
 
 class CarrierMatchHeader(BaseModel):
@@ -112,6 +118,7 @@ class Carrier2Config(BaseModel):
             backoff=0.2,
         )
 
+        print(self)
         config_str = self.model_dump_yaml()
 
         config_commands = [

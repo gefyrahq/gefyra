@@ -126,24 +126,16 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
     return container_information
 
 
-def get_match_header_rules(
-    match_header: List[ExactMatchHeader] = [],
+def get_match_rules(
+    rule_set: List[List] = [],
 ) -> List[Dict[str, Dict[str, str]]]:
-    return [
-        {
-            "matchHeader": {
-                "name": header.name,
-                "value": header.value,
-            }
-        }
-        for header in match_header
-    ]
+    return [rule.to_dict() for rules in rule_set for rule in rules]
 
 
 def get_bridge_rules(
-    match_header: List[ExactMatchHeader] = [],
+    rules: List[ExactMatchHeader] = [],
 ) -> List[Dict[str, List[Dict[str, Dict[str, str]]]]]:
-    return [{"match": get_match_header_rules(match_header)}]
+    return [{"match": get_match_rules(rules)}]
 
 
 def get_gbridge_body(
