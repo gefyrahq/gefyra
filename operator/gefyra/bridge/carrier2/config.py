@@ -28,20 +28,22 @@ class CarrierMatchType(StrEnum):
 
 
 class CarrierHeaderMatch(BaseModel):
+    model_config = ConfigDict(use_enum_values=True)
+
     name: str
     value: str
-    type: CarrierMatchType = CarrierMatchType.ExactLookup
-
-    class Config:
-        use_enum_values = True
+    type: CarrierMatchType = Field(
+        default=CarrierMatchType.ExactLookup, validate_default=True
+    )
 
 
 class CarrierPathMatch(BaseModel):
-    path: str
-    type: CarrierMatchType = CarrierMatchType.ExactLookup
+    model_config = ConfigDict(use_enum_values=True)
 
-    class Config:
-        use_enum_values = True
+    path: str
+    type: CarrierMatchType = Field(
+        default=CarrierMatchType.ExactLookup, validate_default=True
+    )
 
 
 class CarrierMatchHeader(BaseModel):
@@ -94,7 +96,7 @@ class Carrier2Config(BaseModel):
     probes: Optional[CarrierProbe] = None
     proxy: List[Carrier2Proxy] = []
 
-    model_config = ConfigDict(coerce_numbers_to_str=True)
+    model_config = ConfigDict(coerce_numbers_to_str=True, use_enum_values=True)
 
     def model_dump_yaml(self) -> str:
         return yaml.safe_dump(

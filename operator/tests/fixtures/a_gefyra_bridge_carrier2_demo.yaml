@@ -12,12 +12,11 @@ providerParameter:
         - matchHeader:
             name: "x-gefyra"
             value: "peer1"
-            type: "exact"
 connectionProvider: stowaway
 client: client-a
-targetNamespace: default
+targetNamespace: demo
 target: bridgemount-a
-targetContainer: nginx
+targetContainer: demo
 portMappings:
-  - "8080:80"
+  - "8080:5002"
 destinationIP: "192.168.101.1"

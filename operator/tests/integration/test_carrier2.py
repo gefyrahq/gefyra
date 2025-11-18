@@ -6,6 +6,7 @@ from pytest_kubernetes.providers import AClusterManager
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
+
 from tests.integration.utils import read_carrier2_config
 
 
@@ -16,7 +17,7 @@ class TestCarrier2:
 
     def test_a_commit_config(self, gefyra_crd: AClusterManager, carrier2_image):
 
-        from gefyra.bridge.carrier2.config import Carrier2Config
+        from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy
 
         test_pod = str(
             Path(Path(__file__).parent.parent, "fixtures/test_pod.yaml").absolute()
@@ -32,8 +33,7 @@ class TestCarrier2:
         )
 
         config = Carrier2Config()
-        config.clusterUpstream = ["blueshoe.io:443"]
-        config.port = 5000
+        config.proxy = [Carrier2Proxy(port=5000, clusterUpstream=["blueshoe.io:443"])]
         start = time.time()
         config.commit(
             pod_name="backend",
@@ -50,7 +50,7 @@ class TestCarrier2:
         config = read_carrier2_config(core_v1, "backend", "default")
         config = config[0].replace("\n", "").replace(" ", "")
         assert (
-            "version:1threads:4port:5000error_log:/tmp/carrier.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100clusterUpstream:-blueshoe.io:443"
+            "version:1threads:4error_log:/tmp/carrier.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100proxy:-port:5000clusterUpstream:-blueshoe.io:443bridges:{}"
             in config
         )
 
@@ -80,8 +80,9 @@ class TestCarrier2:
             name="bridgemount-a",
             configuration=configuration,
             target_namespace=namespace,
-            target=name,
+            target=f"deploy/{name}",
             target_container="nginx",
+            post_event_function=lambda a, b, c: None,
             logger=logger,
         )
         mount.prepare()
