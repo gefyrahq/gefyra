@@ -339,7 +339,7 @@ def list_bridges(
                     )
                     break
                 else:
-                    result.append(None, bridge)
+                    result.append((None, bridge))
         return result
     else:
         return [
