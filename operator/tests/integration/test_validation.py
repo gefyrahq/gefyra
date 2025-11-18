@@ -98,8 +98,10 @@ def test_b_gefyrabridgemount_validator(operator: AClusterManager):
         "targetNamespace": "abc",
         "targetContainer": "abc",
     }
-    check_validate_bridgemount_parameters(body, diff, logger, operation)
+    with pytest.raises(kopf.AdmissionError):
+        check_validate_bridgemount_parameters(body, diff, logger, operation)
 
+    body["target"] = "deploy/abc"
     operation = "UPDATE"
     check_validate_bridgemount_parameters(body, diff, logger, operation)
 
@@ -115,7 +117,7 @@ def test_b_gefyrabridgemount_validator(operator: AClusterManager):
     body = {
         "metadata": {"name": "test1"},
         "provider": "carrier2mount",
-        "target": "nginx-deployment",
+        "target": "deploy/nginx-deployment",
         "targetNamespace": "default",
         "targetContainer": "nginx",
     }

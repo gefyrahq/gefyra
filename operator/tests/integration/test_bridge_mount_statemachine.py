@@ -44,7 +44,7 @@ class TestBridgeMountStateMachine:
                 "kind": "gefyrabridgemount",
                 "state": "REQUESTED",
                 "targetNamespace": namespace,
-                "target": name,
+                "target": "deploy/" + name,
                 "targetContainer": "nginx",
                 "provider": "carrier2mount",
             }

@@ -21,8 +21,7 @@ from gefyra.bridge_mount.utils import (
     get_upstreams_for_svc,
 )
 from gefyra.bridge.carrier2.utils import read_carrier2_config
-from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
-from gefyra.bridge.exceptions import BridgeInstallException
+
 
 app_api = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -45,6 +44,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
         post_event_function: Callable[[str, str, str], None],
         logger,
     ) -> None:
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+
         self.configuration = configuration
         self.bridge_name = name
         self.bridge_mount_name = target  # BridgeMount

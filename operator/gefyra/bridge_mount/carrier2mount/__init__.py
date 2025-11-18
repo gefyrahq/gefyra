@@ -164,8 +164,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         if len(parts) == 2:
             kind, name = parts[0].lower(), parts[1]
         else:
-            # assume it's a pod name if no kind prefix is provided
-            kind, name = "pod", parts[0]
+            raise BridgeMountTargetException(
+                f"Target format is not correctly specified: {target}"
+            )
 
         if kind in ("deployment", "deploy", "deployments"):
             type_ = V1Deployment
@@ -207,12 +208,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             )
             new_workload.spec.selector.match_labels = match_labels
         else:
-            pod_labels = self._get_duplication_labels(
-                new_workload.metadata.labels or {}
-            )
             # we use this for svc selector
-            pod_labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
-            new_workload.metadata.labels = pod_labels
+            labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
+            new_workload.metadata.labels = labels
 
         new_workload.metadata.annotations = self._clean_annotations(
             new_workload.metadata.annotations or {}
@@ -460,6 +458,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             self.post_event(
                 "Patching target pod",
                 f"Now patching Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s)); container {self.container} with Carrier2",
+                "Normal",
             )
             try:
                 core_v1_api.patch_namespaced_pod(
@@ -496,6 +495,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             self.post_event(
                 "Update Carrier2",
                 f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s))",
+                "Normal",
             )
             self.logger.debug(f"Carrier2 config: {carrier_config}")
             try:

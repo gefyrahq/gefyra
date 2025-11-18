@@ -118,7 +118,6 @@ class Carrier2Config(BaseModel):
             backoff=0.2,
         )
 
-        print(self)
         config_str = self.model_dump_yaml()
 
         config_commands = [

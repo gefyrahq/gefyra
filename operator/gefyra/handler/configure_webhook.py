@@ -155,15 +155,20 @@ def check_validate_bridge_parameters(body, diff, logger, operation, **_):
             target = body["target"]
         except KeyError as e:
             raise kopf.AdmissionError(f"Missing field {e}")
-
-        provider = provider = bridge_provider_factory.get(
-            BridgeProviderType(provider_parameter),
-            configuration,
-            body.get("targetNamespace"),
-            target,
-            body.get("targetContainer"),
-            None,
-            logger,
-        )
+        try:
+            provider = bridge_provider_factory.get(
+                BridgeProviderType(provider_parameter),
+                configuration,
+                name,
+                body.get("targetNamespace"),
+                target,
+                body.get("targetContainer"),
+                None,
+                logger,
+            )
+        except Exception as e:
+            raise kopf.AdmissionError(
+                f"Cannot create GefyraBridge provider {provider_parameter} due to: {e}"
+            )
         provider.validate(body, {})
     return True
