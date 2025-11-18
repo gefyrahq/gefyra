@@ -38,7 +38,7 @@ def create_mount(
         kube_context=kubecontext,
         connection_name=connection_name,
     )
-    _, workload_name, container_name = get_workload_information(target)
+    workload_type, workload_name, container_name = get_workload_information(target)
     if not mount_name:
         mount_name = f"{workload_name[:25]}-{namespace[:20]}-{random_string(5)}"
     if len(mount_name) > 63:
@@ -46,7 +46,7 @@ def create_mount(
     bridge_mount_body = get_gbridgemount_body(
         config,
         mount_name,
-        workload_name,
+        f"{workload_type}/{workload_name}",
         provider,
         namespace,
         container_name,
