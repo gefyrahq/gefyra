@@ -39,7 +39,7 @@ def mount(ctx):
     "--target",
     help=(
         "Install a GefyraBridgeMount to workloads following the notion 'resource/name/container'. "
-        "Resource can be one of 'deployment' or 'pod'. "
+        "Resource can be one of 'deployment', 'statefulset' or 'pod'. "
         "E.g.: --target deployment/hello-nginx/nginx"
     ),
     required=True,
