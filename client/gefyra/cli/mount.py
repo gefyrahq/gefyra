@@ -82,6 +82,7 @@ def create(
 ):
     from gefyra import api
 
+    timeout_reached = False
     try:
         with alive_bar(
             total=None,
@@ -109,10 +110,13 @@ def create(
             )
             bar.text(f"GefyraBridgeMount requested")
             if not nowait:
-                mount.watch_events(bar.text, timeout=timeout)
-        console.success(
-            f"Successfully created GefyraBridgeMount '{mount.name}'. You can now create a GefyraBridge to intercept traffic."
-        )
+                timeout_reached = mount.watch_events(bar.text, timeout=timeout)
+        if timeout_reached:
+            raise click.ClickException("Timeout for this operation reached.")
+        else:
+            console.success(
+                f"Successfully created GefyraBridgeMount '{mount.name}'. {'You can now create a GefyraBridge to intercept traffic.' if not nowait else ''}"
+            )
 
     except RuntimeError as e:
         console.error(f"Could not create GefyraBridgeMount: {e}")

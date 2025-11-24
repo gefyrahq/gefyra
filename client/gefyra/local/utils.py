@@ -151,7 +151,8 @@ class WatchEventsMixin:
         update_callback: Optional[callable] = None,
         stop_reason: str = "Ready",
         timeout: int = 60,
-    ):
+    ) -> bool:
+        # returns if timeout is reached
         import kubernetes as k8s
 
         core_api = self._config.K8S_CORE_API
@@ -180,8 +181,10 @@ class WatchEventsMixin:
 
                     if event["object"].reason == stop_reason:
                         w.stop()
+                        return False
+            else:
+                return True
         except k8s.client.exceptions.ApiException as e:
-            print(e)
             if e.status == 403:
                 raise RuntimeError(
                     f"Cannot 'watch' events in namespace '{self._config.NAMESPACE}'"

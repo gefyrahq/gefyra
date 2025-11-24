@@ -28,7 +28,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=None,
         )
 
@@ -44,7 +44,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=None,
         )
 
@@ -53,8 +53,8 @@ class TestBridgeMountObject(TestCase):
         new_deployment = mount._clone_workload_structure(deployment)
         self.assertEqual(new_deployment.metadata.name, "nginx-gefyra")
         self.assertIn(("app", "nginx-gefyra"), new_deployment.metadata.labels.items())
-        self.assertIn(("app", "nginx"),
-            new_deployment.spec.selector.match_labels.items()
+        self.assertIn(
+            ("app", "nginx"), new_deployment.spec.selector.match_labels.items()
         )
         self.assertIn(
             ("app", "nginx"),
@@ -70,7 +70,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=None,
         )
 
@@ -106,7 +106,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=logger,
         )
         mount.prepare()
@@ -173,7 +173,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=logger,
         )
         mount.prepare()
@@ -193,7 +193,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=logger,
         )
 
@@ -226,7 +226,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=logger,
         )
 
@@ -283,7 +283,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a,b,c: None,
+            post_event_function=lambda a, b, c: None,
             logger=logger,
         )
 

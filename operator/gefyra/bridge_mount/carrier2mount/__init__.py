@@ -383,8 +383,22 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
         if probes:
             carrier_config.probes = CarrierProbe(
-                httpGet=[probe.http_get.port for probe in probes if not probe.http_get.scheme or probe.http_get.scheme.lower() == "http"],
-                httpsGet=[probe.http_get.port for probe in probes if probe.http_get.scheme and probe.http_get.scheme.lower() == "https"]
+                httpGet=list(
+                    set(
+                        probe.http_get.port
+                        for probe in probes
+                        if not probe.http_get.scheme
+                        or probe.http_get.scheme.lower() == "http"
+                    )
+                ),
+                httpsGet=list(
+                    set(
+                        probe.http_get.port
+                        for probe in probes
+                        if probe.http_get.scheme
+                        and probe.http_get.scheme.lower() == "https"
+                    )
+                ),
             )
         return carrier_config
 
@@ -485,7 +499,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     )
                 ).restart_count
                 > 0,
-                timeout=30,
+                timeout=120,
                 backoff=0.2,
             )
 

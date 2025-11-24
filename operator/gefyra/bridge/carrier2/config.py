@@ -115,9 +115,9 @@ class Carrier2Config(BaseModel):
         wait_until_condition(
             read_func,
             lambda s: all(
-                [container.ready for container in s.status.container_statuses]
+                [container.started for container in s.status.container_statuses]
             ),
-            timeout=30,
+            timeout=120,
             backoff=0.2,
         )
 
