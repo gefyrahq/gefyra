@@ -93,8 +93,12 @@ def serve(
 ):
     httpd = HTTPServer(("localhost", port), handler)
     if tls_keypath and tls_certpath:
-        httpd.socket = ssl.wrap_socket(
-            httpd.socket, keyfile=tls_keypath, certfile=tls_certpath, server_side=True
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.check_hostname = False
+        ctx.load_cert_chain(tls_certpath, tls_keypath)
+
+        httpd.socket = ctx.wrap_socket(
+            httpd.socket, server_side=True
         )
     httpd.serve_forever()
 
@@ -119,6 +123,7 @@ def https_upstream(request):
         ),
     )
     p.start()
+    
     yield
     os.kill(p.pid, signal.SIGKILL)
 

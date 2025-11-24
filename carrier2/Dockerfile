@@ -29,6 +29,9 @@ LABEL gefyra.dev/provider="carrier2"
 COPY --from=builder /carrier/target/x86_64-unknown-linux-musl/release/carrier2 /bin/carrier2
 # Add default config
 COPY config.yaml /tmp/config.yaml
+COPY client-cert.pem /tmp/client-cert.pem
+COPY client-key.pem /tmp/client-key.pem
+
 RUN touch /tmp/carrier.log
 COPY entrypoint.sh /entrypoint.sh
 COPY etc/ /etc

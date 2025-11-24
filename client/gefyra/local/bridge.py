@@ -186,6 +186,7 @@ def deploy_app_container(
     platform: Optional[str] = "linux/amd64",
     cpu_quota: Optional[str] = None,
     mem_limit: Optional[str] = None,
+    user: Optional[str] = None,
 ) -> Container:
     import docker
 
@@ -219,6 +220,7 @@ def deploy_app_container(
         "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",  # noqa: E231
         "cpu_quota": cpu_quota,
         "mem_limit": mem_limit,
+        "user": user,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 

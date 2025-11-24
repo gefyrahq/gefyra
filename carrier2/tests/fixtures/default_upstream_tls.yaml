@@ -1,5 +1,6 @@
 version: 1
 threads: 2
+upstream_keepalive_pool_size: 100
 proxy:
     - port: 8080
       tls:
@@ -7,7 +8,7 @@ proxy:
         key: "./tests/fixtures/test_key.pem"
         sni: ""
       clusterUpstream: 
-        - "localhost:4444"
+        - "127.0.0.1:4444"
 probes: 
     httpGet:
         - 8001

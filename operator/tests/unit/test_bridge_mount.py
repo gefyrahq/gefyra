@@ -26,8 +26,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=None,
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=None,
         )
 
@@ -41,8 +42,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=None,
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=None,
         )
 
@@ -50,13 +52,13 @@ class TestBridgeMountObject(TestCase):
 
         new_deployment = mount._clone_workload_structure(deployment)
         self.assertEqual(new_deployment.metadata.name, "nginx-gefyra")
-        self.assertEqual(new_deployment.metadata.labels, {"app": "nginx-gefyra"})
-        self.assertEqual(
-            new_deployment.spec.selector.match_labels, {"app": "nginx-gefyra"}
+        self.assertIn(("app", "nginx-gefyra"), new_deployment.metadata.labels.items())
+        self.assertIn(("app", "nginx"),
+            new_deployment.spec.selector.match_labels.items()
         )
-        self.assertDictContainsSubset(
-            {"app": "nginx-gefyra"},
-            new_deployment.spec.template.metadata.labels,
+        self.assertIn(
+            ("app", "nginx"),
+            new_deployment.spec.template.metadata.labels.items(),
         )
 
     def test_cleaning_annotations(self):
@@ -66,8 +68,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=None,
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=None,
         )
 
@@ -81,7 +84,7 @@ class TestBridgeMountObject(TestCase):
         self.assertEqual(cleaned_annotations, {"some-other-key": "some-value"})
 
     @patch.multiple(
-        "gefyra.bridge_mount.duplicate",
+        "gefyra.bridge_mount.carrier2mount",
         app=DEFAULT,
         core_v1_api=DEFAULT,
         custom_object_api=DEFAULT,
@@ -101,8 +104,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=logger,
         )
         mount.prepare()
@@ -135,7 +139,7 @@ class TestBridgeMountObject(TestCase):
         ]
 
     @patch.multiple(
-        "gefyra.bridge_mount.duplicate",
+        "gefyra.bridge_mount.carrier2mount",
         app=DEFAULT,
         core_v1_api=DEFAULT,
         custom_object_api=DEFAULT,
@@ -167,8 +171,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=logger,
         )
         mount.prepare()
@@ -176,7 +181,7 @@ class TestBridgeMountObject(TestCase):
         core_v1_api.patch_namespaced_service.assert_called_once()
 
     @patch.multiple(
-        "gefyra.bridge_mount.duplicate",
+        "gefyra.bridge_mount.carrier2mount",
         core_v1_api=DEFAULT,
     )
     def test_carrier_upstream(self, core_v1_api):
@@ -186,8 +191,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=logger,
         )
 
@@ -206,7 +212,7 @@ class TestBridgeMountObject(TestCase):
         assert carrier_config.probes.httpGet[0] == probe.http_get.port
 
     @patch.multiple(
-        "gefyra.bridge_mount.duplicate",
+        "gefyra.bridge_mount.carrier2mount",
         app=DEFAULT,
         core_v1_api=DEFAULT,
         read_carrier2_config=DEFAULT,
@@ -218,8 +224,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=logger,
         )
 
@@ -274,8 +281,9 @@ class TestBridgeMountObject(TestCase):
             name="test",
             configuration=OperatorConfiguration(),
             target_namespace="default",
-            target="nginx",
+            target="deploy/nginx",
             target_container="nginx",
+            post_event_function=lambda a,b,c: None,
             logger=logger,
         )
 

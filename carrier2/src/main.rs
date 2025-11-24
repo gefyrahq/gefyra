@@ -108,7 +108,6 @@ fn main() {
         debug!("{:?}", my_server.configuration);
         debug!("GefyraBridge config: {:?}", carrier_config);
         let carrier_config = carrier_config.as_mapping().unwrap();
-        
 
         // GefyraBridge data given, run the proxy process
         if carrier_config.contains_key("proxy") {
@@ -133,7 +132,7 @@ fn main() {
                     } else {
                         None
                     };
-                    
+
                     if proxy.contains_key("tls") {
                         cert_path = match proxy["tls"]["certificate"].as_str() {
                             Some(path) => Some(path.into()),
@@ -206,7 +205,7 @@ fn main() {
             // httpGet probe
             if let Some(http_get_ports) = carrier_config["probes"].get("httpGet") {
                 let ports = http_get_ports.as_sequence().unwrap();
-                info!("Configured probe ports: {:?}", ports);
+                info!("Configured httpGet (scheme HTTP) probe ports: {:?}", ports);
                 for port in ports {
                     let mut httpget_probe_handler = Service::new(
                         format!("httpGet probe handler {}", port.as_u64().unwrap()),
@@ -214,6 +213,24 @@ fn main() {
                     );
                     httpget_probe_handler.add_tcp(&format!("0.0.0.0:{}", port.as_u64().unwrap()));
                     my_server.add_service(httpget_probe_handler);
+                }
+            }
+            if let Some(https_get_ports) = carrier_config["probes"].get("httpsGet") {
+                let ports = https_get_ports.as_sequence().unwrap();
+                info!(
+                    "Configured httpsGet (scheme HTTPS) probe ports: {:?}",
+                    ports
+                );
+                for port in ports {
+                    let mut httpsget_probe_handler = Service::new(
+                        format!("httpsGet probe handler {}", port.as_u64().unwrap()),
+                        HttpGetProbeHandler,
+                    );
+                    let listening = format!("0.0.0.0:{}", port.as_u64().unwrap());
+                    httpsget_probe_handler
+                        .add_tls(&listening, "/tmp/client-cert.pem", "/tmp/client-key.pem")
+                        .unwrap();
+                    my_server.add_service(httpsget_probe_handler);
                 }
             }
         }

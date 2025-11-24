@@ -6,6 +6,8 @@ probes:
         - 8019
         - 8020
         - 8021
+    httpsGet:
+        - 8023
 proxy:
   - port: 8080
     tls:
@@ -13,24 +15,24 @@ proxy:
         key: "./tests/fixtures/test_key.pem"
         sni: ""
     clusterUpstream: 
-        - "localhost:4444"
+        - "127.0.0.1:4444"
     bridges:
         user-1:
-            endpoint: "localhost:5443"
+            endpoint: "127.0.0.1:5443"
             rules:
                 - match:
                     - matchHeader:
                         name: "x-gefyra"
                         value: "user-1"
         user-2:
-            endpoint: "localhost:5444"
+            endpoint: "127.0.0.1:5444"
             rules:
                 - match:
                     - matchHeader:
                         name: "x-gefyra"
                         value: "user-2"
         user-3:  
-            endpoint: "localhost:5442"
+            endpoint: "127.0.0.1:5442"
             tls: false  # this client does not run with TLS
             rules:
                 - match:
@@ -43,24 +45,24 @@ proxy:
         key: "./tests/fixtures/test_key.pem"
         sni: ""
     clusterUpstream: 
-        - "localhost:4444"
+        - "127.0.0.1:4444"
     bridges:
         user-1:
-            endpoint: "localhost:5443"
+            endpoint: "127.0.0.1:5443"
             rules:
                 - match:
                     - matchHeader:
                         name: "x-gefyra"
                         value: "user-1"
         user-2:
-            endpoint: "localhost:5444"
+            endpoint: "127.0.0.1:5444"
             rules:
                 - match:
                     - matchHeader:
                         name: "x-gefyra"
                         value: "user-2"
         user-3:  
-            endpoint: "localhost:5442"
+            endpoint: "127.0.0.1:5442"
             tls: false  # this client does not run with TLS
             rules:
                 - match:

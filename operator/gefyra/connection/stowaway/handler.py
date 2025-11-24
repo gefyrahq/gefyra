@@ -87,6 +87,8 @@ async def read_wireguard_status(logger):
                         # there is at least one client which has not yet set the "Interface.PublicKey", probably old
                         pass
                     else:
+                        if "status" not in client.data:
+                            client._patch_object({"status": {}})
                         if (
                             "wireguard" in client.data["status"]
                             and peer_status == client.data["status"]["wireguard"]

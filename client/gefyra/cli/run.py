@@ -65,6 +65,12 @@ from gefyra.cli.utils import (
     required=False,
 )
 @click.option(
+    "--user",
+    help="Username or UID (format: <name|uid>[:<group|gid>])",
+    type=str,
+    required=False,
+)
+@click.option(
     "-v",
     "--volume",
     help=(
@@ -130,6 +136,7 @@ def run(
     memory_from,
     cpu,
     memory,
+    user,
     volume,
     env,
     namespace,
@@ -164,6 +171,7 @@ def run(
         memory_from=memory_from,
         cpu=cpu,
         memory=memory,
+        user=user,
         env=env,
         ports=expose,
         auto_remove=auto_remove,

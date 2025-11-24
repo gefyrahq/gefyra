@@ -68,7 +68,8 @@ class CarrierBridge(BaseModel):
 
 
 class CarrierProbe(BaseModel):
-    httpGet: list[int]
+    httpGet: list[int] = []
+    httpsGet: list[int] = []
 
 
 class CarrierTLS(BaseModel):

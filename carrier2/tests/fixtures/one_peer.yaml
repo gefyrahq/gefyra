@@ -3,10 +3,10 @@ threads: 2
 proxy:
     - port: 8080
       clusterUpstream: 
-        - "localhost:4443"
+        - "127.0.0.1:4443"
       bridges:
         user-1:
-            endpoint: "localhost:5442"
+            endpoint: "127.0.0.1:5442"
             rules:
                 - match:
                     - matchPath: 

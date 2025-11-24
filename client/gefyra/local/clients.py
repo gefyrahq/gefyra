@@ -132,4 +132,5 @@ def get_gefyraclient_body(
             "namespace": config.NAMESPACE,
         },
         "provider": provider,
+        "status": {},
     }

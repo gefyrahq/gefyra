@@ -383,7 +383,8 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
         if probes:
             carrier_config.probes = CarrierProbe(
-                httpGet=[probe.http_get.port for probe in probes]
+                httpGet=[probe.http_get.port for probe in probes if not probe.http_get.scheme or probe.http_get.scheme.lower() == "http"],
+                httpsGet=[probe.http_get.port for probe in probes if probe.http_get.scheme and probe.http_get.scheme.lower() == "https"]
             )
         return carrier_config
 
@@ -508,7 +509,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             except RuntimeError:
                 raise BridgeInstallException(
                     f"Could not install GefyraBridgeMount successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
-                    f"and container '{self.container}' in namespace '{self.namespace}' for more information."
+                    f" and container '{self.container}' in namespace '{self.namespace}' for more information."
                 )
 
     @property

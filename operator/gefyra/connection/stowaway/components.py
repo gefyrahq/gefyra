@@ -187,18 +187,20 @@ def handle_stowaway_nodeport_service(
         logger.info("Stowaway nodeport service created")
     except k8s.client.exceptions.ApiException as e:
         if e.status in [409, 422]:
+            logger.info("Stowaway service already exist")
             # the Stowaway service already exist
+            # TODO check with installed service from 'gefyra install'
             # status == 422 is nodeport already allocated
-            logger.warning(
-                "Stowaway nodeport service already available, now patching it with"
-                " current configuration"
-            )
-            core_v1_api.patch_namespaced_service(
-                name=nodeport_service_stowaway.metadata.name,
-                body=nodeport_service_stowaway,
-                namespace=configuration.NAMESPACE,
-            )
-            logger.info("Stowaway nodeport service patched")
+            # logger.warning(
+            #     "Stowaway nodeport service already available, now patching it with"
+            #     " current configuration"
+            # )
+            # core_v1_api.patch_namespaced_service(
+            #     name=nodeport_service_stowaway.metadata.name,
+            #     body=nodeport_service_stowaway,
+            #     namespace=configuration.NAMESPACE,
+            # )
+            # logger.info("Stowaway nodeport service patched")
         else:
             raise e
 

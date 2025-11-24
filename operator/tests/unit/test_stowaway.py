@@ -38,6 +38,7 @@ peer: fc1N/s3c/jDsx+ACYfrC2WOUVs=
 """
 
     parsed_data = parse_wg_output(wg_output)
+    print(parsed_data)
     assert parsed_data == {
         "interface": {
             "name": "wg0",
@@ -51,7 +52,7 @@ peer: fc1N/s3c/jDsx+ACYfrC2WOUVs=
                 "preshared_key": "(hidden)",
                 "endpoint": {"host": "10.132.0.12", "port": 33416},
                 "allowed_ips": ["192.168.99.3/32", "172.22.0.0/16"],
-                "latest_handshake": {"value": 24, "unit": "seconds"},
+                "latest_handshake": "24 seconds ago",
                 "transfer": {
                     "received": {"value": 1.24, "unit": "MiB"},
                     "sent": {"value": 1.18, "unit": "MiB"},
