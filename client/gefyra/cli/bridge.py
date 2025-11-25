@@ -157,30 +157,35 @@ def create_bridge(
         raise click.MissingParameter(
             "You have to pass at least one rule to match traffic in the target GefyraBridgeMount"
         )
+    timeout_reached = False
+    try:
+        with alive_bar(
+            total=None,
+            length=20,
+            title=f"Creating the requested GefyraBridge (timeout={timeout}s))",
+            bar="smooth",
+            spinner="classic",
+            stats=False,
+            dual_line=True,
+        ) as bar:
 
-    with alive_bar(
-        total=None,
-        length=20,
-        title=f"Creating the requested GefyraBridge (timeout={timeout}s))",
-        bar="smooth",
-        spinner="classic",
-        stats=False,
-        dual_line=True,
-    ) as bar:
-
-        bridge: GefyraBridge = api.create_bridge(
-            name=name,
-            local=local,
-            ports=ports,
-            bridge_mount_name=mount,
-            connection_name=connection_name,
-            rules=rules,
-        )
-        bar.text(f"GefyraBridge requested")
-        if not nowait:
-            bridge.watch_events(bar.text, timeout=timeout)
-    # TODO check bridge state
-    # console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
+            bridge: GefyraBridge = api.create_bridge(
+                name=name,
+                local=local,
+                ports=ports,
+                bridge_mount_name=mount,
+                connection_name=connection_name,
+                rules=rules,
+            )
+            bar.text(f"GefyraBridge requested")
+            if not nowait:
+                timeout_reached = bridge.watch_events(bar.text, timeout=timeout)
+        if timeout_reached:
+            raise click.ClickException("Timeout for this operation reached.")
+        else:
+            console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
+    except RuntimeError as e:
+        raise click.ClickException(f"Could not create GefyraBridge: {e}")
 
 
 @bridge.command(

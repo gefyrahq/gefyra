@@ -69,7 +69,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         self.name = name
         self.post_event = post_event_function
         self.logger = logger
-        self.params = kwargs.get("provider_parameter", {})
+        self.params = kwargs.get("parameter", {})
 
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
         duplication_labels = {}
@@ -387,16 +387,22 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     set(
                         probe.http_get.port
                         for probe in probes
-                        if not probe.http_get.scheme
-                        or probe.http_get.scheme.lower() == "http"
+                        if probe.http_get.port not in upstream_ports
+                        and (
+                            not probe.http_get.scheme
+                            or probe.http_get.scheme.lower() == "http"
+                        )
                     )
                 ),
                 httpsGet=list(
                     set(
                         probe.http_get.port
                         for probe in probes
-                        if probe.http_get.scheme
-                        and probe.http_get.scheme.lower() == "https"
+                        if probe.http_get.port not in upstream_ports
+                        and (
+                            probe.http_get.scheme
+                            and probe.http_get.scheme.lower() == "https"
+                        )
                     )
                 ),
             )

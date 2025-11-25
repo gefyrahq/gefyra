@@ -119,7 +119,7 @@ def create(
             )
 
     except RuntimeError as e:
-        console.error(f"Could not create GefyraBridgeMount: {e}")
+        raise click.ClickException(f"Could not create GefyraBridgeMount: {e}")
 
 
 @mount.command(
