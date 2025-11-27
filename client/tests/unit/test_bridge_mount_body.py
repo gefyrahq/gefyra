@@ -4,11 +4,12 @@ from gefyra.local.mount import get_gbridgemount_body
 
 
 def test_bridge_mount_body_generation():
-    config = ClientConfiguration()
+    config = ClientConfiguration(ignore_docker=True)
     body = get_gbridgemount_body(
         config=config,
         name="test-mount",
         target="test-target",
+        provider="carrier2mount",
         target_namespace="test-namespace",
         target_container="test-container",
         tls_certificate="test-cert",
@@ -23,18 +24,19 @@ def test_bridge_mount_body_generation():
     assert body["targetNamespace"] == "test-namespace"
     assert body["target"] == "test-target"
     assert body["targetContainer"] == "test-container"
-    assert body["provider"] == "carrier2"
+    assert body["provider"] == "carrier2mount"
     assert body["providerParameter"]["tls"]["certificate"] == "test-cert"
     assert body["providerParameter"]["tls"]["key"] == "test-key"
     assert body["providerParameter"]["tls"]["sni"] == "test-sni"
 
 
 def test_bridge_mount_body_generation_no_tls():
-    config = ClientConfiguration()
+    config = ClientConfiguration(ignore_docker=True)
     body = get_gbridgemount_body(
         config=config,
         name="test-mount",
         target="test-target",
+        provider="carrier2mount",
         target_namespace="test-namespace",
         target_container="test-container",
     )
@@ -46,17 +48,18 @@ def test_bridge_mount_body_generation_no_tls():
     assert body["targetNamespace"] == "test-namespace"
     assert body["target"] == "test-target"
     assert body["targetContainer"] == "test-container"
-    assert body["provider"] == "carrier2"
+    assert body["provider"] == "carrier2mount"
     assert "tls" not in body["providerParameter"]
 
 
 def test_bridge_mount_body_generation_invalid_tls():
-    config = ClientConfiguration()
+    config = ClientConfiguration(ignore_docker=True)
     with pytest.raises(RuntimeError) as excinfo:
         get_gbridgemount_body(
             config=config,
             name="test-mount",
             target="test-target",
+            provider="carrier2mount",
             target_namespace="test-namespace",
             target_container="test-container",
             tls_key="test-key",
@@ -70,6 +73,7 @@ def test_bridge_mount_body_generation_invalid_tls():
             config=config,
             name="test-mount",
             target="test-target",
+            provider="carrier2mount",
             target_namespace="test-namespace",
             target_container="test-container",
             tls_certificate="test-cert",
