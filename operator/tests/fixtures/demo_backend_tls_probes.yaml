@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: demo
-        image: quay.io/gefyra/gefyra-demo-backend:latest
+        image: quay.io/gefyra/gefyra-demo-backend:gefyra
         ports:
         - containerPort: 8000
         livenessProbe:

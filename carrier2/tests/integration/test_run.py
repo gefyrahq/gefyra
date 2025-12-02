@@ -87,7 +87,7 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
     # test ingress from demo workload
     resp = session.get("http://localhost:8091/color")
     assert resp.status_code == 200
-    assert "blue" in resp.text  # { "color": "blue" }
+    assert "green" in resp.text  # { "color": "green" }
 
     # -- this is a core of the patch operation --
     pod = core_v1.read_namespaced_pod(name="backend", namespace="demo")
@@ -161,4 +161,4 @@ def test_c_configure_cluster_upstream(k3d: AClusterManager):
     # the is now served from backend-shadow (from the cluster) via Carrier2
     resp = session.get("http://localhost:8091/color")
     assert resp.status_code == 200
-    assert "blue" in resp.text  # { "color": "blue" }
+    assert "green" in resp.text  # { "color": "green" }

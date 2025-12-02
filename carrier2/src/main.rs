@@ -1,11 +1,12 @@
 use async_trait::async_trait;
 use http::{Response, StatusCode};
 use lib::GefyraClient;
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use pingora::{
     apps::http_app::ServeHttp, prelude::*, protocols::http::ServerSession,
     server::configuration::ServerConf, services::listening::Service,
 };
+use uuid::Uuid;
 
 use std::{fs, sync::Arc};
 
@@ -18,11 +19,38 @@ pub struct Carrier2 {
     gefyra_clients: Arc<Vec<GefyraClient>>,
 }
 
+pub struct Carrier2Ctx {
+    request_id: Uuid,
+}
+
 #[async_trait]
 impl ProxyHttp for Carrier2 {
-    type CTX = ();
-    fn new_ctx(&self) -> () {
-        ()
+    type CTX = Carrier2Ctx;
+    fn new_ctx(&self) -> Self::CTX {
+        Carrier2Ctx {
+            request_id: Uuid::new_v4(),
+        }
+    }
+
+    fn fail_to_connect(
+        &self,
+        _session: &mut Session,
+        _peer: &HttpPeer,
+        _ctx: &mut Self::CTX,
+        e: Box<Error>,
+    ) -> Box<Error> {
+        error!(
+            "({}) Error connecting upstream request: {}",
+            _ctx.request_id, e
+        );
+        e
+    }
+
+    async fn request_filter(&self, session: &mut Session, ctx: &mut Self::CTX) -> Result<bool> {
+        if let Some(client) = session.client_addr() {
+            info!("({}) Received request from {}", ctx.request_id, client);
+        }
+        Ok(false)
     }
 
     async fn logging(
@@ -36,19 +64,27 @@ impl ProxyHttp for Carrier2 {
             .map_or(0, |resp| resp.status.as_u16());
         // access log
         info!(
-            "{} response code: {response_code}",
+            "({}) {} response code: {response_code}",
+            ctx.request_id,
             self.request_summary(session, ctx)
         );
     }
 
-    async fn upstream_peer(&self, _session: &mut Session, _ctx: &mut ()) -> Result<Box<HttpPeer>> {
+    async fn upstream_peer(
+        &self,
+        _session: &mut Session,
+        _ctx: &mut Carrier2Ctx,
+    ) -> Result<Box<HttpPeer>> {
         let client_idx = self
             .gefyra_clients
             .iter()
             .position(|c| c.matching_rules.is_hit(_session.req_header()));
         if let Some(client_idx) = client_idx {
             let client = &self.gefyra_clients[client_idx];
-            info!("Selected GefyraClient {:?}", client.key);
+            info!(
+                "({}) Selected GefyraClient {:?}",
+                _ctx.request_id, client.key
+            );
             return Ok(Box::new(client.peer.clone()));
         }
 
@@ -60,9 +96,15 @@ impl ProxyHttp for Carrier2 {
                 self.cluster_sni.clone(),
             ));
             if self.gefyra_clients.len() == 0 {
-                info!("Selected cluster upstream peer (no GefyraClient loaded)");
+                info!(
+                    "({}) Selected cluster upstream (no GefyraClient loaded)",
+                    _ctx.request_id
+                );
             } else {
-                info!("Selected cluster upstream peer (no matching rule hit)");
+                info!(
+                    "({}) Selected cluster upstream (no matching rule hit)",
+                    _ctx.request_id
+                );
             }
 
             return Ok(peer);
