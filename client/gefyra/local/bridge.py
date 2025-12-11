@@ -187,6 +187,8 @@ def deploy_app_container(
     cpu_quota: Optional[str] = None,
     mem_limit: Optional[str] = None,
     user: Optional[str] = None,
+    security_opts: Optional[List[str]] = None,
+    privileged: Optional[bool] = None,
 ) -> Container:
     import docker
 
@@ -221,6 +223,8 @@ def deploy_app_container(
         "cpu_quota": cpu_quota,
         "mem_limit": mem_limit,
         "user": user,
+        "security_opt": security_opts,
+        "privileged": privileged,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 

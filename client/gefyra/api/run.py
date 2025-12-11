@@ -52,7 +52,9 @@ def run(
     memory_from: Optional[str] = None,
     cpu: Optional[str] = None,
     memory: Optional[str] = None,
+    security_opts: Optional[List[str]] = None,
     user: Optional[str] = None,
+    privileged: Optional[bool] = None,
 ) -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
@@ -150,7 +152,9 @@ def run(
             platform=platform,
             cpu_quota=cpu_quota,
             mem_limit=mem_limit,
+            security_opts=security_opts,
             user=user,
+            privileged=privileged,
         )
     except APIError as e:
         if e.status_code == 409:

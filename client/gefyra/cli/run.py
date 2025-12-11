@@ -125,7 +125,22 @@ from gefyra.cli.utils import (
     default="linux/amd64",
 )
 @click.option(
+    "--security-opt",
+    type=str,
+    help="Security Options",
+    required=False,
+    multiple=True,
+)
+@click.option(
     "--connection-name", type=str, callback=check_connection_name, required=False
+)
+@click.option(
+    "--privileged",
+    "privileged",
+    help="Give extended privileges to this container",
+    type=bool,
+    is_flag=True,
+    default=False,
 )
 def run(
     detach,
@@ -146,6 +161,8 @@ def run(
     pull,
     platform,
     connection_name,
+    security_opt,
+    privileged,
 ):
     from gefyra import api
 
@@ -179,6 +196,8 @@ def run(
         detach=detach,
         pull=pull,
         platform=platform,
+        security_opts=security_opt,
+        privileged=privileged,
         connection_name=connection_name,
     )
     if not result:
