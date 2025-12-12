@@ -130,6 +130,7 @@ from gefyra.cli.utils import (
     help="Security Options",
     required=False,
     multiple=True,
+    default=[]
 )
 @click.option(
     "--connection-name", type=str, callback=check_connection_name, required=False
@@ -178,6 +179,7 @@ def run(
             "Option conflict: --cpu and --cpu-from cannot be used together. Please specify only one."
         )
 
+    security_opt = list(security_opt)
     result = api.run(
         image=image,
         name=name,
