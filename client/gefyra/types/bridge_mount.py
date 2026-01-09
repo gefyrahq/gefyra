@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
-from gefyra.configuration import ClientConfiguration
-from gefyra.local.mount import get_gefyrabridgemount
-from gefyra.types import StowawayParameter
-from gefyra.local.utils import WatchEventsMixin
+if TYPE_CHECKING:
+    from gefyra.configuration import ClientConfiguration
+    from gefyra.local.mount import get_gefyrabridgemount
+    from gefyra.types import StowawayParameter
+    from gefyra.local.utils import WatchEventsMixin
 
 logger = logging.getLogger(__name__)
 
