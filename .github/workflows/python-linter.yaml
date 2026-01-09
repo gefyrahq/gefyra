@@ -1,4 +1,4 @@
-name: black and flake8
+name: Ruff Linter
 
 on: 
   push:
@@ -12,27 +12,6 @@ jobs:
     timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.9'
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-    - name: Lint and flake8 client
-      working-directory: client/
-      run: |
-        poetry install
-        poetry run black . --check
-        poetry run flake8 --config ../setup.cfg
-    - name: Lint and flake8 operator
-      working-directory: operator/
-      run: |
-        poetry install
-        poetry run black . --check
-        poetry run flake8 --config ../setup.cfg
-    - name: Run MyPy client
-      working-directory: client/
-      run: |
-        poetry install
-        poetry run mypy gefyra
-      
+    - uses: astral-sh/ruff-action@v3
+
+          

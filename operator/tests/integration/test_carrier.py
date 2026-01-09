@@ -1,7 +1,6 @@
 import logging
 import os
 import pytest
-from pytest_kubernetes.providers import AClusterManager
 
 from gefyra.configuration import OperatorConfiguration
 

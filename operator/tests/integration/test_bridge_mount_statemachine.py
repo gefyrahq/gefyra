@@ -3,7 +3,6 @@ from time import sleep
 from unittest.mock import MagicMock
 
 from pathlib import Path
-from kopf import TemporaryError
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
 
@@ -63,7 +62,6 @@ class TestBridgeMountStateMachine:
             print(bridge_mount_machine.current_state)
             try:
                 if bridge_mount_machine.preparing.is_active:
-
                     bridge_mount_machine.install()
 
                 elif bridge_mount_machine.requested.is_active:

@@ -16,7 +16,6 @@ from gefyra.bridge.carrier2.config import (
 )
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
-    generate_duplicate_svc_name,
     get_all_probes,
     get_upstreams_for_svc,
 )
@@ -127,7 +126,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         for idx, pod in enumerate(pods):
             self.post_event(
                 "Updating routing rules",
-                f"Now updating routing rules in Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s))",
+                f"Now updating routing rules in Pod {pod.metadata.name} ({idx + 1} of {len(pods)} Pod(s))",
                 "Normal",
             )
             self.update_carrier_config(pod)
@@ -312,7 +311,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         if not self.ready():
             raise RuntimeError(
-                f"Not able to configure Carrier in Pods. See error above."
+                "Not able to configure Carrier in Pods. See error above."
             )
         for pod in self.pods.items:
             self.update_carrier_config(pod)
@@ -367,7 +366,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
             or "gefyra.dev/client" not in bridge_request["metadata"]["labels"].keys()
         ):
             raise kopf.AdmissionError(
-                f"The requested GefyraBridge does not set the labels 'gefyra.dev/bridge-mount' and 'gefyra.dev/client'"
+                "The requested GefyraBridge does not set the labels 'gefyra.dev/bridge-mount' and 'gefyra.dev/client'"
             )
 
         try:
@@ -378,14 +377,14 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 "gefyrabridgemounts",
                 bridge_request["target"],
             )
-        except Exception as e:
+        except Exception:
             raise kopf.AdmissionError(
-                f"The target GefyraBridgeMounts does not exist or cannot be read"
+                "The target GefyraBridgeMounts does not exist or cannot be read"
             ) from None
 
         if bridge_mount["state"] != "ACTIVE":
             raise kopf.AdmissionError(
-                f"The target GefyraBridgeMounts is not in ACTIVE state. Please try again soon."
+                "The target GefyraBridgeMounts is not in ACTIVE state. Please try again soon."
             ) from None
 
         try:
@@ -408,7 +407,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 == bridge_request["providerParameter"]
             ):
                 raise kopf.AdmissionError(
-                    f"A GefyraBridge with these target parameters already exists."
+                    "A GefyraBridge with these target parameters already exists."
                 )
 
 

@@ -1,11 +1,12 @@
 import logging
 from pathlib import Path
-import random
-import string
 
 # from time import sleep
-from typing import List, Dict, TYPE_CHECKING, Optional, Tuple, Union
+from typing import List, Dict, Optional, Tuple, Union
 
+from kubernetes.client import ApiException
+
+from gefyra.api.utils import get_workload_type
 from gefyra.local.bridge import get_all_containers, get_gefyrabridge
 from gefyra.types import ExactMatchHeader, GefyraLocalContainer
 from gefyra.local.mount import get_gefyrabridgemount
@@ -19,7 +20,6 @@ from gefyra.configuration import ClientConfiguration
 from gefyra.api.utils import (
     random_string,
     stopwatch,
-    wrap_bridge,
 )  # get_workload_information
 
 logger = logging.getLogger(__name__)
@@ -176,7 +176,7 @@ def create_bridge(
             name=bridge_mount_name,
         )
         bridge_mount = GefyraBridgeMount(config, mount)
-    except Exception as e:
+    except Exception:
         raise GefyraBridgeError(
             f"Could not find GefyraBridgeMount '{bridge_mount_name}'"
         )

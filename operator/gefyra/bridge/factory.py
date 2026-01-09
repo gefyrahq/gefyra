@@ -29,7 +29,7 @@ class GefyraBridgeFactory:
         target_container: str,
         post_event_function: Callable[[str, str, str], None],
         logger,
-        **kwargs
+        **kwargs,
     ):
         builder = self._builders.get(provider_type.value)
         if not builder:
@@ -42,7 +42,7 @@ class GefyraBridgeFactory:
             target_container,
             post_event_function,
             logger,
-            **kwargs
+            **kwargs,
         )
 
     def get(
@@ -55,7 +55,7 @@ class GefyraBridgeFactory:
         target_container: str,
         post_event_function: Callable[[str, str, str], None],
         logger,
-        **kwargs
+        **kwargs,
     ) -> AbstractGefyraBridgeProvider:
         return self.__create(
             provider_type,
@@ -66,7 +66,7 @@ class GefyraBridgeFactory:
             target_container,
             post_event_function,
             logger,
-            **kwargs
+            **kwargs,
         )
 
 

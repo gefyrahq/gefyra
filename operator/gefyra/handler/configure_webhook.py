@@ -100,7 +100,6 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
 
 @kopf.on.validate("gefyrabridgemount.gefyra.dev", id="mount-parameters")  # type: ignore
 def check_validate_bridgemount_parameters(body, diff, logger, operation, **_):
-
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraBridgeMount {name}")
 
@@ -133,7 +132,6 @@ def check_validate_bridgemount_parameters(body, diff, logger, operation, **_):
 
 @kopf.on.validate("gefyrabridge.gefyra.dev", id="bridge-parameters")  # type: ignore
 def check_validate_bridge_parameters(body, diff, logger, operation, **_):
-
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraBridge {name}")
 

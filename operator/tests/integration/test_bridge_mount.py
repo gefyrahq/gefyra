@@ -195,7 +195,7 @@ class TestBridgeMountObject:
         mount.prepare()
         try:
             mount.install()
-        except:
+        except Exception:
             pass
 
         new_deployment = gefyra_crd.kubectl(

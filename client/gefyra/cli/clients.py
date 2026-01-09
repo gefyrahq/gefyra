@@ -44,7 +44,7 @@ def create_clients(ctx, client_id, quantity, registry, nowait: bool = False):
         with alive_bar(
             total=None,
             length=20,
-            title=f"Creating the requested GefyraClient (timeout=60))",
+            title="Creating the requested GefyraClient (timeout=60))",
             bar="smooth",
             spinner="classic",
             stats=False,

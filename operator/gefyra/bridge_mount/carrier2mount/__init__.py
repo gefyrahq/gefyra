@@ -258,7 +258,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
         # Create the new workload
         try:
-
             self._create_namespaced_(workload.__class__)(self.namespace, new_workload)
             self.post_event(
                 "Cluster upstream",
@@ -299,7 +298,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     def _get_workload(
         self, target: str, namespace: str
     ) -> V1Deployment | V1StatefulSet | V1Pod:
-
         name, type_ = self._split_target_type_name(target)
         try:
             return self._read_namespaced_(type_)(name, namespace)
@@ -478,7 +476,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 )
             self.post_event(
                 "Patching target pod",
-                f"Now patching Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s)); container {self.container} with Carrier2",
+                f"Now patching Pod {pod.metadata.name} ({idx + 1} of {len(pods)} Pod(s)); container {self.container} with Carrier2",
                 "Normal",
             )
             try:
@@ -515,7 +513,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             )
             self.post_event(
                 "Update Carrier2",
-                f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx+1} of {len(pods)} Pod(s))",
+                f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx + 1} of {len(pods)} Pod(s))",
                 "Normal",
             )
             self.logger.debug(f"Carrier2 config: {carrier_config}")
@@ -621,7 +619,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         return ready and len(self._gefyra_pods.items) == len(self._original_pods.items)
 
     def validate(self, bridge_request, hints):
-
         required_fields = ["target", "targetNamespace", "targetContainer"]
         for required_field in required_fields:
             if (

@@ -57,7 +57,7 @@ class GefyraClient(WatchEventsMixin):
                     self._wg_handshake = self.wg_status["latest_handshake"]
                 else:
                     self._wg_handshake = "No handshake"
-            except Exception as p:
+            except Exception:
                 pass
         else:
             self.wg_status = None

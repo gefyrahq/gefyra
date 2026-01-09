@@ -1,7 +1,6 @@
 import logging
 from pathlib import Path
 from time import sleep
-import time
 from pytest_kubernetes.providers import AClusterManager
 import requests
 from requests.adapters import HTTPAdapter, Retry
@@ -14,9 +13,7 @@ logger = logging.getLogger()
 
 
 class TestCarrier2:
-
     def test_a_commit_config(self, gefyra_crd: AClusterManager, carrier2_image):
-
         from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy
 
         test_pod = str(
@@ -34,14 +31,12 @@ class TestCarrier2:
 
         config = Carrier2Config()
         config.proxy = [Carrier2Proxy(port=5000, clusterUpstream=["blueshoe.io:443"])]
-        start = time.time()
         config.commit(
             pod_name="backend",
             container_name="backend",
             namespace="default",
             debug=True,
         )
-        end = time.time()
         # print(f"commit time: {end - start}")
 
         from kubernetes.client.api import core_v1_api

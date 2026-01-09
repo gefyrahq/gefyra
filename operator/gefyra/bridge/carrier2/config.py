@@ -125,7 +125,7 @@ class Carrier2Config(BaseModel):
 
         config_commands = [
             # 1. write new config
-            "cat <<'EOF' > /tmp/config.yaml\n" f"{config_str}",
+            f"cat <<'EOF' > /tmp/config.yaml\n{config_str}",
             "EOF",
             # 2. graceful upgrade of the process
             RELOAD_CARRIER2_DEBUG if debug else RELOAD_CARRIER2_INFO,

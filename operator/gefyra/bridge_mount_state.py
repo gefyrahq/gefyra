@@ -1,5 +1,4 @@
 from datetime import datetime
-from functools import partial
 from typing import Optional
 
 import kubernetes as k8s
@@ -147,7 +146,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             self.bridge_mount_provider.prepare()
         except (BridgeMountInstallException, ValueError) as e:
             self.post_event(
-                reason=f"Failed to install GefyraBridgeMount",
+                reason="Failed to install GefyraBridgeMount",
                 message=str(e),
                 type="Warning",
             )
@@ -167,7 +166,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             # TODO RuntimeError failed to fullfil waiting condition
         except BridgeMountInstallException as e:
             self.post_event(
-                reason=f"Failed to install GefyraBridgeMount",
+                reason="Failed to install GefyraBridgeMount",
                 message=str(e),
                 type="Warning",
             )

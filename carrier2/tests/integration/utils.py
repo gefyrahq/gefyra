@@ -71,4 +71,3 @@ def reload_carrier2_config(core_api, name: str, namespace: str):
             break
     # commit the last command
     resp.write_stdin("\n")
-    sdate = resp.readline_stdout(timeout=3)

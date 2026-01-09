@@ -9,7 +9,6 @@ from tests.e2e.base import GefyraTestCase
 
 
 class TestCustomRegistry(GefyraTestCase):
-
     def test_a_write_client_file(self, operator: AClusterManager):
         k3d = operator
         from gefyra.api.clients import add_clients

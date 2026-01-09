@@ -1,10 +1,7 @@
-import dataclasses
 import os
-from time import sleep
 from typing import List, Optional
 from alive_progress import alive_bar
 import click
-from gefyra.local.bridge import get_all_containers
 from gefyra.types import ExactMatchHeader
 from gefyra.cli import console
 from gefyra.cli.utils import (
@@ -168,7 +165,6 @@ def create_bridge(
             stats=False,
             dual_line=True,
         ) as bar:
-
             bridge: GefyraBridge = api.create_bridge(
                 name=name,
                 local=local,
@@ -177,7 +173,7 @@ def create_bridge(
                 connection_name=connection_name,
                 rules=rules,
             )
-            bar.text(f"GefyraBridge requested")
+            bar.text("GefyraBridge requested")
             if not nowait:
                 timeout_reached = bridge.watch_events(bar.text, timeout=timeout)
         if timeout_reached:

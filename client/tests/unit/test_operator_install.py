@@ -5,7 +5,6 @@ from click.testing import CliRunner
 
 
 class GefyraOperatorInstallTest(TestCase):
-
     @patch("gefyra.misc.comps.deployment.data")
     def test_operator_install_connection_age(self, mock_deployment_data):
         from gefyra.cli.main import cli

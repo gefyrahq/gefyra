@@ -2,7 +2,6 @@ from multiprocessing import Process, Queue
 import subprocess
 import requests
 from requests.adapters import HTTPAdapter, Retry
-from time import sleep
 
 CARRIER_TIMEOUT = 2
 
@@ -125,7 +124,6 @@ def test_f_simple_probes_tls_upstream_all(carrier2, https_upstream):
     assert res.status_code == 200
     assert "Gefyra upstream rockz!" in res.text
 
-
     res = session.get(
         "https://localhost:4444/what/a/path/", verify="./tests/fixtures/test_ca.pem"
     )
@@ -209,9 +207,9 @@ def test_h_probes_three_peer_mixed_https(
     for req in [8019, 8020, 8021]:
         res = session.get(f"http://localhost:{req}")
         assert res.status_code == 200
-    
+
     # this is a httpsGet probe with fake SSL
-    res = session.get(f"https://localhost:8023", verify=False)
+    res = session.get("https://localhost:8023", verify=False)
 
     # this request gets upstreamed to https://localhost:4443
     res = session.get("https://localhost:8080", verify="./tests/fixtures/test_ca.pem")

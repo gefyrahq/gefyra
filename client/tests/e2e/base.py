@@ -15,7 +15,6 @@ from kubernetes.client import (
 )
 from pytest_kubernetes.providers import AClusterManager
 import pytest
-from unittest import TestCase
 
 from click.testing import CliRunner, Result
 from copy import deepcopy
@@ -56,7 +55,6 @@ from gefyra.cluster.resources import (
     owner_reference_consistent,
 )
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
-from tests.conftest import purge_gefyra_objects
 from tests.e2e.const import CONNECTION_NAME
 from tests.e2e.mixin import GefyraTestMixin
 

@@ -4,7 +4,11 @@ import json
 import logging
 from typing import Optional
 
-from gefyra.configuration import ClientConfiguration, __VERSION__
+from gefyra.configuration import ClientConfiguration
+from gefyra.types.bridge_mount import GefyraBridgeMount
+from gefyra.types.bridge import GefyraBridge, ExactMatchHeader
+from gefyra.types.client import GefyraClient
+from gefyra.types.install import GefyraInstallOptions
 
 
 __all__ = [
@@ -158,9 +162,3 @@ class GefyraLocalContainer:
     name: str
     address: str
     namespace: str
-
-
-from .bridge_mount import GefyraBridgeMount
-from .bridge import GefyraBridge, ExactMatchHeader
-from .client import GefyraClient
-from .install import GefyraInstallOptions

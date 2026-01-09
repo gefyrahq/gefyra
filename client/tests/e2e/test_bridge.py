@@ -2,7 +2,6 @@ import pytest
 
 from pytest_kubernetes.providers import AClusterManager
 
-from tests.conftest import purge_gefyra_objects
 from tests.e2e.base import GefyraTestCase
 
 

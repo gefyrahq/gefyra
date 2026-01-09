@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 
 
 class AbstractGefyraBridgeProvider(ABC):
-
     @abstractmethod
     def install(self, parameters: Optional[Dict[Any, Any]] = None):
         """

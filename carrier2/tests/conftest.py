@@ -12,7 +12,7 @@ import pytest
 def carrier_binary(request):
     name = "RUST_LOG=debug ./target/release/carrier2"
     subprocess.run(
-        (f"cargo build --release"),
+        ("cargo build --release"),
         shell=True,
     )
     yield name
@@ -20,7 +20,6 @@ def carrier_binary(request):
 
 @pytest.fixture
 def carrier2(carrier_binary):
-
     def call_with_args(
         args: str, timeout: int = 1, queue: Optional[multiprocessing.Queue] = None
     ) -> str:
@@ -52,7 +51,6 @@ def carrier2(carrier_binary):
 # this is the test upstream, modify for more sophisticated test cases
 class UpstreamRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        request_path = self.path
         self.send_response(200)
         self.end_headers()
         self.wfile.write("Gefyra upstream rockz!".encode("utf-8"))
@@ -64,7 +62,6 @@ class UpstreamRequestHandler(BaseHTTPRequestHandler):
 # this is a Gefyra client peer
 class PeerRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        request_path = self.path
         self.send_response(200)
         self.end_headers()
         self.wfile.write("Gefyra peer rockz, too!".encode("utf-8"))
@@ -76,7 +73,6 @@ class PeerRequestHandler(BaseHTTPRequestHandler):
 # this is another Gefyra client peer
 class Peer2RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        request_path = self.path
         self.send_response(200)
         self.end_headers()
         self.wfile.write("Gefyra peer with different output, here!".encode("utf-8"))
@@ -97,9 +93,7 @@ def serve(
         ctx.check_hostname = False
         ctx.load_cert_chain(tls_certpath, tls_keypath)
 
-        httpd.socket = ctx.wrap_socket(
-            httpd.socket, server_side=True
-        )
+        httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
     httpd.serve_forever()
 
 
@@ -123,7 +117,7 @@ def https_upstream(request):
         ),
     )
     p.start()
-    
+
     yield
     os.kill(p.pid, signal.SIGKILL)
 

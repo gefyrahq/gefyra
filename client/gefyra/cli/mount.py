@@ -93,7 +93,6 @@ def create(
             stats=False,
             dual_line=True,
         ) as bar:
-
             mount: GefyraBridgeMount = api.create_mount(
                 namespace=namespace,
                 target=target,
@@ -108,7 +107,7 @@ def create(
                 tls_key=tls_key,
                 tls_sni=tls_sni,
             )
-            bar.text(f"GefyraBridgeMount requested")
+            bar.text("GefyraBridgeMount requested")
             if not nowait:
                 timeout_reached = mount.watch_events(bar.text, timeout=timeout)
         if timeout_reached:

@@ -2,13 +2,11 @@ from time import sleep
 from pytest_kubernetes.providers import AClusterManager
 import requests
 from requests.adapters import HTTPAdapter, Retry
-import tempfile
 
 import utils
 
 
 def test_a_run_pod(k3d: AClusterManager, carrier_image):
-
     k3d.load_image(carrier_image)
 
     k3d.apply("tests/fixtures/carrier2_pod.yaml")
@@ -52,12 +50,11 @@ def test_a_run_pod(k3d: AClusterManager, carrier_image):
         "pod/carrier-nosec",
     ]:
         pod = k3d.kubectl(["get", pod])
-        assert pod["status"]["containerStatuses"][0]["ready"] == True
+        assert pod["status"]["containerStatuses"][0]["ready"]
         assert pod["status"]["containerStatuses"][0]["restartCount"] == 0
 
 
 def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image):
-
     k3d.load_image(demo_backend_image)
 
     retries = Retry(total=25, backoff_factor=0.2)
@@ -114,7 +111,7 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
 
     backend_pod = k3d.kubectl(["get", "pod", "backend", "-n", "demo"])
     assert backend_pod["spec"]["containers"][0]["image"] == carrier_image
-    assert backend_pod["status"]["containerStatuses"][0]["ready"] == True
+    assert backend_pod["status"]["containerStatuses"][0]["ready"]
     assert backend_pod["status"]["containerStatuses"][0]["restartCount"] == 1
     # -- end patch operation --
 

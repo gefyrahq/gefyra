@@ -1,5 +1,6 @@
 import os
-import asyncio, signal
+import asyncio
+import signal
 
 import kopf
 import kubernetes as k8s

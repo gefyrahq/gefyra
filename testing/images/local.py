@@ -62,6 +62,7 @@ context.load_cert_chain("/tmp/client-cert.pem", "/tmp/client-key.pem")
 ssl_server = socketserver.ThreadingTCPServer(("0.0.0.0", port_ssl), my_tls_handler)
 ssl_server.socket = context.wrap_socket(ssl_server.socket, server_side=True)
 
+
 def signal_handler(signal, frame):
     try:
         if server:
