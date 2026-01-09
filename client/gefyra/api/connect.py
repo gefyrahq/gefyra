@@ -137,7 +137,8 @@ def connect(  # noqa: C901
         try:
             if update_callback:
                 update_callback(
-                    f"Activating connection with appointed local Gefyra network {gefyra_network.attrs['IPAM']['Config'][0]['Subnet']} ..."
+                    "Activating connection with appointed local "
+                    f"Gefyra network {gefyra_network.attrs['IPAM']['Config'][0]['Subnet']} ..."
                 )
             client.activate_connection(
                 gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
@@ -158,7 +159,7 @@ def connect(  # noqa: C901
     while _i < config.CONNECTION_TIMEOUT:
         if client.state == GefyraClientState.ACTIVE:
             if update_callback:
-                update_callback(f"Cluster connection activated")
+                update_callback("Cluster connection activated")
             break
         else:
             _i += 1
@@ -212,7 +213,7 @@ def connect(  # noqa: C901
         if not cargo_container:
             if update_callback:
                 update_callback(
-                    f"Pulling and starting local Cargo container (client-side Wireguard endpoint)"
+                    "Pulling and starting local Cargo container (client-side Wireguard endpoint)"
                 )
             cargo_container = handle_docker_get_or_create_container(
                 config,
@@ -250,7 +251,7 @@ def connect(  # noqa: C901
     # Confirm the wireguard connection working
     logger.debug("Checking wireguard connection")
     if update_callback:
-        update_callback(f"Checking Wireguard connectivity...")
+        update_callback("Checking Wireguard connectivity...")
     probe_wireguard_connection(config)
     return True
 
