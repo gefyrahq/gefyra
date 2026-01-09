@@ -173,14 +173,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - name: Set Gefyra tracking config / fake kubeconfig
-        shell: bash
-        run: |
-          mkdir -p ~/.gefyra
-          cd ~/.gefyra
-          touch config.ini
-          echo "[telemetry]" >> config.ini
-          echo "track = False" >> config.ini
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -248,12 +240,7 @@ jobs:
       - name: Set Gefyra tracking config / fake kubeconfig
         shell: bash
         run: |
-          mkdir -p ~/.gefyra
           mkdir -p ~/.kube
-          cd ~/.gefyra
-          touch config.ini
-          echo "[telemetry]" >> config.ini
-          echo "track = False" >> config.ini
           cd ~/.kube
           touch config
       - name: Download artifact

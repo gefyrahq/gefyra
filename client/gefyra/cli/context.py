@@ -17,7 +17,6 @@ from gefyra.cli.utils import AliasedGroup
 @click.pass_context
 def cli(ctx: click.Context, kubeconfig, context, debug):
     import logging
-    from gefyra.cli.telemetry import CliTelemetry
 
     # Set up logging based on the debug flag
     if debug:
@@ -41,10 +40,6 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
 
     ctx.ensure_object(dict)
 
-    try:
-        ctx.obj["telemetry"] = CliTelemetry()
-    except Exception:  # pragma: no cover
-        ctx.obj["telemetry"] = False
     ctx.obj["debug"] = debug
     ctx.obj["kubeconfig"] = kubeconfig
     ctx.obj["context"] = context
