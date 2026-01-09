@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import subprocess
 from time import sleep
+from alive_progress import config_handler
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
@@ -230,3 +231,6 @@ def purge_gefyra_objects(k8s):
                 )
     except RuntimeError:
         pass
+
+
+config_handler.set_global(disable=True)
