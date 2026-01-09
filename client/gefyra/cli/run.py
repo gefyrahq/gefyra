@@ -130,7 +130,7 @@ from gefyra.cli.utils import (
     help="Security Options",
     required=False,
     multiple=True,
-    default=[]
+    default=[],
 )
 @click.option(
     "--connection-name", type=str, callback=check_connection_name, required=False
