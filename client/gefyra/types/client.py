@@ -1,18 +1,64 @@
 from dataclasses import dataclass, fields
+from enum import Enum
+import json
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
-from gefyra.configuration import ClientConfiguration
 from gefyra.local.clients import handle_get_gefyraclient
-from gefyra.types import (
-    GefyraClientConfig,
-    GefyraClientState,
+from gefyra.types.stowaway import (
     StowawayConfig,
     StowawayParameter,
 )
 from gefyra.local.utils import WatchEventsMixin
 
+if TYPE_CHECKING:
+    from gefyra.configuration import ClientConfiguration
+
 logger = logging.getLogger(__name__)
+
+
+LOCAL_SERVER = "#local#"
+
+
+@dataclass
+class GefyraClientConfig:
+    client_id: str
+    kubernetes_server: str
+    provider: str
+    namespace: str
+    gefyra_server: str
+    token: str | None = None
+    ca_crt: str | None = None
+    registry: Optional[str] = None
+    wireguard_mtu: Optional[str] = "1340"
+
+    def __getattribute__(self, name):
+        if name == "gefyra_server":
+            from gefyra.configuration import ClientConfiguration
+
+            if super().__getattribute__(name) == LOCAL_SERVER:
+                return ClientConfiguration().CARGO_ENDPOINT
+        return super().__getattribute__(name)
+
+    @property
+    def json(self):
+        return json.dumps(self.__dict__)
+
+    @classmethod
+    def from_json_str(cls, json_data: str):
+        data = json.loads(json_data)
+        return cls(**data)
+
+
+class GefyraClientState(Enum):
+    REQUESTED = "REQUESTED"
+    CREATING = "CREATING"
+    WAITING = "WAITING"
+    ENABLING = "ENABLING"
+    ACTIVE = "ACTIVE"
+    DISABLING = "DISABLING"
+    TERMINATING = "TERMINATING"
+    ERROR = "ERROR"
 
 
 @dataclass
@@ -39,7 +85,7 @@ class GefyraClient(WatchEventsMixin):
     service_account_name: Optional[str] = None
     service_account: Optional[Dict[str, str]] = None
 
-    def __init__(self, gclient: dict[str, Any], config: ClientConfiguration):
+    def __init__(self, gclient: dict[str, Any], config: "ClientConfiguration"):
         self._init_data(gclient)
         self._config = config
 

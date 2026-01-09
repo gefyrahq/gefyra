@@ -1,14 +1,17 @@
 from dataclasses import dataclass
 from enum import Enum
-import json
 import logging
-from typing import Optional
 
-from gefyra.configuration import ClientConfiguration
 from gefyra.types.bridge_mount import GefyraBridgeMount
 from gefyra.types.bridge import GefyraBridge, ExactMatchHeader
-from gefyra.types.client import GefyraClient
+from gefyra.types.client import (
+    GefyraClient,
+    GefyraClientConfig,
+    GefyraClientState,
+    LOCAL_SERVER,
+)
 from gefyra.types.install import GefyraInstallOptions
+from gefyra.types.stowaway import StowawayParameter, StowawayConfig
 
 
 __all__ = [
@@ -17,79 +20,15 @@ __all__ = [
     "GefyraBridgeMount",
     "GefyraBridge",
     "ExactMatchHeader",
+    "StowawayParameter",
+    "StowawayConfig",
+    "GefyraClientConfig",
+    "GefyraClientState",
+    "LOCAL_SERVER",
 ]
 
 
 logger = logging.getLogger(__name__)
-
-
-LOCAL_SERVER = "#local#"
-
-
-@dataclass
-class StowawayParameter:
-    # the subnet for a client
-    subnet: str
-
-
-@dataclass
-class GefyraClientConfig:
-    client_id: str
-    kubernetes_server: str
-    provider: str
-    namespace: str
-    gefyra_server: str
-    token: str | None = None
-    ca_crt: str | None = None
-    registry: Optional[str] = None
-    wireguard_mtu: Optional[str] = "1340"
-
-    def __getattribute__(self, name):
-        if name == "gefyra_server":
-            if super().__getattribute__(name) == LOCAL_SERVER:
-                return ClientConfiguration().CARGO_ENDPOINT
-        return super().__getattribute__(name)
-
-    @property
-    def json(self):
-        return json.dumps(self.__dict__)
-
-    @classmethod
-    def from_json_str(cls, json_data: str):
-        data = json.loads(json_data)
-        return cls(**data)
-
-
-@dataclass
-class StowawayConfig:
-    # the wireguard connection data
-    # Interface.Address: 192.168.99.2
-    iaddress: str
-    # Interface.DNS: 192.168.99.1
-    idns: str
-    # Interface.ListenPort: 51820
-    iport: int
-    # Interface.PrivateKey: MFQ3v+...=
-    iprivatekey: str
-    # Peer.AllowedIPs: 0.0.0.0/0, ::/0
-    pallowedips: str
-    # Peer.Endpoint: 95.91.248.4:31820
-    pendpoint: str
-    # Peer.PublicKey: sy8jXi7...=
-    ppublickey: str
-    # Peer.PresharedKey: WCWY20...=
-    presharedkey: str
-
-
-class GefyraClientState(Enum):
-    REQUESTED = "REQUESTED"
-    CREATING = "CREATING"
-    WAITING = "WAITING"
-    ENABLING = "ENABLING"
-    ACTIVE = "ACTIVE"
-    DISABLING = "DISABLING"
-    TERMINATING = "TERMINATING"
-    ERROR = "ERROR"
 
 
 @dataclass

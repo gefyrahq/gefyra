@@ -4,10 +4,10 @@ from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from gefyra.local.mount import get_gefyrabridgemount
 from gefyra.local.utils import WatchEventsMixin
+from gefyra.types.stowaway import StowawayParameter
 
 if TYPE_CHECKING:
     from gefyra.configuration import ClientConfiguration
-    from gefyra.types import StowawayParameter
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +36,10 @@ class GefyraBridgeMount(WatchEventsMixin):
     provider_parameter: Optional[StowawayParameter] = None
 
     @classmethod
-    def from_raw(cls, config: ClientConfiguration, gbridgemount: dict[str, Any]):
+    def from_raw(cls, config: "ClientConfiguration", gbridgemount: dict[str, Any]):
         return cls(config, gbridgemount)
 
-    def __init__(self, config: ClientConfiguration, gbridgemount: dict[str, Any]):
+    def __init__(self, config: "ClientConfiguration", gbridgemount: dict[str, Any]):
         self._init_data(gbridgemount)
         self._config = config
 
