@@ -39,8 +39,8 @@ def create_wireguard_config(
         f"PrivateKey = {params.iprivatekey}\n"
         f"DNS = {params.idns}\n"
         "PreUp = sysctl -w net.ipv4.ip_forward=1\n"
-        "PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE\n"  # noqa E501
-        "PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth1 -j MASQUERADE\n"  # noqa E501
+        "PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o %i -j MASQUERADE\n"  # noqa E501
+        "PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o %i -j MASQUERADE\n"  # noqa E501
         "[Peer]\n"
         f"PublicKey = {params.ppublickey}\n"
         f"Endpoint = {cargo_endpoint}\n"
