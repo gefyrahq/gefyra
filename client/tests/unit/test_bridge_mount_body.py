@@ -14,6 +14,7 @@ def test_bridge_mount_body_generation():
         tls_certificate="test-cert",
         tls_key="test-key",
         tls_sni="test-sni",
+        provider="carrier2mount",
     )
     # check body structure
     assert body["apiVersion"] == "gefyra.dev/v1"
@@ -37,6 +38,7 @@ def test_bridge_mount_body_generation_no_tls():
         target="test-target",
         target_namespace="test-namespace",
         target_container="test-container",
+        provider="carrier2mount",
     )
     # check body structure
     assert body["apiVersion"] == "gefyra.dev/v1"
@@ -60,6 +62,7 @@ def test_bridge_mount_body_generation_invalid_tls():
             target_namespace="test-namespace",
             target_container="test-container",
             tls_key="test-key",
+            provider="carrier2mount",
         )
     assert (
         str(excinfo.value)
@@ -73,6 +76,7 @@ def test_bridge_mount_body_generation_invalid_tls():
             target_namespace="test-namespace",
             target_container="test-container",
             tls_certificate="test-cert",
+            provider="carrier2mount",
         )
     assert (
         str(excinfo.value)
