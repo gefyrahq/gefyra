@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -46,7 +46,7 @@ jobs:
         tags: pyserver
         outputs: type=docker,dest=/tmp/pyserver.tar
     - name: Upload pyserver image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: pyserver
         path: /tmp/pyserver.tar
@@ -57,7 +57,7 @@ jobs:
       tags: ${{ steps.operator_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -101,7 +101,7 @@ jobs:
         cache-from: type=registry,ref=quay.io/gefyra/operator:latest
         outputs: type=docker,dest=/tmp/operator.tar
     - name: Upload operator image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: operator
         path: /tmp/operator.tar
@@ -114,7 +114,7 @@ jobs:
       tags: ${{ steps.cargo_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -152,7 +152,7 @@ jobs:
         cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
         outputs: type=docker,dest=/tmp/cargo.tar
     - name: Upload cargo image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: cargo
         path: /tmp/cargo.tar
@@ -162,7 +162,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set fake kubeconfig
         shell: bash
         run: |
@@ -170,7 +170,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
       - name: Install Poetry
@@ -196,7 +196,7 @@ jobs:
           COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: coverage_data
           path: ./client/.coverage*
@@ -217,9 +217,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
       # https://github.com/opensafely-core/job-server/issues/3429
@@ -244,7 +244,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: /tmp
       - name: start minikube
@@ -258,7 +258,7 @@ jobs:
           docker load --input /tmp/pyserver/pyserver.tar
           docker load --input /tmp/cargo/cargo.tar
           docker load --input /tmp/operator/operator.tar
-          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.1.6
+          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.4.0
           docker image ls -a
       - name: Install dependencies
         working-directory: ./client
@@ -297,7 +297,7 @@ jobs:
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: coverage_data-${{ matrix.os }}
           path: ./client/.coverage*
@@ -307,11 +307,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:

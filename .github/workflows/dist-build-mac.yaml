@@ -16,9 +16,9 @@ jobs:
   build:
     runs-on: macos-13
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
         python-version: '3.9'
     - name: Setup XCode
@@ -78,7 +78,7 @@ jobs:
         
         /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ./gefyra -v
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-darwin-universal
         path: |
