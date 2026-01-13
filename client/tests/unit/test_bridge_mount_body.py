@@ -24,7 +24,7 @@ def test_bridge_mount_body_generation():
     assert body["targetNamespace"] == "test-namespace"
     assert body["target"] == "test-target"
     assert body["targetContainer"] == "test-container"
-    assert body["provider"] == "carrier2"
+    assert body["provider"] == "carrier2mount"
     assert body["providerParameter"]["tls"]["certificate"] == "test-cert"
     assert body["providerParameter"]["tls"]["key"] == "test-key"
     assert body["providerParameter"]["tls"]["sni"] == "test-sni"
@@ -48,7 +48,7 @@ def test_bridge_mount_body_generation_no_tls():
     assert body["targetNamespace"] == "test-namespace"
     assert body["target"] == "test-target"
     assert body["targetContainer"] == "test-container"
-    assert body["provider"] == "carrier2"
+    assert body["provider"] == "carrier2mount"
     assert "tls" not in body["providerParameter"]
 
 
