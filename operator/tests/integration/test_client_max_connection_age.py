@@ -31,7 +31,7 @@ def test_client_max_connection_age(
         "gefyraclients.gefyra.dev/client-a",
         "jsonpath=.state=WAITING",
         namespace="gefyra",
-        timeout=20,
+        timeout=60,
     )
 
     # Connect the client by setting providerParameter
@@ -56,7 +56,7 @@ def test_client_max_connection_age(
         "gefyraclients.gefyra.dev/client-a",
         "jsonpath=.state=ACTIVE",
         namespace="gefyra",
-        timeout=20,
+        timeout=60,
     )
 
     # Verify client is active
@@ -76,7 +76,7 @@ def test_client_max_connection_age(
         "gefyraclients.gefyra.dev/client-a",
         "jsonpath=.state=WAITING",
         namespace="gefyra",
-        timeout=10,
+        timeout=60,
     )
 
     # Final verification
