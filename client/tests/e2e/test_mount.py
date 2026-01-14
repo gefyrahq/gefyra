@@ -25,7 +25,7 @@ def test_a_create_simple_mount(operator: AClusterManager, workloads_for_test):
     res = create_mount(
         namespace="default",
         target="deploy/nginx-deployment/nginx",
-        provider="carrier2",
+        provider="carrier2mount",
         kubeconfig=k3d.kubeconfig,
         kubecontext=k3d.context,
         wait=True,
