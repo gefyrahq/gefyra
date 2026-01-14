@@ -598,7 +598,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     ) -> Union["V1Deployment", "V1StatefulSet", "V1Pod"]:
         _, type_ = self._split_target_type_name(self.target)
         workload = self._get_workload(self.target, self.namespace)
-        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+        if hasattr(workload.spec, "template") and workload.spec.template is not None:
             workload.spec.template.metadata.annotations = {
                 "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
             }
@@ -752,7 +752,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 break
         else:
             raise RuntimeError(
-                f"Could not found container {self.container} in Pod {pod_name}: cannot"
+                f"Could not find container {self.container} in Pod {pod_name}: cannot"
                 " patch with original state"
             )
 

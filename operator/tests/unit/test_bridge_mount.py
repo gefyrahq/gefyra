@@ -1,3 +1,4 @@
+import json
 from unittest import TestCase
 from unittest.mock import DEFAULT, MagicMock, patch
 
@@ -8,6 +9,7 @@ import logging
 from ..factories import (
     NginxDeploymentFactory,
     NginxPodFactory,
+    V1ConfigMapFactory,
     V1PodListFactory,
     V1ProbeFactory,
     V1ServiceFactory,
@@ -125,6 +127,21 @@ class TestBridgeMountObject(TestCase):
         app.read_namespaced_deployment.assert_called_once()
         core_v1_api.patch_namespaced_pod.assert_called_once()
         args = core_v1_api.patch_namespaced_pod.call_args
+
+        cm = V1ConfigMapFactory()
+        cm.data = {
+            "default-nginx": json.dumps(
+                {
+                    "originalConfig": {
+                        "version": 1,
+                    }
+                }
+            )
+        }
+        core_v1_api.read_namespaced_config_map.return_value = cm
+
+        core_v1_api.read_namespaced_pod.return_value = pod
+
         self.assertEqual(
             args[1]["body"].spec.containers[0].image, "quay.io/gefyra/carrier2:latest"
         )
@@ -196,19 +213,19 @@ class TestBridgeMountObject(TestCase):
             post_event_function=lambda a, b, c: None,
             logger=logger,
         )
-
-        core_v1_api.read_namespaced_service.return_value = V1ServiceFactory()
-
+        svc = V1ServiceFactory()
+        core_v1_api.read_namespaced_service.return_value = svc
+        port = svc.spec.ports[0].port
         # config creation works
         probe: V1Probe = V1ProbeFactory()
         carrier_config = mount._set_carrier_upstream(
-            upstream_ports=[8080], probes=[probe]
+            upstream_ports=[port], probes=[probe]
         )
 
-        assert carrier_config.clusterUpstream == [
-            "nginx-service.default.svc.cluster.local:80"
+        assert carrier_config.proxy[0].clusterUpstream == [
+            f"nginx-service.default.svc.cluster.local:{port}"
         ]
-        assert carrier_config.port == 8080
+        assert carrier_config.proxy[0].port == port
         assert carrier_config.probes.httpGet[0] == probe.http_get.port
 
     @patch.multiple(
@@ -252,7 +269,6 @@ class TestBridgeMountObject(TestCase):
             "upgrade_sock: /tmp/carrier2.sock",
             "upstream_keepalive_pool_size: 100",
             "port: 5002",
-            "clusterUpstream: ",
         ]
 
         assert not mount._upstream_set
@@ -266,8 +282,9 @@ class TestBridgeMountObject(TestCase):
             "upgrade_sock: /tmp/carrier2.sock",
             "upstream_keepalive_pool_size: 100",
             "port: 5002",
-            "clusterUpstream:",
-            "- 'nginx-service.default.svc.cluster.local:80'",
+            "proxy:",
+            "  - clusterUpstream:",
+            "    - 'nginx-service.default.svc.cluster.local:80'",
         ]
 
         assert mount._upstream_set

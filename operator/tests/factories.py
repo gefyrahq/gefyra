@@ -20,6 +20,7 @@ from kubernetes.client import (
     V1Service,
     V1ServiceSpec,
     V1ServicePort,
+    V1ConfigMap,
 )
 
 
@@ -236,3 +237,11 @@ class NginxPodFactory(V1PodFactory):
         ),
     )
     status = factory.SubFactory(V1PodStatusFactory)
+
+
+class V1ConfigMapFactory(factory.Factory):
+    class Meta:
+        model = V1ConfigMap
+
+    metadata = factory.SubFactory(V1ObjectMetaFactory, name="test-configmap", labels={})
+    data = factory.Dict({})
