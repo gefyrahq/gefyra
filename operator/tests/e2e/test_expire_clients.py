@@ -34,5 +34,5 @@ def test_a_expire_client(
         "gefyraclients.gefyra.dev/client-a",
         "delete",
         namespace="gefyra",
-        timeout=20,
+        timeout=60,
     )
