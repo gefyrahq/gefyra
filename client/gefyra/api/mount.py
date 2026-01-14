@@ -63,7 +63,7 @@ def create_mount(
         mount = get_gefyrabridgemount(config, mount_name)
         gmount = GefyraBridgeMount(config, mount)
         if gmount.uid in bridge_mount["metadata"]["uid"] and gmount._state == "ACTIVE":
-            logger.info(f"Bridge mount {mount.name} established.")
+            logger.info(f"Bridge mount {gmount.name} established.")
             break
         sleep(1)
         # Raise exception in case timeout is reached
