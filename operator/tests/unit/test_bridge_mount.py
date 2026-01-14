@@ -266,7 +266,7 @@ class TestBridgeMountObject(TestCase):
             "upgrade_sock: /tmp/carrier2.sock",
             "upstream_keepalive_pool_size: 100",
             "port: 5002",
-            "clusterUpstream: ",
+            "clusterUpstream:",
             "- 'nginx-service.default.svc.cluster.local:80'",
         ]
 

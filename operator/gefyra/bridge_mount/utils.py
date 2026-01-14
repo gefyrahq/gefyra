@@ -56,7 +56,7 @@ def get_ports_for_workload(
     workload: V1Deployment | V1StatefulSet | V1Pod, container_name: str
 ) -> list[V1ServicePort]:
     ports = []
-    if isinstance(workload, (V1Deployment, V1StatefulSet)):
+    if hasattr(workload.spec, "template") and workload.spec.template is not None:
         spec_ = workload.spec.template.spec
     else:
         spec_ = workload.spec

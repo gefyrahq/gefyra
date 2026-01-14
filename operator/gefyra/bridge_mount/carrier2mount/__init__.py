@@ -110,50 +110,54 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             return "pod"
 
     def _read_namespaced_(self, type_) -> Callable:
+        type_name = type_.__name__ if hasattr(type_, "__name__") else str(type_)
         func = {
-            V1Deployment: app.read_namespaced_deployment,
-            V1StatefulSet: app.read_namespaced_stateful_set,
-            V1Pod: core_v1_api.read_namespaced_pod,
-        }.get(type_)
+            "V1Deployment": app.read_namespaced_deployment,
+            "V1StatefulSet": app.read_namespaced_stateful_set,
+            "V1Pod": core_v1_api.read_namespaced_pod,
+        }.get(type_name)
         if not func:
             raise BridgeMountTargetException(
-                f"Cannont select correct Kubernetes API read-op for type '{type_}'"
+                f"Cannot select correct Kubernetes API read-op for type '{type_}'"
             )
         return func
 
     def _create_namespaced_(self, type_) -> Callable:
+        type_name = type_.__name__ if hasattr(type_, "__name__") else str(type_)
         func = {
-            V1Deployment: app.create_namespaced_deployment,
-            V1StatefulSet: app.create_namespaced_stateful_set,
-            V1Pod: core_v1_api.create_namespaced_pod,
-        }.get(type_)
+            "V1Deployment": app.create_namespaced_deployment,
+            "V1StatefulSet": app.create_namespaced_stateful_set,
+            "V1Pod": core_v1_api.create_namespaced_pod,
+        }.get(type_name)
         if not func:
             raise BridgeMountInstallException(
-                f"Cannont select correct Kubernetes API create-op for type '{type_}'"
+                f"Cannot select correct Kubernetes API create-op for type '{type_}'"
             )
         return func
 
     def _patch_namespaced_(self, type_) -> Callable:
+        type_name = type_.__name__ if hasattr(type_, "__name__") else str(type_)
         func = {
-            V1Deployment: app.patch_namespaced_deployment,
-            V1StatefulSet: app.patch_namespaced_stateful_set,
-            V1Pod: core_v1_api.patch_namespaced_pod,
-        }.get(type_)
+            "V1Deployment": app.patch_namespaced_deployment,
+            "V1StatefulSet": app.patch_namespaced_stateful_set,
+            "V1Pod": core_v1_api.patch_namespaced_pod,
+        }.get(type_name)
         if not func:
             raise BridgeMountInstallException(
-                f"Cannont select correct Kubernetes API patch-op for type '{type_}'"
+                f"Cannot select correct Kubernetes API patch-op for type '{type_}'"
             )
         return func
 
     def _delete_namespaced_(self, type_) -> Callable:
+        type_name = type_.__name__ if hasattr(type_, "__name__") else str(type_)
         func = {
-            V1Deployment: app.delete_namespaced_deployment,
-            V1StatefulSet: app.delete_namespaced_stateful_set,
-            V1Pod: core_v1_api.delete_namespaced_pod,
-        }.get(type_)
+            "V1Deployment": app.delete_namespaced_deployment,
+            "V1StatefulSet": app.delete_namespaced_stateful_set,
+            "V1Pod": core_v1_api.delete_namespaced_pod,
+        }.get(type_name)
         if not func:
             raise BridgeMountInstallException(
-                f"Cannont select correct Kubernetes API delete-op for type '{type_}'"
+                f"Cannot select correct Kubernetes API delete-op for type '{type_}'"
             )
         return func
 
