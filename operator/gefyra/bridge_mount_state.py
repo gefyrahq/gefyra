@@ -88,7 +88,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             target_container=self.data["targetContainer"],
             name=self.data["metadata"]["name"],
             post_event_function=self.post_event,
-            parameter=self.data.get("providerParameter"),
+            parameter=self.data.get("providerParameter", {}),
             logger=self.logger,
         )
         return provider
