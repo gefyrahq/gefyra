@@ -32,4 +32,4 @@ def test_a_create_simple_mount(operator: AClusterManager, workloads_for_test):
         timeout=120,
     )
 
-    assert res is True
+    assert res._created
