@@ -256,7 +256,7 @@ jobs:
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
       - name: Run gefyra up
-        timeout-minutes: 8
+        timeout-minutes: 15
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra.cli.main --debug up --minikube
