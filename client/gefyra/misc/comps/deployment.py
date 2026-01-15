@@ -78,7 +78,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     },
                                     {
                                         "name": "GEFYRA_CARRIER2_DEBUG",
-                                        "value": params.bridge_debug,
+                                        "value": str(params.bridge_debug),
                                     },
                                     {
                                         "name": "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT",
