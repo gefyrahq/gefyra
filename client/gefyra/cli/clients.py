@@ -1,10 +1,10 @@
 import os
 import pprint
-from alive_progress import alive_bar
 import click
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from gefyra.types import GefyraClient
+from gefyra.types.client import GefyraClientState
 from tabulate import tabulate
 
 
@@ -40,33 +40,19 @@ def clients(ctx):
 def create_clients(ctx, client_id, quantity, registry, nowait: bool = False):
     from gefyra import api
 
-    if quantity > 1 or not nowait:
-        with alive_bar(
-            total=None,
-            length=20,
-            title="Creating the requested GefyraClient (timeout=60))",
-            bar="smooth",
-            spinner="classic",
-            stats=False,
-            dual_line=True,
-        ) as bar:
-            client: GefyraClient = api.add_clients(
-                client_id,
-                quantity,
-                registry=registry,
-                kubeconfig=ctx.obj["kubeconfig"],
-                kubecontext=ctx.obj["context"],
-            )
-            client[0].watch_events(bar.text)  # only one, checked
-    else:
-        api.add_clients(
-            client_id,
-            quantity,
-            registry=registry,
-            kubeconfig=ctx.obj["kubeconfig"],
-            kubecontext=ctx.obj["context"],
-        )
-        console.success(f"{quantity} GefyraClient(s) created successfully")
+    clients: list[GefyraClient] = api.add_clients(
+        client_id,
+        quantity,
+        registry=registry,
+        kubeconfig=ctx.obj["kubeconfig"],
+        kubecontext=ctx.obj["context"],
+    )
+    if not nowait:
+        console.info("Waiting for GefyraClient(s) to be ready...")
+        for client in clients:
+            client.wait_for_state(GefyraClientState.WAITING)
+
+    console.success(f"{quantity} GefyraClient(s) created successfully")
 
 
 @clients.command(

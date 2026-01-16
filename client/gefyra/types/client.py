@@ -3,6 +3,7 @@ from enum import Enum
 import json
 import logging
 from typing import Any, Dict, Optional, TYPE_CHECKING
+import time
 
 from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.types.stowaway import (
@@ -150,6 +151,18 @@ class GefyraClient(WatchEventsMixin):
                 else:
                     data[_field.name] = _v
         return data
+
+    def wait_for_state(self, desired_state: GefyraClientState, timeout: int = 60):
+        start_time = time.time()
+        while True:
+            self.update()
+            if self.state == desired_state:
+                return
+            if time.time() - start_time > timeout:
+                raise TimeoutError(
+                    f"Timeout waiting for client {self.client_id} to reach state {desired_state}"
+                )
+            time.sleep(2)
 
     @property
     def state(self) -> GefyraClientState:
