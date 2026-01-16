@@ -29,15 +29,7 @@ class TestGefyraClients(GefyraTestCase):
         from gefyra.api.clients import get_client
 
         gclient = get_client("client-a", kubeconfig=operator.kubeconfig)
-        retries = 20
-        counter = 0
-        try:
-            assert gclient.state is GefyraClientState.WAITING
-        except AssertionError as e:
-            if counter >= retries:
-                raise e
-            counter += 1
-            sleep(4)
+        gclient.wait_for_state(GefyraClientState.WAITING)
 
         assert gclient.provider_parameter is None
         assert gclient.provider_config is None
@@ -47,6 +39,12 @@ class TestGefyraClients(GefyraTestCase):
 
         no_sa = self.run_operator_with_sa(operator)
         # if this is disabled SA
+        print(
+            k3d.kubectl(
+                ["logs", "-n", "gefyra", "deployment/gefyra-operator"], as_dict=False
+            )
+        )
+
         if no_sa:
             assert config.ca_crt is None
             assert config.namespace is not None

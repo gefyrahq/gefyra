@@ -155,7 +155,6 @@ class GefyraClient(WatchEventsMixin):
     def wait_for_state(self, desired_state: GefyraClientState, timeout: int = 60):
         start_time = time.time()
         while True:
-            self.update()
             if self.state == desired_state:
                 return
             if time.time() - start_time > timeout:

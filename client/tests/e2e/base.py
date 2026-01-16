@@ -940,6 +940,7 @@ class GefyraTestCase:
             ],
             as_dict=False,
         )
+        print(no_sa)
         if no_sa and no_sa == "True":
             return True
         return False

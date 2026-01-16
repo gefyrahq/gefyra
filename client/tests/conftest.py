@@ -143,13 +143,13 @@ def check_operator_running(k3d):
             )
             print(
                 k3d.kubectl(
-                    ["logs", "-n", "gefyra", "deployment", "gefyra-operator"],
+                    ["logs", "-n", "gefyra", "deployment/gefyra-operator"],
                     as_dict=False,
                 )
             )
             print(
                 k3d.kubectl(
-                    ["logs", "-n", "gefyra", "deployment", "gefyra-operator-webhook"],
+                    ["logs", "-n", "gefyra", "deployment/gefyra-operator-webhook"],
                     as_dict=False,
                 )
             )
