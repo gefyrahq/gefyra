@@ -160,7 +160,7 @@ jobs:
   build_stowaway:
     runs-on: ubuntu-latest
     outputs:
-      tags: ${{ steps.cargo_meta.outputs.tags }}
+      tags: ${{ steps.stowaway_meta.outputs.tags }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
