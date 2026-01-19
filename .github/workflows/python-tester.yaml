@@ -221,7 +221,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -271,7 +271,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       # https://github.com/opensafely-core/job-server/issues/3429
       - name: Install Poetry
         uses: snok/install-poetry@v1
@@ -353,7 +353,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       - name: Checkout
         uses: actions/checkout@v6
       - name: Install Poetry
