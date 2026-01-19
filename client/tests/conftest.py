@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 import subprocess
@@ -103,27 +104,27 @@ def operator(request):
         return request.getfixturevalue("operator_with_sa")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
-    k3d.apply(Path(__file__).parent / Path("fixtures/operator.yaml"))
-
-    check_operator_running(k3d)
+    now = datetime.now(timezone.utc)
+    k3d.apply(Path(__file__).parent / Path("fixtures/operator.yaml"), wait=True)
+    check_operator_running(k3d, after=now)
     yield k3d
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="class")
 def operator_no_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
-    k3d.apply(Path(__file__).parent / Path("fixtures/operator_no_sa.yaml"))
-
-    check_operator_running(k3d)
+    now = datetime.now(timezone.utc)
+    k3d.apply(Path(__file__).parent / Path("fixtures/operator_no_sa.yaml"), wait=True)
+    check_operator_running(k3d, after=now)
     yield k3d
 
 
-def check_operator_running(k3d):
+def check_operator_running(k3d, after: datetime):
     not_found = True
     _i = 0
     while not_found and _i < 120:
@@ -131,7 +132,12 @@ def check_operator_running(k3d):
         events = k3d.kubectl(["get", "events", "-n", "gefyra"])
         _i += 1
         for event in events["items"]:
-            if event["reason"] == "Gefyra-Ready":
+            if (
+                event["eventTime"]
+                and datetime.fromisoformat(event["eventTime"].replace("Z", "+00:00"))
+                > after
+                and event["reason"] == "Gefyra-Ready"
+            ):
                 not_found = False
     if not_found:
         try:

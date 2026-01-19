@@ -40,11 +40,6 @@ class TestGefyraClients(GefyraTestCase):
         config = gclient.get_client_config(gefyra_server="localhost:31820")
         assert config.kubernetes_server is not None
         no_sa = self.run_operator_with_sa(operator)
-        print(
-            k3d.kubectl(
-                ["-n", "gefyra", "logs", "deployment/gefyra-operator"], as_dict=False
-            )
-        )
         # if this is disabled SA
         if no_sa:
             assert config.ca_crt is None
@@ -70,6 +65,8 @@ class TestGefyraClients(GefyraTestCase):
         k3d = operator
         from gefyra.api.clients import delete_client
 
+        delete_client("client-a", kubeconfig=operator.kubeconfig)
+        delete_client("client-b", kubeconfig=operator.kubeconfig)
         delete_client("client-f", kubeconfig=operator.kubeconfig)
         sleep(2)
         with pytest.raises(RuntimeError):
