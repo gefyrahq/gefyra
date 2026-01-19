@@ -2,11 +2,10 @@ import logging
 from pathlib import Path
 
 # from time import sleep
-from typing import List, Dict, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 from kubernetes.client import ApiException
 
-from gefyra.api.utils import get_workload_type
 from gefyra.local.bridge import get_all_containers, get_gefyrabridge
 from gefyra.types import ExactMatchHeader, GefyraLocalContainer
 from gefyra.local.mount import get_gefyrabridgemount
@@ -23,98 +22,6 @@ from gefyra.api.utils import (
 )  # get_workload_information
 
 logger = logging.getLogger(__name__)
-
-
-def get_pods_to_intercept(
-    workload_name: str, workload_type: str, namespace: str, config
-) -> Dict[str, List[str]]:
-    from gefyra.cluster.resources import (
-        get_pods_and_containers_for_pod_name,
-        get_pods_and_containers_for_workload,
-    )
-
-    pods_to_intercept = {}
-    if workload_type != "pod":
-        pods_to_intercept.update(
-            get_pods_and_containers_for_workload(
-                config, workload_name, namespace, workload_type
-            )
-        )
-    else:
-        pods_to_intercept.update(
-            get_pods_and_containers_for_pod_name(config, workload_name, namespace)
-        )
-    return pods_to_intercept
-
-
-def check_workloads(
-    pods_to_intercept: dict,
-    workload_type: str,
-    workload_name: str,
-    container_name: str,
-    namespace: str,
-    config: "ClientConfiguration",
-):
-    from gefyra.cluster.resources import check_pod_valid_for_bridge
-
-    pod_names = pods_to_intercept.keys()
-    if len(pod_names) == 0:
-        raise Exception("Could not find any pod to bridge.")
-
-    cleaned_names = ["-".join(name.split("-")[:-2]) for name in pod_names]
-
-    if workload_type != "pod" and workload_name not in cleaned_names:
-        raise RuntimeError(
-            f"Could not find {workload_type}/{workload_name} to bridge. Available"
-            f" {workload_type}: {', '.join(cleaned_names)}"
-        )
-
-    if container_name not in [
-        container for c_list in pods_to_intercept.values() for container in c_list
-    ]:
-        raise RuntimeError(f"Could not find container {container_name} to bridge.")
-
-    # Validate workload and probes
-    api = config.K8S_APP_API
-    core_api = config.K8S_CORE_API
-    try:
-        reconstructed_workload_type = get_workload_type(workload_type)
-        if reconstructed_workload_type == "pod":
-            workload = core_api.read_namespaced_pod(workload_name, namespace)
-        elif reconstructed_workload_type == "deployment":
-            workload = api.read_namespaced_deployment(workload_name, namespace)
-        elif reconstructed_workload_type == "statefulset":
-            workload = api.read_namespaced_stateful_set(workload_name, namespace)
-    except ApiException as e:
-        raise RuntimeError(
-            f"Error fetching workload {workload_type}/{workload_name}: {e}"
-        )
-
-    containers = (
-        workload.spec.template.spec.containers
-        if hasattr(workload.spec, "template")
-        else workload.spec.containers
-    )
-    target_container = next((c for c in containers if c.name == container_name), None)
-    if not target_container:
-        raise RuntimeError(
-            f"Container {container_name} not found in workload {workload_type}/{workload_name}."
-        )
-
-    def validate_http_probe(probe, probe_type):
-        if probe and probe.http_get is None:
-            raise RuntimeError(
-                f"{probe_type} in container {container_name} does not use httpGet. "
-                f"Only HTTP-based probes are supported."
-            )
-
-    # Check for HTTP probes only
-    validate_http_probe(target_container.liveness_probe, "LivenessProbe")
-    validate_http_probe(target_container.readiness_probe, "ReadinessProbe")
-    validate_http_probe(target_container.startup_probe, "StartupProbe")
-
-    for name in pod_names:
-        check_pod_valid_for_bridge(config, name, namespace, container_name)
 
 
 @stopwatch
@@ -301,7 +208,6 @@ def list_bridges(
     """
     Retrieve all GefyraBridge objects
     """
-    from kubernetes.client import ApiException
 
     config = ClientConfiguration(
         kube_config_file=kubeconfig,

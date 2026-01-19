@@ -3,12 +3,10 @@ from typing import Callable
 
 from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
-from gefyra.bridge.carrier import CarrierBuilder
 from gefyra.bridge.carrier2 import Carrier2Builder
 
 
 class BridgeProviderType(Enum):
-    CARRIER = "carrier"
     CARRIER2 = "carrier2"
 
 
@@ -71,5 +69,4 @@ class GefyraBridgeFactory:
 
 
 bridge_provider_factory = GefyraBridgeFactory()
-bridge_provider_factory.register_builder(BridgeProviderType.CARRIER, CarrierBuilder())
 bridge_provider_factory.register_builder(BridgeProviderType.CARRIER2, Carrier2Builder())

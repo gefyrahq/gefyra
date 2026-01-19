@@ -71,6 +71,10 @@ class TestGefyraBridge(GefyraTestCase):
                 LOCAL_CONTAINER_NAME,
                 "--command",
                 "python3 local.py",
+                "--cpu",
+                "1",
+                "--memory",
+                "128m",
             ],
         )
 
