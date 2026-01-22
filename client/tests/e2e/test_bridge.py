@@ -127,6 +127,8 @@ class TestGefyraBridge(GefyraTestCase):
                 "nginx-deployment-gefyra",
                 "--connection-name",
                 "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
             ],
         )
 
@@ -295,3 +297,13 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
+
+    def test_s_get_bridge(
+        self, operator: AClusterManager, tmp_path, demo_backend_image
+    ):
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["inspect", "bridge_name", "pytest-gefyra-bridge"],
+        )
+        print(res.stdout)

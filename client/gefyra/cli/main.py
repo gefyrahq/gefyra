@@ -33,7 +33,6 @@ cli.add_command(cmd=version, name="version")
 cli.add_command(cmd=_self, name="self")
 cli.add_command(cmd=list, name="list")
 cli.add_command(cmd=mount, name="mount")
-# cli.add_command(cmd=reverse, name="reverse")
 
 
 def main():
