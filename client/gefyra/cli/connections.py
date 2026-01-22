@@ -142,14 +142,20 @@ def connect_client(
     alias=["stop", "halt"],
     help="Disconnect this local machine from a Gefyra cluster",
 )
+@click.option(
+    "--yes",
+    help="Non-interactive mode, do not ask for confirmation",
+    type=bool,
+    default=False,
+)
 @click.argument(
     "connection_name", type=str, default="default", callback=check_connection_name
 )
 @standard_error_handler
-def disconnect_client(connection_name: str):
+def disconnect_client(yes: bool, connection_name: str):
     from gefyra import api
 
-    _manage_container_and_bridges(connection_name=connection_name)
+    _manage_container_and_bridges(connection_name=connection_name, force=yes)
     api.disconnect(connection_name=connection_name)
 
 
