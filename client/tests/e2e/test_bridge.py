@@ -304,6 +304,6 @@ class TestGefyraBridge(GefyraTestCase):
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
-            ["inspect", "bridge_name", "pytest-gefyra-bridge"],
+            ["inspect", "pytest-gefyra-bridge"],
         )
         print(res.stdout)
