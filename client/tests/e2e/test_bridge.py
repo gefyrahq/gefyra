@@ -346,7 +346,7 @@ class TestGefyraBridge(GefyraTestCase):
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
-            ["delete", "pytest-gefyra-bridge", "--connection-name", "pytest-gefyra"],
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
         # Assert deletion was successful
         assert "marked for deletion" in res.output
