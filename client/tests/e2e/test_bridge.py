@@ -306,4 +306,68 @@ class TestGefyraBridge(GefyraTestCase):
             "bridge",
             ["inspect", "pytest-gefyra-bridge"],
         )
-        print(res.stdout)
+
+        # Assert the command succeeded (already checked by cmd() but explicit is good)
+        assert res.exit_code == 0
+
+        # Assert the bridge name is in the output
+        assert "pytest-gefyra-bridge" in res.output
+
+        # Assert the mount target is shown
+        assert "nginx-deployment-gefyra" in res.output
+
+        # Assert the header match rule is shown (the x-gefyra:peer header)
+        assert "x-gefyra" in res.output
+
+        # Assert states are shown (ACTIVE state should be present since bridge is active)
+        assert "States:" in res.output
+
+        # Assert the GefyraBridgeMount reference is shown
+        assert "GefyraBridgeMount:" in res.output
+
+    def test_t_list_bridges(
+        self, operator: AClusterManager, tmp_path, demo_backend_image
+    ):
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["list", "--connection-name", "pytest-gefyra"],
+        )
+        # Assert the bridge is listed
+        assert "pytest-gefyra-bridge" in res.output
+        # Assert state is shown
+        assert "ACTIVE" in res.output
+        # Assert the mount is shown
+        assert "nginx-deployment-gefyra" in res.output
+
+    def test_u_delete_bridge(
+        self, operator: AClusterManager, tmp_path, demo_backend_image
+    ):
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "pytest-gefyra-bridge", "--connection-name", "pytest-gefyra"],
+        )
+        # Assert deletion was successful
+        assert "marked for deletion" in res.output
+
+        # Verify the bridge is actually deleted
+        import time
+
+        for _ in range(30):
+            try:
+                operator.kubectl(
+                    [
+                        "get",
+                        "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+                        "-n",
+                        "gefyra",
+                    ],
+                    as_dict=False,
+                )
+                time.sleep(2)
+            except RuntimeError:
+                # Resource not found - deletion successful
+                break
+        else:
+            raise AssertionError("Bridge was not deleted within timeout")
