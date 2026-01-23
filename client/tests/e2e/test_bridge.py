@@ -1,3 +1,4 @@
+from gefyra.api.connect import list_connections
 import pytest
 
 from pytest_kubernetes.providers import AClusterManager
@@ -343,6 +344,7 @@ class TestGefyraBridge(GefyraTestCase):
     def test_u_delete_bridge(
         self, operator: AClusterManager, tmp_path, demo_backend_image
     ):
+        print(list_connections())
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
