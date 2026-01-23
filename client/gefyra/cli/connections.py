@@ -146,6 +146,7 @@ def connect_client(
     "--yes",
     help="Non-interactive mode, do not ask for confirmation",
     type=bool,
+    is_flag=True,
     default=False,
 )
 @click.argument(
