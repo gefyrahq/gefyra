@@ -28,7 +28,7 @@ from gefyra.cli.utils import check_connection_name
 from gefyra.api.clients import list_client, write_client_file
 from gefyra.api.install import LB_PRESETS
 
-from gefyra.api.list import get_bridges_and_print, get_containers_and_print
+from gefyra.api.list import get_containers_and_print
 from gefyra.cli.main import cli
 from gefyra.cluster.utils import (
     get_container_command,
@@ -46,7 +46,6 @@ from gefyra.api import (
     status,
     unbridge_all,
     list_containers,
-    list_gefyra_bridges,
 )
 from gefyra.api.status import StatusSummary
 from gefyra.cluster.resources import (
@@ -397,10 +396,6 @@ class GefyraBaseTest(GefyraTestMixin):
 
         self.assertIn("already bridged", str(rte.exception))
 
-    def test_m_run_gefyra_list_bridges(self):
-        res = list_gefyra_bridges(connection_name=CONNECTION_NAME)
-        self.assertEqual(len(res), 1)
-
     def test_m_run_gefyra_list_containers(self):
         res = list_containers(connection_name=CONNECTION_NAME)
         self.assertEqual(len(res), 1)
@@ -416,11 +411,6 @@ class GefyraBaseTest(GefyraTestMixin):
     @pytest.fixture(autouse=True)
     def monkeypatch(self, monkeypatch):
         self.monkeypatch = monkeypatch
-
-    def test_m_run_gefyra_list_output_bridges(self):
-        get_bridges_and_print(connection_name=CONNECTION_NAME)
-        captured = self.capsys.readouterr()
-        self.assertIn("mypyserver-to-default.pod.hello-nginxdemo", captured.out)
 
     def test_m_run_gefyra_list_output_containers(self):
         get_containers_and_print(connection_name=CONNECTION_NAME)

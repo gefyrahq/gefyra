@@ -1,12 +1,12 @@
 import logging
 from gefyra.exceptions import ClientConfigurationError
-from gefyra.types import GefyraBridge, GefyraLocalContainer
+from gefyra.types import GefyraLocalContainer
 from tabulate import tabulate
 from typing import List, Optional, Tuple
 
 from gefyra.configuration import ClientConfiguration
 
-from .utils import stopwatch, wrap_bridge
+from .utils import stopwatch
 
 
 logger = logging.getLogger(__name__)
@@ -21,57 +21,6 @@ def get_containers_and_print(connection_name: Optional[str] = None):
             containers, headers=["NAME", "IP ADDRESS", "NAMESPACE"], tablefmt="plain"
         )
     )
-
-
-def get_bridges_and_print(connection_name: Optional[str] = None):
-    from gefyra.api import list_gefyra_bridges
-
-    gefyra_bridges = list_gefyra_bridges(connection_name=connection_name)
-    if gefyra_bridges:
-        for gefyra_bridge in gefyra_bridges:
-            print(gefyra_bridge)
-    else:
-        logger.info("No active bridges found")
-
-
-@stopwatch
-def list_gefyra_bridges(
-    connection_name: Optional[str] = None,
-) -> List[Tuple[str, List[GefyraBridge]]]:
-    from gefyra.local.bridge import get_all_gefyrabridges
-    from gefyra import api
-
-    conns = api.list_connections()
-    config = ClientConfiguration(connection_name=connection_name)
-    if connection_name:
-        if connection_name not in [conns.name for conns in conns]:
-            raise ClientConfigurationError(
-                f"Connection {connection_name} does not exist. Please create it first."
-            )
-        obridges = get_all_gefyrabridges(config)
-        return [
-            (
-                connection_name,
-                list(GefyraBridge.from_raw(obridge, config) for obridge in obridges),
-            )
-        ]
-    else:
-        bridges = []
-        for conn in conns:
-            bridges.append(
-                (
-                    conn.name,
-                    list(
-                        map(
-                            wrap_bridge,
-                            get_all_gefyrabridges(
-                                ClientConfiguration(connection_name=conn.name)
-                            ),
-                        )
-                    ),
-                )
-            )
-        return bridges
 
 
 @stopwatch

@@ -17,19 +17,19 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
     from gefyra.configuration import ClientConfiguration
 
     try:
-        _bridges = api.list_gefyra_bridges(connection_name)
-        if _bridges and len(_bridges[0][1]) > 0:
+        _bridges = api.list_bridges(connection_name)
+        if _bridges and len(_bridges) > 0:
             console.info(
-                f"There is {len(_bridges[0][1])} GefyraBridge(s) running with connection '{connection_name}'."
+                f"There is {len(_bridges)} GefyraBridge(s) running with connection '{connection_name}'."
             )
             if force:
                 _del = True
             elif click.confirm("Do you want to remove them?", abort=True):
                 _del = True
             if _del:
-                for gbridges in _bridges[0][1]:
+                for gbridge in _bridges:
                     api.delete_bridge(
-                        name=gbridges.name,
+                        name=gbridge.name,
                         connection_name=connection_name,
                     )
     except (
