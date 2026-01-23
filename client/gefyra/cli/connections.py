@@ -149,15 +149,23 @@ def connect_client(
     is_flag=True,
     default=False,
 )
+@click.option(
+    "--nowait",
+    is_flag=True,
+    help="Do not wait for the GefyraClient to be in state 'WAITING'",
+)
 @click.argument(
     "connection_name", type=str, default="default", callback=check_connection_name
 )
 @standard_error_handler
-def disconnect_client(yes: bool, connection_name: str):
+def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
     from gefyra import api
 
     _manage_container_and_bridges(connection_name=connection_name, force=yes)
-    api.disconnect(connection_name=connection_name)
+    console.info(f"Disconnecting Gefyra connection '{connection_name}'...")
+    if not nowait:
+        console.info("Waiting for the GefyraClient to be in state 'WAITING'...")
+    api.disconnect(connection_name=connection_name, nowait=nowait)
 
 
 @connections.command(

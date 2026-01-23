@@ -262,7 +262,7 @@ def connect(  # noqa: C901
 
 
 @stopwatch
-def disconnect(connection_name: str) -> bool:
+def disconnect(connection_name: str, nowait: bool = False) -> bool:
     import docker
 
     config = ClientConfiguration(connection_name=connection_name)
@@ -276,6 +276,8 @@ def disconnect(connection_name: str) -> bool:
     except docker.errors.NotFound:
         pass
     client.deactivate_connection()
+    if not nowait:
+        client.wait_for_state(GefyraClientState.WAITING)
     return True
 
 
