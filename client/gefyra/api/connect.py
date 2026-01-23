@@ -47,7 +47,7 @@ def _get_client_networks(config: ClientConfiguration) -> List[str]:
     )
     active_clients = list(
         filter(
-            lambda x: x["state"] == "ACTIVE" and x["providerParameter"],
+            lambda x: x["state"] == "ACTIVE" and "providerParameter" in x,
             clients["items"],
         )
     )
