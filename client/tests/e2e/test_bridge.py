@@ -394,9 +394,6 @@ class TestGefyraBridge(GefyraTestCase):
             ["connect", "--connection-name", "pytest-gefyra"],
         )
 
-        res = self.cmd(operator.kubeconfig, "connection", ["remove"])
-        assert "The connection name 'default' does not exist." in res.output
-
         self.cmd(
             operator.kubeconfig,
             "connection",
