@@ -231,11 +231,12 @@ class TestGefyraBridge(GefyraTestCase):
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
 
-    def test_rollout_bridge_mount_reconciles(
+    def test_multiple_cli_commands(
         self, operator: AClusterManager, tmp_path, demo_backend_image
     ):
         """
         Test if a deployment rollout is detected and the bridge is updated accordingly.
+        Afterwards check if listing, inspecting and deleting bridges works as expected.
         """
         client_file_path = tmp_path / "client-a.json"
         self.cmd(
@@ -297,6 +298,21 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "list",
+            ["--connection-name", "pytest-gefyra"],
+        )
+
+        assert LOCAL_CONTAINER_NAME in res.output
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "list",
+        )
+
+        assert LOCAL_CONTAINER_NAME in res.output
 
         res = self.cmd(
             operator.kubeconfig,
@@ -362,3 +378,21 @@ class TestGefyraBridge(GefyraTestCase):
                 break
         else:
             raise AssertionError("Bridge was not deleted within timeout")
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["disconnect", "--yes", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["connect", "--connection-name", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
+        )

@@ -1,7 +1,6 @@
 import logging
 from gefyra.exceptions import ClientConfigurationError
 from gefyra.types import GefyraLocalContainer
-from tabulate import tabulate
 from typing import List, Optional, Tuple
 
 from gefyra.configuration import ClientConfiguration
@@ -10,17 +9,6 @@ from .utils import stopwatch
 
 
 logger = logging.getLogger(__name__)
-
-
-def get_containers_and_print(connection_name: Optional[str] = None):
-    from gefyra.api import list_containers
-
-    containers = list_containers(connection_name=connection_name)
-    print(
-        tabulate(
-            containers, headers=["NAME", "IP ADDRESS", "NAMESPACE"], tablefmt="plain"
-        )
-    )
 
 
 @stopwatch
