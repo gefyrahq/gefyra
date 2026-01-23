@@ -313,10 +313,7 @@ class TestGefyraBridge(GefyraTestCase):
 
         assert LOCAL_CONTAINER_NAME in res.output
 
-        res = self.cmd(
-            operator.kubeconfig,
-            "list",
-        )
+        res = self.cmd(operator.kubeconfig, "list", [])
 
         assert LOCAL_CONTAINER_NAME in res.output
 
