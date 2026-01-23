@@ -1,4 +1,3 @@
-from gefyra.api.connect import list_connections
 import pytest
 
 from pytest_kubernetes.providers import AClusterManager
@@ -299,9 +298,6 @@ class TestGefyraBridge(GefyraTestCase):
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
 
-    def test_s_get_bridge(
-        self, operator: AClusterManager, tmp_path, demo_backend_image
-    ):
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
@@ -326,9 +322,6 @@ class TestGefyraBridge(GefyraTestCase):
         # Assert the GefyraBridgeMount reference is shown
         assert "GefyraBridgeMount:" in res.output
 
-    def test_t_list_bridges(
-        self, operator: AClusterManager, tmp_path, demo_backend_image
-    ):
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
@@ -341,10 +334,6 @@ class TestGefyraBridge(GefyraTestCase):
         # Assert the mount is shown
         assert "nginx-deployment-gefyra" in res.output
 
-    def test_u_delete_bridge(
-        self, operator: AClusterManager, tmp_path, demo_backend_image
-    ):
-        print(list_connections())
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
