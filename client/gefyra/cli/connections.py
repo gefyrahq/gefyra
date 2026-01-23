@@ -17,7 +17,7 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
     from gefyra.configuration import ClientConfiguration
 
     try:
-        _bridges = api.list_bridges(connection_name)
+        _bridges = api.list_bridges(connection_name=connection_name)
         if _bridges and len(_bridges) > 0:
             console.info(
                 f"There is {len(_bridges)} GefyraBridge(s) running with connection '{connection_name}'."
