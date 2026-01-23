@@ -45,12 +45,10 @@ def _get_client_networks(config: ClientConfiguration) -> List[str]:
         group="gefyra.dev",
         version="v1",
     )
-    if len(clients["items"]) == 0:
+    active_clients = filter(lambda x: x["state"] == "ACTIVE", clients["items"])
+    if not active_clients:
         return []
-    return [
-        client["providerParameter"]["subnet"]
-        for client in filter(lambda x: x["state"] == "ACTIVE", clients["items"])
-    ]
+    return [client["providerParameter"]["subnet"] for client in active_clients]
 
 
 @stopwatch
