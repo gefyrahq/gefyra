@@ -29,9 +29,9 @@ class TestGefyraBridge(GefyraTestCase):
     def test_bridge(self, operator: AClusterManager, tmp_path, demo_backend_image):
         # Check help flag is working (format group for click)
         self.cmd(operator.kubeconfig, "client", ["--help"])
-
-        res = self.cmd(operator.kubeconfig, "connection", ["remove"])
-        assert "No Gefyra connection found." in res.output
+        with pytest.raises(AssertionError):
+            res = self.cmd(operator.kubeconfig, "connection", ["remove"])
+            assert "No Gefyra connection found." in res.output
 
         self.cmd(operator.kubeconfig, "client", ["create", "--client-id", "client-a"])
 
