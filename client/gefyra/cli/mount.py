@@ -124,16 +124,24 @@ def create(
 @mount.command(
     "delete", alias=["rm", "remove"], help="Mark a GefyraBridgeMount for deletion"
 )
+@click.option(
+    "--nowait",
+    is_flag=True,
+    help="Do not wait for the GefyraBridgeMount to be deleted.",
+)
 @click.argument("mount_name", nargs=-1, required=True)
 @click.pass_context
 @standard_error_handler
-def delete_mount(ctx, mount_name):
+def delete_mount(ctx, mount_name, nowait: bool = False):
     from gefyra import api
 
     # TODO add connection-name support
     for _del in list(mount_name):
         deleted = api.delete_mount(
-            _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+            _del,
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            wait=not nowait,
         )
         if deleted:
             console.success(f"GefyraBridgeMount '{_del}' marked for deletion")
