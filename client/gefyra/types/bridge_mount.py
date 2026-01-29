@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import logging
+import time
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
 from gefyra.local.mount import get_gefyrabridgemount
@@ -61,3 +62,13 @@ class GefyraBridgeMount(WatchEventsMixin):
         logger.debug(f"Fetching object GefyraBridgeMount {self.mount_id}")
         gbm = get_gefyrabridgemount(self._config, self.mount_id)
         self._init_data(gbm)
+
+    def wait_for_deletion(self, timeout: int = 60):
+        for _ in range(timeout):
+            res = get_gefyrabridgemount(self._config, self.mount_id)
+            if res == {}:
+                return True
+            time.sleep(1)
+        raise TimeoutError(
+            f"Timed out waiting for GefyraBridgeMount {self.mount_id} to be deleted."
+        )
