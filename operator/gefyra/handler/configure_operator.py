@@ -13,5 +13,7 @@ def configure(settings: kopf.OperatorSettings, **_):
         key="last-handled-configuration",
     )
     settings.persistence.finalizer = "operator.gefyra.dev/kopf-finalizer"
-    settings.watching.server_timeout = 10 * 60
-    settings.watching.client_timeout = 5 * 60
+    settings.networking.request_timeout = 30
+    settings.networking.connect_timeout = 10
+    settings.watching.connect_timeout = 10
+    settings.watching.server_timeout = 210

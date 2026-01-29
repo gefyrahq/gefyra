@@ -37,6 +37,11 @@ def configure(settings: kopf.OperatorSettings, **_):
         prefix="gefyra.dev",
         key="last-handled-configuration",
     )
+    settings.networking.request_timeout = 30
+    settings.networking.connect_timeout = 10
+    settings.watching.connect_timeout = 10
+    settings.watching.server_timeout = 210
+
     settings.persistence.finalizer = "operator.gefyra.dev/kopf-finalizer"
     settings.admission.server = kopf.WebhookServer(
         port=9443,
