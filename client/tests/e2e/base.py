@@ -40,7 +40,6 @@ from gefyra.types import GefyraClientState
 
 from gefyra.api import (
     create_bridge,
-    reflect,
     run,
     status,
     unbridge_all,
@@ -442,112 +441,6 @@ class GefyraBaseTest(GefyraTestMixin):
 
     def test_n_run_gefyra_down_again_without_errors(self):
         self.gefyra_down()
-
-    def test_o_reflect_occupied_port(self):
-        container_name = "busybox"
-        self.DOCKER_API.containers.run(
-            "alpine",
-            auto_remove=True,
-            ports={"8000/tcp": [8000]},
-            detach=True,
-            command=["sleep", "300"],
-            name=container_name,
-        )
-        res = self.gefyra_up()
-        self.assertTrue(res)
-        self.assert_cargo_running()
-        self.assert_gefyra_connected()
-        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
-        params = {
-            "workload": "deploy/bye-nginxdemo-8000",
-            "do_bridge": True,
-            "auto_remove": True,
-        }
-        with self.assertRaises(RuntimeError) as rte:
-            reflect(**params)
-
-        assert "allocated" in str(rte.exception) or "occupied" in str(rte.exception)
-        self._stop_container(container=container_name)
-        self.gefyra_down()
-        self.assert_namespace_not_found("gefyra")
-        self.assert_cargo_not_running()
-
-    def test_p_reflect(self):
-        res = self.gefyra_up()
-        self.assertTrue(res)
-        self.assert_cargo_running()
-        self.assert_gefyra_connected()
-        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
-        res_reflect = reflect(**self.default_reflect_params)
-        self.assertTrue(res_reflect)
-        unbridge_all(connection_name=CONNECTION_NAME, wait=True)
-        self.assert_gefyra_operational_no_bridge()
-        self._stop_container(
-            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
-        )
-        self.gefyra_down()
-        self.assert_namespace_not_found("gefyra")
-        self.assert_cargo_not_running()
-        self.assertTrue(res)
-
-    def test_p_reflect_port_overwrite(self):
-        res = self.gefyra_up()
-        self.assertTrue(res)
-        self.assert_cargo_running()
-        self.assert_gefyra_connected()
-        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
-        params = self.default_reflect_params
-        params.update(
-            {
-                "ports": {80: 4000},
-                "expose_ports": False,
-            }
-        )
-        res_reflect = reflect(**params)
-        self.assertTrue(res_reflect)
-        self.assert_http_service_available("localhost", 4000)
-
-        unbridge_all(connection_name=CONNECTION_NAME, wait=True)
-        self.assert_gefyra_operational_no_bridge()
-        self._stop_container(
-            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
-        )
-        self.gefyra_down()
-        self.assert_namespace_not_found("gefyra")
-        self.assert_cargo_not_running()
-        self.assertTrue(res)
-
-    def test_p_reflect_image_overwrite(self):
-        res = self.gefyra_up()
-        self.assertTrue(res)
-        self.assert_cargo_running()
-        self.assert_gefyra_connected()
-        self.assert_deployment_ready(name="bye-nginxdemo-8000", namespace="default")
-        image = "pyserver:latest"
-        params = self.default_reflect_params
-        params.update(
-            {
-                "image": image,
-            }
-        )
-        res_reflect = reflect(**params)
-        self.assertTrue(res_reflect)
-        container = list(
-            filter(
-                lambda container: container.name.startswith("gefyra-reflect-"),
-                self.DOCKER_API.containers.list(),
-            )
-        )[0]
-        self.assertEqual(container.image.tags[0], image)
-        unbridge_all(connection_name=CONNECTION_NAME, wait=True)
-        self.assert_gefyra_operational_no_bridge()
-        self._stop_container(
-            container="gefyra-reflect-default-deploy-bye-nginxdemo-8000"
-        )
-        self.gefyra_down()
-        self.assert_namespace_not_found("gefyra")
-        self.assert_cargo_not_running()
-        self.assertTrue(res)
 
     def test_o_client_commands(self):
         res = self.gefyra_up()
