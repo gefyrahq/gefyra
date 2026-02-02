@@ -162,15 +162,25 @@ def check_stowaway_statefulset(
 ) -> bool:
     stowaway_sts = create_stowaway_statefulset(labels, configuration)
     try:
-        app.patch_namespaced_stateful_set(
-            stowaway_sts.metadata.name,
-            stowaway_sts.metadata.namespace,
-            body=stowaway_sts,
+        sts = app.read_namespaced_stateful_set(
+            stowaway_sts.metadata.name, stowaway_sts.metadata.namespace
         )
+        if (
+            sts.spec.template.spec.containers[0].image
+            != stowaway_sts.spec.template.spec.containers[  # type: ignore
+                0
+            ].image
+        ):
+            logger.warning("Stowaway image does not match, reinstalling...")
+            app.delete_namespaced_stateful_set(
+                name=stowaway_sts.metadata.name,
+                namespace=stowaway_sts.metadata.namespace,
+            )
+            handle_stowaway_statefulset(logger, configuration, labels)
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            logger.warning("Stowaway deployment does not exist")
+            logger.warning("Stowaway statefulset does not exist")
             return False
         else:
             raise e
