@@ -58,6 +58,7 @@ class OperatorConfiguration:
         self.DISABLE_CLIENT_SA_MANAGEMENT = config(
             "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT", default=False, cast=bool
         )
+        self.APP_REVISION = config("GEFYRA_APP_REVISION", default="unknown")
 
     def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if k.isupper()}

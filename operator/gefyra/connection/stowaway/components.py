@@ -162,8 +162,10 @@ def check_stowaway_statefulset(
 ) -> bool:
     stowaway_sts = create_stowaway_statefulset(labels, configuration)
     try:
-        app.read_namespaced_stateful_set(
-            stowaway_sts.metadata.name, stowaway_sts.metadata.namespace
+        app.patch_namespaced_stateful_set(
+            stowaway_sts.metadata.name,
+            stowaway_sts.metadata.namespace,
+            body=stowaway_sts,
         )
         return True
     except k8s.client.exceptions.ApiException as e:

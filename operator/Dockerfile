@@ -49,9 +49,16 @@ COPY poetry.lock pyproject.toml ./
 
 # install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
 RUN bash -c 'source $VENV_PATH/bin/activate && poetry install'
-
+ARG COMMIT_SHA
+RUN if [ -z "$COMMIT_SHA" ]; then \
+      echo "Error: COMMIT_SHA build argument is required but not set."; \
+      exit 1; \
+    fi
 
 FROM gcr.io/distroless/python3
+ARG COMMIT_SHA
+ENV GEFYRA_APP_REVISION=$COMMIT_SHA
+LABEL gefyra-revision=$COMMIT_SHA
 COPY --from=builder /opt/pysetup/venv/lib/python3.11/site-packages /usr/lib/python3.11/
 COPY . /app/
 WORKDIR /app

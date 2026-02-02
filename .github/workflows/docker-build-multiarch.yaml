@@ -57,6 +57,7 @@ jobs:
           tags: ${{ steps.operator_meta.outputs.tags }}
           cache-from: type=registry,ref=${{ steps.operator_meta.outputs.tags }}
           cache-to: type=inline
+          build-args: COMMIT_SHA=${{ github.sha }}
       #
       # Gefyra Cargo
       #

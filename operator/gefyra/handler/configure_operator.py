@@ -4,7 +4,7 @@ import kopf
 
 
 @kopf.on.startup()
-def configure(settings: kopf.OperatorSettings, **_):
+def configure(logger, settings: kopf.OperatorSettings, **_):
     settings.peering.standalone = True
     settings.posting.level = logging.WARNING
     settings.posting.enabled = False
@@ -17,3 +17,4 @@ def configure(settings: kopf.OperatorSettings, **_):
     settings.networking.connect_timeout = 10
     settings.watching.connect_timeout = 10
     settings.watching.server_timeout = 210
+    logger.info(f"Gefyra Operator Kopf configuration: {settings}")
