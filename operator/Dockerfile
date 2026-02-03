@@ -1,4 +1,4 @@
-FROM quay.io/blueshoe/python3.11-slim AS builder
+FROM quay.io/blueshoe/python3.13-slim AS builder
 
 # python
 ENV PYTHONUNBUFFERED=1 \
@@ -59,7 +59,7 @@ FROM gcr.io/distroless/python3
 ARG COMMIT_SHA
 ENV GEFYRA_APP_REVISION=$COMMIT_SHA
 LABEL gefyra-revision=$COMMIT_SHA
-COPY --from=builder /opt/pysetup/venv/lib/python3.11/site-packages /usr/lib/python3.11/
+COPY --from=builder /opt/pysetup/venv/lib/python3.13/site-packages /usr/lib/python3.13/
 COPY . /app/
 WORKDIR /app
 CMD ["-m", "kopf", "run", "-A", "main.py"]
