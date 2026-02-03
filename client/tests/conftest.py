@@ -56,7 +56,7 @@ def operator_image(request):
     name = "operator:pytest"
     subprocess.run(
         (
-            f"docker build -t {name} --platform linux/amd64 --build-args COMMIT_SHA=cipipeline -f"
+            f"docker build -t {name} --platform linux/amd64 --build-arg COMMIT_SHA=cipipeline -f"
             f" {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
             f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
         ),
