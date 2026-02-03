@@ -84,7 +84,7 @@ def list_client(ctx):
     clients = [
         [
             c.client_id,
-            c.state.value,
+            GefyraClientState(c._state).value,
             c.state_transitions.get("CREATING", "Creating..."),
             c._wg_handshake or "-",
         ]
