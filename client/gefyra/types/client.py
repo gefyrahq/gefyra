@@ -170,7 +170,6 @@ class GefyraClient(WatchEventsMixin):
 
     @property
     def state_transitions(self):
-        self.update()
         return self._state_transitions
 
     def update(self):
