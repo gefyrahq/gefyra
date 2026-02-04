@@ -34,7 +34,7 @@ async def bridgemount_deleted(body, logger, **kwargs):
 async def bridge_mount_reconcile(body, logger, **kwargs):
     obj = GefyraBridgeMountObject(body)
     bridge_mount = GefyraBridgeMount(obj, configuration, logger)
-    logger.debug("Reconciliation for GefyraBridgeMount.")
+    logger.info(f"Reconciliation for GefyraBridgeMount: {obj}")
     if bridge_mount.should_terminate:
         # terminate this client
         bridge_mount.terminate()
