@@ -63,6 +63,9 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
         elif bridge_mount.active.is_active:
             # check if all is good
             if not bridge_mount.is_intact:
+                logger.warning(
+                    "GefyraBridgeMount is impaired. Transitioning to restoring state."
+                )
                 bridge_mount.restore()
     # this happens when either the transition from x to y is not allowed
     # or when the condition for the transition is not fulfilled.

@@ -610,7 +610,12 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         return new_workload
 
     def prepared(self):
-        return self._duplicated_pods_ready
+        pods_ready = self._duplicated_pods_ready
+        if not pods_ready:
+            self.logger.info(
+                "Not all duplicated pods are ready yet for the GefyraBridgeMount."
+            )
+        return pods_ready
 
     def ready(self):
         ready = (
@@ -619,8 +624,21 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             and self._original_pods_ready
             and self._upstream_set
         )
+        gefyra_pod_len = len(self._gefyra_pods.items)
+        original_pod_len = len(self._original_pods.items)
+        same_amount = gefyra_pod_len == original_pod_len
+        if not ready:
+            self.logger.info(
+                "GefyraBridgeMount is not ready yet: "
+                f"duplicated pods ready: {self._duplicated_pods_ready}, "
+                f"carrier installed: {self._carrier_installed}, "
+                f"original pods ready: {self._original_pods_ready}, "
+                f"upstream set: {self._upstream_set},"
+                f"original pod count: {original_pod_len}, "
+                f"Gefyra pod count: {gefyra_pod_len}"
+            )
         # consider down scaling & up scaling
-        return ready and len(self._gefyra_pods.items) == len(self._original_pods.items)
+        return ready and same_amount
 
     def validate(self, bridge_request, hints):
         required_fields = ["target", "targetNamespace", "targetContainer"]
