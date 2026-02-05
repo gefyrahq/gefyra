@@ -4,7 +4,7 @@ from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 from gefyra.configuration import configuration
 
 
-RECONCILIATION_INTERVAL = 10
+RECONCILIATION_INTERVAL = 60
 
 
 @kopf.on.create("gefyrabridges.gefyra.dev")

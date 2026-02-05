@@ -5,7 +5,7 @@ from statemachine.exceptions import TransitionNotAllowed
 from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
 from gefyra.configuration import configuration
 
-RECONCILIATION_INTERVAL = 10
+RECONCILIATION_INTERVAL = 60
 
 
 @kopf.on.create("gefyrabridgemounts.gefyra.dev")
