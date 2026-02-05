@@ -7,8 +7,6 @@ from kopf import TemporaryError
 import kubernetes as k8s
 from websocket import WebSocketConnectionClosedException
 
-core_v1_api = k8s.client.CoreV1Api()
-
 logger = logging.getLogger(__name__)
 
 
@@ -20,7 +18,7 @@ def stream_exec_retries(
     while retries > 0:
         try:
             return stream_exec(name, namespace, container, commands)
-        except (ApiException, SSLEOFError) as e:
+        except (ApiException, SSLEOFError, ConnectionResetError) as e:
             logger.error(
                 f"Failed to exec commands on pod {name} in namespace {namespace} with container {container}: {e}"
             )
@@ -36,6 +34,8 @@ def stream_exec_retries(
 
 def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
     from kubernetes.stream import stream
+
+    core_v1_api = k8s.client.CoreV1Api()
 
     logger.info(
         f"Executing commands on pod {name} in namespace {namespace} with container {container}"
@@ -78,37 +78,59 @@ def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
     return last_ouput
 
 
-def read_carrier2_config(core_api, name: str, namespace: str) -> List[str]:
+def read_carrier2_config(
+    core_api, name: str, namespace: str, retries: int = 30
+) -> List[str]:
     from kubernetes.stream import stream
+    from kubernetes.client.rest import ApiException
+
+    core_v1_api = k8s.client.CoreV1Api()
+
+    logger.info(f"Reading carrier2 config from pod {name} in namespace {namespace}")
 
     exec_command = ["busybox", "sh"]
-    resp = stream(
-        core_api.connect_get_namespaced_pod_exec,
-        name,
-        namespace,
-        command=exec_command,
-        stderr=True,
-        stdin=True,
-        stdout=True,
-        tty=False,
-        _preload_content=False,
-    )
+    while retries > 0:
+        try:
+            resp = stream(
+                core_v1_api.connect_get_namespaced_pod_exec,
+                name,
+                namespace,
+                command=exec_command,
+                stderr=True,
+                stdin=True,
+                stdout=True,
+                tty=False,
+                _preload_content=False,
+            )
 
-    commands = []
-    commands.append("cat /tmp/config.yaml \n")
-    res = []
-    while resp.is_open():
-        resp.update(timeout=1)
-        if resp.peek_stdout():
-            res.append(resp.read_stdout())
-        if resp.peek_stderr():
-            res.append(resp.read_stdout())
+            commands = []
+            commands.append("cat /tmp/config.yaml \n")
+            res = []
+            while resp.is_open():
+                resp.update(timeout=5)
+                if resp.peek_stdout():
+                    res.append(resp.read_stdout())
+                if resp.peek_stderr():
+                    res.append(resp.read_stdout())
 
-        if commands:
-            c = commands.pop(0)
-            resp.write_stdin(c)
-        else:
-            break
+                if commands:
+                    c = commands.pop(0)
+                    resp.write_stdin(c)
+                else:
+                    break
 
-    resp.close()
+            resp.close()
+            if res == []:
+                raise TemporaryError(
+                    f"Failed to read carrier2 config on pod {name} in namespace {namespace}",
+                    delay=10,
+                )
+
+        except (ApiException, SSLEOFError, ConnectionResetError) as e:
+            logger.error(
+                f"Failed to read carrier2 config on pod {name} in namespace {namespace}: {e}"
+            )
+            retries -= 1
+            time.sleep(1)
+            continue
     return res
