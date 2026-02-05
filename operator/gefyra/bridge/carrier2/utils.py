@@ -125,6 +125,7 @@ def read_carrier2_config(
                     f"Failed to read carrier2 config on pod {name} in namespace {namespace}",
                     delay=10,
                 )
+            return res
 
         except (ApiException, SSLEOFError, ConnectionResetError) as e:
             logger.error(
