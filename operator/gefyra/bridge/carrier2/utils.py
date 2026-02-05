@@ -40,41 +40,45 @@ def stream_exec(name: str, namespace: str, container: str, commands: List[str]):
     logger.info(
         f"Executing commands on pod {name} in namespace {namespace} with container {container}"
     )
-
     exec_command = ["busybox", "sh"]
-    resp = stream(
-        core_v1_api.connect_get_namespaced_pod_exec,
-        name,
-        namespace,
-        command=exec_command,
-        container=container,
-        stderr=True,
-        stdin=True,
-        stdout=True,
-        tty=False,
-        _preload_content=False,
-    )
-    temp_commands = commands[:]
-    last_ouput = None
-    while resp.is_open():
-        resp.update(timeout=5)
-        if resp.peek_stdout():
-            last_ouput = resp.read_stdout()
-            logger.debug(f"[carrier2] {last_ouput}")
-        if resp.peek_stderr():
-            last_ouput = resp.read_stderr()
-            logger.debug(f"[carrier2] {last_ouput}")
-            continue
-        if temp_commands:
-            c = temp_commands.pop(0)
-            logger.debug(f"Sending command: {c}")
-            resp.write_stdin(c + "\n")
-            time.sleep(0.5)
-        else:
-            break
-        logger.debug(f"Last output: {last_ouput}")
+    try:
+        resp = stream(
+            core_v1_api.connect_get_namespaced_pod_exec,
+            name,
+            namespace,
+            command=exec_command,
+            container=container,
+            stderr=True,
+            stdin=True,
+            stdout=True,
+            tty=False,
+            _preload_content=False,
+        )
+        temp_commands = commands[:]
+        last_ouput = None
+        while resp.is_open():
+            resp.update(timeout=5)
+            if resp.peek_stdout():
+                last_ouput = resp.read_stdout()
+                logger.debug(f"[carrier2] {last_ouput}")
+            if resp.peek_stderr():
+                last_ouput = resp.read_stderr()
+                logger.debug(f"[carrier2] {last_ouput}")
+                continue
+            if temp_commands:
+                c = temp_commands.pop(0)
+                logger.debug(f"Sending command: {c}")
+                resp.write_stdin(c + "\n")
+                time.sleep(0.5)
+            else:
+                break
+            logger.debug(f"Last output: {last_ouput}")
 
-    resp.close()
+        resp.close()
+    except Exception as e:
+        if resp.is_open():
+            resp.close()
+        raise e
     return last_ouput
 
 
@@ -133,5 +137,7 @@ def read_carrier2_config(
             )
             retries -= 1
             time.sleep(1)
+            if resp.is_open():
+                resp.close()
             continue
     return res
