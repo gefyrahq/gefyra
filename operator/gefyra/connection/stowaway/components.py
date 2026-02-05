@@ -167,9 +167,7 @@ def check_stowaway_statefulset(
         )
         if (
             sts.spec.template.spec.containers[0].image
-            != stowaway_sts.spec.template.spec.containers[  # type: ignore
-                0
-            ].image
+            != stowaway_sts.spec.template.spec.containers[0].image  # type: ignore
         ):
             logger.warning("Stowaway image does not match, reinstalling...")
             app.delete_namespaced_stateful_set(

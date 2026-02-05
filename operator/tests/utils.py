@@ -43,7 +43,9 @@ PersistentKeepalive = 21 \\n\
 AllowedIPs = '"$ALLOWED_IPS" > /config/wg0.conf
 
 RUN cat /config/wg0.conf
-""".encode("utf-8")
+""".encode(
+            "utf-8"
+        )
     )
 
 

@@ -155,12 +155,38 @@ class Carrier2(AbstractGefyraBridgeProvider):
         return proxy
 
     def _set_probes(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
+        upstream_ports = []
+        if config.proxy:
+            upstream_ports = [int(p.port) for p in config.proxy if p.port]
+
         for container in pod.spec.containers:
             if container.name == self.container:
                 probes = get_all_probes(container)
-                self.carrier_config.probes = CarrierProbe(
-                    httpGet=[probe.http_get.port for probe in probes]
-                )
+                if probes:
+                    config.probes = CarrierProbe(
+                        httpGet=list(
+                            set(
+                                probe.http_get.port
+                                for probe in probes
+                                if probe.http_get.port not in upstream_ports
+                                and (
+                                    not probe.http_get.scheme
+                                    or probe.http_get.scheme.lower() == "http"
+                                )
+                            )
+                        ),
+                        httpsGet=list(
+                            set(
+                                probe.http_get.port
+                                for probe in probes
+                                if probe.http_get.port not in upstream_ports
+                                and (
+                                    probe.http_get.scheme
+                                    and probe.http_get.scheme.lower() == "https"
+                                )
+                            )
+                        ),
+                    )
         return config
 
     def _set_proxies(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
@@ -179,6 +205,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     def update_carrier_config(self, pod: V1Pod):
         carrier_config = Carrier2Config()
+        # order of these calls is important
         carrier_config = self._set_proxies(carrier_config, pod)
         carrier_config = self._set_probes(carrier_config, pod)
         carrier_config.add_bridge_rules_for_mount(
