@@ -445,7 +445,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             # there is probably an update in progress
             raise TemporaryError(
                 "Cannot install Gefyra Carrier2 on pods controlled by more than one controller.",
-                delay=5,
+                delay=10,
             )
         for idx, pod in enumerate(pods):
             if pod.status.phase == "Terminating":
@@ -490,7 +490,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             except ApiException as e:
                 raise TemporaryError(
                     f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e}",
-                    delay=5,
+                    delay=10,
                 )
 
             # wait for the container restart to become effective

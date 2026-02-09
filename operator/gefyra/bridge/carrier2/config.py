@@ -118,7 +118,7 @@ class Carrier2Config(BaseModel):
                 [container.started for container in s.status.container_statuses]
             ),
             timeout=120,
-            backoff=0.2,
+            backoff=2,
         )
 
         config_str = self.model_dump_yaml()
@@ -154,7 +154,7 @@ class Carrier2Config(BaseModel):
             read_func,
             _check_carrier2_output,
             timeout=30,
-            backoff=1,
+            backoff=2,
         )
 
     @classmethod

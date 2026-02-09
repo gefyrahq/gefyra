@@ -5,7 +5,7 @@ from statemachine.exceptions import TransitionNotAllowed
 from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
 from gefyra.configuration import configuration
 
-RECONCILIATION_INTERVAL = 10
+RECONCILIATION_INTERVAL = 60
 
 
 @kopf.on.create("gefyrabridgemounts.gefyra.dev")
@@ -15,12 +15,25 @@ async def bridge_mount_created(body, logger, **kwargs):
     bridge_mount = GefyraBridgeMount(obj, configuration, logger)
     if bridge_mount.requested.is_active:
         bridge_mount.prepare()
-    if (
-        bridge_mount.preparing.is_active
-        or bridge_mount.installing.is_active
-        or bridge_mount.active.is_active
-    ):
-        pass
+    try:
+        if bridge_mount.requested.is_active:
+            bridge_mount.prepare()
+        elif bridge_mount.preparing.is_active:
+            bridge_mount.install()
+        elif bridge_mount.installing.is_active:
+            bridge_mount.install()
+        elif bridge_mount.error.is_active:
+            bridge_mount.restore()
+        elif bridge_mount.restoring.is_active:
+            bridge_mount.restore()
+    # this happens when either the transition from x to y is not allowed
+    # or when the condition for the transition is not fulfilled.
+    except TransitionNotAllowed as e:
+        retry_delay = 15
+        raise kopf.TemporaryError(
+            f"Transition not allowed: {e}. Retrying in {retry_delay}s.",
+            delay=retry_delay,
+        )
 
 
 @kopf.on.delete("gefyrabridgemounts.gefyra.dev")
@@ -70,7 +83,7 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
     # this happens when either the transition from x to y is not allowed
     # or when the condition for the transition is not fulfilled.
     except TransitionNotAllowed as e:
-        retry_delay = 3
+        retry_delay = 15
         raise kopf.TemporaryError(
             f"Transition not allowed: {e}. Retrying in {retry_delay}s.",
             delay=retry_delay,
