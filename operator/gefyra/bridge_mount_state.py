@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import kubernetes as k8s
@@ -12,7 +12,10 @@ from gefyra.bridge_mount.factory import (
     BridgeMountProviderType,
     bridge_mount_provider_factory,
 )
-from gefyra.bridge_mount.exceptions import BridgeMountInstallException
+from gefyra.bridge_mount.exceptions import (
+    BridgeMountInstallException,
+    BridgeMountTargetException,
+)
 from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 
 
@@ -22,7 +25,31 @@ class GefyraBridgeMountObject(GefyraStateObject):
 
 class GefyraBridgeMount(StateMachine, StateControllerMixin):
     """
-    A Gefyra Bridge Mount is implemented as a state machine
+    State machine managing the lifecycle of a GefyraBridgeMount resource.
+
+    A GefyraBridgeMount represents the Carrier2 installation on a target
+    workload (Deployment, StatefulSet, or Pod). It manages the full lifecycle:
+    duplicating the workload, patching containers with Carrier2, and restoring
+    the original state on teardown.
+
+    State diagram::
+
+        REQUESTED ──> PREPARING ──> INSTALLING ──> ACTIVE
+            │              │             │            │
+            │              │             │            ├──> RESTORING ──> PREPARING
+            │              │             │            │
+            ▼              ▼             ▼            ▼
+          MISSING <──────────────────────────────── (any)
+            │
+            ├──> PREPARING  (recover: target reappears)
+            ▼
+        TERMINATED  (grace period expired or sunset reached)
+
+    The MISSING state handles the scenario where the target workload or
+    namespace is removed (e.g. during a large redeployment). A configurable
+    grace period (default: 1 day) allows the target to reappear before the
+    mount is terminated. This prevents premature cleanup during rolling
+    deployments or temporary namespace removals.
     """
 
     kind = "GefyraBridgeMount"
@@ -34,6 +61,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     active = State("Bridge Mount active", value="ACTIVE")
     restoring = State("Bridge Mount restoring workload", value="RESTORING")
     error = State("Bridge Mount error", value="ERROR")
+    missing = State("Bridge Mount target missing", value="MISSING")
     terminated = State("Bridge Mount terminated", value="TERMINATED")
 
     prepare = (
@@ -49,6 +77,17 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
 
     restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
     impair = error.from_(preparing, requested, installing, active, active, error)
+
+    #: Transition to MISSING when the target workload or namespace disappears.
+    #: Allowed from any operational state except TERMINATED and MISSING itself.
+    mark_missing = missing.from_(
+        active, error, restoring, preparing, installing, requested
+    )
+
+    #: Transition from MISSING back to PREPARING when the target reappears
+    #: within the grace period. Re-enters the full install pipeline.
+    recover = missing.to(preparing)
+
     terminate = (
         requested.to(terminated)
         | installing.to(terminated)
@@ -56,6 +95,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         | preparing.to(terminated)
         | restoring.to(terminated)
         | error.to(terminated)
+        | missing.to(terminated)
         | terminated.to.itself()
     )
 
@@ -114,12 +154,81 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             return False
 
     @property
+    def target_exists(self) -> bool:
+        """
+        Check whether the target workload and its namespace still exist in
+        the cluster. Delegates to the bridge mount provider's target_exists()
+        method and treats any unexpected exception as "not found" to avoid
+        blocking reconciliation.
+
+        :return: True if both namespace and workload are reachable, False otherwise.
+        """
+        try:
+            return self.bridge_mount_provider.target_exists()
+        except Exception as e:
+            self.logger.warning(
+                f"Error checking target existence for '{self.object_name}': {e}"
+            )
+            return False
+
+    @property
+    def missing_grace_period(self) -> int:
+        """
+        Return the grace period (in seconds) before a MISSING bridge mount
+        is terminated.
+
+        Resolution order:
+        1. Per-resource ``missingGracePeriod`` field on the CRD (if set)
+        2. Global ``GEFYRA_BRIDGE_MOUNT_MISSING_GRACE_PERIOD`` env var (default: 86400s = 1 day)
+
+        :return: Grace period in seconds.
+        """
+        per_resource = self.data.get("missingGracePeriod")
+        if per_resource is not None:
+            return int(per_resource)
+        return self.configuration.BRIDGE_MOUNT_MISSING_GRACE_PERIOD
+
+    @property
+    def missing_grace_period_expired(self) -> bool:
+        """
+        Check whether the grace period for this MISSING bridge mount has
+        expired. Reads the MISSING timestamp from ``stateTransitions`` and
+        compares it against the configured grace period.
+
+        :return: True if the mount has been MISSING longer than the grace period,
+                 False if still within the grace period or if no MISSING
+                 transition has been recorded.
+        """
+        missing_since = self.completed_transition(GefyraBridgeMount.missing.value)
+        if not missing_since:
+            return False
+        missing_dt = datetime.fromisoformat(missing_since.rstrip("Z")).replace(
+            tzinfo=timezone.utc
+        )
+        return datetime.now(timezone.utc) >= missing_dt + timedelta(
+            seconds=self.missing_grace_period
+        )
+
+    @property
     def is_intact(self) -> bool:
+        """
+        Check whether the bridge mount's Carrier2 installation is still
+        healthy: duplicated workload running and original pods patched.
+
+        A ``BridgeMountTargetException`` (target 404) is caught silently
+        and returns False — the reconciliation loop will handle the
+        transition to MISSING separately. Other exceptions post a
+        warning event.
+
+        :return: True if both prepared() and ready() pass, False otherwise.
+        """
         try:
             return (
                 self.bridge_mount_provider.prepared()
                 and self.bridge_mount_provider.ready()
             )
+        except BridgeMountTargetException:
+            return False
         except Exception as e:
             self.post_event(
                 reason="Not intact",
@@ -127,6 +236,44 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
                 type="Warning",
             )
             return False
+
+    def on_mark_missing(self):
+        """
+        Callback fired when the state machine transitions to MISSING.
+
+        Posts a warning event with the configured grace period and attempts
+        a best-effort cleanup of Carrier2 artifacts (duplicated workload,
+        service, original workload restore). Cleanup errors are logged but
+        not raised, since the target resources may already be gone.
+        """
+        self.post_event(
+            reason="Target missing",
+            message=f"GefyraBridgeMount '{self.object_name}' target is missing. "
+            f"Grace period: {self.missing_grace_period}s.",
+            type="Warning",
+        )
+        try:
+            self.bridge_mount_provider.uninstall()
+        except Exception as e:
+            self.logger.warning(
+                f"Best-effort cleanup for missing mount '{self.object_name}': {e}"
+            )
+
+    def on_recover(self):
+        """
+        Callback fired when the state machine transitions from MISSING back
+        to PREPARING (i.e. the target workload has reappeared within the
+        grace period).
+
+        Posts an informational event. The reconciliation loop will then
+        drive the mount through the full prepare -> install -> active
+        pipeline again.
+        """
+        self.post_event(
+            reason="Target recovered",
+            message=f"GefyraBridgeMount '{self.object_name}' target has reappeared. "
+            "Recovering to preparing state.",
+        )
 
     def on_restore(self):
         self.post_event(

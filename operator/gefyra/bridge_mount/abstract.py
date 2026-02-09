@@ -42,6 +42,20 @@ class AbstractGefyraBridgeMountProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def target_exists(self) -> bool:
+        """
+        Check whether the target workload and its Kubernetes namespace
+        still exist in the cluster.
+
+        Used by the reconciliation loop to detect removed targets and
+        transition the bridge mount to the MISSING state.
+
+        :return: True if both the namespace and workload exist, False if
+                 either has been deleted.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def validate(self, bridge_request: dict, hits: dict | None):
         """
         Validate the bridgemount request

@@ -191,6 +191,12 @@ def create_bridge_mount_definition() -> k8s.client.V1CustomResourceDefinition:
                 type="object", x_kubernetes_preserve_unknown_fields=True
             ),
             "sunset": k8s.client.V1JSONSchemaProps(type="string"),
+            # grace period in seconds before a MISSING bridge mount is terminated;
+            # 0 means immediate termination, unset uses the global default.
+            # Overrides the global GEFYRA_BRIDGE_MOUNT_MISSING_GRACE_PERIOD setting.
+            "missingGracePeriod": k8s.client.V1JSONSchemaProps(
+                type="integer", minimum=0
+            ),
             "state": k8s.client.V1JSONSchemaProps(type="string", default="REQUESTED"),
             "stateTransitions": k8s.client.V1JSONSchemaProps(
                 type="object", x_kubernetes_preserve_unknown_fields=True

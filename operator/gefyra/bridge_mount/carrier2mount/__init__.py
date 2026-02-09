@@ -782,6 +782,30 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             name=pod_name, namespace=self.namespace, body=pod
         )
 
+    def target_exists(self) -> bool:
+        """
+        Check whether the target namespace and workload still exist in the
+        cluster by performing two sequential K8s API reads.
+
+        Checks the namespace first (cheaper call, and a deleted namespace
+        implies the workload is gone too). Then checks the workload itself.
+
+        :return: True if both the namespace and workload are found (HTTP 200),
+                 False if either returns 404.
+        :raises ApiException: Re-raised for non-404 errors (e.g. 403 forbidden).
+        """
+        try:
+            core_v1_api.read_namespace(self.namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return False
+            raise
+        try:
+            self._get_workload(self.target, self.namespace)
+        except BridgeMountTargetException:
+            return False
+        return True
+
     def uninstall(self):
         self.uninstall_duplicated_workload()
         self.uninstall_service()
