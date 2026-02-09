@@ -204,29 +204,38 @@ def create_bridge(
     default=None,
 )
 @click.option(
+    "--nowait",
+    is_flag=True,
+    help="Do not wait for the GefyraBridge to be deleted.",
+)
+@click.option(
     "--connection-name", type=str, default="default", callback=check_connection_name
 )
 @standard_error_handler
 def delete_bridge(
-    name: str, connection_name: str, all: bool = False, mount: Optional[str] = None
+    name: str,
+    connection_name: str,
+    all: bool = False,
+    mount: Optional[str] = None,
+    nowait: bool = False,
 ):
     from gefyra import api
 
     if not all and not name and not mount:
         console.error("Provide a name or use --all flag to unbridge.")
     if all:
-        api.unbridge_all(connection_name=connection_name, wait=True)
+        api.unbridge_all(connection_name=connection_name, wait=not nowait)
     elif mount:
         deleted = api.delete_bridge(
             connection_name=connection_name,
             mount_name=mount,
-            wait=False,
+            wait=not nowait,
         )
         if deleted:
             console.success(f"GefyraBridge '{name}' marked for deletion")
     else:
         deleted = api.delete_bridge(
-            connection_name=connection_name, name=name, wait=False
+            connection_name=connection_name, name=name, wait=not nowait
         )
         if deleted:
             console.success(f"GefyraBridge '{name}' marked for deletion")
