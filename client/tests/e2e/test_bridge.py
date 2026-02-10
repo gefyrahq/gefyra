@@ -232,6 +232,8 @@ class TestGefyraBridge(GefyraTestCase):
                 "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
                 "-n",
                 "gefyra",
+                "-o",
+                "json",
             ],
         )
         transitions = mount.get("stateTransitions", {})
@@ -307,6 +309,8 @@ class TestGefyraBridge(GefyraTestCase):
                 "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
                 "-n",
                 "gefyra",
+                "-o",
+                "json",
             ],
         )
         transitions = mount.get("stateTransitions", {})
