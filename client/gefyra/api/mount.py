@@ -60,7 +60,14 @@ def create_mount(
         waiting_time = timeout
     while True and wait:
         # watch whether all relevant mounts have been established
-        mount = get_gefyrabridgemount(config, mount_name)
+        try:
+            mount = get_gefyrabridgemount(config, mount_name)
+        except Exception:
+            sleep(1)
+            waiting_time -= 1
+            if timeout and waiting_time <= 0:
+                raise CommandTimeoutError("Timeout for bridging operation exceeded")
+            continue
         gmount = GefyraBridgeMount(config, mount)
         if gmount.uid in bridge_mount["metadata"]["uid"] and gmount._state == "ACTIVE":
             logger.info(f"Bridge mount {gmount.name} established.")
@@ -83,6 +90,8 @@ def get_mount(
     """
     Get a GefyraBridgeMount object
     """
+    from kubernetes.client import ApiException
+
     config_params = {"connection_name": connection_name}
     if kubeconfig:
         config_params.update({"kube_config_file": str(kubeconfig)})
@@ -90,7 +99,14 @@ def get_mount(
     if kubecontext:
         config_params.update({"kube_context": kubecontext})
     config = ClientConfiguration(**config_params)  # type: ignore
-    mount = get_gefyrabridgemount(config, mount_name)
+    try:
+        mount = get_gefyrabridgemount(config, mount_name)
+    except ApiException as e:
+        if e.status == 404:
+            raise RuntimeError(
+                f"GefyraBridgeMount '{mount_name}' not found"
+            ) from None
+        raise
     return GefyraBridgeMount(config, mount)
 
 
@@ -102,9 +118,10 @@ def delete_mount(
     kubecontext: Optional[str] = None,
     connection_name: Optional[str] = None,
     wait: bool = False,
+    timeout: int = 60,
 ) -> bool:
     """
-    Delete a GefyraClient configuration
+    Delete a GefyraBridgeMount resource
     """
     config = ClientConfiguration(
         kube_config_file=kubeconfig,
@@ -112,7 +129,9 @@ def delete_mount(
         connection_name=connection_name if connection_name else "no-connection-name",
         # use no-connection-name to make sure you use admin access to the cluster
     )
-    return handle_delete_gefyramount(config, mount_name, force, wait=wait)
+    return handle_delete_gefyramount(
+        config, mount_name, force, wait=wait, timeout=timeout
+    )
 
 
 @stopwatch

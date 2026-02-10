@@ -36,3 +36,7 @@ class PodNotFoundError(RuntimeError):
 
 class WorkloadNotFoundError(RuntimeError):
     pass
+
+
+class GefyraMountNotFoundError(RuntimeError):
+    pass

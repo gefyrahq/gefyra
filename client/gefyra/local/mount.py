@@ -35,9 +35,15 @@ def handle_create_gefyrabridgemount(config: ClientConfiguration, body, target: s
 
 
 def handle_delete_gefyramount(
-    config: ClientConfiguration, name: str, force: bool, wait: bool
+    config: ClientConfiguration,
+    name: str,
+    force: bool,
+    wait: bool,
+    timeout: int = 60,
 ) -> bool:
     from kubernetes.client import ApiException
+
+    from gefyra.exceptions import GefyraMountNotFoundError
 
     try:
         if force:
@@ -57,7 +63,6 @@ def handle_delete_gefyramount(
             version="v1",
         )
         if wait:
-            timeout = 30
             counter = 0
             while counter < timeout:
                 try:
@@ -70,8 +75,10 @@ def handle_delete_gefyramount(
         return True
     except ApiException as e:
         logger.debug(e)
-        if e.status in [404, 403]:
-            return False
+        if e.status == 404:
+            raise GefyraMountNotFoundError(
+                f"GefyraBridgeMount '{name}' not found"
+            ) from None
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
@@ -146,5 +153,4 @@ def get_gefyrabridgemount(config: ClientConfiguration, name: str):
     except ApiException as e:
         if e.status != 404:
             logger.warning("Error getting GefyraBridgeMounts: " + str(e))
-            raise e from None
-        return {}
+        raise e from None
