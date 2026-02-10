@@ -112,8 +112,17 @@ class TestHandleDeleteGefyramount:
         config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.assert_called_once()
         config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.assert_called_once()
 
+    def test_raises_permission_error_on_403(self):
+        """Deleting with 403 must raise RuntimeError with permission message."""
+        config = MagicMock()
+        config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = (
+            ApiException(status=403, reason="Forbidden")
+        )
+        with pytest.raises(RuntimeError, match="Permission denied"):
+            handle_delete_gefyramount(config, "my-mount", force=False, wait=False)
+
     def test_reraises_non_404_api_errors(self):
-        """Non-404 API errors are re-raised."""
+        """Non-404/non-403 API errors are re-raised."""
         config = MagicMock()
         config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = (
             ApiException(status=500, reason="Internal Server Error")

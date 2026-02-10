@@ -79,6 +79,10 @@ def handle_delete_gefyramount(
             raise GefyraMountNotFoundError(
                 f"GefyraBridgeMount '{name}' not found"
             ) from None
+        elif e.status == 403:
+            raise RuntimeError(
+                f"Permission denied when deleting GefyraBridgeMount '{name}'"
+            ) from None
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"

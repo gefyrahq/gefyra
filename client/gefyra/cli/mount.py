@@ -129,7 +129,13 @@ def create(
     is_flag=True,
     help="Do not wait for the GefyraBridgeMount to be deleted.",
 )
-@click.option("--timeout", type=int, default=60, required=False)
+@click.option(
+    "--timeout",
+    type=int,
+    default=60,
+    show_default=True,
+    help="Maximum seconds to wait for deletion to complete.",
+)
 @click.argument("mount_name", nargs=-1, required=True)
 @click.pass_context
 def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
@@ -163,7 +169,7 @@ def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
                 raise click.ClickException(
                     f"Timeout waiting for GefyraBridgeMount '{_del}' to be deleted."
                 )
-        except RuntimeError as e:
+        except Exception as e:
             raise click.ClickException(str(e))
 
 

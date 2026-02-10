@@ -3,6 +3,8 @@ from pathlib import Path
 from time import sleep
 from typing import List, Optional
 
+from kubernetes.client import ApiException
+
 from gefyra.api.utils import get_workload_information, random_string, stopwatch
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import CommandTimeoutError
@@ -62,7 +64,7 @@ def create_mount(
         # watch whether all relevant mounts have been established
         try:
             mount = get_gefyrabridgemount(config, mount_name)
-        except Exception:
+        except ApiException:
             sleep(1)
             waiting_time -= 1
             if timeout and waiting_time <= 0:
@@ -90,8 +92,6 @@ def get_mount(
     """
     Get a GefyraBridgeMount object
     """
-    from kubernetes.client import ApiException
-
     config_params = {"connection_name": connection_name}
     if kubeconfig:
         config_params.update({"kube_config_file": str(kubeconfig)})
