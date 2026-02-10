@@ -51,7 +51,11 @@ class AbstractGefyraBridgeMountProvider(ABC):
         transition the bridge mount to the MISSING state.
 
         :return: True if both the namespace and workload exist, False if
-                 either has been deleted.
+                 either has been deleted (API returns 404).
+        :raises: Non-404 API errors (e.g. ``ApiException`` for 403/500,
+                 or ``RuntimeError`` from workload lookup) are propagated
+                 so callers can distinguish "not found" from transient
+                 infrastructure or RBAC failures.
         """
         raise NotImplementedError
 

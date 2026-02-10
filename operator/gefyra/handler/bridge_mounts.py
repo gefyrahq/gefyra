@@ -41,6 +41,7 @@ def _try_delete_cr(bridge_mount: GefyraBridgeMount, logger) -> None:
             namespace=bridge_mount.configuration.NAMESPACE,
             name=bridge_mount.object_name,
             group="gefyra.dev",
+            version="v1",
             plural="gefyrabridgemounts",
         )
     except k8s.client.ApiException as e:

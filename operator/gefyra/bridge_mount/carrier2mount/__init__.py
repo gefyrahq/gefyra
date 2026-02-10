@@ -792,7 +792,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
         :return: True if both the namespace and workload are found (HTTP 200),
                  False if either returns 404.
-        :raises ApiException: Re-raised for non-404 errors (e.g. 403 forbidden).
+        :raises ApiException: Re-raised for non-404 namespace errors (e.g. 403).
+        :raises RuntimeError: Raised by ``_get_workload`` for non-404 workload
+                 errors (wraps the underlying ``ApiException``).
         """
         try:
             core_v1_api.read_namespace(self.namespace)

@@ -202,9 +202,15 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         missing_since = self.completed_transition(GefyraBridgeMount.missing.value)
         if not missing_since:
             return False
-        missing_dt = datetime.fromisoformat(missing_since.rstrip("Z")).replace(
-            tzinfo=timezone.utc
-        )
+        # Normalize trailing 'Z' (UTC designator) to an explicit offset
+        normalized = missing_since
+        if normalized.endswith("Z"):
+            normalized = normalized[:-1] + "+00:00"
+        missing_dt = datetime.fromisoformat(normalized)
+        if missing_dt.tzinfo is None:
+            missing_dt = missing_dt.replace(tzinfo=timezone.utc)
+        else:
+            missing_dt = missing_dt.astimezone(timezone.utc)
         return datetime.now(timezone.utc) >= missing_dt + timedelta(
             seconds=self.missing_grace_period
         )
