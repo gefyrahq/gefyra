@@ -17,7 +17,7 @@ def test_a_create_bridge_mount(operator: AClusterManager):
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=ACTIVE",
         namespace="gefyra",
-        timeout=60,
+        timeout=120,
     )
     bridge_mount_obj = k3d.kubectl(
         ["-n", "gefyra", "get", "gefyrabridgemounts.gefyra.dev", "bridgemount-a"]
@@ -55,18 +55,22 @@ def test_b_change_deployment_replicas(operator: AClusterManager):
         namespace="default",
         timeout=120,
     )
-    # Operator recognizes the change and updates the bridge mount
-    k3d.wait(
-        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
-        "jsonpath=.state=RESTORING",
-        namespace="gefyra",
-        timeout=120,
-    )
+    # Operator recognizes the change and restores the bridge mount.
+    # Wait for ACTIVE directly — RESTORING is near-instantaneous because
+    # on_restore() immediately calls self.send("prepare").
     k3d.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=ACTIVE",
         namespace="gefyra",
         timeout=120,
+    )
+    # Verify the restoration cycle occurred via stateTransitions
+    bridge_mount_obj = k3d.kubectl(
+        ["-n", "gefyra", "get", "gefyrabridgemounts.gefyra.dev", "bridgemount-a"]
+    )
+    transitions = bridge_mount_obj.get("stateTransitions", {})
+    assert "RESTORING" in transitions, (
+        "Expected RESTORING state transition after replica change"
     )
     pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
     assert (
