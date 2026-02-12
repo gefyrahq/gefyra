@@ -171,6 +171,10 @@ def delete_bridge(
                 if wait:
                     wait_for_deletion([gefyra_bridge], config=config)
                 logger.info(f"Bridge {bridge['metadata']['name']} removed")
+        else:
+            raise RuntimeError(
+                f"No GefyraBridge found for GefyraBridgeMount {mount_name} or GefyraBridgeMount does not exist."
+            )
     return True
 
 
