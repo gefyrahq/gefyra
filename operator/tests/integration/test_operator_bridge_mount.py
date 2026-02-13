@@ -64,7 +64,7 @@ def test_b_change_deployment_replicas(operator: AClusterManager):
     # on TransitionNotAllowed + pod startup time in CI
     k3d.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
-        "jsonpath=.state=ACTIVE",
+        "jsonpath=.state=RESTORING",
         namespace="gefyra",
         timeout=240,
     )
@@ -75,6 +75,12 @@ def test_b_change_deployment_replicas(operator: AClusterManager):
     transitions = bridge_mount_obj.get("stateTransitions", {})
     assert "RESTORING" in transitions, (
         "Expected RESTORING state transition after replica change"
+    )
+    k3d.wait(
+        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
+        "jsonpath=.state=ACTIVE",
+        namespace="gefyra",
+        timeout=240,
     )
     pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
     assert (
