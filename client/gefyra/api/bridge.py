@@ -60,6 +60,13 @@ def create_bridge(
 
     config = ClientConfiguration(connection_name=connection_name)
 
+    # Automatically clean up bridges pointing to dead containers
+    from gefyra.api.rm import cleanup_stale_bridges
+
+    cleaned = cleanup_stale_bridges(connection_name=connection_name)
+    if cleaned:
+        logger.info(f"Cleaned up {cleaned} stale bridge(s) before creating new bridge")
+
     try:
         container = config.DOCKER.containers.get(local)
     except NotFound:

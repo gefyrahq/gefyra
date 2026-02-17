@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 from .utils import stopwatch
 
-__all__ = ["rm", "rm_all"]
+__all__ = ["rm", "rm_all", "cleanup_stale_bridges"]
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +89,13 @@ def rm_all(
     wait: bool = False,
     force: bool = False,
 ) -> bool:
+    from docker.errors import NotFound
     from gefyra.configuration import ClientConfiguration
-    from gefyra.local.bridge import get_all_containers
+    from gefyra.local.bridge import (
+        get_all_containers,
+        handle_delete_gefyrabridge,
+    )
+    from gefyra.api.bridge import wait_for_deletion
 
     config = ClientConfiguration(connection_name=connection_name)
     containers = get_all_containers(config)
@@ -99,15 +104,90 @@ def rm_all(
         logger.info("No Gefyra containers found")
         return True
 
+    # 1) Collect all bridges and delete them in one pass
+    all_bridges = []
+    container_names = []
     for container_info in containers:
+        container_names.append(container_info.name)
         try:
-            rm(
-                name=container_info.name,
-                connection_name=connection_name,
-                wait=wait,
-                force=force,
-            )
-        except Exception as e:
-            logger.warning(f"Failed to remove container '{container_info.name}': {e}")
+            container = config.DOCKER.containers.get(container_info.name)
+            container_ip = container.attrs["NetworkSettings"]["Networks"][
+                config.NETWORK_NAME
+            ]["IPAddress"]
+        except (NotFound, KeyError):
             continue
+
+        matching_bridges = _get_bridges_for_container(config, container_ip)
+        for bridge in matching_bridges:
+            bridge_name = bridge["metadata"]["name"]
+            logger.info(f"Removing bridge {bridge_name}")
+            handle_delete_gefyrabridge(config, bridge_name)
+        all_bridges.extend(matching_bridges)
+
+    # 2) Wait once for all bridge deletions
+    if wait and all_bridges:
+        wait_for_deletion(all_bridges, config=config)
+
+    # 3) Remove all containers
+    for name in container_names:
+        try:
+            container = config.DOCKER.containers.get(name)
+            logger.info(f"Removing container {name}")
+            container.remove(force=force)
+        except NotFound:
+            logger.warning(f"Container '{name}' already removed")
+        except Exception as e:
+            logger.warning(f"Failed to remove container '{name}': {e}")
+
     return True
+
+
+def cleanup_stale_bridges(
+    connection_name: str = "",
+) -> int:
+    """Remove GefyraBridges whose destinationIP no longer matches any running
+    Gefyra container.  Returns the number of stale bridges removed.
+
+    This is intentionally best-effort: if the cluster or Docker is unreachable
+    the function logs a warning and returns 0.
+    """
+    from gefyra.configuration import ClientConfiguration
+    from gefyra.local.bridge import (
+        get_all_containers,
+        get_all_gefyrabridges,
+        handle_delete_gefyrabridge,
+    )
+
+    try:
+        config = ClientConfiguration(connection_name=connection_name)
+    except Exception:
+        logger.debug("cleanup_stale_bridges: no active connection, skipping")
+        return 0
+
+    try:
+        containers = get_all_containers(config)
+    except Exception:
+        logger.debug("cleanup_stale_bridges: cannot list containers, skipping")
+        return 0
+
+    live_ips = {c.address for c in containers if c.address != "unknown"}
+
+    try:
+        all_bridges = get_all_gefyrabridges(config)
+    except Exception:
+        logger.debug("cleanup_stale_bridges: cannot list bridges, skipping")
+        return 0
+
+    stale = [b for b in all_bridges if b.get("destinationIP") not in live_ips]
+
+    for bridge in stale:
+        bridge_name = bridge["metadata"]["name"]
+        logger.info(f"Cleaning up stale bridge {bridge_name}")
+        try:
+            handle_delete_gefyrabridge(config, bridge_name)
+        except Exception as e:
+            logger.warning(f"Failed to remove stale bridge '{bridge_name}': {e}")
+
+    if stale:
+        logger.info(f"Cleaned up {len(stale)} stale bridge(s)")
+    return len(stale)
