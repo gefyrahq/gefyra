@@ -1,7 +1,8 @@
 from gefyra.cli.self import _self
 from gefyra.cli.version import version
-from gefyra.cli.run import run
-from gefyra.cli.bridge import bridge
+from gefyra.cli.run import run, rm
+from gefyra.cli.bridge import create_bridge, unbridge
+from gefyra.cli.clients import clients
 from gefyra.cli.connections import connections
 from gefyra.cli.status import status_command
 from gefyra.cli.updown import cluster_down, cluster_up
@@ -29,6 +30,7 @@ cli.add_command(cmd=cluster_down, name="down")
 cli.add_command(cmd=status_command, name="status")
 cli.add_command(cmd=bridge, name="bridge")
 cli.add_command(cmd=run, name="run")
+cli.add_command(cmd=rm, name="rm")
 cli.add_command(cmd=version, name="version")
 cli.add_command(cmd=_self, name="self")
 cli.add_command(cmd=list, name="list")
