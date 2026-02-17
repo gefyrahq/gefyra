@@ -39,17 +39,24 @@ class GefyraStateObject:
         self._write_state(value)
 
     def _write_state(self, state: State):
-        self.custom_api.patch_namespaced_custom_object(
-            namespace=self.namespace,
-            name=self.name,
-            body={
-                "state": str(state),
-                "stateTransitions": {str(state): _get_now()},
-            },
-            plural=self.plural,
-            group="gefyra.dev",
-            version="v1",
-        )
+        try:
+            self.custom_api.patch_namespaced_custom_object(
+                namespace=self.namespace,
+                name=self.name,
+                body={
+                    "state": str(state),
+                    "stateTransitions": {str(state): _get_now()},
+                },
+                plural=self.plural,
+                group="gefyra.dev",
+                version="v1",
+            )
+        except k8s.client.ApiException as e:
+            if e.status == 404:
+                # Object already deleted — nothing to patch
+                pass
+            else:
+                raise
 
 
 class StateControllerMixin:

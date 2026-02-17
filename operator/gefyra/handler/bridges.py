@@ -1,4 +1,5 @@
 import kopf
+from statemachine.exceptions import TransitionNotAllowed
 
 from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 from gefyra.configuration import configuration
@@ -26,5 +27,7 @@ async def bridge_delete(body, logger, **kwargs):
     bridge = GefyraBridge(obj, configuration, logger)
     try:
         bridge.remove()
+    except TransitionNotAllowed:
+        logger.info("GefyraBridge already terminating, skipping.")
     except Exception as e:
         logger.error(f"Unexpected error removing this GefyraBridge: {e}")

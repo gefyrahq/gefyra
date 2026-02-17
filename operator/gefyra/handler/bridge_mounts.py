@@ -40,7 +40,13 @@ async def bridge_mount_created(body, logger, **kwargs):
 async def bridgemount_deleted(body, logger, **kwargs):
     obj = GefyraBridgeMountObject(body)
     bridge_mount = GefyraBridgeMount(obj, configuration, logger)
-    bridge_mount.terminate()
+    try:
+        bridge_mount.terminate()
+    except TransitionNotAllowed:
+        # Already terminating or terminated — nothing to do
+        logger.info(
+            f"GefyraBridgeMount '{obj.name}' is already terminating, skipping."
+        )
 
 
 @kopf.timer("gefyrabridgemounts.gefyra.dev", interval=RECONCILIATION_INTERVAL)
