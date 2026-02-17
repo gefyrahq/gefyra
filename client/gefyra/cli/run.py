@@ -241,4 +241,3 @@ def rm(name: str, all: bool, force: bool, connection_name: str):
     else:
         api.rm(name=name, connection_name=connection_name, wait=True, force=force)
         console.success(f"Container '{name}' and its bridges have been removed.")
->>>>>>> 6d61b74 (feature(#GO-1006):implemnting a new cli command to remove bridges of containers not available anymore)
