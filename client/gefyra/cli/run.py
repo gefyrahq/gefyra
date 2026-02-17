@@ -233,8 +233,7 @@ def rm(name: str, all: bool, force: bool, connection_name: str):
     from gefyra import api
 
     if not all and not name:
-        console.error("Provide a container name or use --all flag to remove all.")
-        return
+        raise click.UsageError("Provide a container name or use --all flag to remove all.")
 
     if all:
         api.rm_all(connection_name=connection_name, wait=True, force=force)

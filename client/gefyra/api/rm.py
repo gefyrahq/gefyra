@@ -16,6 +16,8 @@ if TYPE_CHECKING:
 
 from .utils import stopwatch
 
+__all__ = ["rm", "rm_all"]
+
 logger = logging.getLogger(__name__)
 
 
@@ -98,10 +100,14 @@ def rm_all(
         return True
 
     for container_info in containers:
-        rm(
-            name=container_info.name,
-            connection_name=connection_name,
-            wait=wait,
-            force=force,
-        )
+        try:
+            rm(
+                name=container_info.name,
+                connection_name=connection_name,
+                wait=wait,
+                force=force,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to remove container '{container_info.name}': {e}")
+            continue
     return True
