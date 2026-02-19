@@ -1,6 +1,6 @@
 ARG ARCH=
-ARG GOLANG_VERSION=1.18
-ARG ALPINE_VERSION=3.17
+ARG GOLANG_VERSION=1.22
+ARG ALPINE_VERSION=3.20
 
 FROM ${ARCH}golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} as builder
 
@@ -23,7 +23,7 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
     make && \
     make install
 
-FROM alpine:3.17 as cargo
+FROM alpine:3.20 as cargo
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/
 
