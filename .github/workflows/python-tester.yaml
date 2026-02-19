@@ -209,6 +209,8 @@ jobs:
 
   test_client:
     name: Pytest Gefyra Client
+    needs:
+      - build_cargo
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -234,6 +236,16 @@ jobs:
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+      - name: Download cargo artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: cargo
+          path: /tmp/cargo
+      - name: Load pre-built cargo image
+        run: |
+          docker load --input /tmp/cargo/cargo.tar
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
+          docker image ls -a
       - name: Run PyTest
         working-directory: ./client
         run: poetry run coverage run -m pytest tests/
