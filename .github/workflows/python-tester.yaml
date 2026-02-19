@@ -353,6 +353,8 @@ jobs:
 
   test_operator:
     name: Pytest Gefyra Operator
+    needs:
+      - build_cargo
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
@@ -372,8 +374,20 @@ jobs:
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+      - name: Download cargo artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: cargo
+          path: /tmp/cargo
+      - name: Load pre-built cargo image
+        run: |
+          docker load --input /tmp/cargo/cargo.tar
+          docker tag ${{ needs.build_cargo.outputs.tags }} cargo:pytest
+          docker image ls -a
       - name: Run PyTest
         working-directory: ./operator
+        env:
+          GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
         run: poetry run coverage run -m pytest -s -x --retries 5
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
