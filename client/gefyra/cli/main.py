@@ -1,6 +1,7 @@
 from gefyra.cli.self import _self
 from gefyra.cli.version import version
-from gefyra.cli.run import run, rm
+from gefyra.cli.run import run
+from gefyra.cli.rm import rm
 from gefyra.cli.bridge import bridge
 from gefyra.cli.clients import clients
 from gefyra.cli.connections import connections

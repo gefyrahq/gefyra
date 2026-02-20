@@ -203,7 +203,8 @@ def test_rm_all(mock_get_containers, mock_config_cls):
 
 @patch("gefyra.configuration.ClientConfiguration")
 @patch("gefyra.local.bridge.get_all_containers")
-def test_rm_all_no_containers(mock_get_containers, mock_config_cls):
+@patch("gefyra.api.rm.cleanup_stale_bridges")
+def test_rm_all_no_containers(mock_cleanup, mock_get_containers, mock_config_cls):
     config = MagicMock()
     mock_config_cls.return_value = config
     mock_get_containers.return_value = []
@@ -211,6 +212,7 @@ def test_rm_all_no_containers(mock_get_containers, mock_config_cls):
     result = rm_all(connection_name="default")
 
     assert result is True
+    mock_cleanup.assert_called_once_with(config=config)
 
 
 @patch("gefyra.configuration.ClientConfiguration")
@@ -307,3 +309,38 @@ def test_cleanup_stale_bridges_no_connection():
         result = cleanup_stale_bridges(connection_name="default")
 
     assert result == 0
+
+
+def test_cleanup_stale_bridges_with_config():
+    """When a config is passed directly, it should be reused instead of creating a new one."""
+    from gefyra.api.rm import cleanup_stale_bridges
+    from gefyra.types import GefyraLocalContainer
+
+    config = MagicMock()
+    config.NETWORK_NAME = "gefyra"
+
+    live_containers = [
+        GefyraLocalContainer(
+            id="a1", short_id="a1", name="alive",
+            address="192.168.99.5", namespace="default",
+        ),
+    ]
+    bridges = [
+        {"metadata": {"name": "alive-bridge"}, "destinationIP": "192.168.99.5"},
+        {"metadata": {"name": "dead-bridge"}, "destinationIP": "192.168.99.99"},
+    ]
+
+    with patch(
+        "gefyra.local.bridge.get_all_containers", return_value=live_containers
+    ), patch(
+        "gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges
+    ), patch(
+        "gefyra.local.bridge.handle_delete_gefyrabridge"
+    ) as mock_delete, patch(
+        "gefyra.configuration.ClientConfiguration"
+    ) as mock_config_cls:
+        result = cleanup_stale_bridges(config=config)
+
+    assert result == 1
+    mock_delete.assert_called_once_with(config, "dead-bridge")
+    mock_config_cls.assert_not_called()

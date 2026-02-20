@@ -9,7 +9,7 @@ the bridge's `destinationIP`), then remove the container.
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from gefyra.configuration import ClientConfiguration
@@ -101,7 +101,8 @@ def rm_all(
     containers = get_all_containers(config)
 
     if not containers:
-        logger.info("No Gefyra containers found")
+        logger.info("No Gefyra containers found; cleaning up stale bridges if any")
+        cleanup_stale_bridges(config=config)
         return True
 
     # 1) Collect all bridges and delete them in one pass
@@ -144,6 +145,7 @@ def rm_all(
 
 def cleanup_stale_bridges(
     connection_name: str = "",
+    config: Optional["ClientConfiguration"] = None,
 ) -> int:
     """Remove GefyraBridges whose destinationIP no longer matches any running
     Gefyra container.  Returns the number of stale bridges removed.
@@ -158,24 +160,31 @@ def cleanup_stale_bridges(
         handle_delete_gefyrabridge,
     )
 
-    try:
-        config = ClientConfiguration(connection_name=connection_name)
-    except Exception:
-        logger.debug("cleanup_stale_bridges: no active connection, skipping")
-        return 0
+    if config is None:
+        try:
+            config = ClientConfiguration(connection_name=connection_name)
+        except Exception as e:
+            logger.warning(
+                "cleanup_stale_bridges: no active connection, skipping: %s", e
+            )
+            return 0
 
     try:
         containers = get_all_containers(config)
-    except Exception:
-        logger.debug("cleanup_stale_bridges: cannot list containers, skipping")
+    except Exception as e:
+        logger.warning(
+            "cleanup_stale_bridges: cannot list containers, skipping: %s", e
+        )
         return 0
 
     live_ips = {c.address for c in containers if c.address != "unknown"}
 
     try:
         all_bridges = get_all_gefyrabridges(config)
-    except Exception:
-        logger.debug("cleanup_stale_bridges: cannot list bridges, skipping")
+    except Exception as e:
+        logger.warning(
+            "cleanup_stale_bridges: cannot list bridges, skipping: %s", e
+        )
         return 0
 
     stale = [b for b in all_bridges if b.get("destinationIP") not in live_ips]
@@ -183,10 +192,7 @@ def cleanup_stale_bridges(
     for bridge in stale:
         bridge_name = bridge["metadata"]["name"]
         logger.info(f"Cleaning up stale bridge {bridge_name}")
-        try:
-            handle_delete_gefyrabridge(config, bridge_name)
-        except Exception as e:
-            logger.warning(f"Failed to remove stale bridge '{bridge_name}': {e}")
+        handle_delete_gefyrabridge(config, bridge_name)
 
     if stale:
         logger.info(f"Cleaned up {len(stale)} stale bridge(s)")
