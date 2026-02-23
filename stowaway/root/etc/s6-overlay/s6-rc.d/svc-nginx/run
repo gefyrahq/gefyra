@@ -1,3 +1,4 @@
 #!/usr/bin/with-contenv bash
 
 nginx -g "daemon off;"
+bash generate-proxyroutes.sh /stowaway/proxyroutes/
