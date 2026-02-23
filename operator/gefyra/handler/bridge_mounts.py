@@ -30,11 +30,13 @@ async def bridgemount_deleted(body, logger, **kwargs):
     bridge_mount.terminate()
 
 
-def _try_delete_cr(bridge_mount: GefyraBridgeMount, logger) -> None:
+def _try_delete_cr(bridge_mount: GefyraBridgeMount, logger) -> bool:
     """Best-effort deletion of the GefyraBridgeMount CR.
 
     Swallows 404 (already gone) but logs other errors so that the
     reconciliation loop retries on the next tick.
+
+    :return: True if the CR was deleted (or was already gone), False on error.
     """
     try:
         bridge_mount.custom_api.delete_namespaced_custom_object(
@@ -44,13 +46,15 @@ def _try_delete_cr(bridge_mount: GefyraBridgeMount, logger) -> None:
             version="v1",
             plural="gefyrabridgemounts",
         )
+        return True
     except k8s.client.ApiException as e:
         if e.status == 404:
-            return  # already gone
+            return True  # already gone
         logger.warning(
             f"Failed to delete GefyraBridgeMount CR "
             f"'{bridge_mount.object_name}': {e}. Will retry."
         )
+        return False
 
 
 @kopf.timer(
@@ -112,39 +116,26 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                     f"missing. Waiting for grace period "
                     f"({bridge_mount.missing_grace_period}s)."
                 )
-        elif bridge_mount.requested.is_active:
+        else:
+            # For all operational states, check target existence once.
             if not bridge_mount.target_exists:
                 bridge_mount.mark_missing()
             else:
-                bridge_mount.prepare()
-        elif bridge_mount.preparing.is_active:
-            if not bridge_mount.target_exists:
-                bridge_mount.mark_missing()
-            else:
-                bridge_mount.install()
-        elif bridge_mount.installing.is_active:
-            if not bridge_mount.target_exists:
-                bridge_mount.mark_missing()
-            else:
-                bridge_mount.install()
-        elif bridge_mount.error.is_active:
-            if not bridge_mount.target_exists:
-                bridge_mount.mark_missing()
-            else:
-                bridge_mount.restore()
-        elif bridge_mount.restoring.is_active:
-            if not bridge_mount.target_exists:
-                bridge_mount.mark_missing()
-            else:
-                bridge_mount.restore()
-        elif bridge_mount.active.is_active:
-            if not bridge_mount.target_exists:
-                bridge_mount.mark_missing()
-            elif not bridge_mount.is_intact:
-                logger.warning(
-                    "GefyraBridgeMount is impaired. Transitioning to restoring state."
-                )
-                bridge_mount.restore()
+                state_actions = {
+                    "REQUESTED": bridge_mount.prepare,
+                    "PREPARING": bridge_mount.install,
+                    "INSTALLING": bridge_mount.install,
+                    "ERROR": bridge_mount.restore,
+                    "RESTORING": bridge_mount.restore,
+                }
+                action = state_actions.get(bridge_mount.current_state.value)
+                if action:
+                    action()
+                elif bridge_mount.active.is_active and not bridge_mount.is_intact:
+                    logger.warning(
+                        "GefyraBridgeMount is impaired. Transitioning to restoring state."
+                    )
+                    bridge_mount.restore()
     # this happens when either the transition from x to y is not allowed
     # or when the condition for the transition is not fulfilled.
     except TransitionNotAllowed as e:

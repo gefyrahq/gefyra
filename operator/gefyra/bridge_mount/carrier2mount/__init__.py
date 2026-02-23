@@ -785,12 +785,13 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     def target_exists(self) -> bool:
         """
         Check whether the target namespace and workload still exist in the
-        cluster by performing two sequential K8s API reads.
+        cluster.
 
-        Checks the namespace first (cheaper call, and a deleted namespace
-        implies the workload is gone too). Then checks the workload itself.
+        Checks the namespace first — a deleted namespace implies the
+        workload is gone too, so we can return early. Then checks the
+        workload itself.
 
-        :return: True if both the namespace and workload are found (HTTP 200),
+        :return: True if both the namespace and workload are found,
                  False if either returns 404.
         :raises ApiException: Re-raised for non-404 namespace errors (e.g. 403).
         :raises RuntimeError: Raised by ``_get_workload`` for non-404 workload

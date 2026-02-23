@@ -201,16 +201,14 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         """
         missing_since = self.completed_transition(GefyraBridgeMount.missing.value)
         if not missing_since:
+            self.logger.warning(
+                f"No MISSING transition recorded for '{self.object_name}'. "
+                "Cannot determine grace period expiry."
+            )
             return False
-        # Normalize trailing 'Z' (UTC designator) to an explicit offset
-        normalized = missing_since
-        if normalized.endswith("Z"):
-            normalized = normalized[:-1] + "+00:00"
-        missing_dt = datetime.fromisoformat(normalized)
-        if missing_dt.tzinfo is None:
-            missing_dt = missing_dt.replace(tzinfo=timezone.utc)
-        else:
-            missing_dt = missing_dt.astimezone(timezone.utc)
+        missing_dt = datetime.fromisoformat(missing_since.strip("Z")).replace(
+            tzinfo=timezone.utc
+        )
         return datetime.now(timezone.utc) >= missing_dt + timedelta(
             seconds=self.missing_grace_period
         )
@@ -262,7 +260,8 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             self.bridge_mount_provider.uninstall()
         except Exception as e:
             self.logger.warning(
-                f"Best-effort cleanup for missing mount '{self.object_name}': {e}"
+                f"Failed to clean up artifacts for missing mount "
+                f"'{self.object_name}': {e}"
             )
 
     def on_recover(self):
