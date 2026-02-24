@@ -47,6 +47,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         | installing.to(installed)
         | error.to(installed)
         | installed.to.itself()
+        | restoring.to(installed)
     )
     activate = installed.to(creating) | error.to(creating) | creating.to.itself()
     establish = creating.to(active) | error.to(active)
@@ -56,7 +57,12 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         | removing.to.itself()
         | creating.to(removing)
     )
-    restore = installed.to(restoring) | error.to(restoring) | restoring.to.itself()
+    restore = (
+        installed.to(restoring)
+        | error.to(restoring)
+        | restoring.to.itself()
+        | active.to(restoring)
+    )
     impair = error.from_(
         requested, installing, installed, creating, removing, active, error
     )
@@ -160,42 +166,45 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         try:
             # TODO refactor this code
             destination = self.data["destinationIP"]
-            for port_mapping in self.data.get("portMappings"):
-                local_port, target_port = port_mapping.split(":")
-                if not self.connection_provider.destination_exists(
-                    self.data["client"], destination, int(local_port)
-                ):
-                    proxy_host = self.connection_provider.add_destination(
-                        self.data["client"], destination, int(local_port)
-                    )
-                else:
-                    proxy_host = self.connection_provider.get_destination(
-                        self.data["client"], destination, int(local_port)
-                    )
-                proxy_host, proxy_port = proxy_host.split(":", 1)
-                self._patch_object(
-                    {"clusterEndpoint": {target_port: f"{proxy_host}:{proxy_port}"}}
-                )
-                self.post_event(
-                    "GefyraBridge connection",
-                    f"Added cluster endpoint '{proxy_host}:{proxy_port}' for local port '{local_port}'",
-                )
-
-            for port_mapping in self.data.get("portMappings"):
-                local_port, target_port = port_mapping.split(":")
-                proxy_host = self.connection_provider.get_destination(
-                    self.data["client"], destination, int(local_port)
-                )
-                proxy_host, proxy_port = proxy_host.split(":", 1)
-                if not self.bridge_provider.proxy_route_exists(
-                    target_port, proxy_host, proxy_port
-                ):
-                    self.bridge_provider.add_proxy_route(
-                        target_port, proxy_host, proxy_port
-                    )
+            self.handle_proxyroute_setup(destination)
             self.send("establish")
         except Exception as e:
             self.send("impair", exception=e)
+
+    def handle_proxyroute_setup(self, destination):
+        for port_mapping in self.data.get("portMappings"):
+            local_port, target_port = port_mapping.split(":")
+            if not self.connection_provider.destination_exists(
+                self.data["client"], destination, int(local_port)
+            ):
+                proxy_host = self.connection_provider.add_destination(
+                    self.data["client"], destination, int(local_port)
+                )
+            else:
+                proxy_host = self.connection_provider.get_destination(
+                    self.data["client"], destination, int(local_port)
+                )
+            proxy_host, proxy_port = proxy_host.split(":", 1)
+            self._patch_object(
+                {"clusterEndpoint": {target_port: f"{proxy_host}:{proxy_port}"}}
+            )
+            self.post_event(
+                "GefyraBridge connection",
+                f"Added cluster endpoint '{proxy_host}:{proxy_port}' for local port '{local_port}'",
+            )
+
+        for port_mapping in self.data.get("portMappings"):
+            local_port, target_port = port_mapping.split(":")
+            proxy_host = self.connection_provider.get_destination(
+                self.data["client"], destination, int(local_port)
+            )
+            proxy_host, proxy_port = proxy_host.split(":", 1)
+            if not self.bridge_provider.proxy_route_exists(
+                target_port, proxy_host, proxy_port
+            ):
+                self.bridge_provider.add_proxy_route(
+                    target_port, proxy_host, proxy_port
+                )
 
     def on_create(self):
         self.post_event(
@@ -212,6 +221,10 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     def on_terminate(self):
         destination = self.data["destinationIP"]
+        self.handle_proxyroute_teardown(destination)
+
+    def handle_proxyroute_teardown(self, destination):
+
         for port_mapping in self.data.get("portMappings"):
             source_port, target_port = port_mapping.split(":")
             if self.connection_provider.destination_exists(
@@ -250,7 +263,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
 
     def on_restore(self):
         self.bridge_provider.uninstall()
-        self.send("terminate")
+        self.send("set_installed")
 
     def on_impair(self, exception: Optional[BridgeException] = None):
         message = (

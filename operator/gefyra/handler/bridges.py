@@ -20,6 +20,24 @@ async def bridge_create(body, logger, **kwargs):
         bridge.activate()
 
 
+@kopf.on.field("gefyrabridges.gefyra.dev", field="destinationIP")
+async def update_bridge_destination(body, logger, old, new, **kwargs):
+    obj = GefyraBridgeObject(body)
+    bridge = GefyraBridge(obj, configuration, logger)
+    if not old:
+        return
+    if bridge.active.is_active:
+        logger.warn(f"Updating destinationIP for this GefyraBridge: {bridge}")
+        bridge.handle_proxyroute_teardown(old)
+        bridge.send("restore")
+        bridge.send("activate")
+    else:
+        # TODO handle these cases
+        logger.warn(
+            f"GefyraBridge {bridge} is not ACTIVE, but destinationIP has been changed."
+        )
+
+
 @kopf.on.delete("gefyrabridges.gefyra.dev")
 async def bridge_delete(body, logger, **kwargs):
     obj = GefyraBridgeObject(body)

@@ -102,6 +102,7 @@ def create_bridge(
     bridge_body = GefyraBridge(
         name=bridge_name,
         local_container_ip=local_container_ip,
+        local_container_name=local,
         port_mappings=port_mappings,
         target=bridge_mount_name,
         rules=rules,
@@ -250,6 +251,8 @@ def list_bridges(
                     break
                 else:
                     continue
+            else: 
+                result.append((None, bridge))
         return result
     else:
         return [

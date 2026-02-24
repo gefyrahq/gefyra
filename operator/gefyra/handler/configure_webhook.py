@@ -146,7 +146,6 @@ def check_validate_bridge_parameters(body, diff, logger, operation, **_):
         if (
             "target" in changeset
             or "connectionProvider" in changeset
-            or "destinationIP" in changeset
             or "portMappings" in changeset
         ):
             raise kopf.AdmissionError(

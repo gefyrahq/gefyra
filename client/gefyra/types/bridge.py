@@ -69,6 +69,8 @@ class GefyraBridge(WatchEventsMixin):
     client: str
     # the ip if the local container
     local_container_ip: str
+    # the local container name
+    local_container_name: str | None
     # mapping ports [local:remote]
     port_mappings: List[str]
     # the name of the GefyraBridgeMount object
@@ -106,6 +108,7 @@ class GefyraBridge(WatchEventsMixin):
             target_namespace=bridge_raw["targetNamespace"],
             target=bridge_raw["target"],
             rules=bridge_raw.get("providerParameter"),
+            local_container_name=bridge_raw["metadata"]["labels"].get("gefyra.dev/client-container")
         )
         bridge._state = bridge_raw["state"]
         bridge._state_transitions = bridge_raw.get("stateTransitions", None)
@@ -129,6 +132,7 @@ class GefyraBridge(WatchEventsMixin):
                 "labels": {
                     "gefyra.dev/bridge-mount": self.target,
                     "gefyra.dev/client": self.client,
+                    "gefyra.dev/client-container": self.local_container_name,
                 },
             },
             "provider": self.provider,
