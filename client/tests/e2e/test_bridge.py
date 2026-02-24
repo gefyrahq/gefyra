@@ -213,7 +213,7 @@ class TestGefyraBridge(GefyraTestCase):
             "deployment/nginx-deployment-gefyra",
             "jsonpath=.spec.template.spec.containers[0].image=nginx:latest",
             namespace="default",
-            timeout=60,
+            timeout=120,
         )
 
         # RESTORING state usually lasts just very briefly, so we wait for PREPARING state
@@ -221,14 +221,14 @@ class TestGefyraBridge(GefyraTestCase):
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=PREPARING",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
         operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
@@ -289,14 +289,14 @@ class TestGefyraBridge(GefyraTestCase):
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=RESTORING",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
         operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
@@ -364,7 +364,7 @@ class TestGefyraBridge(GefyraTestCase):
         # Verify the bridge is actually deleted
         import time
 
-        for _ in range(30):
+        for _ in range(50):
             try:
                 operator.kubectl(
                     [

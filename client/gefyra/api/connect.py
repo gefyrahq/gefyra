@@ -66,6 +66,7 @@ def connect(  # noqa: C901
     mtu: Optional[int] = 1340,
     probe_timeout: int = 60,
     update_callback: Optional[callable] = None,
+    cargo_image: Optional[str] = None,
 ) -> bool:
     import kubernetes
     import docker
@@ -127,6 +128,7 @@ def connect(  # noqa: C901
             cargo_endpoint_port=gclient_conf.gefyra_server.split(":")[1],
             cargo_container_name=f"gefyra-cargo-{connection_name}",
             wireguard_mtu=(str(mtu) if mtu else None) or gclient_conf.wireguard_mtu,
+            cargo_image_url=cargo_image or "",
         )
 
         gclient = handle_get_gefyraclient(config, gclient_conf.client_id)
