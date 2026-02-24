@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UIcon, UPageMarquee, UPageSection } from '#components'
+import { UIcon, UMarquee, UPageSection } from '#components'
 </script>
 
 <template>
@@ -79,7 +79,7 @@ import { UIcon, UPageMarquee, UPageSection } from '#components'
       </ProseP>
     </div>
 
-    <UPageMarquee>
+    <UMarquee>
       <UIcon
         name="i-mdi-apple"
         class="size-10 shrink-0"
@@ -140,6 +140,6 @@ import { UIcon, UPageMarquee, UPageSection } from '#components'
         name="i-mdi-language-php"
         class="size-10 shrink-0"
       />
-    </UPageMarquee>
+    </UMarquee>
   </UPageSection>
 </template>

@@ -6,6 +6,7 @@ export default defineNuxtConfig({
       standalone: false,
     },
   },
+
   i18n: {
     defaultLocale: 'en',
     locales: [{
@@ -16,13 +17,19 @@ export default defineNuxtConfig({
       name: 'Français',
     }],
   },
+
+  fonts: {
+    provider: 'google',
+  },
+
   icon: {
     provider: 'iconify',
     customCollections: [{
       prefix: 'gefyra',
-      dir: './assets/icons',
+      dir: './app/assets/icons',
     }],
   },
+
   llms: {
     domain: 'https://gefyra.dev/',
     title: 'Gefyra Documentation',
