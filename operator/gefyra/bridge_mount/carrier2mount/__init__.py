@@ -33,7 +33,7 @@ from gefyra.bridge_mount.utils import (
     get_upstreams_for_svc,
 )
 from gefyra.utils import wait_until_condition
-from gefyra.bridge.carrier2.utils import read_carrier2_config
+from gefyra.bridge.carrier2.utils import get_ttl_hash, read_carrier2_config
 from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.bridge_mount.exceptions import (
     BridgeMountException,
@@ -582,7 +582,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     def _upstream_set(self) -> bool:
         for pod in self._original_pods.items:
             config_str_list = read_carrier2_config(
-                core_v1_api, pod.metadata.name, self.namespace
+                pod.metadata.name, self.namespace, get_ttl_hash(5)
             )
             config_str = "\n".join(config_str_list)
             pod_config = Carrier2Config.from_string(config_str)

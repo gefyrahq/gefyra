@@ -49,6 +49,7 @@ RUN \
     bc \
     wget \
     coredns \
+    inotify-tools \
     gnupg \
     grep \
     iproute2 \

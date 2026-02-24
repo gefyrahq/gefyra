@@ -133,6 +133,13 @@ class Carrier2Config(BaseModel):
             f"cat {ERROR_LOG_PATH}",
         ]
 
+        def _check_carrier2_output(s):
+            return (
+                isinstance(s, str)
+                and "Bootstrap starting" in s
+                and "thread 'main' panicked" not in s
+            )
+
         read_func = partial(
             stream_exec_retries,
             pod_name,
@@ -140,16 +147,10 @@ class Carrier2Config(BaseModel):
             container_name,
             config_commands,
             10,
+            _check_carrier2_output,
         )
 
         # TODO raise TemporaryError to handle longer Carrier2 pulls via async
-        def _check_carrier2_output(s):
-            return (
-                isinstance(s, str)
-                and "Daemonizing the server" in s
-                and "thread 'main' panicked" not in s
-            )
-
         wait_until_condition(
             read_func,
             _check_carrier2_output,

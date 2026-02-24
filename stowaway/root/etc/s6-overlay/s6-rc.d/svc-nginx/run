@@ -1,4 +1,4 @@
 #!/usr/bin/with-contenv bash
 
+s6-echo "Starting Nginx service"
 nginx -g "daemon off;"
-bash generate-proxyroutes.sh /stowaway/proxyroutes/
