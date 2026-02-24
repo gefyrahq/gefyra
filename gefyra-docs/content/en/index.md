@@ -5,10 +5,10 @@ seo:
 ---
 
 ::u-page-hero
-# title
+#title
 :icon{name="i-gefyra-logo-vertical" mode="svg" class="home-icon"}
 
-# description
+#description
 Blazingly-fast, rock-solid, local application development with Kubernetes.
 
 #links
@@ -59,7 +59,7 @@ class: "text-center mb-6"
 ---
 class: "border-t"
 ---
-# title
+#title
 Why Gefyra?
 
 #features
@@ -67,10 +67,10 @@ Why Gefyra?
   ---
   icon: i-gefyra-deadline
   ---
-  # title
+  #title
   Supercharge Development Speed
-
-  # description
+  
+  #description
   Run your code directly in a Kubernetes cluster and overcome [CI/CD waiting times]{.font-bold}.
   :::
 
@@ -78,10 +78,10 @@ Why Gefyra?
   ---
   icon: i-gefyra-sweat
   ---
-  # title
+  #title
   Fight Environment Bugs
-
-  # description
+  
+  #description
   Uncover bugs [before]{.font-bold} they appear on staging or production environments.
   :::
 
@@ -89,10 +89,10 @@ Why Gefyra?
   ---
   icon: i-gefyra-team
   ---
-  # title
+  #title
   Promote Collaboration
-
-  # description
+  
+  #description
   Share [running code instantly]{.font-bold} and let your team work in a realistic environment.
   :::
 
@@ -100,10 +100,10 @@ Why Gefyra?
   ---
   icon: i-gefyra-play-button
   ---
-  # title
+  #title
   One Click and Go
-
-  # description
+  
+  #description
   Gefyra is [ready in seconds]{.font-bold}, not hours or days.
   :::
 
@@ -111,10 +111,10 @@ Why Gefyra?
   ---
   icon: i-gefyra-link
   ---
-  # title
+  #title
   Flexible Workflows
-
-  # description
+  
+  #description
   Integrate Gefyra [into existing workflows]{.font-bold}. Make Gefyra part of your CI/CD pipeline.
   :::
 
@@ -122,10 +122,10 @@ Why Gefyra?
   ---
   icon: i-gefyra-budget
   ---
-  # title
+  #title
   Cost Efficient
-
-  # description
+  
+  #description
   Improve time-to-market and utilization of resources. Spent [less]{.font-bold} on CI/CD pipelines and container builds.
   :::
 ::
@@ -137,10 +137,10 @@ orientation: horizontal
 ---
 :video{autoplay controls loop src="https://res.cloudinary.com/dcrl8q2g3/video/upload/v1745404403/landing_od8epr.mp4"}
 
-# title
+#title
 Docker Desktop Extension
 
-# description
+#description
 Gefyra is a Docker Desktop extension that allows you to run your code directly in a Kubernetes cluster.
 
 #links
@@ -162,10 +162,10 @@ Gefyra is a Docker Desktop extension that allows you to run your code directly i
 ---
 class: "border-t"
 ---
-# title
+#title
 Let us know about your experience!
 
-# description
+#description
 We depend on your feedback - Gefyra's was created out of our own needs and the feedback we received from you, and our community.
 We'd appreciate it if you could take 2 minutes of your time to fill out our [feedback form]{.font-bold}.
 

@@ -1,8 +1,6 @@
 export default defineNuxtConfig({
   modules: ['@nuxtjs/i18n', '@nuxt/eslint'],
-
   css: ['~/assets/scss/main.scss'],
-
   eslint: {
     config: {
       standalone: false,
@@ -41,7 +39,6 @@ export default defineNuxtConfig({
       description: 'Gefyra - Kubernetes Development Environment',
     },
   },
-
   content: {
     build: {
       markdown: {

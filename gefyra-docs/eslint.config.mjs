@@ -11,6 +11,8 @@ export default withNuxt(
     },
     rules: {
       'no-console': 'warn',
+      'vue/max-attributes-per-line': 'warn',
+      'vue/require-default-prop': 'warn',
     },
   }),
 )
