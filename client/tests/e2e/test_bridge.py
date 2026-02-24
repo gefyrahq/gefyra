@@ -216,20 +216,28 @@ class TestGefyraBridge(GefyraTestCase):
             timeout=120,
         )
 
-        # RESTORING state usually lasts just very briefly, so we wait for PREPARING state
-        operator.wait(
-            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
-            "jsonpath=.state=PREPARING",
-            namespace="gefyra",
-            timeout=120,
-        )
-
+        # Wait for ACTIVE directly — intermediate states (RESTORING, PREPARING) are
+        # too short-lived for kubectl wait to catch reliably.
         operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=120,
         )
+
+        # Verify the restoration cycle occurred via stateTransitions
+        mount = operator.kubectl(
+            [
+                "get",
+                "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+                "-n",
+                "gefyra",
+                "-o",
+                "json",
+            ],
+        )
+        transitions = mount.get("stateTransitions", {})
+        assert "RESTORING" in transitions, "Expected RESTORING state transition"
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
@@ -285,19 +293,28 @@ class TestGefyraBridge(GefyraTestCase):
             ]
         )
 
-        operator.wait(
-            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
-            "jsonpath=.state=RESTORING",
-            namespace="gefyra",
-            timeout=120,
-        )
-
+        # Wait for ACTIVE directly — RESTORING is near-instantaneous because
+        # on_restore() immediately calls self.send("prepare").
         operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=120,
         )
+
+        # Verify the restoration cycle occurred via stateTransitions
+        mount = operator.kubectl(
+            [
+                "get",
+                "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+                "-n",
+                "gefyra",
+                "-o",
+                "json",
+            ],
+        )
+        transitions = mount.get("stateTransitions", {})
+        assert "RESTORING" in transitions, "Expected RESTORING state transition"
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
