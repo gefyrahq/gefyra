@@ -1,10 +1,12 @@
 {
-  "name": "docus-starter",
+  "name": "gefyra-docs",
+  "type": "module",
+  "private": true,
   "scripts": {
     "dev": "nuxt dev --extends docus",
     "build": "nuxt build --extends docus",
-    "lint": "eslint",
-    "lint:fix": "eslint --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@nuxt/eslint": "^1.15.2",
