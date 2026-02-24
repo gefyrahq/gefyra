@@ -52,20 +52,20 @@ def generate_env_dict_from_strings(env_vars: Iterable[str]) -> dict:
     return {k[0]: k[1] for k in [arg.split("=", 1) for arg in env_vars] if len(k) > 1}
 
 
-def wrap_bridge(bridge: Dict[Any, Any]) -> "GefyraBridge":
-    from gefyra.types import GefyraBridge
+# def wrap_bridge(bridge: Dict[Any, Any]) -> "GefyraBridge":
+#     from gefyra.types import GefyraBridge
 
-    return GefyraBridge(
-        provider=bridge["provider"],
-        name=bridge["metadata"]["name"],
-        client=bridge["client"],
-        local_container_ip=bridge["destinationIP"],
-        port_mappings=bridge["portMappings"] or [],
-        target_container=bridge["targetContainer"],
-        target_namespace=bridge["targetNamespace"],
-        target=bridge["target"],
-        state=bridge["state"],
-    )
+#     return GefyraBridge(
+#         provider=bridge["provider"],
+#         name=bridge["metadata"]["name"],
+#         client=bridge["client"],
+#         local_container_ip=bridge["destinationIP"],
+#         port_mappings=bridge["portMappings"] or [],
+#         target_container=bridge["targetContainer"],
+#         target_namespace=bridge["targetNamespace"],
+#         target=bridge["target"],
+#         state=bridge["state"],
+#     )
 
 
 def stopwatch(func):

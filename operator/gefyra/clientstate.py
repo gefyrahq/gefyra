@@ -216,19 +216,23 @@ class GefyraClient(StateMachine, StateControllerMixin):
         )
 
     def on_terminate(self):
-        self.post_event(
-            reason="GefyraClient state change",
-            message=f"GefyraClient '{self.object_name}' is being terminated",
-        )
-        if self.connection_provider.peer_exists(self.object_name):
-            self.logger.warning(
-                f"Removing GefyraClient '{self.object_name}' from connection provider"
+        try:
+            self.post_event(
+                reason="GefyraClient state change",
+                message=f"GefyraClient '{self.object_name}' is being terminated",
             )
-            self.connection_provider.remove_peer(self.object_name)
+            if self.connection_provider.peer_exists(self.object_name):
+                self.logger.warning(
+                    f"Removing GefyraClient '{self.object_name}' from connection provider"
+                )
+                self.connection_provider.remove_peer(self.object_name)
 
-        sa_name = f"gefyra-client-{self.object_name}"
-        handle_delete_gefyraclient_serviceaccount(self.logger, sa_name, self.namespace)
-        self.cleanup_all_bridges()
+            sa_name = f"gefyra-client-{self.object_name}"
+            handle_delete_gefyraclient_serviceaccount(self.logger, sa_name, self.namespace)
+            self.cleanup_all_bridges()
+        except Exception as e:
+            self.logger.warning(f"Error during termination of GefyraClient: {e}")
+            pass
 
     def can_add_client(self):
         if self.connection_provider.peer_exists(self.object_name):

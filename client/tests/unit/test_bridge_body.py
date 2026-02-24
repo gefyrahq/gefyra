@@ -9,6 +9,7 @@ def test_bridge_body_generation():
         target="nginx-deployment-default-1234",
         client="client-a",
         local_container_ip="192.178.0.22",
+        local_container_name="test",
         port_mappings="8080:8080",
     ).get_k8s_bridge_body(config)
     # check body structure
