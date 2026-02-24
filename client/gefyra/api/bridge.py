@@ -15,8 +15,6 @@ from gefyra.types.bridge_mount import GefyraBridgeMount  # , CommandTimeoutError
 from gefyra.types import GefyraBridge
 from gefyra.configuration import ClientConfiguration
 
-
-from gefyra.api.rm import cleanup_stale_bridges
 from gefyra.api.utils import (
     random_string,
     stopwatch,
@@ -60,11 +58,6 @@ def create_bridge(
     )
 
     config = ClientConfiguration(connection_name=connection_name)
-
-    # Automatically clean up bridges pointing to dead containers
-    cleaned = cleanup_stale_bridges(config=config)
-    if cleaned:
-        logger.info(f"Cleaned up {cleaned} stale bridge(s) before creating new bridge")
 
     try:
         container = config.DOCKER.containers.get(local)
