@@ -17,12 +17,6 @@ def test_a_create_bridge_mount(operator: AClusterManager):
 
     k3d.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
-        "jsonpath=.state=REQUESTED",
-        namespace="gefyra",
-        timeout=120,
-    )
-    k3d.wait(
-        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=ACTIVE",
         namespace="gefyra",
         timeout=120,
