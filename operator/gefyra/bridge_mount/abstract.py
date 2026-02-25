@@ -42,6 +42,20 @@ class AbstractGefyraBridgeMountProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def target_exists(self) -> bool:
+        """
+        Check whether the bridge mount target still exists in the cluster.
+
+        Used by the reconciliation loop to detect removed targets and
+        transition the bridge mount to the MISSING state.
+
+        :return: True if the target exists, False if it has been removed.
+        :raises: Non-404 API errors are propagated so callers can
+                 distinguish "not found" from transient failures.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def validate(self, bridge_request: dict, hits: dict | None):
         """
         Validate the bridgemount request
