@@ -34,7 +34,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
     removing = State("GefyraBridge removing", value="REMOVING")
     restoring = State("GefyraBridge restoring Pod", value="RESTORING")
     error = State("GefyraBridge error", value="ERROR")
-    terminating = State("GefyraBridge terminating", value="TERMINATING")
+    terminating = State("GefyraBridge terminating", value="TERMINATING", final=True)
 
     install = (
         requested.to(installing, on="_install_provider")
@@ -224,7 +224,6 @@ class GefyraBridge(StateMachine, StateControllerMixin):
         self.handle_proxyroute_teardown(destination)
 
     def handle_proxyroute_teardown(self, destination):
-
         for port_mapping in self.data.get("portMappings"):
             source_port, target_port = port_mapping.split(":")
             if self.connection_provider.destination_exists(
@@ -272,7 +271,7 @@ class GefyraBridge(StateMachine, StateControllerMixin):
             else str(exception or "")
         )
         self.post_event(
-            reason=f"Failed in state {self.current_state}",
+            reason=f"Failed in state {self.current_state_value}",
             message=message,
             type="Warning",
         )

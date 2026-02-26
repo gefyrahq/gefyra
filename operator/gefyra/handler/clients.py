@@ -1,3 +1,5 @@
+import asyncio
+
 import click
 import kopf
 import kubernetes as k8s
@@ -13,7 +15,7 @@ async def client_created(body, logger, **kwargs):
     obj = GefyraClientObject(body)
     client = GefyraClient(obj, configuration, logger)
     if client.requested.is_active or client.creating.is_active:
-        client.create()
+        await client.create()
 
 
 # 'providerParameter' activates the client, once set to a provider specific value the
@@ -23,40 +25,49 @@ async def client_connection_changed(new, body, logger, **kwargs):
     obj = GefyraClientObject(body)
     client = GefyraClient(obj, configuration, logger)
     # check if parameters for this connection provider have been added or removed
-    logger.info(f"Client is: {client.current_state}")
+    logger.info(f"Client is: {client.current_state_value}")
     if bool(new):
         # activate this connection
         try:
             if client.waiting.is_active:
-                client.enable()
+                await client.enable()
             if client.enabling.is_active:
-                client.activate()
+                await client.activate()
         except TransitionNotAllowed as e:
             logger.error(f"TransitionNotAllowed: {e}")
-            client.impair()
+            await client.impair()
         except k8s.client.exceptions.ApiException as e:
             logger.error(f"ApiException: {e}")
             if e.status == 500:
                 raise kopf.TemporaryError(
-                    f"Could not activate connection: {e}, \nClient is {client.current_state}",
+                    f"Could not activate connection: {e}, \nClient is {client.current_state_value}",
                     delay=1,
                 )
     else:
         # deactivate this connection
         if client.active.is_active or client.error.is_active:
             # only trigger the state transition
-            client.disable()
+            await client.disable()
         if client.disabling.is_active:
             # this is called in case of retry
-            client.wait()
-        client._patch_object({"status": {"wireguard": None}})
+            await client.wait()
+        thread = client.custom_api.patch_namespaced_custom_object(
+            namespace=client.configuration.NAMESPACE,
+            name=client.object_name,
+            body={"status": {"wireguard": None}},
+            group="gefyra.dev",
+            plural="gefyraclients",
+            version="v1",
+            async_req=True,
+        )
+        await asyncio.to_thread(thread.get)
 
 
 @kopf.on.delete("gefyraclients.gefyra.dev")
 async def client_deleted(body, logger, **kwargs):
     obj = GefyraClientObject(body)
     client = GefyraClient(obj, configuration, logger)
-    client.terminate()
+    await client.terminate()
 
 
 # this is a workaround to get the --dev flag from the CLI for testing
@@ -78,16 +89,18 @@ async def client_reconcile(body, logger, **kwargs):
     client = GefyraClient(obj, configuration, logger)
     if client.should_terminate:
         # terminate this client
-        client.terminate()
+        await client.terminate()
         try:
-            client.custom_api.delete_namespaced_custom_object(
+            thread = client.custom_api.delete_namespaced_custom_object(
                 namespace=client.configuration.NAMESPACE,
                 name=client.client_name,
                 group="gefyra.dev",
                 plural="gefyraclients",
                 version="v1",
+                async_req=True,
             )
+            await asyncio.to_thread(thread.get)
         except k8s.client.ApiException:
             pass
     if client.should_disable:
-        client.disable()
+        await client.disable()

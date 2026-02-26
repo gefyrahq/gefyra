@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone
 from logging import Logger
 import tarfile
@@ -37,7 +38,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
     active = State("Client active", value="ACTIVE")
     disabling = State("Client disabling", value="DISABLING")
     error = State("Client error", value="ERROR")
-    terminating = State("Client terminating", value="TERMINATING")
+    terminating = State("Client terminating", value="TERMINATING", final=True)
 
     create = (
         requested.to(creating, on="on_create")
@@ -148,7 +149,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
         else:
             return False
 
-    def on_create(self):
+    async def on_create(self):
         self.post_event(
             reason="GefyraClient state change",
             message=f"GefyraClient '{self.object_name}' is being created",
@@ -158,36 +159,49 @@ class GefyraClient(StateMachine, StateControllerMixin):
                 reason="GefyraClient ServiceAccount",
                 message=f"Skipping the ServiceAccount for GefyraClient '{self.object_name}' (ServiceAccount management is disabled)",
             )
-            self.wait()
+            await self.wait()
         else:
-            self.create_service_account()
+            await self.create_service_account()
 
-    def create_service_account(self) -> None:
+    async def create_service_account(self) -> None:
         """
         This method is called when the GefyraClient is creating
         :return: None
         """
 
         sa_name = f"gefyra-client-{self.object_name}"
-        handle_create_gefyraclient_serviceaccount(
-            self.logger, sa_name, self.configuration.NAMESPACE, self.object_name
+        await asyncio.to_thread(
+            handle_create_gefyraclient_serviceaccount,
+            self.logger,
+            sa_name,
+            self.configuration.NAMESPACE,
+            self.object_name,
         )
         try:
-            token_data = get_serviceaccount_data(sa_name, self.configuration.NAMESPACE)
+            token_data = await asyncio.to_thread(
+                get_serviceaccount_data, sa_name, self.configuration.NAMESPACE
+            )
         except kopf.TemporaryError as e:
             self.post_event(
                 reason="GefyraClient ServiceAccount",
                 message=f"Creating ServiceAccount waiting: {e}",
             )
             raise e
-        self._patch_object(
-            {"serviceAccountName": sa_name, "serviceAccountData": token_data}
+        thread = self.custom_api.patch_namespaced_custom_object(
+            namespace=self.configuration.NAMESPACE,
+            name=self.object_name,
+            body={"serviceAccountName": sa_name, "serviceAccountData": token_data},
+            group="gefyra.dev",
+            plural=self.plural,
+            version="v1",
+            async_req=True,
         )
+        await asyncio.to_thread(thread.get)
         self.post_event(
             reason="GefyraClient ServiceAccount",
             message=f"ServiceAccount for GefyraClient '{self.object_name}' created '{sa_name}' in namespace '{self.configuration.NAMESPACE}' ",
         )
-        self.wait()
+        await self.wait()
 
     def on_enable(self):
         self.post_event(
@@ -201,13 +215,13 @@ class GefyraClient(StateMachine, StateControllerMixin):
             message=f"GefyraClient '{self.object_name}' is active",
         )
 
-    def on_disable(self):
+    async def on_disable(self):
         self.post_event(
             reason="GefyraClient state change",
             message=f"GefyraClient '{self.object_name}' is being disabled",
         )
-        self.cleanup_all_bridges()
-        self.wait()
+        await self.cleanup_all_bridges()
+        await self.wait()
 
     def on_waiting(self):
         self.post_event(
@@ -215,7 +229,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
             message=f"GefyraClient '{self.object_name}' is ready to accept a client connection request",
         )
 
-    def on_terminate(self):
+    async def on_terminate(self):
         try:
             self.post_event(
                 reason="GefyraClient state change",
@@ -228,8 +242,13 @@ class GefyraClient(StateMachine, StateControllerMixin):
                 self.connection_provider.remove_peer(self.object_name)
 
             sa_name = f"gefyra-client-{self.object_name}"
-            handle_delete_gefyraclient_serviceaccount(self.logger, sa_name, self.namespace)
-            self.cleanup_all_bridges()
+            await asyncio.to_thread(
+                handle_delete_gefyraclient_serviceaccount,
+                self.logger,
+                sa_name,
+                self.namespace,
+            )
+            await self.cleanup_all_bridges()
         except Exception as e:
             self.logger.warning(f"Error during termination of GefyraClient: {e}")
             pass
@@ -292,14 +311,16 @@ class GefyraClient(StateMachine, StateControllerMixin):
                 )
         self._patch_object({"providerConfig": None})
 
-    def cleanup_all_bridges(self) -> None:
-        bridges = self.custom_api.list_namespaced_custom_object(
+    async def cleanup_all_bridges(self) -> None:
+        thread = self.custom_api.list_namespaced_custom_object(
             group="gefyra.dev",
             version="v1",
             plural="gefyrabridges",
             namespace=self.configuration.NAMESPACE,
             label_selector=f"gefyra.dev/client={self.client_name}",
+            async_req=True,
         )
+        bridges = await asyncio.to_thread(thread.get)
         for bridge in bridges.get("items"):
             if bridge.get("client") == self.client_name:
                 self.logger.warning(
@@ -313,13 +334,15 @@ class GefyraClient(StateMachine, StateControllerMixin):
                     f"This GefyraBridge will be removed since the related GefyraClient '{self.client_name}' is currently being removed",
                 )
 
-                self.custom_api.delete_namespaced_custom_object(
+                thread = self.custom_api.delete_namespaced_custom_object(
                     group="gefyra.dev",
                     version="v1",
                     plural="gefyrabridges",
                     namespace=self.configuration.NAMESPACE,
                     name=bridge["metadata"]["name"],
+                    async_req=True,
                 )
+                await asyncio.to_thread(thread.get)
 
     def get_latest_transition(self) -> Optional[datetime]:
         """
