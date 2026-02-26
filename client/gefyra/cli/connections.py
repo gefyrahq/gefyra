@@ -91,12 +91,19 @@ def connections(ctx):
     type=int,
     default=1340,
 )
+@click.option(
+    "--cargo-image",
+    help="Use a custom Cargo container image",
+    type=str,
+    default=None,
+)
 @standard_error_handler
 def connect_client(
     client_config,
     connection_name: str,
     minikube: Optional[str] = None,
     mtu: int = 1340,
+    cargo_image: Optional[str] = None,
 ):
     from alive_progress import alive_bar
     from gefyra import api
@@ -125,6 +132,7 @@ def connect_client(
             client_config=client_config,
             minikube_profile=minikube,
             mtu=mtu,
+            cargo_image=cargo_image,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "

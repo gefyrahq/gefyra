@@ -36,7 +36,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v6
       env:
-        DOCKER_BUILD_NO_SUMMARY: true
+        DOCKER_BUILD_SUMMARY: false
       with:
         context: testing/images/
         platforms: linux/amd64
@@ -90,7 +90,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v6
       env:
-        DOCKER_BUILD_NO_SUMMARY: true
+        DOCKER_BUILD_SUMMARY: false
       with:
         context: operator/
         platforms: linux/amd64
@@ -141,7 +141,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v6
       env:
-        DOCKER_BUILD_NO_SUMMARY: true
+        DOCKER_BUILD_SUMMARY: false
       with:
         context: cargo/
         platforms: linux/amd64
@@ -264,11 +264,15 @@ jobs:
         uses: medyagh/setup-minikube@latest
         with:
           start-args: --ports 127.0.0.1:31820:31820/udp
-      - name: Load Gefyra images
+      - name: Load Cargo image on host Docker
+        run: |
+          docker load --input /tmp/cargo/cargo.tar
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.1.6
+          docker image ls -a
+      - name: Load Gefyra images into Minikube
         run: |
           eval $(minikube docker-env)
           docker load --input /tmp/pyserver/pyserver.tar
-          docker load --input /tmp/cargo/cargo.tar
           docker load --input /tmp/operator/operator.tar
           docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.1.6
           docker image ls -a
@@ -427,6 +431,8 @@ jobs:
           path: ./client/.coverage*
   test_operator:
     name: Test Gefyra Operator
+    needs:
+      - build_cargo
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
@@ -446,8 +452,20 @@ jobs:
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
+      - name: Download cargo artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: cargo
+          path: /tmp/cargo
+      - name: Load pre-built cargo image
+        run: |
+          docker load --input /tmp/cargo/cargo.tar
+          docker tag ${{ needs.build_cargo.outputs.tags }} cargo:pytest
+          docker image ls -a
       - name: Run PyTest
         working-directory: ./operator
+        env:
+          GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
         run: poetry run coverage run -m pytest -s -x --retries 5
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'

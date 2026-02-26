@@ -1,3 +1,4 @@
+import os
 import sys
 import platform
 from pathlib import Path
@@ -8,6 +9,11 @@ from .utils import GefyraDockerClient
 
 @pytest.fixture(scope="session")
 def cargo_image(request):
+    # In CI, the cargo image is pre-built and loaded via artifact
+    prebuilt = os.environ.get("GEFYRA_CARGO_IMAGE_PREBUILT")
+    if prebuilt:
+        return prebuilt
+    # Local dev: build from source
     name = "cargo:pytest"
     if sys.platform == "win32" or "microsoft-standard" in platform.release():
         target = "cargo-win"
