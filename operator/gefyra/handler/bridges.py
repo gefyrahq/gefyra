@@ -1,3 +1,5 @@
+from asyncio import sleep
+
 import kopf
 
 from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
@@ -11,26 +13,30 @@ RECONCILIATION_INTERVAL = 10
 @kopf.on.resume("gefyrabridges.gefyra.dev")
 async def bridge_create(body, logger, **kwargs):
     obj = GefyraBridgeObject(body)
-    bridge = GefyraBridge(obj, configuration, logger)
+    bridge = GefyraBridge(
+        obj, configuration, logger, initial=obj.state
+    )  # Pass initial state
     if bridge.requested.is_active:
-        bridge.install()
+        await bridge.install()
     if bridge.installing.is_active:
-        bridge.install()
+        await bridge.install()
     if bridge.installed.is_active:
-        bridge.activate()
+        await bridge.activate()
 
 
 @kopf.on.field("gefyrabridges.gefyra.dev", field="destinationIP")
 async def update_bridge_destination(body, logger, old, new, **kwargs):
     obj = GefyraBridgeObject(body)
-    bridge = GefyraBridge(obj, configuration, logger)
+    bridge = GefyraBridge(
+        obj, configuration, logger, initial=obj.state
+    )  # Pass initial state
     if not old:
         return
     if bridge.active.is_active:
         logger.warn(f"Updating destinationIP for this GefyraBridge: {bridge}")
-        bridge.handle_proxyroute_teardown(old)
-        bridge.send("restore")
-        bridge.send("activate")
+        await bridge.handle_proxyroute_teardown(old)  # Await
+        await bridge.send("restore")  # Await
+        await bridge.send("activate")  # Await
     else:
         # TODO handle these cases
         logger.warn(
@@ -41,8 +47,10 @@ async def update_bridge_destination(body, logger, old, new, **kwargs):
 @kopf.on.delete("gefyrabridges.gefyra.dev")
 async def bridge_delete(body, logger, **kwargs):
     obj = GefyraBridgeObject(body)
-    bridge = GefyraBridge(obj, configuration, logger)
+    bridge = GefyraBridge(
+        obj, configuration, logger, initial=obj.state
+    )  # Pass initial state
     try:
-        bridge.remove()
+        await bridge.send("remove")
     except Exception as e:
         logger.error(f"Unexpected error removing this GefyraBridge: {e}")

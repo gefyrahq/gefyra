@@ -46,13 +46,13 @@ async def read_wireguard_status(logger):
 
     # there are some GefyraClients
     stowaway = Stowaway(configuration, logger)
-    if not stowaway.ready():
+    if not await stowaway.ready():
         logger.info(
             "Skipping Wireguard connection status on Stowaway: currently not ready"
         )
         return
     logger.info("Checking Wireguard connection status on Stowaway")
-    wg_status = stowaway.read_wireguard_status()
+    wg_status = await stowaway.read_wireguard_status()
     if not wg_status:
         logger.error(
             "Wireguard connection status was empty. Wireguard probably not working!"
@@ -89,14 +89,16 @@ async def read_wireguard_status(logger):
                         pass
                     else:
                         if "status" not in client.data:
-                            client._patch_object({"status": {}})
+                            await client._patch_object({"status": {}})
                         if (
                             "wireguard" in client.data["status"]
                             and peer_status == client.data["status"]["wireguard"]
                         ):
                             continue
                         else:
-                            client._patch_object({"status": {"wireguard": peer_status}})
+                            await client._patch_object(
+                                {"status": {"wireguard": peer_status}}
+                            )
                             # client.post_event(
                             #     reason="GefyraClient connection",
                             #     message="Updated Wireguard status (see .status.wireguard field)",

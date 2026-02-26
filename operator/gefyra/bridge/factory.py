@@ -17,7 +17,7 @@ class GefyraBridgeFactory:
     def register_builder(self, provider_type: BridgeProviderType, builder):
         self._builders[provider_type.value] = builder
 
-    def __create(
+    async def __create(
         self,
         provider_type: BridgeProviderType,
         configuration: OperatorConfiguration,
@@ -32,7 +32,7 @@ class GefyraBridgeFactory:
         builder = self._builders.get(provider_type.value)
         if not builder:
             raise ValueError(provider_type)
-        return builder(
+        return await builder(
             configuration,
             name,
             target_namespace,
@@ -43,7 +43,7 @@ class GefyraBridgeFactory:
             **kwargs,
         )
 
-    def get(
+    async def get(
         self,
         provider_type: BridgeProviderType,
         configuration: OperatorConfiguration,
@@ -55,7 +55,7 @@ class GefyraBridgeFactory:
         logger,
         **kwargs,
     ) -> AbstractGefyraBridgeProvider:
-        return self.__create(
+        return await self.__create(
             provider_type,
             configuration,
             name,

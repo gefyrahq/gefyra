@@ -61,7 +61,10 @@ def handle_delete_gefyramount(
             counter = 0
             while counter < timeout:
                 try:
-                    get_gefyrabridgemount(config=config, name=name)
+                    result = get_gefyrabridgemount(config=config, name=name)
+                    # return early if object is not available anymore
+                    if not result:
+                        return
                 except ApiException:
                     return True
                 time.sleep(1)

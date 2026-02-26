@@ -42,7 +42,7 @@ class TestCarrier2:
         from kubernetes.client.api import core_v1_api
 
         core_v1 = core_v1_api.CoreV1Api()
-        config = read_carrier2_config(core_v1, "backend", "default")
+        config = read_carrier2_config(logger, core_v1, "backend", "default")
         config = config[0].replace("\n", "").replace(" ", "")
         assert (
             "version:1threads:4error_log:/tmp/carrier.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100proxy:-port:5000clusterUpstream:-blueshoe.io:443bridges:{}"

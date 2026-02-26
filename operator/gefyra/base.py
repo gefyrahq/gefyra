@@ -1,6 +1,8 @@
+import asyncio
 from typing import Any, Dict, Optional
 import uuid
 from gefyra.configuration import OperatorConfiguration
+import statemachine
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 import kubernetes as k8s
 from statemachine import State
@@ -49,11 +51,12 @@ class GefyraStateObject:
             plural=self.plural,
             group="gefyra.dev",
             version="v1",
+            async_req=True,
         )
 
 
 class StateControllerMixin:
-    configuration: OperatorConfiguration
+    operator_configuration: OperatorConfiguration
     logger: Any
     custom_api: k8s.client.CustomObjectsApi
     events_api: k8s.client.EventsV1Api
@@ -88,7 +91,7 @@ class StateControllerMixin:
         """
         provider = connection_provider_factory.get(
             ConnectionProviderType(self.data.get(self.connection_provider_field)),
-            self.configuration,
+            self.operator_configuration,
             self.logger,
         )
         return provider
@@ -106,7 +109,7 @@ class StateControllerMixin:
         else:
             return None
 
-    def post_event(self, reason: str, message: str, type: str = "Normal") -> None:
+    async def post_event(self, reason: str, message: str, type: str = "Normal") -> None:
         """
         It creates an event object and posts it to the Kubernetes API
         :param reason: The reason for the event
@@ -124,7 +127,7 @@ class StateControllerMixin:
         event = k8s.client.EventsV1Event(
             metadata=k8s.client.V1ObjectMeta(
                 name=f"{self.object_name}-{uuid.uuid4()}",
-                namespace=self.configuration.NAMESPACE,
+                namespace=self.operator_configuration.NAMESPACE,
             ),
             reason=reason,
             note=message[:1024],  # maximum message length
@@ -143,17 +146,20 @@ class StateControllerMixin:
             ),
         )
         try:
-            self.events_api.create_namespaced_event(
-                namespace=self.configuration.NAMESPACE, body=event
+            await asyncio.to_thread(
+                self.events_api.create_namespaced_event,
+                namespace=self.operator_configuration.NAMESPACE,
+                body=event,
             )
         except Exception as e:
             self.logger.error(
                 f"Could not post event to object '{self.data['kind']}/{self.data['metadata']['name']}': {e}"
             )
 
-    def _patch_object(self, data: dict):
-        self.custom_api.patch_namespaced_custom_object(
-            namespace=self.configuration.NAMESPACE,
+    async def _patch_object(self, data: dict):
+        await asyncio.to_thread(
+            self.custom_api.patch_namespaced_custom_object,
+            namespace=self.operator_configuration.NAMESPACE,
             name=self.object_name,
             body=data,
             group="gefyra.dev",

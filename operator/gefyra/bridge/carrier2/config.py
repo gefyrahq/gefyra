@@ -1,3 +1,4 @@
+import asyncio
 from enum import StrEnum
 from functools import partial
 import logging
@@ -104,15 +105,21 @@ class Carrier2Config(BaseModel):
             self.model_dump(by_alias=True, exclude_none=True), sort_keys=False
         )
 
-    def commit(
-        self, pod_name: str, container_name: str, namespace: str, debug: bool = False
+    async def commit(
+        self,
+        logger,
+        pod_name: str,
+        container_name: str,
+        namespace: str,
+        debug: bool = False,
     ):
         core_v1 = k8s.client.CoreV1Api()
         read_func = partial(core_v1.read_namespaced_pod_status, pod_name, namespace)
 
         # busy wait for pod to get ready, raises RuntimeError on timeout
         # TODO raise TemporaryError to handle longer pulls via async
-        wait_until_condition(
+        await asyncio.to_thread(
+            wait_until_condition,
             read_func,
             lambda s: all(
                 [container.started for container in s.status.container_statuses]
@@ -142,6 +149,7 @@ class Carrier2Config(BaseModel):
 
         read_func = partial(
             stream_exec_retries,
+            logger,
             pod_name,
             namespace,
             container_name,
@@ -151,7 +159,8 @@ class Carrier2Config(BaseModel):
         )
 
         # TODO raise TemporaryError to handle longer Carrier2 pulls via async
-        wait_until_condition(
+        await asyncio.to_thread(
+            wait_until_condition,
             read_func,
             _check_carrier2_output,
             timeout=30,
@@ -162,11 +171,12 @@ class Carrier2Config(BaseModel):
     def from_string(cls, content_str: str):
         return Carrier2Config(**yaml.safe_load(content_str))
 
-    def add_bridge_rules_for_mount(
+    async def add_bridge_rules_for_mount(
         self, bridge_mount_name: str, namespace: str, current_bridge: str | None
     ) -> "Carrier2Config":
         custom_object_api = k8s.client.CustomObjectsApi()
-        bridges = custom_object_api.list_namespaced_custom_object(
+        bridges = await asyncio.to_thread(
+            custom_object_api.list_namespaced_custom_object,
             "gefyra.dev",
             "v1",
             namespace,

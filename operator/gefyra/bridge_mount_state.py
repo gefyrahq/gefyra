@@ -1,8 +1,10 @@
+import asyncio
 from datetime import datetime
 from typing import Optional
 
+import kopf
 import kubernetes as k8s
-from statemachine import State, StateMachine
+from statemachine import State, StateChart
 
 
 from gefyra.base import GefyraStateObject, StateControllerMixin
@@ -20,10 +22,15 @@ class GefyraBridgeMountObject(GefyraStateObject):
     plural = "gefyrabridgemounts"
 
 
-class GefyraBridgeMount(StateMachine, StateControllerMixin):
+class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateMachine
     """
     A Gefyra Bridge Mount is implemented as a state machine
     """
+
+    atomic_configuration_update = True
+    catch_errors_as_events = False
+    enable_self_transition_entries = False
+    allow_event_without_transition = False
 
     kind = "GefyraBridgeMount"
     plural = "gefyrabridgemounts"
@@ -36,7 +43,7 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
     error = State("Bridge Mount error", value="ERROR")
     terminated = State("Bridge Mount terminated", value="TERMINATED")
 
-    prepare = (
+    arrange = (
         restoring.to(preparing)
         | requested.to(preparing)
         | error.to(preparing)
@@ -64,11 +71,14 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         model: GefyraBridgeMountObject,
         configuration: OperatorConfiguration,
         logger,
+        initial: Optional[State] = None,  # Added initial state parameter
     ):
-        super().__init__()
+        super().__init__(
+            start_value=initial or GefyraBridgeMount.requested.id
+        )  # Pass initial state to super
         self.model = model
         self.data = model.data
-        self.configuration = configuration
+        self.operator_configuration = configuration
         self.logger = logger
         self.custom_api = k8s.client.CustomObjectsApi()
         self.events_api = k8s.client.EventsV1Api()
@@ -80,18 +90,19 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
         It creates a GefyraBridgeMount provider object based on the provider type
         :return: The GefyraBridgeMount provider is being returned.
         """
-        provider = bridge_mount_provider_factory.get(
-            provider_type=BridgeMountProviderType(self.data["provider"]),
-            configuration=self.configuration,
-            target_namespace=self.data["targetNamespace"],
-            target=self.data["target"],
-            target_container=self.data["targetContainer"],
-            name=self.data["metadata"]["name"],
-            post_event_function=self.post_event,
-            parameter=self.data.get("providerParameter", {}),
-            logger=self.logger,
-        )
-        return provider
+        if self._bridge_mount_provider is None:
+            self._bridge_mount_provider = bridge_mount_provider_factory.get(
+                provider_type=BridgeMountProviderType(self.data["provider"]),
+                configuration=self.operator_configuration,
+                target_namespace=self.data["targetNamespace"],
+                target=self.data["target"],
+                target_container=self.data["targetContainer"],
+                name=self.data["metadata"]["name"],
+                post_event_function=self.post_event,
+                parameter=self.data.get("providerParameter", {}),
+                logger=self.logger,
+            )
+        return self._bridge_mount_provider
 
     @property
     def sunset(self) -> Optional[datetime]:
@@ -101,10 +112,10 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             return None
 
     @property
-    def should_terminate(self) -> bool:
+    async def should_terminate(self) -> bool:  # Made async
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this shadow because the sunset time is in the past
-            self.post_event(
+            await self.post_event(
                 reason="GefyraBridgeMount state change",
                 message=f"Bridge Mount '{self.object_name}' should be terminated "
                 "due to reached sunset date",
@@ -114,98 +125,108 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
             return False
 
     @property
-    def is_intact(self) -> bool:
+    async def is_intact(self) -> bool:
+
         try:
-            return (
-                self.bridge_mount_provider.prepared()
-                and self.bridge_mount_provider.ready()
-            )
+            bmp = self.bridge_mount_provider
+            return await bmp.prepared() and await bmp.ready()
         except Exception as e:
-            self.post_event(
+            import traceback
+
+            print(traceback.format_exc())
+            await self.post_event(
                 reason="Not intact",
                 message=f"GefyraBridgeMount '{self.object_name}' not intact: {e}",
                 type="Warning",
             )
             return False
 
-    def on_restore(self):
-        self.post_event(
+    async def on_restore(self):
+        await self.post_event(
             reason="Change detected",
             message=f"Restoring GefyraBridgeMount '{self.object_name}'",
             type="Warning",
         )
-        self.send("prepare")
+        await self.send("arrange")
 
-    def on_prepare(self):
-        self.post_event(
-            reason="GefyraBridgeMount state change",
-            message=f"GefyraBridgeMount '{self.object_name}' is being prepared",
-        )
+    async def on_arrange(self):
+        # await self.post_event( # Await post_event
+        #     reason="GefyraBridgeMount state change",
+        #     message=f"GefyraBridgeMount '{self.object_name}' is being prepared",
+        # )
         try:
             #  TODO self.bridge_mount_provider.check_mount_conditions()
-            self.bridge_mount_provider.prepare()
+            bmp = self.bridge_mount_provider
+            await bmp.prepare()
         except (BridgeMountInstallException, ValueError) as e:
-            self.post_event(
+            await self.post_event(
                 reason="Failed to install GefyraBridgeMount",
                 message=str(e),
                 type="Warning",
             )
-            self.impair()
+            await self.impair()
 
     @install.cond
-    def _bridge_mount_prepared(self):
-        return self.bridge_mount_provider.prepared()
+    async def _bridge_mount_prepared(self):
+        bmp = self.bridge_mount_provider
+        if not await bmp.prepared():
+            raise kopf.TemporaryError("GefyraBridgeMount not yet prepared", delay=5)
+        return True
 
-    def on_install(self):
-        self.post_event(
+    async def on_install(self):
+        await self.post_event(
             reason="GefyraBridgeMount state change",
             message=f"GefyraBridgeMount '{self.object_name}' is being installed",
         )
         try:
-            self.bridge_mount_provider.install()
+            bmp = self.bridge_mount_provider
+            await bmp.install()
             # TODO RuntimeError failed to fullfil waiting condition
         except BridgeMountInstallException as e:
-            self.post_event(
+            await self.post_event(
                 reason="Failed to install GefyraBridgeMount",
                 message=str(e),
                 type="Warning",
             )
-            self.impair()
+            await self.impair()
         else:
-            self.activate()
+            await self.activate()
 
     @activate.cond
-    def _bridge_mount_finished(self):
-        _ready = self.bridge_mount_provider.ready()
+    async def _bridge_mount_finished(self):
+        bmp = self.bridge_mount_provider
+        _ready = await bmp.ready()
         if _ready:
-            self.post_event(
+            await self.post_event(
                 reason="Ready",
                 message=f"GefyraBridgeMount '{self.object_name}' is ready",
             )
         return _ready
 
-    def on_terminate(self):
-        self.post_event(
-            reason="Deleting",
-            message=f"GefyraBridgeMount '{self.object_name}' is being removed",
-        )
+    async def on_terminate(self):
+        # await self.post_event( # Await post_event
+        #     reason="Deleting",
+        #     message=f"GefyraBridgeMount '{self.object_name}' is being removed",
+        # )
         try:
-            self.bridge_mount_provider.uninstall()
+            bmp = self.bridge_mount_provider
+            await bmp.uninstall()
         except Exception as e:
             self.logger.error(
                 f"Cannot uninstall GefyraBridgeMount '{self.object_name}' due to: {e}"
             )
         try:
-            self.cleanup_all_bridges()
+            await self.cleanup_all_bridges()
         except Exception as e:
             self.logger.error(f"Cannot cleanup remaining GefyraBridges due to: {e}")
 
-    def cleanup_all_bridges(self) -> None:
-        bridges = self.custom_api.list_namespaced_custom_object(
+    async def cleanup_all_bridges(self) -> None:  # Made async
+        bridges = await asyncio.to_thread(
+            self.custom_api.list_namespaced_custom_object,
             group="gefyra.dev",
             version="v1",
             plural="gefyrabridges",
-            namespace=self.configuration.NAMESPACE,
+            namespace=self.operator_configuration.NAMESPACE,
             label_selector=f"gefyra.dev/bridge-mount={self.object_name}",
         )
         for bridge in bridges.get("items"):
@@ -214,16 +235,18 @@ class GefyraBridgeMount(StateMachine, StateControllerMixin):
                 f"'{bridge['metadata']['name']}' for GefyraBridgeMount {self.object_name}"
             )
             obj = GefyraBridgeObject(bridge)
-            bridge_obj = GefyraBridge(obj, self.configuration, self.logger)
-            bridge_obj.post_event(
-                "GefyraBridgeMount deleted",
-                f"GefyraBridge '{bridge_obj.object_name}' will be removed since the related GefyraBridgeMount '{self.object_name}' is currently being removed",
-            )
+            # GefyraBridge needs to be async, but it's not fully converted yet, so deferring async init
+            # bridge_obj = GefyraBridge(obj, self.operator_configuration, self.logger)
+            # await bridge_obj.post_event( # Await post_event
+            #     "GefyraBridgeMount deleted",
+            #     f"GefyraBridge '{bridge_obj.object_name}' will be removed since the related GefyraBridgeMount '{self.object_name}' is currently being removed",
+            # )
 
-            self.custom_api.delete_namespaced_custom_object(
+            await asyncio.to_thread(
+                self.custom_api.delete_namespaced_custom_object,
                 group="gefyra.dev",
                 version="v1",
                 plural="gefyrabridges",
-                namespace=self.configuration.NAMESPACE,
+                namespace=self.operator_configuration.NAMESPACE,
                 name=bridge["metadata"]["name"],
             )

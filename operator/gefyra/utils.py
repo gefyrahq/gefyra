@@ -1,10 +1,12 @@
+import asyncio
+from concurrent.futures import ProcessPoolExecutor
 import logging
 import select
 import tarfile
 from tempfile import TemporaryFile
 import time
 import traceback
-from typing import Any, Callable, List
+from typing import Any, AsyncIterable, Callable, List
 
 import kubernetes as k8s
 
@@ -170,3 +172,17 @@ def wait_until_condition(
         time.sleep(backoff)
 
     raise RuntimeError("Failed to fulfill wait condition")
+
+
+async def async_any(async_iterable: AsyncIterable[object]) -> bool:
+    async for element in async_iterable:
+        if element:
+            return True
+    return False
+
+
+async def async_all(async_iterable: AsyncIterable[object]) -> bool:
+    async for element in async_iterable:
+        if not element:
+            return False
+    return True

@@ -7,42 +7,42 @@ class AbstractGefyraBridgeMountProvider(ABC):
     provider_type = ""
 
     @abstractmethod
-    def install(self) -> None:
+    async def install(self) -> None:
         """
         Install this Gefyra bridgemount provider to the Kubernetes Resource
         """
         raise NotImplementedError
 
     @abstractmethod
-    def prepare(self) -> None:
+    async def prepare(self) -> None:
         """
         Prepare this Gefyra bridgemount provider to the Kubernetes Resource
         """
         raise NotImplementedError
 
     @abstractmethod
-    def ready(self) -> bool:
+    async def ready(self) -> bool:
         """
         Check if this Gefyra bridgemount provider is ready for bridgemounts
         """
         raise NotImplementedError
 
     @abstractmethod
-    def prepared(self) -> bool:
+    async def prepared(self) -> bool:
         """
         Check if this Gefyra bridgemount provider is prepared for bridgemounts
         """
         raise NotImplementedError
 
     @abstractmethod
-    def uninstall(self) -> None:
+    async def uninstall(self) -> None:
         """
         Uninstall this Gefyra bridgemount provider from the Kubernetes Pod
         """
         raise NotImplementedError
 
     @abstractmethod
-    def validate(self, bridge_request: dict, hits: dict | None):
+    async def validate(self, bridge_request: dict, hits: dict | None):
         """
         Validate the bridgemount request
         """

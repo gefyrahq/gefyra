@@ -6,63 +6,63 @@ class AbstractGefyraConnectionProvider(ABC):
     provider_type = ""
 
     @abstractmethod
-    def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
+    async def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
         """
         Check if this Gefyra connection provider is properly installed to the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    def install(self, config: Optional[Dict[Any, Any]] = None):
+    async def install(self, config: Optional[Dict[Any, Any]] = None):
         """
         Install this Gefyra connection provider to the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    def uninstall(self, config: Optional[Dict[Any, Any]] = None):
+    async def uninstall(self, config: Optional[Dict[Any, Any]] = None):
         """
         Uninstall this Gefyra connection provider from the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    def ready(self) -> bool:
+    async def ready(self) -> bool:
         """
         Returns True if the connection provider is ready to accept peer connections
         """
         raise NotImplementedError
 
     @abstractmethod
-    def add_peer(self, peer_id: str, parameters: Optional[Dict[Any, Any]] = None):
+    async def add_peer(self, peer_id: str, parameters: Optional[Dict[Any, Any]] = None):
         """
         Add a new peer to the connection provider
         """
         raise NotImplementedError
 
     @abstractmethod
-    def remove_peer(self, peer_id: str):
+    async def remove_peer(self, peer_id: str):
         """
         Remove a peer from the connection provider
         """
         raise NotImplementedError
 
     @abstractmethod
-    def get_peer_config(self, peer_id: str) -> Dict[str, str]:
+    async def get_peer_config(self, peer_id: str) -> Dict[str, str]:
         """
         Returns a dict of configuration values for the peer to be stored in the Peer CRD
         """
         raise NotImplementedError
 
     @abstractmethod
-    def peer_exists(self, peer_id: str) -> bool:
+    async def peer_exists(self, peer_id: str) -> bool:
         """
         Returns True if the peer exists, otherwise False
         """
         raise NotImplementedError
 
     @abstractmethod
-    def add_destination(
+    async def add_destination(
         self,
         peer_id: str,
         destination_ip: str,
@@ -76,7 +76,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def remove_destination(
+    async def remove_destination(
         self, peer_id: str, destination_ip: str, destination_port: int
     ):
         """
@@ -85,7 +85,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def destination_exists(
+    async def destination_exists(
         self, peer_id: str, destination_ip: str, destination_port: int
     ) -> bool:
         """
@@ -94,7 +94,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_destination(
+    async def get_destination(
         self, peer_id: str, destination_ip: str, destination_port: int
     ) -> str:
         """
@@ -103,7 +103,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def validate(self, gclient: dict, hints: Dict[Any, Any]):
+    async def validate(self, gclient: dict, hints: Dict[Any, Any]):
         """
         Validate the Gefyra client object with this connection provider
         Raises a kopf.AdmissionError if validation fails

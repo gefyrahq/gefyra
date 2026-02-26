@@ -3,6 +3,7 @@ from datetime import datetime
 
 import kubernetes as k8s
 import kopf
+import asyncio
 
 from gefyra.clientstate import GefyraClient
 
@@ -53,12 +54,13 @@ def configure(settings: kopf.OperatorSettings, **_):
 
 
 @kopf.on.validate("gefyraclients.gefyra.dev", id="client-parameters")  # type: ignore
-def check_validate_provider_parameters(body, diff, logger, operation, **_):
+async def check_validate_provider_parameters(body, diff, logger, operation, **_):
     if body.get("check", False):
 
-        def _write_startup_task() -> None:
+        async def _write_startup_task() -> None:
             try:
-                events.create_namespaced_event(
+                await asyncio.to_thread(
+                    events.create_namespaced_event,
                     body=create_operator_webhook_ready_event(configuration.NAMESPACE),
                     namespace=configuration.NAMESPACE,
                 )
@@ -66,12 +68,12 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
                 if e.status != 409:
                     logger.error("Could not create startup event: " + str(e))
 
-        _write_startup_task()
+        await _write_startup_task()
         return True
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraClient {name}")
     provider_parameter = body["provider"]
-    provider = connection_provider_factory.get(
+    provider = await connection_provider_factory.get(
         ConnectionProviderType(provider_parameter),
         configuration,
         logger,
@@ -100,12 +102,14 @@ def check_validate_provider_parameters(body, diff, logger, operation, **_):
             datetime.fromisoformat(sunset.strip("Z"))
         except ValueError as e:
             raise kopf.AdmissionError(f"Cannot parse 'sunset': {e}")
-    provider.validate(body, hints)
+    await provider.validate(body, hints)
     return True
 
 
 @kopf.on.validate("gefyrabridgemount.gefyra.dev", id="mount-parameters")  # type: ignore
-def check_validate_bridgemount_parameters(body, diff, logger, operation, **_):
+async def check_validate_bridgemount_parameters(
+    body, diff, logger, operation, **_
+):  # Made async
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraBridgeMount {name}")
 
@@ -121,7 +125,7 @@ def check_validate_bridgemount_parameters(body, diff, logger, operation, **_):
             )
     if operation == "CREATE":
         provider_parameter = body["provider"]
-        provider = bridge_mount_provider_factory.get(
+        provider = await bridge_mount_provider_factory.get(
             BridgeMountProviderType(provider_parameter),
             configuration,
             body.get("targetNamespace"),
@@ -132,12 +136,14 @@ def check_validate_bridgemount_parameters(body, diff, logger, operation, **_):
             body.get("providerParameter"),
             logger,
         )
-        provider.validate(body, {})
+        await provider.validate(body, {})
     return True
 
 
 @kopf.on.validate("gefyrabridge.gefyra.dev", id="bridge-parameters")  # type: ignore
-def check_validate_bridge_parameters(body, diff, logger, operation, **_):
+async def check_validate_bridge_parameters(
+    body, diff, logger, operation, **_
+):  # Made async
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraBridge {name}")
 
@@ -159,7 +165,7 @@ def check_validate_bridge_parameters(body, diff, logger, operation, **_):
         except KeyError as e:
             raise kopf.AdmissionError(f"Missing field {e}")
         try:
-            provider = bridge_provider_factory.get(
+            provider = await bridge_provider_factory.get(
                 BridgeProviderType(provider_parameter),
                 configuration,
                 name,
@@ -173,5 +179,5 @@ def check_validate_bridge_parameters(body, diff, logger, operation, **_):
             raise kopf.AdmissionError(
                 f"Cannot create GefyraBridge provider {provider_parameter} due to: {e}"
             )
-        provider.validate(body, {})
+        await provider.validate(body, {})  # Await
     return True
