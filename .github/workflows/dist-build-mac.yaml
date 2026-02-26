@@ -27,6 +27,8 @@ jobs:
         xcode-version: latest-stable
     - name: Install Poetry
       uses: snok/install-poetry@v1
+      with:
+        version: '2.1.1'
     - name: Determine App Version
       working-directory: client/
       run: |

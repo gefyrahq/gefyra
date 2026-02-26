@@ -18,6 +18,8 @@ jobs:
         python-version: '3.9'
     - name: Install Poetry
       uses: snok/install-poetry@v1
+      with:
+        version: '2.1.1'
     - name: Lint and flake8 client
       working-directory: client/
       run: |
