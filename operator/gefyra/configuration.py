@@ -10,10 +10,7 @@ class OperatorConfiguration:
         self.STOWAWAY_IMAGE_PULLPOLICY = config(
             "GEFYRA_STOWAWAY_IMAGE_PULLPOLICY", default="IfNotPresent"
         )
-        self.STOWAWAY_TAG = config(
-            "GEFYRA_STOWAWAY_TAG",
-            default="@sha256:689b2084c1ca9c1ba76e89a94db4bdded5c384d18370a57d807168c69d19c7b7",
-        )
+        self.STOWAWAY_TAG = config("GEFYRA_STOWAWAY_TAG", default="latest")
         self.WIREGUARD_EXT_PORT = config(
             "GEFYRA_STOWAWAY_SERVERPORT", cast=int, default=31820
         )
