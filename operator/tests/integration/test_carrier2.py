@@ -5,15 +5,15 @@ from pytest_kubernetes.providers import AClusterManager
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-
-from utils import post_event_noop, read_carrier2_config
+from utils import read_carrier2_config
+from tests.utils import post_event_noop
 
 
 logger = logging.getLogger()
 
 
 class TestCarrier2:
-    def test_a_commit_config(self, gefyra_crd: AClusterManager, carrier2_image):
+    async def test_a_commit_config(self, gefyra_crd: AClusterManager, carrier2_image):
         from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy
 
         test_pod = str(
@@ -31,7 +31,8 @@ class TestCarrier2:
 
         config = Carrier2Config()
         config.proxy = [Carrier2Proxy(port=5000, clusterUpstream=["blueshoe.io:443"])]
-        config.commit(
+        await config.commit(
+            logger,
             pod_name="backend",
             container_name="backend",
             namespace="default",
@@ -42,14 +43,14 @@ class TestCarrier2:
         from kubernetes.client.api import core_v1_api
 
         core_v1 = core_v1_api.CoreV1Api()
-        config = read_carrier2_config(logger, core_v1, "backend", "default")
+        config = read_carrier2_config(core_v1, "backend", "default")
         config = config[0].replace("\n", "").replace(" ", "")
         assert (
             "version:1threads:4error_log:/tmp/carrier.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100proxy:-port:5000clusterUpstream:-blueshoe.io:443bridges:{}"
             in config
         )
 
-    def test_carrier2_duplicated_svc_available(self, gefyra_crd: AClusterManager):
+    async def test_carrier2_duplicated_svc_available(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from gefyra.configuration import OperatorConfiguration
 
@@ -80,9 +81,9 @@ class TestCarrier2:
             post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()
         # todo reconcile eventually
-        mount.install()
+        await mount.install()
         retries = Retry(total=60, backoff_factor=0.2, status_forcelist=[404, 500])
         session = requests.Session()
         session.mount("http://localhost:8080", HTTPAdapter(max_retries=retries))

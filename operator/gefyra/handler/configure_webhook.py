@@ -125,7 +125,7 @@ async def check_validate_bridgemount_parameters(
             )
     if operation == "CREATE":
         provider_parameter = body["provider"]
-        provider = await bridge_mount_provider_factory.get(
+        provider = bridge_mount_provider_factory.get(
             BridgeMountProviderType(provider_parameter),
             configuration,
             body.get("targetNamespace"),

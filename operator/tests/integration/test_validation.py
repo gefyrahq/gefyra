@@ -5,7 +5,7 @@ import pytest
 from pytest_kubernetes.providers import AClusterManager
 
 
-def test_a_gefyraclients_validator(operator: AClusterManager):
+async def test_a_gefyraclients_validator(operator: AClusterManager):
     import kopf
     from gefyra.handler.configure_webhook import check_validate_provider_parameters
 
@@ -13,14 +13,14 @@ def test_a_gefyraclients_validator(operator: AClusterManager):
     operation = "CREATE"
     diff = {}
     body = {"metadata": {"name": "test1"}, "provider": "stowaway"}
-    check_validate_provider_parameters(body, diff, logger, operation)
+    await check_validate_provider_parameters(body, diff, logger, operation)
 
     body = {
         "metadata": {"name": "test1"},
         "provider": "stowaway",
         "sunset": f"{datetime.now().isoformat()}Z",
     }
-    check_validate_provider_parameters(body, diff, logger, operation)
+    await check_validate_provider_parameters(body, diff, logger, operation)
 
     body = {
         "metadata": {"name": "test1"},
@@ -28,7 +28,7 @@ def test_a_gefyraclients_validator(operator: AClusterManager):
         "sunset": "ain't correct",
     }
     with pytest.raises(kopf.AdmissionError):
-        check_validate_provider_parameters(body, diff, logger, operation)
+        await check_validate_provider_parameters(body, diff, logger, operation)
 
     body = {
         "metadata": {"name": "test1"},
@@ -36,7 +36,7 @@ def test_a_gefyraclients_validator(operator: AClusterManager):
         "providerParameter": {"subnet": "192.168.300.0/24"},
     }
     with pytest.raises(kopf.AdmissionError):
-        check_validate_provider_parameters(body, diff, logger, operation)
+        await check_validate_provider_parameters(body, diff, logger, operation)
 
     operation = "UPDATE"
     body = {
@@ -46,7 +46,7 @@ def test_a_gefyraclients_validator(operator: AClusterManager):
         "state": GefyraClient.waiting.value,
     }
     diff = [("add", ("providerParameter",), None, {"subnet": "192.168.300.0/24"})]
-    check_validate_provider_parameters(body, diff, logger, operation)
+    await check_validate_provider_parameters(body, diff, logger, operation)
 
     operation = "UPDATE"
     body = {
@@ -64,7 +64,7 @@ def test_a_gefyraclients_validator(operator: AClusterManager):
         )
     ]
     with pytest.raises(kopf.AdmissionError):
-        check_validate_provider_parameters(body, diff, logger, operation)
+        await check_validate_provider_parameters(body, diff, logger, operation)
 
     operation = "UPDATE"
     body = {
@@ -74,10 +74,10 @@ def test_a_gefyraclients_validator(operator: AClusterManager):
         "state": GefyraClient.active.value,
     }
     diff = [("change", ("providerParameter",), {"subnet": "192.168.300.1/24"}, {})]
-    check_validate_provider_parameters(body, diff, logger, operation)
+    await check_validate_provider_parameters(body, diff, logger, operation)
 
 
-def test_b_gefyrabridgemount_validator(operator: AClusterManager):
+async def test_b_gefyrabridgemount_validator(operator: AClusterManager):
     import kopf
     from gefyra.handler.configure_webhook import check_validate_bridgemount_parameters
 
@@ -86,11 +86,11 @@ def test_b_gefyrabridgemount_validator(operator: AClusterManager):
     diff = {}
     base_body = {"metadata": {"name": "test1"}, "provider": "carrier2mount"}
     with pytest.raises(kopf.AdmissionError):
-        check_validate_bridgemount_parameters(base_body, diff, logger, operation)
+        await check_validate_bridgemount_parameters(base_body, diff, logger, operation)
 
     body = {**base_body, "target": "abc"}
     with pytest.raises(kopf.AdmissionError):
-        check_validate_bridgemount_parameters(body, diff, logger, operation)
+        await check_validate_bridgemount_parameters(body, diff, logger, operation)
 
     body = {
         **base_body,
@@ -99,16 +99,16 @@ def test_b_gefyrabridgemount_validator(operator: AClusterManager):
         "targetContainer": "abc",
     }
     with pytest.raises(kopf.AdmissionError):
-        check_validate_bridgemount_parameters(body, diff, logger, operation)
+        await check_validate_bridgemount_parameters(body, diff, logger, operation)
 
     body["target"] = "deploy/abc"
     operation = "UPDATE"
-    check_validate_bridgemount_parameters(body, diff, logger, operation)
+    await check_validate_bridgemount_parameters(body, diff, logger, operation)
 
     operation = "UPDATE"
     diff = [("change", ("target",), "old", "new")]
     with pytest.raises(kopf.AdmissionError):
-        check_validate_bridgemount_parameters(body, diff, logger, operation)
+        await check_validate_bridgemount_parameters(body, diff, logger, operation)
 
     operator.apply("tests/fixtures/nginx.yaml")
     operator.apply("tests/fixtures/bridge_mount.yaml")
@@ -122,10 +122,10 @@ def test_b_gefyrabridgemount_validator(operator: AClusterManager):
         "targetContainer": "nginx",
     }
     with pytest.raises(kopf.AdmissionError):
-        check_validate_bridgemount_parameters(body, diff, logger, operation)
+        await check_validate_bridgemount_parameters(body, diff, logger, operation)
 
 
-def test_c_gefyrabridge_validator(operator: AClusterManager):
+async def test_c_gefyrabridge_validator(operator: AClusterManager):
     import kopf
     from gefyra.handler.configure_webhook import check_validate_bridge_parameters
 
@@ -134,14 +134,14 @@ def test_c_gefyrabridge_validator(operator: AClusterManager):
     diff = {}
     base_body = {"metadata": {"name": "test1"}, "provider": "carrier2"}
     with pytest.raises(kopf.AdmissionError):
-        check_validate_bridge_parameters(base_body, diff, logger, operation)
+        await check_validate_bridge_parameters(base_body, diff, logger, operation)
 
     operation = "CREATE"
     diff = {}
     body = {**base_body, "target": "bridgemount-b"}
     with pytest.raises(kopf.AdmissionError):
         # missing labels
-        check_validate_bridge_parameters(body, diff, logger, operation)
+        await check_validate_bridge_parameters(body, diff, logger, operation)
 
     operator.apply("tests/fixtures/nginx.yaml")
     operator.apply("tests/fixtures/bridge_mount.yaml")
@@ -155,7 +155,7 @@ def test_c_gefyrabridge_validator(operator: AClusterManager):
     }
     with pytest.raises(kopf.AdmissionError):
         # bridge mount does not exist
-        check_validate_bridge_parameters(body, diff, logger, operation)
+        await check_validate_bridge_parameters(body, diff, logger, operation)
 
     operation = "CREATE"
     diff = {}
@@ -167,7 +167,7 @@ def test_c_gefyrabridge_validator(operator: AClusterManager):
 
     with pytest.raises(kopf.AdmissionError):
         # is not in ACTIVE state
-        check_validate_bridge_parameters(body, diff, logger, operation)
+        await check_validate_bridge_parameters(body, diff, logger, operation)
 
     operator.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
@@ -184,7 +184,7 @@ def test_c_gefyrabridge_validator(operator: AClusterManager):
         "gefyra.dev/client": "client-a",
     }
 
-    check_validate_bridge_parameters(body, diff, logger, operation)
+    await check_validate_bridge_parameters(body, diff, logger, operation)
 
     # TODO check operation = UPDATE
     # TODO check dupuplicate bridge
