@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import json
 from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration
@@ -127,9 +126,7 @@ class GefyraBridge(WatchEventsMixin):
             target_container=bridge_raw["targetContainer"],
             target_namespace=bridge_raw["targetNamespace"],
             target=bridge_raw["target"],
-            rules=json.loads(bridge_raw.get("providerParameter", "{}")).get(
-                "rules", None
-            ),
+            rules=bridge_raw.get("providerParameter").get("rules", None),
             local_container_name=bridge_raw["metadata"]["labels"].get(
                 "gefyra.dev/client-container"
             ),
