@@ -73,7 +73,7 @@ async def check_validate_provider_parameters(body, diff, logger, operation, **_)
     name = body["metadata"]["name"]
     logger.info(f"Validating provider parameters for GefyraClient {name}")
     provider_parameter = body["provider"]
-    provider = await connection_provider_factory.get(
+    provider = connection_provider_factory.get(
         ConnectionProviderType(provider_parameter),
         configuration,
         logger,

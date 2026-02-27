@@ -92,7 +92,7 @@ async def client_reconcile(body, logger, **kwargs):
         try:
             await asyncio.to_thread(
                 client.custom_api.delete_namespaced_custom_object,
-                namespace=client.configuration.NAMESPACE,
+                namespace=client.operator_configuration.NAMESPACE,
                 name=client.client_name,
                 group="gefyra.dev",
                 plural="gefyraclients",
