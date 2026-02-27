@@ -250,7 +250,7 @@ def list_bridges(
                     break
                 else:
                     continue
-            else: 
+            else:
                 result.append((None, bridge))
         return result
     else:

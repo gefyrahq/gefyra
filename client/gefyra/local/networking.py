@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 
 from gefyra.configuration import ClientConfiguration
@@ -12,12 +12,26 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def get_or_create_gefyra_network(
-    config: ClientConfiguration, occupied_networks: Optional[List[str]] = None
-) -> "Network":
-    if not occupied_networks:
-        occupied_networks = []
-    gefyra_network = handle_create_network(config, occupied_networks)
+def _get_client_networks(config: ClientConfiguration) -> List[str]:
+    clients = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+        namespace=config.NAMESPACE,
+        plural="gefyraclients",
+        group="gefyra.dev",
+        version="v1",
+    )
+    active_clients = list(
+        filter(
+            lambda x: x["state"] == "ACTIVE" and "providerParameter" in x,
+            clients["items"],
+        )
+    )
+    if not active_clients:
+        return []
+    return [client["providerParameter"]["subnet"] for client in active_clients]
+
+
+def get_or_create_gefyra_network(config: ClientConfiguration) -> "Network":
+    gefyra_network = handle_create_network(config)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
@@ -44,9 +58,7 @@ def _get_subnet(
     return subnet
 
 
-def handle_create_network(
-    config: ClientConfiguration, occupied_networks: List[str]
-) -> "Network":
+def handle_create_network(config: ClientConfiguration) -> "Network":
     from docker.errors import NotFound
     from docker.types import IPAMConfig, IPAMPool
 
@@ -84,22 +96,35 @@ def handle_create_network(
     except NotFound:
         pass
 
-    subnet = _get_subnet(
-        config=config, network_name=network_name, occupied_networks=occupied_networks
-    )
-    logger.debug(f"Using subnet: {subnet}")
+    i = 0
+    while i < 10:
+        try:
+            occupied_networks = _get_client_networks(config) or []
+            subnet = _get_subnet(
+                config=config,
+                network_name=network_name,
+                occupied_networks=occupied_networks,
+            )
+            logger.debug(f"Using subnet: {subnet}")
 
-    ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
-    ipam_config = IPAMConfig(pool_configs=[ipam_pool])
-    network = config.DOCKER.networks.create(
-        network_name,
-        driver="bridge",
-        ipam=ipam_config,
-        labels={
-            CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
-        },
-        options={DOCKER_MTU_OPTION: config.WIREGUARD_MTU},
-    )
+            ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
+            ipam_config = IPAMConfig(pool_configs=[ipam_pool])
+            network = config.DOCKER.networks.create(
+                network_name,
+                driver="bridge",
+                ipam=ipam_config,
+                labels={
+                    CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
+                },
+                options={DOCKER_MTU_OPTION: config.WIREGUARD_MTU},
+            )
+            break
+        except Exception as e:
+            logger.warning(f"Could not create Gefyra network due to: {e}")
+            i = i + 1
+            continue
+    else:
+        raise RuntimeError("Could not create Gefyra network")
     logger.info(f"Created network '{network_name}' ({network.short_id})")
     return network
 

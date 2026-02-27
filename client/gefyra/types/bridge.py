@@ -108,7 +108,9 @@ class GefyraBridge(WatchEventsMixin):
             target_namespace=bridge_raw["targetNamespace"],
             target=bridge_raw["target"],
             rules=bridge_raw.get("providerParameter"),
-            local_container_name=bridge_raw["metadata"]["labels"].get("gefyra.dev/client-container")
+            local_container_name=bridge_raw["metadata"]["labels"].get(
+                "gefyra.dev/client-container"
+            ),
         )
         bridge._state = bridge_raw["state"]
         bridge._state_transitions = bridge_raw.get("stateTransitions", None)

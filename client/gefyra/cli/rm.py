@@ -39,7 +39,9 @@ def rm(name: str, all: bool, force: bool, nowait: bool, connection_name: str):
     from gefyra import api
 
     if not all and not name:
-        raise click.UsageError("Provide a container name or use --all flag to remove all.")
+        raise click.UsageError(
+            "Provide a container name or use --all flag to remove all."
+        )
 
     wait = not nowait
     if all:
