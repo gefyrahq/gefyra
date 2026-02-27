@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import platform
@@ -6,6 +7,7 @@ from pathlib import Path
 import subprocess
 from time import sleep
 import pytest
+import pytest_asyncio
 from pytest_kubernetes.providers import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
 
@@ -193,7 +195,7 @@ def gefyra_crd(k3d):
     from gefyra.handler.startup import handle_crds
 
     logger = logging.getLogger()
-    handle_crds(logger)
+    asyncio.run(handle_crds(logger))
 
     yield k3d
 

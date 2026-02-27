@@ -6,7 +6,7 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 
 
-from tests.integration.utils import read_carrier2_config
+from utils import post_event_noop, read_carrier2_config
 
 
 logger = logging.getLogger()
@@ -77,7 +77,7 @@ class TestCarrier2:
             target_namespace=namespace,
             target=f"deploy/{name}",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
         mount.prepare()

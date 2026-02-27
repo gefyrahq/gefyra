@@ -3,6 +3,7 @@ from time import sleep
 from unittest.mock import MagicMock
 
 from pathlib import Path
+from kopf import TemporaryError
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
 
@@ -12,7 +13,7 @@ logger = logging.getLogger()
 
 
 class TestBridgeMountStateMachine:
-    def test_a_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
+    async def test_a_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount_state import GefyraBridgeMount
         from gefyra.bridge_mount_state import GefyraBridgeMountObject
 
@@ -55,22 +56,24 @@ class TestBridgeMountStateMachine:
             model=bridge_mount_object,
             configuration=configuration,
             logger=logger,
+            initial="REQUESTED",
         )
         assert bridge_mount_machine.requested.is_active
         retries = 20
         while retries > 0:
-            print(bridge_mount_machine.current_state)
+            print(bridge_mount_machine.configuration)
             try:
                 if bridge_mount_machine.preparing.is_active:
-                    bridge_mount_machine.install()
-
+                    await bridge_mount_machine.install()
                 elif bridge_mount_machine.requested.is_active:
-                    bridge_mount_machine.prepare()
+                    await bridge_mount_machine.arrange()
                 elif bridge_mount_machine.installing.is_active:
-                    bridge_mount_machine.activate()
+                    await bridge_mount_machine.activate()
                 else:
                     break
             except TransitionNotAllowed:
+                retries -= 1
+            except TemporaryError:
                 retries -= 1
 
             sleep(2)
@@ -83,7 +86,7 @@ class TestBridgeMountStateMachine:
         )
         assert bridge_mount_machine.active.is_active
 
-        bridge_mount_machine.terminate()
+        await bridge_mount_machine.terminate()
         gefyra_crd.wait(
             "deployment/" + name + "-gefyra",
             "delete",

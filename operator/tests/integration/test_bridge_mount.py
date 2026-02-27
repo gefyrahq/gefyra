@@ -2,11 +2,13 @@ import logging
 from pathlib import Path
 from pytest_kubernetes.providers import AClusterManager
 
+from tests.utils import post_event_noop
+
 logger = logging.getLogger()
 
 
 class TestBridgeMountObject:
-    def test_a_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
+    async def test_a_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         file_path = str(
@@ -22,10 +24,10 @@ class TestBridgeMountObject:
             target_namespace=namespace,
             target=f"deploy/{name}",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()
 
         new_deployment = gefyra_crd.kubectl(
             ["-n", namespace, "get", "deploy", name + "-gefyra"]
@@ -41,7 +43,7 @@ class TestBridgeMountObject:
             == "nginx-gefyra"
         )
 
-    def test_b_removal_of_bridge_mount(self, gefyra_crd: AClusterManager):
+    async def test_b_removal_of_bridge_mount(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         name = "nginx-deployment"
@@ -53,10 +55,10 @@ class TestBridgeMountObject:
             target_namespace=namespace,
             target=f"deploy/{name}",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
-        mount.uninstall()
+        await mount.uninstall()
 
         gefyra_crd.wait(
             "deployment/" + name + "-gefyra",
@@ -65,7 +67,9 @@ class TestBridgeMountObject:
             timeout=60,
         )
 
-    def test_c_duplication_by_bridge_mount_namespace(self, gefyra_crd: AClusterManager):
+    async def test_c_duplication_by_bridge_mount_namespace(
+        self, gefyra_crd: AClusterManager
+    ):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         namespace = "aaaaaaabbbbbbbbbcccccccdddddddeeeeee-test-432-bb"
@@ -85,10 +89,10 @@ class TestBridgeMountObject:
             target_namespace=namespace,
             target=f"deploy/{name}",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()
 
         new_deployment = gefyra_crd.kubectl(
             ["-n", namespace, "get", "deploy", name + "-gefyra"]
@@ -104,7 +108,9 @@ class TestBridgeMountObject:
             == "nginx-gefyra"
         )
 
-    def test_d_removal_of_bridge_mount_namespace(self, gefyra_crd: AClusterManager):
+    async def test_d_removal_of_bridge_mount_namespace(
+        self, gefyra_crd: AClusterManager
+    ):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         name = "nginx-deployment"
@@ -116,10 +122,10 @@ class TestBridgeMountObject:
             target_namespace=namespace,
             target=f"deploy/{name}",
             target_container="nginx",
-            post_event_function=lambda a, b: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
-        mount.uninstall()
+        await mount.uninstall()
 
         gefyra_crd.wait(
             "deployment/" + name + "-gefyra",
@@ -135,7 +141,7 @@ class TestBridgeMountObject:
         gefyra_crd.kubectl(["delete", "-f", str(file_path)], as_dict=False)
         gefyra_crd.kubectl(["delete", "ns", namespace], as_dict=False)
 
-    def test_a_duplication_by_bridge_mount_sts(self, gefyra_crd: AClusterManager):
+    async def test_a_duplication_by_bridge_mount_sts(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         file_path = str(
@@ -151,10 +157,10 @@ class TestBridgeMountObject:
             target_namespace=namespace,
             target=f"sts/{name}",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()
 
         new_deployment = gefyra_crd.kubectl(
             ["-n", namespace, "get", "sts", name + "-gefyra"]
@@ -169,10 +175,10 @@ class TestBridgeMountObject:
             new_deployment["spec"]["template"]["metadata"]["labels"]["app"]
             == "nginx-gefyra"
         )
-        mount.uninstall()
+        await mount.uninstall()
         gefyra_crd.kubectl(["delete", "-f", str(file_path)], as_dict=False)
 
-    def test_a_duplication_by_bridge_mount_pod(self, gefyra_crd: AClusterManager):
+    async def test_a_duplication_by_bridge_mount_pod(self, gefyra_crd: AClusterManager):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from gefyra.configuration import OperatorConfiguration
 
@@ -189,12 +195,12 @@ class TestBridgeMountObject:
             target_namespace=namespace,
             target=f"pod/{name}",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()
         try:
-            mount.install()
+            await mount.install()
         except Exception:
             pass
 
@@ -205,5 +211,5 @@ class TestBridgeMountObject:
         assert new_deployment["metadata"]["name"] == name + "-gefyra"
         assert new_deployment["metadata"]["labels"]["app"] == "nginx-pod-gefyra"
 
-        mount.uninstall()
+        await mount.uninstall()
         gefyra_crd.kubectl(["delete", "-f", str(file_path)], as_dict=False)

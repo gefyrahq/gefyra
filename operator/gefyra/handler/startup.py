@@ -22,12 +22,12 @@ extension_api = k8s.client.ApiextensionsV1Api()
 events = k8s.client.EventsV1Api()
 
 
-async def handle_crds(logger) -> None:  # Made async
+async def handle_crds(logger) -> None:
     ireqs = create_gefyrabridge_definition()
     try:
         await asyncio.to_thread(
             extension_api.create_custom_resource_definition, body=ireqs
-        )  # Await
+        )
         logger.info("Gefyra CRD gefyrabridge created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
@@ -41,7 +41,7 @@ async def handle_crds(logger) -> None:  # Made async
     try:
         await asyncio.to_thread(
             extension_api.create_custom_resource_definition, body=gclients
-        )  # Await
+        )
         logger.info("Gefyra CRD gefyraclient created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
@@ -56,7 +56,7 @@ async def handle_crds(logger) -> None:  # Made async
     try:
         await asyncio.to_thread(
             extension_api.create_custom_resource_definition, body=gbridgemounts
-        )  # Await
+        )
         logger.info("Gefyra CRD gefyrabridgemount created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:

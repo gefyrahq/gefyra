@@ -154,3 +154,7 @@ class GefyraDockerClient:
         if hasattr(self, "container") and self.container:
             self.container.stop()
             self.container = None
+
+
+async def post_event_noop(a, b, c):
+    pass

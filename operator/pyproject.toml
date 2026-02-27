@@ -46,6 +46,7 @@ pythonpath = "operator"
 pythonpath = [
   "."
 ]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true

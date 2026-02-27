@@ -5,7 +5,8 @@ from unittest.mock import DEFAULT, MagicMock, patch
 from kubernetes.client import V1Deployment, V1Probe
 
 import logging
-import asyncio  # Added asyncio import
+
+from tests.utils import post_event_noop
 
 from ..factories import (
     NginxDeploymentFactory,
@@ -31,7 +32,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
 
@@ -47,7 +48,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
 
@@ -71,7 +72,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
 
@@ -109,7 +110,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
         await mount.prepare()  # Await
@@ -191,7 +192,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
         await mount.prepare()  # Await
@@ -211,7 +212,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
         svc = V1ServiceFactory()
@@ -246,7 +247,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
 
@@ -304,7 +305,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
 
