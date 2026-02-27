@@ -59,14 +59,20 @@ def create_clients(ctx, client_id, quantity, registry, nowait: bool = False):
     "delete", alias=["rm", "remove"], help="Mark a GefyraClient for deletion"
 )
 @click.argument("client_id", nargs=-1, required=True)
+@click.option(
+    "--nowait", is_flag=True, help="Do not wait for the GefyraClient to be ready"
+)
 @click.pass_context
 @standard_error_handler
-def delete_client(ctx, client_id):
+def delete_client(ctx, client_id, nowait: bool = False):
     from gefyra import api
 
     for _del in list(client_id):
         deleted = api.delete_client(
-            _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+            _del,
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            wait=not nowait,
         )
         if deleted:
             console.success(f"GefyraClient {_del} marked for deletion")
