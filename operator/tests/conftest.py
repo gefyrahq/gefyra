@@ -7,7 +7,6 @@ from pathlib import Path
 import subprocess
 from time import sleep
 import pytest
-import pytest_asyncio
 from pytest_kubernetes.providers import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
 

@@ -4,13 +4,13 @@ import random
 import socket
 import string
 import time
-from typing import Any, Dict, Iterable, TYPE_CHECKING, Tuple, Optional
+from typing import Iterable, TYPE_CHECKING, Tuple, Optional
 
 from gefyra.exceptions import GefyraBridgeError
 
 
 if TYPE_CHECKING:
-    from gefyra.types import GefyraBridge
+    # from gefyra.types import GefyraBridge
     from client.gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)

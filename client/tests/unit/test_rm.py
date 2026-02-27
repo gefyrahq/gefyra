@@ -18,9 +18,7 @@ def mock_container():
     container = MagicMock()
     container.name = "myapp"
     container.attrs = {
-        "NetworkSettings": {
-            "Networks": {"gefyra": {"IPAddress": "192.168.99.5"}}
-        }
+        "NetworkSettings": {"Networks": {"gefyra": {"IPAddress": "192.168.99.5"}}}
     }
     return container
 
@@ -71,19 +69,16 @@ def test_get_bridges_for_container_no_match(mock_config, sample_bridges):
 
 
 @patch("gefyra.configuration.ClientConfiguration")
-def test_rm_with_bridges(
-    mock_config_cls, mock_container, sample_bridges
-):
+def test_rm_with_bridges(mock_config_cls, mock_container, sample_bridges):
     config = MagicMock()
     config.NETWORK_NAME = "gefyra"
     mock_config_cls.return_value = config
     config.DOCKER.containers.get.return_value = mock_container
 
-    with patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=sample_bridges
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ) as mock_delete:
+    with (
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=sample_bridges),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge") as mock_delete,
+    ):
         result = rm(name="myapp", connection_name="default", force=True)
 
     assert result is True
@@ -98,11 +93,10 @@ def test_rm_no_bridges(mock_config_cls, mock_container):
     mock_config_cls.return_value = config
     config.DOCKER.containers.get.return_value = mock_container
 
-    with patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=[]
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ) as mock_delete:
+    with (
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=[]),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge") as mock_delete,
+    ):
         result = rm(name="myapp", connection_name="default", force=True)
 
     assert result is True
@@ -133,11 +127,10 @@ def test_rm_container_not_in_network(mock_config_cls):
     container.attrs = {"NetworkSettings": {"Networks": {}}}
     config.DOCKER.containers.get.return_value = container
 
-    with patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=[]
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ) as mock_delete:
+    with (
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=[]),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge") as mock_delete,
+    ):
         result = rm(name="myapp", connection_name="default", force=True)
 
     assert result is True
@@ -157,22 +150,35 @@ def test_rm_all(mock_get_containers, mock_config_cls):
     container1 = MagicMock()
     container1.name = "app1"
     container1.attrs = {
-        "NetworkSettings": {
-            "Networks": {"gefyra": {"IPAddress": "192.168.99.5"}}
-        }
+        "NetworkSettings": {"Networks": {"gefyra": {"IPAddress": "192.168.99.5"}}}
     }
     container2 = MagicMock()
     container2.name = "app2"
     container2.attrs = {
-        "NetworkSettings": {
-            "Networks": {"gefyra": {"IPAddress": "192.168.99.6"}}
-        }
+        "NetworkSettings": {"Networks": {"gefyra": {"IPAddress": "192.168.99.6"}}}
     }
-    config.DOCKER.containers.get.side_effect = [container1, container2, container1, container2]
+    config.DOCKER.containers.get.side_effect = [
+        container1,
+        container2,
+        container1,
+        container2,
+    ]
 
     mock_get_containers.return_value = [
-        GefyraLocalContainer(id="abc123", short_id="abc", name="app1", address="192.168.99.5", namespace="default"),
-        GefyraLocalContainer(id="def456", short_id="def", name="app2", address="192.168.99.6", namespace="default"),
+        GefyraLocalContainer(
+            id="abc123",
+            short_id="abc",
+            name="app1",
+            address="192.168.99.5",
+            namespace="default",
+        ),
+        GefyraLocalContainer(
+            id="def456",
+            short_id="def",
+            name="app2",
+            address="192.168.99.6",
+            namespace="default",
+        ),
     ]
 
     bridges = [
@@ -186,11 +192,10 @@ def test_rm_all(mock_get_containers, mock_config_cls):
         },
     ]
 
-    with patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ) as mock_delete:
+    with (
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge") as mock_delete,
+    ):
         result = rm_all(connection_name="default", force=True)
 
     assert result is True
@@ -222,13 +227,11 @@ def test_rm_with_wait(mock_config_cls, mock_container, sample_bridges):
     mock_config_cls.return_value = config
     config.DOCKER.containers.get.return_value = mock_container
 
-    with patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=sample_bridges
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ), patch(
-        "gefyra.api.bridge.wait_for_deletion"
-    ) as mock_wait:
+    with (
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=sample_bridges),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge"),
+        patch("gefyra.api.bridge.wait_for_deletion") as mock_wait,
+    ):
         result = rm(name="myapp", connection_name="default", wait=True, force=True)
 
     assert result is True
@@ -251,20 +254,24 @@ def test_cleanup_stale_bridges_removes_orphans(mock_config_cls):
     mock_config_cls.return_value = config
 
     live_containers = [
-        GefyraLocalContainer(id="a1", short_id="a1", name="alive", address="192.168.99.5", namespace="default"),
+        GefyraLocalContainer(
+            id="a1",
+            short_id="a1",
+            name="alive",
+            address="192.168.99.5",
+            namespace="default",
+        ),
     ]
     bridges = [
         {"metadata": {"name": "alive-bridge"}, "destinationIP": "192.168.99.5"},
         {"metadata": {"name": "dead-bridge"}, "destinationIP": "192.168.99.99"},
     ]
 
-    with patch(
-        "gefyra.local.bridge.get_all_containers", return_value=live_containers
-    ), patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ) as mock_delete:
+    with (
+        patch("gefyra.local.bridge.get_all_containers", return_value=live_containers),
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge") as mock_delete,
+    ):
         result = cleanup_stale_bridges(connection_name="default")
 
     assert result == 1
@@ -281,19 +288,23 @@ def test_cleanup_stale_bridges_nothing_stale(mock_config_cls):
     mock_config_cls.return_value = config
 
     live_containers = [
-        GefyraLocalContainer(id="a1", short_id="a1", name="alive", address="192.168.99.5", namespace="default"),
+        GefyraLocalContainer(
+            id="a1",
+            short_id="a1",
+            name="alive",
+            address="192.168.99.5",
+            namespace="default",
+        ),
     ]
     bridges = [
         {"metadata": {"name": "alive-bridge"}, "destinationIP": "192.168.99.5"},
     ]
 
-    with patch(
-        "gefyra.local.bridge.get_all_containers", return_value=live_containers
-    ), patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ) as mock_delete:
+    with (
+        patch("gefyra.local.bridge.get_all_containers", return_value=live_containers),
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge") as mock_delete,
+    ):
         result = cleanup_stale_bridges(connection_name="default")
 
     assert result == 0
@@ -321,8 +332,11 @@ def test_cleanup_stale_bridges_with_config():
 
     live_containers = [
         GefyraLocalContainer(
-            id="a1", short_id="a1", name="alive",
-            address="192.168.99.5", namespace="default",
+            id="a1",
+            short_id="a1",
+            name="alive",
+            address="192.168.99.5",
+            namespace="default",
         ),
     ]
     bridges = [
@@ -330,15 +344,12 @@ def test_cleanup_stale_bridges_with_config():
         {"metadata": {"name": "dead-bridge"}, "destinationIP": "192.168.99.99"},
     ]
 
-    with patch(
-        "gefyra.local.bridge.get_all_containers", return_value=live_containers
-    ), patch(
-        "gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges
-    ), patch(
-        "gefyra.local.bridge.handle_delete_gefyrabridge"
-    ) as mock_delete, patch(
-        "gefyra.configuration.ClientConfiguration"
-    ) as mock_config_cls:
+    with (
+        patch("gefyra.local.bridge.get_all_containers", return_value=live_containers),
+        patch("gefyra.local.bridge.get_all_gefyrabridges", return_value=bridges),
+        patch("gefyra.local.bridge.handle_delete_gefyrabridge") as mock_delete,
+        patch("gefyra.configuration.ClientConfiguration") as mock_config_cls,
+    ):
         result = cleanup_stale_bridges(config=config)
 
     assert result == 1

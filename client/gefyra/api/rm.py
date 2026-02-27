@@ -75,9 +75,7 @@ def rm(
     container.remove(force=force)
 
     if matching_bridges:
-        logger.info(
-            f"Removed {len(matching_bridges)} bridge(s) and container '{name}'"
-        )
+        logger.info(f"Removed {len(matching_bridges)} bridge(s) and container '{name}'")
     else:
         logger.info(f"Removed container '{name}' (no bridges found)")
     return True
@@ -172,9 +170,7 @@ def cleanup_stale_bridges(
     try:
         containers = get_all_containers(config)
     except Exception as e:
-        logger.warning(
-            "cleanup_stale_bridges: cannot list containers, skipping: %s", e
-        )
+        logger.warning("cleanup_stale_bridges: cannot list containers, skipping: %s", e)
         return 0
 
     live_ips = {c.address for c in containers if c.address != "unknown"}
@@ -182,9 +178,7 @@ def cleanup_stale_bridges(
     try:
         all_bridges = get_all_gefyrabridges(config)
     except Exception as e:
-        logger.warning(
-            "cleanup_stale_bridges: cannot list bridges, skipping: %s", e
-        )
+        logger.warning("cleanup_stale_bridges: cannot list bridges, skipping: %s", e)
         return 0
 
     stale = [b for b in all_bridges if b.get("destinationIP") not in live_ips]

@@ -1,6 +1,5 @@
 import ast
 import click
-from gefyra.cli import console
 from gefyra.cli.utils import (
     OptionEatAll,
     check_connection_name,

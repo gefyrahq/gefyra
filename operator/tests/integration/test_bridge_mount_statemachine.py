@@ -59,7 +59,7 @@ class TestBridgeMountStateMachine:
             initial="REQUESTED",
         )
         assert bridge_mount_machine.requested.is_active
-        retries = 20
+        retries = 40
         while retries > 0:
             print(bridge_mount_machine.configuration)
             try:

@@ -1,7 +1,6 @@
 import random
 import re
 import string
-from time import sleep
 from collections import defaultdict
 from os import path
 import os

@@ -20,7 +20,7 @@ async def bridge_mount_created(body, logger, **kwargs):
 
     try:
         if bridge_mount.requested.is_active:
-            logger.info(f"Staring up a new GefyraBridgeMount")
+            logger.info("Staring up a new GefyraBridgeMount")
             await bridge_mount.arrange()
         if bridge_mount.preparing.is_active:
             await bridge_mount.install()

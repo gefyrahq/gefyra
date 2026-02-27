@@ -15,7 +15,6 @@ from gefyra.resources.serviceaccounts import (
     handle_create_gefyraclient_serviceaccount,
     handle_delete_gefyraclient_serviceaccount,
 )
-from gefyra.bridgestate import GefyraBridgeObject, GefyraBridge
 
 
 class GefyraClientObject(GefyraStateObject):

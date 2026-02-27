@@ -8,6 +8,15 @@ from gefyra.clientstate import GefyraClientObject, GefyraClient
 from gefyra.configuration import configuration
 from statemachine.exceptions import TransitionNotAllowed
 
+# A simple registry for locks based on resource UID or name
+locks = {}
+
+
+async def get_lock(name):
+    if name not in locks:
+        locks[name] = asyncio.Lock()
+    return locks[name]
+
 
 @kopf.on.create("gefyraclients.gefyra.dev")
 @kopf.on.resume("gefyraclients.gefyra.dev")
@@ -16,8 +25,9 @@ async def client_created(body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+
     if client.requested.is_active or client.creating.is_active:
-        await client.create()  # Await
+        await client.create()
 
 
 # 'providerParameter' activates the client, once set to a provider specific value the
@@ -29,33 +39,36 @@ async def client_connection_changed(new, body, logger, **kwargs):
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
     # check if parameters for this connection provider have been added or removed
-    logger.info(f"Client is: {client.current_state}")
-    if bool(new):
-        # activate this connection
-        try:
-            if client.waiting.is_active:
-                await client.enable()  # Await
-            if client.enabling.is_active:
-                await client.activate()  # Await
-        except TransitionNotAllowed as e:
-            logger.error(f"TransitionNotAllowed: {e}")
-            await client.impair()  # Await
-        except k8s.client.exceptions.ApiException as e:
-            logger.error(f"ApiException: {e}")
-            if e.status == 500:
-                raise kopf.TemporaryError(
-                    f"Could not activate connection: {e}, \nClient is {client.current_state}",
-                    delay=1,
-                )
-    else:
-        # deactivate this connection
-        if client.active.is_active or client.error.is_active:
-            # only trigger the state transition
-            await client.disable()  # Await
-        if client.disabling.is_active:
-            # this is called in case of retry
-            await client.wait()  # Await
-        await client._patch_object({"status": {"wireguard": None}})  # Await
+    lock = await get_lock("client")
+
+    async with lock:
+        logger.info(f"Client is: {client.current_state}")
+        if bool(new):
+            # activate this connection
+            try:
+                if client.waiting.is_active:
+                    await client.enable()  # Await
+                if client.enabling.is_active:
+                    await client.activate()  # Await
+            except TransitionNotAllowed as e:
+                logger.error(f"TransitionNotAllowed: {e}")
+                await client.impair()  # Await
+            except k8s.client.exceptions.ApiException as e:
+                logger.error(f"ApiException: {e}")
+                if e.status == 500:
+                    raise kopf.TemporaryError(
+                        f"Could not activate connection: {e}, \nClient is {client.current_state}",
+                        delay=1,
+                    )
+        else:
+            # deactivate this connection
+            if client.active.is_active or client.error.is_active:
+                # only trigger the state transition
+                await client.disable()  # Await
+            if client.disabling.is_active:
+                # this is called in case of retry
+                await client.wait()  # Await
+            await client._patch_object({"status": {"wireguard": None}})  # Await
 
 
 @kopf.on.delete("gefyraclients.gefyra.dev")
@@ -64,7 +77,10 @@ async def client_deleted(body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
-    await client.terminate()
+    lock = await get_lock("client")
+
+    async with lock:
+        await client.terminate()
 
 
 # this is a workaround to get the --dev flag from the CLI for testing
@@ -74,7 +90,7 @@ try:
     if "priority" in _ctx.params and _ctx.params["priority"] == 666:
         RECONCILIATION_INTERVAL = 2
     else:
-        RECONCILIATION_INTERVAL = 60
+        RECONCILIATION_INTERVAL = 1800
 except RuntimeError:
     # this module is not imported via kopf CLI
     RECONCILIATION_INTERVAL = 2
