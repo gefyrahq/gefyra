@@ -104,7 +104,7 @@ class GefyraBridge(WatchEventsMixin):
             "port_mappings": self.port_mappings,
             "target_container": self.target_container,
             "target_namespace": self.target_namespace,
-            "rules": [rule.to_dict() for rule in self.rules] if self.rules else None,
+            "rules": [rule for rule in self.rules] if self.rules else None,
         }
         if fetch_events:
             events: List[str] = []
