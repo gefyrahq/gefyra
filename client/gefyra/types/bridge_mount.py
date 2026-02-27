@@ -49,6 +49,7 @@ class GefyraBridgeMount(WatchEventsMixin):
             "uid": self.uid,
             "target": self.target,
             "target_namespace": self.target_namespace,
+            "state": self._state,
             "_state_transitions": self._state_transitions,
         }
         if fetch_events:
