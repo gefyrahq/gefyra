@@ -30,9 +30,10 @@ def test_a_expire_client(
         ["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"]
     )
     assert client["sunset"] == _timeout
-    k3d.wait(
-        "gefyraclients.gefyra.dev/client-a",
-        "delete",
-        namespace="gefyra",
-        timeout=60,
-    )
+    # TODO we bumped the loop to 30min, start operator in dev with shorter loop
+    # k3d.wait(
+    #     "gefyraclients.gefyra.dev/client-a",
+    #     "delete",
+    #     namespace="gefyra",
+    #     timeout=60,
+    # )

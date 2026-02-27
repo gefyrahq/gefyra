@@ -67,7 +67,7 @@ def deactivate_client_connection(name: str):
     gefyra_client(f"connection rm {name}")
 
 
-def test_activate_clients(amount: int = 50, processes: int = 10):
+def activate_clients_test(amount: int = 50, processes: int = 10):
     print(
         f"[Test] Creating and activating GefyraClients={amount} with Pool={processes}"
     )
@@ -100,7 +100,7 @@ def main():
     # load testing
     try:
         print("Running tests!")
-        test_activate_clients()
+        activate_clients_test()
     except Exception as e:
         print(e)
     teardown()
