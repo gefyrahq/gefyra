@@ -4,6 +4,7 @@ from alive_progress import alive_bar
 import click
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
+from gefyra.exceptions import CommandTimeoutError
 from gefyra.types import GefyraBridgeMount
 from tabulate import tabulate
 
@@ -111,7 +112,7 @@ def create(
             if not nowait:
                 timeout_reached = mount.watch_events(bar.text, timeout=timeout)
         if timeout_reached:
-            raise click.ClickException("Timeout for this operation reached.")
+            raise CommandTimeoutError("Timeout for this operation reached.")
         else:
             console.success(
                 f"Successfully created GefyraBridgeMount '{mount.name}'. {'You can now create a GefyraBridge to intercept traffic.' if not nowait else ''}"
@@ -130,19 +131,24 @@ def create(
     help="Do not wait for the GefyraBridgeMount to be deleted.",
 )
 @click.argument("mount_name", nargs=-1, required=True)
+@click.option("--timeout", type=int, default=60, required=False)
 @click.pass_context
 @standard_error_handler
-def delete_mount(ctx, mount_name, nowait: bool = False):
+def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
     from gefyra import api
 
     # TODO add connection-name support
     for _del in list(mount_name):
-        deleted = api.delete_mount(
-            _del,
-            kubeconfig=ctx.obj["kubeconfig"],
-            kubecontext=ctx.obj["context"],
-            wait=not nowait,
-        )
+        try:
+            deleted = api.delete_mount(
+                _del,
+                kubeconfig=ctx.obj["kubeconfig"],
+                kubecontext=ctx.obj["context"],
+                wait=not nowait,
+                timeout=timeout,
+            )
+        except TimeoutError:
+            raise CommandTimeoutError("Timeout for deleting GefyraBridgeMount exceeded")
         if deleted:
             console.success(f"GefyraBridgeMount '{_del}' marked for deletion")
 

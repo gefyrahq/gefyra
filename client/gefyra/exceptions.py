@@ -18,8 +18,8 @@ class GefyraBridgeError(RuntimeError):
     pass
 
 
-class CommandTimeoutError(RuntimeError):
-    pass
+class CommandTimeoutError(TimeoutError):
+    exit_code = 100
 
 
 class GefyraConnectionError(RuntimeError):

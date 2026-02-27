@@ -5,6 +5,7 @@ import logging
 from typing import Any, Dict, Optional, TYPE_CHECKING
 import time
 
+from gefyra.exceptions import CommandTimeoutError
 from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.types.stowaway import (
     StowawayConfig,
@@ -158,7 +159,7 @@ class GefyraClient(WatchEventsMixin):
             if self.state == desired_state:
                 return
             if time.time() - start_time > timeout:
-                raise TimeoutError(
+                raise CommandTimeoutError(
                     f"Timeout waiting for client {self.client_id} to reach state {desired_state}"
                 )
             time.sleep(2)

@@ -2,6 +2,7 @@ import os
 from typing import List, Optional
 from alive_progress import alive_bar
 import click
+from gefyra.exceptions import CommandTimeoutError
 from gefyra.types import ExactMatchHeader
 from gefyra.cli import console
 from gefyra.cli.utils import (
@@ -177,7 +178,7 @@ def create_bridge(
             if not nowait:
                 timeout_reached = bridge.watch_events(bar.text, timeout=timeout)
         if timeout_reached:
-            raise click.ClickException("Timeout for this operation reached.")
+            raise TimeoutError("Timeout for this operation reached.")
         else:
             console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
     except RuntimeError as e:
@@ -211,6 +212,7 @@ def create_bridge(
 @click.option(
     "--connection-name", type=str, default="default", callback=check_connection_name
 )
+@click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
 def delete_bridge(
     name: str,
@@ -218,28 +220,34 @@ def delete_bridge(
     all: bool = False,
     mount: Optional[str] = None,
     nowait: bool = False,
+    timeout: Optional[int] = 60,
 ):
     from gefyra import api
 
     if not all and not name and not mount:
         console.error("Provide a name or use --all flag to unbridge.")
         exit(1)
-    if all:
-        api.unbridge_all(connection_name=connection_name, wait=not nowait)
-    elif mount:
-        deleted = api.delete_bridge(
-            connection_name=connection_name,
-            mount_name=mount,
-            wait=not nowait,
-        )
-        if deleted:
+    try:
+        if all:
+            api.unbridge_all(connection_name=connection_name, wait=not nowait)
+            return
+        elif mount:
+            deleted = api.delete_bridge(
+                connection_name=connection_name,
+                mount_name=mount,
+                wait=not nowait,
+                timeout=timeout,
+            )
+        else:
+            deleted = api.delete_bridge(
+                connection_name=connection_name, name=name, wait=not nowait
+            )
+        if deleted and not nowait:
+            console.success(f"GefyraBridge '{name}' deleted")
+        if deleted and nowait:
             console.success(f"GefyraBridge '{name}' marked for deletion")
-    else:
-        deleted = api.delete_bridge(
-            connection_name=connection_name, name=name, wait=not nowait
-        )
-        if deleted:
-            console.success(f"GefyraBridge '{name}' marked for deletion")
+    except TimeoutError:
+        raise CommandTimeoutError("Timeout for this operation reached.")
 
 
 @bridge.command(

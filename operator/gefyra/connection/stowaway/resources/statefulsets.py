@@ -9,7 +9,7 @@ def create_stowaway_statefulset(
 ) -> k8s.client.V1StatefulSet:
     container = k8s.client.V1Container(
         name="stowaway",
-        image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",
+        image=f"{configuration.STOWAWAY_IMAGE}{configuration.STOWAWAY_TAG}",
         image_pull_policy=configuration.STOWAWAY_IMAGE_PULLPOLICY,
         # Wireguard default port 51820 will be mapped by the nodeport service
         ports=[

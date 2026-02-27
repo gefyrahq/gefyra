@@ -35,9 +35,17 @@ def clients(ctx):
 @click.option(
     "--nowait", is_flag=True, help="Do not wait for the GefyraClient to be ready"
 )
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout in seconds for the GefyraClient to be ready",
+    default=60,
+)
 @click.pass_context
 @standard_error_handler
-def create_clients(ctx, client_id, quantity, registry, nowait: bool = False):
+def create_clients(
+    ctx, client_id, quantity, registry, nowait: bool = False, timeout: int = 60
+):
     from gefyra import api
 
     clients: list[GefyraClient] = api.add_clients(
@@ -50,7 +58,7 @@ def create_clients(ctx, client_id, quantity, registry, nowait: bool = False):
     if not nowait:
         console.info("Waiting for GefyraClient(s) to be ready...")
         for client in clients:
-            client.wait_for_state(GefyraClientState.WAITING)
+            client.wait_for_state(GefyraClientState.WAITING, timeout=timeout)
 
     console.success(f"{quantity} GefyraClient(s) created successfully")
 
@@ -60,11 +68,17 @@ def create_clients(ctx, client_id, quantity, registry, nowait: bool = False):
 )
 @click.argument("client_id", nargs=-1, required=True)
 @click.option(
-    "--nowait", is_flag=True, help="Do not wait for the GefyraClient to be ready"
+    "--nowait", is_flag=True, help="Do not wait for the GefyraClient to be deleted"
+)
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout in seconds for the GefyraClient to be deleted",
+    default=60,
 )
 @click.pass_context
 @standard_error_handler
-def delete_client(ctx, client_id, nowait: bool = False):
+def delete_client(ctx, client_id, nowait: bool = False, timeout: int = 60):
     from gefyra import api
 
     for _del in list(client_id):
@@ -73,6 +87,7 @@ def delete_client(ctx, client_id, nowait: bool = False):
             kubeconfig=ctx.obj["kubeconfig"],
             kubecontext=ctx.obj["context"],
             wait=not nowait,
+            timeout=timeout,
         )
         if deleted:
             console.success(f"GefyraClient {_del} marked for deletion")
