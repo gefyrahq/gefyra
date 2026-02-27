@@ -1,6 +1,6 @@
 from copy import deepcopy
 import datetime
-from functools import cache, partial
+from functools import partial
 import json
 from typing import Callable, List, Tuple, Union
 import uuid
@@ -529,12 +529,15 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             await asyncio.to_thread(
                 wait_until_condition,
                 read_func,
-                lambda s: next(
-                    filter(
-                        lambda c: c.name == self.container, s.status.container_statuses
-                    )
-                ).restart_count
-                > 0,
+                lambda s: (
+                    next(
+                        filter(
+                            lambda c: c.name == self.container,
+                            s.status.container_statuses,
+                        )
+                    ).restart_count
+                    > 0
+                ),
                 timeout=120,
                 backoff=0.2,
             )

@@ -73,8 +73,12 @@ async def read_wireguard_status(logger):
                     try:
                         peer_status = next(
                             filter(
-                                lambda p: p["public_key"]
-                                == client.data["providerConfig"]["Interface.PublicKey"],
+                                lambda p: (
+                                    p["public_key"]
+                                    == client.data["providerConfig"][
+                                        "Interface.PublicKey"
+                                    ]
+                                ),
                                 peer_data,
                             )
                         )

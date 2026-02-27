@@ -15,7 +15,6 @@ from gefyra.bridge_mount.factory import (
     bridge_mount_provider_factory,
 )
 from gefyra.bridge_mount.exceptions import BridgeMountInstallException
-from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 
 
 class GefyraBridgeMountObject(GefyraStateObject):

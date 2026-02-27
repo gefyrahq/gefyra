@@ -1,5 +1,3 @@
-from functools import cache, cached_property
-from time import sleep
 from typing import Any, Callable, Dict, Optional
 from kopf import TemporaryError
 import kopf
@@ -21,7 +19,6 @@ from gefyra.bridge_mount.utils import (
     get_upstreams_for_svc,
 )
 from gefyra.bridge.carrier2.utils import get_ttl_hash, read_carrier2_config
-from gefyra.utils import async_all
 
 
 app_api = k8s.client.AppsV1Api()

@@ -1,4 +1,3 @@
-from asyncio import sleep
 import asyncio
 
 import kopf

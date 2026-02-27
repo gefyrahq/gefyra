@@ -2,7 +2,6 @@ import asyncio
 from typing import Any, Dict, Optional
 import uuid
 from gefyra.configuration import OperatorConfiguration
-import statemachine
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 import kubernetes as k8s
 from statemachine import State
