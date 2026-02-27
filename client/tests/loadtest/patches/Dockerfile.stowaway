@@ -1,0 +1,9 @@
+# Loadtest wrapper: applies kernel 6.x overlayfs wg-quick workaround.
+ARG BASE_IMAGE=stowaway:pytest-base
+FROM ${BASE_IMAGE}
+
+# On kernel 6.x, overlayfs exec restrictions cause shebang-launched bash to
+# fail child execve() calls with EACCES.  Using explicit "bash /usr/bin/wg-quick"
+# avoids the shebang code-path.
+COPY run   /etc/s6-overlay/s6-rc.d/svc-wireguard/run
+COPY finish /etc/s6-overlay/s6-rc.d/svc-wireguard/finish
