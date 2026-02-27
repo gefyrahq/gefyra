@@ -541,7 +541,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
             carrier_config = await self._set_carrier_upstream(upstream_ports, probes)
             await carrier_config.add_bridge_rules_for_mount(
-                self.name, self.configuration.NAMESPACE, None
+                self.name, self.configuration.NAMESPACE, None, None
             )
             # await self.post_event(
             #     "Update Carrier2",

@@ -131,9 +131,6 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             bmp = self.bridge_mount_provider
             return await bmp.prepared() and await bmp.ready()
         except Exception as e:
-            import traceback
-
-            print(traceback.format_exc())
             await self.post_event(
                 reason="Not intact",
                 message=f"GefyraBridgeMount '{self.object_name}' not intact: {e}",
@@ -234,7 +231,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
                 "Now going to delete remaining GefyraBridge "
                 f"'{bridge['metadata']['name']}' for GefyraBridgeMount {self.object_name}"
             )
-            obj = GefyraBridgeObject(bridge)
+            # obj = GefyraBridgeObject(bridge)
             # GefyraBridge needs to be async, but it's not fully converted yet, so deferring async init
             # bridge_obj = GefyraBridge(obj, self.operator_configuration, self.logger)
             # await bridge_obj.post_event( # Await post_event

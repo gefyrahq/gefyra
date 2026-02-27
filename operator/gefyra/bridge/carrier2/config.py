@@ -172,7 +172,11 @@ class Carrier2Config(BaseModel):
         return Carrier2Config(**yaml.safe_load(content_str))
 
     async def add_bridge_rules_for_mount(
-        self, bridge_mount_name: str, namespace: str, current_bridge: str | None
+        self,
+        bridge_mount_name: str,
+        namespace: str,
+        current_bridge_add: str | None,
+        current_bridge_rm: str | None,
     ) -> "Carrier2Config":
         custom_object_api = k8s.client.CustomObjectsApi()
         bridges = await asyncio.to_thread(
@@ -188,8 +192,11 @@ class Carrier2Config(BaseModel):
 
         for bridge in bridges["items"]:
             logger.debug(f"BRIDGE State {bridge['state']}")
-            if bridge["state"] != "REMOVING" and bridge["portMappings"]:
-                bridge_name = bridge["metadata"]["name"]
+            bridge_name = bridge["metadata"]["name"]
+            if bridge_name == current_bridge_rm:
+                # exclude this bridge from the full configuration as it is about to be removed
+                continue
+            if bridge["portMappings"]:
                 rport = -1
                 try:
                     for port in bridge["portMappings"]:
@@ -219,7 +226,7 @@ class Carrier2Config(BaseModel):
                                 bridge_name: self._convert_bridge_to_rule(bridge, rport)
                             }
                 except Exception as e:
-                    if current_bridge and bridge_name == current_bridge:
+                    if current_bridge_add and bridge_name == current_bridge_add:
                         raise BridgeInstallException(
                             f"Could not install GefyraBridge: {e}"
                         ) from None

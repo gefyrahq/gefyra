@@ -209,5 +209,8 @@ def list_connections():
 def remove_connection(connection_name: str):
     from gefyra import api
 
-    _manage_container_and_bridges(connection_name=connection_name)
+    try:
+        _manage_container_and_bridges(connection_name=connection_name)
+    except RuntimeError:
+        pass
     api.remove_connection(connection_name=connection_name)

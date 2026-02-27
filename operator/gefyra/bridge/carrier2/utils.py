@@ -103,7 +103,7 @@ def get_ttl_hash(seconds=10):
     return round(time.time() / seconds)
 
 
-@lru_cache()
+# @lru_cache()
 def read_carrier2_config(
     logger, name: str, namespace: str, retries: int = 30, ttl_hash=None
 ) -> List[str]:

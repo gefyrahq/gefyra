@@ -36,7 +36,6 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
     installed = State("GefyraBridge installed", value="INSTALLED")
     creating = State("GefyraBridge creating", value="CREATING")
     active = State("GefyraBridge active", value="ACTIVE")
-    removing = State("GefyraBridge removing", value="REMOVING")
     restoring = State("GefyraBridge restoring Pod", value="RESTORING")
     error = State("GefyraBridge error", value="ERROR")
     terminating = State("GefyraBridge terminating", value="TERMINATING")
@@ -48,7 +47,6 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
     )
     set_installed = (
         requested.to(installed)
-        | removing.to(installed)
         | installing.to(installed)
         | error.to(installed)
         | installed.to.itself()
@@ -56,21 +54,13 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
     )
     activate = installed.to(creating) | error.to(creating) | creating.to.itself()
     establish = creating.to(active) | error.to(active)
-    remove = (
-        active.to(removing)
-        | error.to(removing)
-        | removing.to.itself()
-        | creating.to(removing)
-    )
     restore = (
         installed.to(restoring)
         | error.to(restoring)
         | restoring.to.itself()
         | active.to(restoring)
     )
-    impair = error.from_(
-        requested, installing, installed, creating, removing, active, error
-    )
+    impair = error.from_(requested, installing, installed, creating, active, error)
     terminate = terminating.from_(
         requested,
         restoring,
@@ -78,7 +68,6 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
         installed,
         creating,
         active,
-        removing,
         error,
         terminating,
     )
@@ -205,7 +194,7 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
             )
             proxy_host, proxy_port = proxy_host.split(":", 1)
             if not await (await self.bridge_provider).proxy_route_exists(
-                target_port, proxy_host, proxy_port
+                target_port, proxy_host, proxy_port, self.object_name
             ):
                 await (await self.bridge_provider).add_proxy_route(
                     target_port, proxy_host, proxy_port
@@ -250,21 +239,22 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
                 else:
                     proxy_host, proxy_port = proxy_host.split(":", 1)
                     try:
-
                         if await (await self.bridge_provider).proxy_route_exists(
-                            target_port, proxy_host, proxy_port
+                            target_port, proxy_host, proxy_port, self.object_name
                         ):
                             await (await self.bridge_provider).remove_proxy_route(
                                 target_port, proxy_host, proxy_port
                             )
                     except Exception as e:
-                        import traceback
-
-                        print(traceback.format_exc())
                         self.logger.error(e)
-                    await self.connection_provider.remove_destination(
-                        self.data["client"], destination, int(source_port)
-                    )
+                    # if there is another bridge using this connetion path, we don't want to remove the route from
+                    # the connection provider
+                    if not await (await self.bridge_provider).proxy_route_exists(
+                        target_port, proxy_host, proxy_port
+                    ):
+                        await self.connection_provider.remove_destination(
+                            self.data["client"], destination, int(source_port)
+                        )
             else:
                 self.logger.warning(
                     f"Destination does not exist for GefyraBridge {self.object_name}: {destination}"

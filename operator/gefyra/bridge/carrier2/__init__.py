@@ -124,7 +124,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         """
         Add a new proxy_route to the bridge provider
         """
-        # if the bridge has been added already (through a loop in the statemachine), skip another update for this bridge object
+        # if the bridge has been added already (through a loo in the statemachine), skip another update for this bridge object
         if hasattr(self, "updated") and self.updated:
             return
         if not await self.ready():
@@ -139,7 +139,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
             #     f"Now updating routing rules in Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s))",
             #     "Normal",
             # )
-            pod_updates.append(self.update_carrier_config(pod))
+            pod_updates.append(self.update_carrier_config_add(pod))
         await asyncio.gather(*pod_updates)
         self.updated = True
 
@@ -217,13 +217,10 @@ class Carrier2(AbstractGefyraBridgeProvider):
         config.proxy = proxies
         return config
 
-    async def update_carrier_config(self, pod: V1Pod):
-        carrier_config = Carrier2Config()
-        # order of these calls is important
-        carrier_config = await self._set_proxies(carrier_config, pod)
-        carrier_config = await self._set_probes(carrier_config, pod)
+    async def update_carrier_config_add(self, pod: V1Pod):
+        carrier_config = await self._base_carrier_config(pod)
         await carrier_config.add_bridge_rules_for_mount(
-            self.bridge_mount_name, self.configuration.NAMESPACE, self.bridge_name
+            self.bridge_mount_name, self.configuration.NAMESPACE, self.bridge_name, None
         )
         await carrier_config.commit(
             logger=self.logger,
@@ -232,6 +229,26 @@ class Carrier2(AbstractGefyraBridgeProvider):
             namespace=self.namespace,
             debug=self.configuration.CARRIER2_DEBUG,
         )
+
+    async def update_carrier_config_remove(self, pod: V1Pod):
+        carrier_config = await self._base_carrier_config(pod)
+        await carrier_config.add_bridge_rules_for_mount(
+            self.bridge_mount_name, self.configuration.NAMESPACE, None, self.bridge_name
+        )
+        await carrier_config.commit(
+            logger=self.logger,
+            pod_name=pod.metadata.name,
+            container_name=self.container,
+            namespace=self.namespace,
+            debug=self.configuration.CARRIER2_DEBUG,
+        )
+
+    async def _base_carrier_config(self, pod):
+        carrier_config = Carrier2Config()
+        # order of these calls is important
+        carrier_config = await self._set_proxies(carrier_config, pod)
+        carrier_config = await self._set_probes(carrier_config, pod)
+        return carrier_config
 
     async def _get_pods_workload(
         self, name: str, namespace: str, workload_type: str
@@ -382,11 +399,15 @@ class Carrier2(AbstractGefyraBridgeProvider):
         pods = await self.pods
         pod_updates = []
         for pod in pods.items:
-            pod_updates.append(self.update_carrier_config(pod))
+            pod_updates.append(self.update_carrier_config_remove(pod))
         await asyncio.gather(*pod_updates)
 
     async def proxy_route_exists(
-        self, container_port: int, destination_host: str, destination_port: int
+        self,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+        name: str | None = None,
     ) -> bool:
         """
         Returns True if a proxy route exists for this port, otherwise False
@@ -419,6 +440,9 @@ class Carrier2(AbstractGefyraBridgeProvider):
             None,
         )
         if proxy is None:
+            return False
+
+        if name and name not in proxy.bridges.keys():
             return False
 
         bridge_exists = any(

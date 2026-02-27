@@ -64,7 +64,7 @@ async def client_deleted(body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
-    await client.terminate()  # Await
+    await client.terminate()
 
 
 # this is a workaround to get the --dev flag from the CLI for testing

@@ -38,7 +38,14 @@ class GefyraStateObject:
     @state.setter
     def state(self, value):
         self._state = value
-        self._write_state(value)
+        # persiting the state, ignoring terminating states and state updates to prevent deletion handler
+        # from running multiple times
+        if value.lower() == self.data["state"].lower():
+            pass
+        elif value.lower() in ["terminating", "terminated"]:
+            pass
+        else:
+            self._write_state(value)
 
     def _write_state(self, state: State):
         self.custom_api.patch_namespaced_custom_object(

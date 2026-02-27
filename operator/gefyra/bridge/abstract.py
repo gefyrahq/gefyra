@@ -57,10 +57,14 @@ class AbstractGefyraBridgeProvider(ABC):
 
     @abstractmethod
     async def proxy_route_exists(
-        self, container_port: int, destination_host: str, destination_port: int
+        self,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+        name: str | None = None,
     ) -> bool:
         """
-        Returns True if a proxy route exists for this port, otherwise False
+        Returns True if a proxy route exists for this port or name, otherwise False
         """
         raise NotImplementedError
 

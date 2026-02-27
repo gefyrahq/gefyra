@@ -1,3 +1,6 @@
+import collections
+import threading
+
 import kopf
 import kubernetes as k8s
 import asyncio
@@ -138,3 +141,8 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
 
     await _write_startup_task()  # Await
     logger.info("Gefyra components installed/patched")
+
+
+@kopf.on.startup()
+def setup_locks(memo, **_):
+    memo.locks = collections.defaultdict(threading.Lock)
