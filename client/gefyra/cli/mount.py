@@ -1,5 +1,7 @@
+import json
 import os
 from typing import Optional
+from typing_extensions import Literal
 from alive_progress import alive_bar
 import click
 from gefyra.cli import console
@@ -69,6 +71,7 @@ def mount(ctx):
 )
 @click.option("--timeout", type=int, default=60, required=False)
 @click.pass_context
+@standard_error_handler
 def create(
     ctx,
     namespace: str,
@@ -154,9 +157,10 @@ def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
 
 
 @mount.command("list", alias=["ls"], help="List all GefyraBridgeMounts")
+@click.option("--output", "-o", type=click.Choice(["json", "text"]), default="text")
 @click.pass_context
 @standard_error_handler
-def list_mounts(ctx):
+def list_mounts(ctx, output: Literal["json", "text"] = "text"):
     from gefyra import api
 
     # TODO add connection-name support
@@ -165,24 +169,30 @@ def list_mounts(ctx):
         kubecontext=ctx.obj["context"],
     )
 
-    mounts = [
-        [c.name, c._state, c.target, c.target_container, c.target_namespace]
-        for c in bridge_mounts
-    ]
-    if mounts:
-        click.echo(
-            tabulate(
-                mounts,
-                headers=[
-                    "ID",
-                    "STATE",
-                    "TARGET",
-                    "TARGET CONTAINER",
-                    "TARGET NAMESPACE",
-                ],
-                tablefmt="plain",
+    if bridge_mounts:
+        if output == "text":
+            mounts = [
+                [c.name, c._state, c.target, c.target_container, c.target_namespace]
+                for c in bridge_mounts
+            ]
+            click.echo(
+                tabulate(
+                    mounts,
+                    headers=[
+                        "ID",
+                        "STATE",
+                        "TARGET",
+                        "TARGET CONTAINER",
+                        "TARGET NAMESPACE",
+                    ],
+                    tablefmt="plain",
+                )
             )
-        )
+        elif output == "json":
+            res = {mount.name: mount.inspect() for mount in bridge_mounts}
+            click.echo(json.dumps(res))
+        else:
+            raise ValueError(f"Unsupported output format: {output}")
     else:
         console.info("No GefyraBridgeMounts found")
 
@@ -191,20 +201,28 @@ def list_mounts(ctx):
     "inspect", alias=["describe", "show", "get"], help="Describe a GefyraBridgeMount"
 )
 @click.argument("mount_name")
+@click.option("-o", "--output", type=click.Choice(["json", "text"]), default="text")
 @click.pass_context
 @standard_error_handler
-def inspect_mount(ctx, mount_name):
+def inspect_mount(ctx, mount_name, output: Literal["json", "text"] = "text"):
     from gefyra import api
 
     # TODO add connection-name support
     mount_obj = api.get_mount(
         mount_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
-    console.heading(mount_obj.name)
-    console.info(f"uid: {mount_obj.uid}")
-    console.info(
-        f"Target: {mount_obj.target} in namespace {mount_obj.target_namespace}"
-    )
-    console.info(f"States: {mount_obj._state_transitions}")
-    console.heading("Events")
-    mount_obj.watch_events(console.info, None, 1)
+    status = mount_obj.inspect(fetch_events=True)
+    if output == "text":
+        console.heading(status["name"])
+        console.info(f"uid: {status['uid']}")
+        console.info(
+            f"Target: {status['target']} in namespace {status['target_namespace']}"
+        )
+        console.info(f"States: {status['_state_transitions']}")
+        console.heading("Events")
+        for event in status["events"]:
+            console.info(event)
+    elif output == "json":
+        click.echo(json.dumps(status))
+    else:
+        raise ValueError(f"Unsupported output format: {output}")

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import logging
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
 from gefyra.local.mount import get_gefyrabridgemount
 from gefyra.local.utils import WatchEventsMixin
@@ -42,6 +42,20 @@ class GefyraBridgeMount(WatchEventsMixin):
     def __init__(self, config: "ClientConfiguration", gbridgemount: dict[str, Any]):
         self._init_data(gbridgemount)
         self._config = config
+
+    def inspect(self, fetch_events: bool = False):
+        res = {
+            "name": self.name,
+            "uid": self.uid,
+            "target": self.target,
+            "target_namespace": self.target_namespace,
+            "_state_transitions": self._state_transitions,
+        }
+        if fetch_events:
+            events: List[str] = []
+            self.watch_events(events.append, None, 1)
+            res["events"] = events
+        return res
 
     def _init_data(self, _object: dict[str, Any]):
         self.mount_id = _object["metadata"]["name"]

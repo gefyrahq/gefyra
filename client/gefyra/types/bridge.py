@@ -12,7 +12,7 @@ class CarrierHeaderMatchBase:
     # the exact header value to match
     value: str
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, dict[str, str]]:
         return {
             "matchHeader": {"name": self.name, "value": self.value, "type": self.type}
         }
@@ -94,6 +94,25 @@ class GefyraBridge(WatchEventsMixin):
     target_namespace: str = ""
     target_container: str = ""
 
+    def inspect(self, fetch_events: bool = False) -> dict[str, Any]:
+        res = {
+            "name": self.name,
+            "state": self._state,
+            "_state_transitions": self._state_transitions,
+            "target": self.target,
+            "client": self.client,
+            "port_mappings": self.port_mappings,
+            "target_container": self.target_container,
+            "target_namespace": self.target_namespace,
+            "rules": [rule.to_dict() for rule in self.rules] if self.rules else None,
+        }
+        if fetch_events:
+            events: List[str] = []
+            self.watch_events(events.append, None, 1)
+            if events:
+                res["events"] = events
+        return res
+
     @classmethod
     def from_raw(
         cls, bridge_raw: Dict[Any, Any], config: ClientConfiguration
@@ -108,7 +127,9 @@ class GefyraBridge(WatchEventsMixin):
             target_namespace=bridge_raw["targetNamespace"],
             target=bridge_raw["target"],
             rules=bridge_raw.get("providerParameter"),
-            local_container_name=bridge_raw["metadata"]["labels"].get("gefyra.dev/client-container")
+            local_container_name=bridge_raw["metadata"]["labels"].get(
+                "gefyra.dev/client-container"
+            ),
         )
         bridge._state = bridge_raw["state"]
         bridge._state_transitions = bridge_raw.get("stateTransitions", None)

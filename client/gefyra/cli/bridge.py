@@ -1,5 +1,7 @@
+import json
 import os
 from typing import List, Optional
+from typing_extensions import Literal
 from alive_progress import alive_bar
 import click
 from gefyra.exceptions import CommandTimeoutError
@@ -262,9 +264,12 @@ def delete_bridge(
     default=False,
 )
 @click.option("--connection-name", type=str, default="default")
+@click.option("-o", "--output", type=click.Choice(["json", "text"]), default="text")
 @click.pass_context
 @standard_error_handler
-def list_bridges(ctx, all: bool, connection_name: str):
+def list_bridges(
+    ctx, all: bool, connection_name: str, output: Literal["json", "text"] = "text"
+):
     from gefyra import api
 
     if not all and connection_name:
@@ -276,18 +281,27 @@ def list_bridges(ctx, all: bool, connection_name: str):
             filter_client=True,
             get_containers=True,
         )
-        bridges = [
-            [
-                b.name,
-                b._state,
-                b.target,
-                b.port_mappings,
-                c.short_id if c else "-",
-                c.name if c else "-",
+    else:
+        bridges = api.list_bridges(
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            filter_client=False,
+        )
+
+    if bridges:
+        if output == "text":
+            bridges = [
+                [
+                    b.name,
+                    b._state,
+                    b.target,
+                    b.client,
+                    b.port_mappings,
+                    c.short_id if c else "-",
+                    c.name if c else "-",
+                ]
+                for c, b in bridges
             ]
-            for c, b in bridges
-        ]
-        if bridges:
             click.echo(
                 tabulate(
                     bridges,
@@ -295,6 +309,7 @@ def list_bridges(ctx, all: bool, connection_name: str):
                         "ID",
                         "STATE",
                         "BRIDGEMOUNT",
+                        "CLIENT",
                         "PORT MAPPING",
                         "TARGET CONTAINER",
                         "TARGET CONTAINER NAME",
@@ -302,45 +317,39 @@ def list_bridges(ctx, all: bool, connection_name: str):
                     tablefmt="plain",
                 )
             )
+        elif output == "json":
+            res = {bridge.name: bridge.inspect() for _, bridge in bridges}
+            click.echo(json.dumps(res))
         else:
-            console.info("No GefyraBridges found")
+            raise ValueError(f"Unsupported output format: {output}")
     else:
-        bridges = api.list_bridges(
-            kubeconfig=ctx.obj["kubeconfig"],
-            kubecontext=ctx.obj["context"],
-            filter_client=False,
-        )
-        bridges = [
-            [c.name, c._state, c.target, c.client, c.port_mappings] for c in bridges
-        ]
-        if bridges:
-            click.echo(
-                tabulate(
-                    bridges,
-                    headers=["ID", "STATE", "BRIDGEMOUNT", "CLIENT", "PORT MAPPING"],
-                    tablefmt="plain",
-                )
-            )
-        else:
-            console.info("No GefyraBridges found")
+        console.info("No GefyraBridges found")
 
 
 @bridge.command(
     "inspect", alias=["describe", "show", "get"], help="Describe a GefyraBridge"
 )
 @click.argument("bridge_name")
+@click.option("--output", "-o", type=click.Choice(["json", "text"]), default="text")
 @click.pass_context
 @standard_error_handler
-def inspect_bridge(ctx, bridge_name):
+def inspect_bridge(ctx, bridge_name, output: Literal["json", "text"] = "text"):
     from gefyra import api
 
     # TODO add connection-name support
     bridge_obj = api.get_bridge(
         bridge_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
-    console.heading(bridge_obj.name)
-    console.info(f"States: {bridge_obj._state_transitions}")
-    console.info(f"GefyraBridgeMount: {bridge_obj.target}")
-    console.info(f"Provider Parameters: {bridge_obj.rules}")
-    console.heading("Events")
-    bridge_obj.watch_events(console.info, None, 1)
+    status = bridge_obj.inspect(fetch_events=True)
+    if output == "text":
+        console.heading(status["name"])
+        console.info(f"States: {status['_state_transitions']}")
+        console.info(f"GefyraBridgeMount: {status['target']}")
+        console.info(f"Provider Parameters: {status['rules']}")
+        console.heading("Events")
+        for event in status["events"]:
+            console.info(event)
+    elif output == "json":
+        click.echo(json.dumps(status))
+    else:
+        raise ValueError(f"Unsupported output format: {output}")

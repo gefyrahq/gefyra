@@ -1,5 +1,7 @@
+import json
 import os
 import pprint
+from typing import Literal
 import click
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
@@ -94,9 +96,10 @@ def delete_client(ctx, client_id, nowait: bool = False, timeout: int = 60):
 
 
 @clients.command("list", alias=["ls"], help="List all GefyraClients")
+@click.option("-o", "--output", type=click.Choice(["json", "text"]), default="text")
 @click.pass_context
 @standard_error_handler
-def list_client(ctx):
+def list_client(ctx, output: Literal["json", "text"] = "text"):
     from gefyra import api
 
     gefyraclients = api.list_client(
@@ -112,13 +115,21 @@ def list_client(ctx):
         for c in gefyraclients
     ]
     if clients:
-        click.echo(
-            tabulate(
-                clients,
-                headers=["ID", "STATE", "CREATED", "WIREGUARD HANDSHAKE"],
-                tablefmt="plain",
+        if output == "text":
+            click.echo(
+                tabulate(
+                    clients,
+                    headers=["ID", "STATE", "CREATED", "WIREGUARD HANDSHAKE"],
+                    tablefmt="plain",
+                )
             )
-        )
+        elif output == "json":
+            res = {}
+            for c in gefyraclients:
+                res[c.client_id] = c.inspect()
+            click.echo(json.dumps(res))
+        else:
+            raise ValueError(f"Unsupported output format: {output}")
     else:
         console.info("No GefyraClients found")
 
@@ -143,21 +154,39 @@ def disconnect_client(ctx, client_id):
     "inspect", alias=["describe", "show", "get"], help="Describe a GefyraClient"
 )
 @click.argument("client_id")
+@click.option(
+    "-o",
+    "--output",
+    help="Output format (json, text)",
+    default="text",
+    type=click.Choice(["json", "text"]),
+)
 @click.pass_context
 @standard_error_handler
-def inspect_client(ctx, client_id):
+def inspect_client(ctx, client_id, output: Literal["json", "text"] = "text"):
     from gefyra import api
 
     client = api.get_client(
         client_id, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
-    console.heading(client.client_id)
-    console.info(f"uid: {client.uid}")
-    console.info("States:\n" + pprint.pformat(client.state_transitions, width=60))
-    if client.wg_status:
-        console.info("Wireguard: \n" + pprint.pformat(client.wg_status, width=60))
-    console.heading("Events")
-    client.watch_events(console.info, None, 1)
+    status = client.inspect()
+    if output == "text":
+        console.heading(status["client_id"])
+        console.info(f"uid: {status['uid']}")
+        console.info(
+            "States:\n" + pprint.pformat(status["state_transitions"], width=60)
+        )
+        if status["wg_status"]:
+            console.info(
+                "Wireguard: \n" + pprint.pformat(status["wg_status"], width=60)
+            )
+        console.heading("Events")
+        for event in status["events"]:
+            console.info(event)
+    elif output == "json":
+        click.echo(json.dumps(status))
+    else:
+        raise ValueError(f"Unsupported output format: {output}")
 
 
 @clients.command(

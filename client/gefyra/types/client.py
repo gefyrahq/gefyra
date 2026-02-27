@@ -2,7 +2,7 @@ from dataclasses import dataclass, fields
 from enum import Enum
 import json
 import logging
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import time
 
 from gefyra.exceptions import CommandTimeoutError
@@ -80,7 +80,7 @@ class GefyraClient(WatchEventsMixin):
     _state: str
     _state_transitions: Dict[str, str]
     _wg_status: Optional[Dict[str, str]] = None
-    _wg_handshake: Optional[Dict[str, str]] = None
+    _wg_handshake: str | None = None
     _created: Optional[str] = None
     provider_parameter: Optional[StowawayParameter] = None
     provider_config: Optional[StowawayConfig] = None
@@ -90,6 +90,23 @@ class GefyraClient(WatchEventsMixin):
     def __init__(self, gclient: dict[str, Any], config: "ClientConfiguration"):
         self._init_data(gclient)
         self._config = config
+
+    def inspect(self, fetch_events: bool = False) -> dict[str, str | List[str]]:
+        res = {
+            "client_id": self.client_id,
+            "uid": self.uid,
+            "state": GefyraClientState(self._state).value,
+            "state_transitions": self.state_transitions,
+            "wg_status": self.wg_status,
+            "created": self.state_transitions.get("CREATING", "Creating..."),
+            "wg_handshake": self._wg_handshake or "-",
+        }
+
+        if fetch_events:
+            events: List[str] = []
+            self.watch_events(events.append, None, 1)
+            res["events"] = events
+        return res
 
     def _init_data(self, _object: dict[str, Any]):
         self.client_id = _object["metadata"]["name"]
