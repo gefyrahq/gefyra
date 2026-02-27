@@ -226,8 +226,12 @@ class TestStowaway:
             ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
         )
         assert len(proxy_configmap["data"].keys()) == 1
-        assert await stowaway.destination_exists("test2", "192.168.100.10", 8080) is True
-        assert await stowaway.destination_exists("test2", "192.168.100.11", 8080) is False
+        assert (
+            await stowaway.destination_exists("test2", "192.168.100.10", 8080) is True
+        )
+        assert (
+            await stowaway.destination_exists("test2", "192.168.100.11", 8080) is False
+        )
 
         assert (
             await stowaway.get_destination("test2", "192.168.100.10", 8080)
@@ -328,7 +332,9 @@ class TestStowaway:
                 {"providerParameter": {"subnet": "192.168.201.0/24"}},
                 {"added": "providerParameter"},
             )
-        await stowaway.validate({"providerParameter": {}}, {"added": "providerParameter"})
+        await stowaway.validate(
+            {"providerParameter": {}}, {"added": "providerParameter"}
+        )
 
     async def test_y_provider_notexists(self, k3d: AClusterManager):
         import kubernetes

@@ -8,6 +8,15 @@ from gefyra.clientstate import GefyraClientObject, GefyraClient
 from gefyra.configuration import configuration
 from statemachine.exceptions import TransitionNotAllowed
 
+# A simple registry for locks based on resource UID or name
+locks = {}
+
+
+async def get_lock(name):
+    if name not in locks:
+        locks[name] = asyncio.Lock()
+    return locks[name]
+
 
 @kopf.on.create("gefyraclients.gefyra.dev")
 @kopf.on.resume("gefyraclients.gefyra.dev")
@@ -16,8 +25,12 @@ async def client_created(body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
-    if client.requested.is_active or client.creating.is_active:
-        await client.create()  # Await
+
+    lock = await get_lock("client")
+
+    async with lock:
+        if client.requested.is_active or client.creating.is_active:
+            await client.create()
 
 
 # 'providerParameter' activates the client, once set to a provider specific value the
