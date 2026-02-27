@@ -223,6 +223,7 @@ def delete_bridge(
 
     if not all and not name and not mount:
         console.error("Provide a name or use --all flag to unbridge.")
+        exit(1)
     if all:
         api.unbridge_all(connection_name=connection_name, wait=not nowait)
     elif mount:
