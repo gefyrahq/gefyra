@@ -98,7 +98,7 @@ def create(
                 target=target,
                 provider="carrier2mount",
                 connection_name=connection_name,
-                wait=False,
+                wait=not nowait,
                 timeout=timeout,
                 kubeconfig=ctx.obj["kubeconfig"],
                 kubecontext=ctx.obj["context"],
