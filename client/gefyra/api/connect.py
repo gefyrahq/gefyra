@@ -49,13 +49,15 @@ def connect(  # noqa: C901
     probe_timeout: int = 60,
     update_callback: Optional[callable] = None,
     cargo_image: Optional[str] = None,
+    force: bool = False,
 ) -> bool:
     import kubernetes
     import docker
 
     cargo_container = None
+    known_connection = connection_name in [conns.name for conns in list_connections()]
     # if this connection already exists, just restore it
-    if connection_name in [conns.name for conns in list_connections()]:
+    if known_connection:
         logger.debug(f"Restoring existing connection {connection_name}")
         if update_callback:
             update_callback(f"Restoring existing connection {connection_name}")
@@ -117,6 +119,18 @@ def connect(  # noqa: C901
         client = GefyraClient(gclient, config)
 
         config.CARGO_PROBE_TIMEOUT = probe_timeout
+
+    if not known_connection and client._state == GefyraClientState.ACTIVE and not force:
+        logger.error(f"Connection {connection_name} is already active.")
+        exit(200)
+        return False
+
+    if client._state == GefyraClientState.ACTIVE and force:
+        logger.info(
+            f"Connection {connection_name} is already active, but --force is set, diconnecting client..."
+        )
+        disconnect(connection_name=connection_name)
+        logger.info(f"Connection {connection_name} reconnecting...")
 
     _retry = 0
 

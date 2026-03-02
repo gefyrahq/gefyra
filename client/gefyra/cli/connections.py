@@ -97,6 +97,11 @@ def connections(ctx):
     type=str,
     default=None,
 )
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Force re-connection of client, even if it is already active.",
+)
 @click.pass_context
 @standard_error_handler
 def connect_client(
@@ -106,6 +111,7 @@ def connect_client(
     minikube: Optional[str] = None,
     mtu: int = 1340,
     cargo_image: Optional[str] = None,
+    force: bool = False,
 ):
     from alive_progress import alive_bar
     from gefyra import api
@@ -138,6 +144,7 @@ def connect_client(
             mtu=mtu,
             update_callback=bar.text,
             cargo_image=cargo_image,
+            force=force,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "
