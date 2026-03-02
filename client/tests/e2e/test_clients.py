@@ -107,3 +107,9 @@ class TestGefyraClients(GefyraTestCase):
             ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
         )
         assert "is already active" in res.output
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["rm", "pytest-gefyra"],
+        )
