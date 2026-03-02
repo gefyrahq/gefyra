@@ -71,15 +71,39 @@ class TestGefyraClients(GefyraTestCase):
         with pytest.raises(RuntimeError):
             k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-f"])
 
-    def test_e_failing_reconnect(self, operator: AClusterManager):
-        k3d = operator
-        k3d.version()
-        from gefyra.api.clients import add_clients
+    def test_e_failing_reconnect(self, operator: AClusterManager, tmp_path):
+        self.cmd(
+            operator.kubeconfig, "client", ["create", "--client-id", "client-recon"]
+        )
 
-        gclient: GefyraClient = add_clients("client-a", kubeconfig=operator.kubeconfig)[
-            0
-        ]
-        gclient.wait_for_state(GefyraClientState.WAITING)
-        gclient.connect()
-        gclient.wait_for_state(GefyraClientState.ACTIVE)
-        gclient.disconnect()
+        operator.wait(
+            "gefyraclients.gefyra.dev/client-recon",
+            "jsonpath=.state=WAITING",
+            namespace="gefyra",
+            timeout=60,
+        )
+        client_file_path = tmp_path / "client-recon.json"
+        self.cmd(
+            operator.kubeconfig,
+            "client",
+            ["config", "-o", client_file_path, "client-recon", "--local"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+        )
+
+        operator.wait(
+            "gefyraclients.gefyra.dev/client-recon",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+        res = self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+        )
+        assert "is already active" in res.output

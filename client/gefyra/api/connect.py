@@ -114,8 +114,9 @@ def connect(  # noqa: C901
 
     if not known_connection and client._state == GefyraClientState.ACTIVE and not force:
         logger.error(f"Connection {connection_name} is already active.")
-        exit(200)
-        return False
+        raise GefyraConnectionError(
+            f"Connection {connection_name} is already active. Use --force to reconnect."
+        )
 
     if client._state == GefyraClientState.ACTIVE and force:
         logger.info(
