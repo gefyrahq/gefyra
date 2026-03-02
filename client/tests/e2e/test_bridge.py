@@ -376,7 +376,7 @@ class TestGefyraBridge(GefyraTestCase):
             ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
         # Assert deletion was successful
-        assert "marked for deletion" in res.output
+        assert "pytest-gefyra-bridge' deleted" in res.output
 
         # Verify the bridge is actually deleted
         import time
