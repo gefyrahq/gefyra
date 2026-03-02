@@ -265,6 +265,20 @@ class GefyraClient(WatchEventsMixin):
                 f" {self.state}"
             )
 
+    def disconnect(self, nowait: bool = False):
+        get_or_create_gefyra_network(self._config)
+        try:
+            cargo_container = self._config.DOCKER.containers.get(
+                f"{self._config.CARGO_CONTAINER_NAME}",
+            )
+            cargo_container.stop()
+        except docker.errors.NotFound:
+            pass
+        self.deactivate_connection()
+        if not nowait:
+            self.wait_for_state(GefyraClientState.WAITING)
+        return True
+
     def connect(
         self, update_callback=None, cargo_container=None, minikube_profile=None
     ):

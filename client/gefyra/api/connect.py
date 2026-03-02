@@ -18,7 +18,7 @@ from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.local.cargo import (
     probe_wireguard_connection,
 )
-from gefyra.local.networking import get_or_create_gefyra_network, handle_remove_network
+from gefyra.local.networking import handle_remove_network
 from gefyra.local.utils import (
     compose_kubeconfig_for_serviceaccount,
 )
@@ -134,22 +134,9 @@ def connect(  # noqa: C901
 
 @stopwatch
 def disconnect(connection_name: str, nowait: bool = False) -> bool:
-    import docker
-
     config = ClientConfiguration(connection_name=connection_name)
     client = get_client(config.CLIENT_ID, connection_name=connection_name)
-    get_or_create_gefyra_network(config)
-    try:
-        cargo_container = config.DOCKER.containers.get(
-            f"{config.CARGO_CONTAINER_NAME}",
-        )
-        cargo_container.stop()
-    except docker.errors.NotFound:
-        pass
-    client.deactivate_connection()
-    if not nowait:
-        client.wait_for_state(GefyraClientState.WAITING)
-    return True
+    return client.disconnect(nowait=nowait)
 
 
 @stopwatch
