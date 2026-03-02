@@ -127,7 +127,6 @@ def connect(  # noqa: C901
     return client.connect(
         update_callback=update_callback,
         cargo_container=cargo_container,
-        config=config,
         minikube_profile=minikube_profile,
     )
 
