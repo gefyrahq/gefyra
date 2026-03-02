@@ -127,7 +127,7 @@ def operator_no_sa(k3d: AClusterManager, operator_image, stowaway_image):
 def check_operator_running(k3d, after: datetime):
     not_found = True
     _i = 0
-    while not_found and _i < 240:
+    while not_found and _i < 120:
         sleep(1)
         events = k3d.kubectl(["get", "events", "-n", "gefyra"])
         _i += 1
