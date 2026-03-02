@@ -87,7 +87,7 @@ def create(
         with alive_bar(
             total=None,
             length=20,
-            title=f"Creating the requested GefyraBridgeMount (timeout={timeout}s))",
+            title=f"Creating the requested GefyraBridgeMount (timeout={timeout}s)",
             bar="smooth",
             spinner="classic",
             stats=False,
@@ -129,22 +129,48 @@ def create(
     is_flag=True,
     help="Do not wait for the GefyraBridgeMount to be deleted.",
 )
+@click.option(
+    "--timeout",
+    type=int,
+    default=60,
+    show_default=True,
+    help="Maximum seconds to wait for deletion to complete.",
+)
 @click.argument("mount_name", nargs=-1, required=True)
 @click.pass_context
-@standard_error_handler
-def delete_mount(ctx, mount_name, nowait: bool = False):
+def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
     from gefyra import api
 
     # TODO add connection-name support
     for _del in list(mount_name):
-        deleted = api.delete_mount(
-            _del,
-            kubeconfig=ctx.obj["kubeconfig"],
-            kubecontext=ctx.obj["context"],
-            wait=not nowait,
-        )
-        if deleted:
-            console.success(f"GefyraBridgeMount '{_del}' marked for deletion")
+        try:
+            with alive_bar(
+                total=None,
+                length=20,
+                title=f"Deleting GefyraBridgeMount '{_del}' (timeout={timeout}s)",
+                bar="smooth",
+                spinner="classic",
+                stats=False,
+                dual_line=True,
+            ) as bar:
+                bar.text(f"Requesting deletion of '{_del}'")
+                deleted = api.delete_mount(
+                    _del,
+                    kubeconfig=ctx.obj["kubeconfig"],
+                    kubecontext=ctx.obj["context"],
+                    wait=not nowait,
+                    timeout=timeout,
+                )
+                if not nowait:
+                    bar.text("Waiting for deletion to complete")
+            if deleted:
+                console.success(f"GefyraBridgeMount '{_del}' deleted")
+            else:
+                raise click.ClickException(
+                    f"Timeout waiting for GefyraBridgeMount '{_del}' to be deleted."
+                )
+        except Exception as e:
+            raise click.ClickException(str(e))
 
 
 @mount.command("list", alias=["ls"], help="List all GefyraBridgeMounts")
