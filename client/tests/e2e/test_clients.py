@@ -70,3 +70,13 @@ class TestGefyraClients(GefyraTestCase):
         sleep(5)
         with pytest.raises(RuntimeError):
             k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-f"])
+
+    def test_e_failing_reconnect(self, operator: AClusterManager):
+        k3d = operator
+        k3d.version()
+        from gefyra.api.clients import add_clients
+
+        gclient = add_clients("client-a", kubeconfig=operator.kubeconfig)[0]
+        gclient.wait_for_state(GefyraClientState.WAITING)
+        gclient.connect()
+        gclient.wait_for_state(GefyraClientState.ACTIVE)

@@ -2,19 +2,27 @@ from dataclasses import dataclass, fields
 from enum import Enum
 import json
 import logging
+import os
+import socket
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 import time
 
-from gefyra.exceptions import CommandTimeoutError
+import docker
+from gefyra.configuration import get_gefyra_config_location
+from gefyra.exceptions import CommandTimeoutError, GefyraConnectionError
 from gefyra.local.clients import handle_get_gefyraclient
+from gefyra.local.minikube import detect_minikube_config
+from gefyra.local.networking import get_or_create_gefyra_network
 from gefyra.types.stowaway import (
     StowawayConfig,
     StowawayParameter,
 )
-from gefyra.local.utils import WatchEventsMixin
+from gefyra.local.utils import WatchEventsMixin, handle_docker_get_or_create_container
 
 if TYPE_CHECKING:
     from gefyra.configuration import ClientConfiguration
+    from docker.models.networks import Network
+
 
 logger = logging.getLogger(__name__)
 
@@ -256,3 +264,147 @@ class GefyraClient(WatchEventsMixin):
                 f"Cannot deactivate connection for client {self.client_id}, state is"
                 f" {self.state}"
             )
+
+    def connect(
+        self, update_callback=None, cargo_container=None, minikube_profile=None
+    ):
+        import kubernetes
+        from gefyra.local.cargo import (
+            create_wireguard_config,
+            get_cargo_ip_from_netaddress,
+            probe_wireguard_connection,
+        )
+
+        _retry = 0
+
+        while _retry < 10:
+            gefyra_network = get_or_create_gefyra_network(self._config)
+            try:
+                if update_callback:
+                    update_callback(
+                        "Activating connection with appointed local "
+                        f"Gefyra network {gefyra_network.attrs['IPAM']['Config'][0]['Subnet']} ..."
+                    )
+                self.activate_connection(
+                    gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
+                )
+                break
+            except kubernetes.client.exceptions.ApiException as e:
+                _retry += 1
+                if e.status == 500:
+                    logger.debug(
+                        f"Could not activate connection, retrying {_retry}/10..."
+                    )
+                    # if the given subnet is taken in the cluster (by another client), recreate the network and try again
+                    # hopefully the IPAM config will give a new subnet
+                    gefyra_network.remove()
+        else:
+            raise GefyraConnectionError("Could not activate connection") from None
+
+        # busy wait for the client to enter the ACTIVE state
+        _i = 0
+        while _i < self._config.CONNECTION_TIMEOUT:
+            if self.state == GefyraClientState.ACTIVE:
+                if update_callback:
+                    update_callback("Cluster connection activated")
+                break
+            else:
+                _i += 1
+                time.sleep(1)
+        else:
+            raise GefyraConnectionError("Could not activate connection") from None
+        self.update()
+
+        # since this connection was (re)activated, save the current wireguard config (again)
+        wg_conf = os.path.join(
+            get_gefyra_config_location(), f"{self._config.CONNECTION_NAME}.conf"
+        )
+        if not self.provider_config:
+            raise GefyraConnectionError(
+                "Could not get provider config for client"
+            ) from None
+
+        if self._config.CARGO_ENDPOINT is None:
+            self._config.CARGO_ENDPOINT = self.provider_config.pendpoint
+        logger.debug(self._config.CARGO_ENDPOINT)
+        # busy wait to resolve the cargo endpoint, making sure it's actually resolvable from this host
+        _i = 0
+        while _i < self._config.CONNECTION_TIMEOUT:
+            try:
+                socket.gethostbyname_ex(self._config.CARGO_ENDPOINT.split(":")[0])
+                break
+            except (
+                socket.gaierror,
+                socket.herror,
+            ):  # [Errno -2] Name or service not known
+                logger.debug(
+                    f"Could not resolve host '{self._config.CARGO_ENDPOINT.split(':')[0]}', "
+                    f"retrying {_i}/{self._config.CONNECTION_TIMEOUT}..."
+                )
+                _i += 1
+                time.sleep(1)
+        else:
+            raise GefyraConnectionError(
+                f"Cannot resolve host '{self._config.CARGO_ENDPOINT.split(':')[0]}'."
+            ) from None
+
+        with open(wg_conf, "w") as f:
+            f.write(
+                create_wireguard_config(
+                    self.provider_config,
+                    self._config.CARGO_ENDPOINT,
+                    self._config.WIREGUARD_MTU,
+                )
+            )
+
+        cargo_ip_address = get_cargo_ip_from_netaddress(
+            gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
+        )
+
+        try:
+            if not cargo_container:
+                if update_callback:
+                    update_callback(
+                        "Pulling and starting local Cargo container (client-side Wireguard endpoint)"
+                    )
+                cargo_container = handle_docker_get_or_create_container(
+                    self._config,
+                    f"{self._config.CARGO_CONTAINER_NAME}",
+                    self._config.CARGO_IMAGE,
+                    detach=True,
+                    cap_add=["NET_ADMIN"],
+                    privileged=True,
+                    volumes=[
+                        "/var/run/docker.sock:/var/run/docker.sock",
+                        f"{wg_conf}:/config/wg0.conf",
+                    ],
+                    pid_mode="host",
+                )
+
+                if minikube_profile:
+                    mini_conf = detect_minikube_config(minikube_profile)
+                    if mini_conf["network_name"]:
+                        logger.debug("Joining minikube network")
+                        minikube_net: "Network" = self._config.DOCKER.networks.get(
+                            mini_conf["network_name"]
+                        )
+                        minikube_net.connect(cargo_container)
+                logger.debug(f"Cargo gefyra net ip address: {cargo_ip_address}")
+                gefyra_network.connect(cargo_container, ipv4_address=cargo_ip_address)
+            cargo_container.start()
+            time.sleep(1)
+        except docker.errors.APIError as e:
+            try:
+                cargo_container and cargo_container.remove()
+            except docker.errors.APIError:
+                pass
+            raise GefyraConnectionError(
+                f"Could not start Cargo container: {e}"
+            ) from None
+
+        # Confirm the wireguard connection working
+        logger.debug("Checking wireguard connection")
+        if update_callback:
+            update_callback("Checking Wireguard connectivity...")
+        probe_wireguard_connection(self._config)
+        return True
