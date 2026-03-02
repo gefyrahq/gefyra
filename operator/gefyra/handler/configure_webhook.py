@@ -14,7 +14,6 @@ from gefyra.connection.factory import (
 
 from gefyra.resources.events import create_operator_webhook_ready_event
 
-
 logger = logging.getLogger(__name__)
 
 events = k8s.client.EventsV1Api()
