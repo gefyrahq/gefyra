@@ -102,6 +102,7 @@ def delete_mount(
     kubecontext: Optional[str] = None,
     connection_name: Optional[str] = None,
     wait: bool = False,
+    timeout: Optional[int] = None,
 ) -> bool:
     """
     Delete a GefyraClient configuration
@@ -112,7 +113,9 @@ def delete_mount(
         connection_name=connection_name if connection_name else "no-connection-name",
         # use no-connection-name to make sure you use admin access to the cluster
     )
-    return handle_delete_gefyramount(config, mount_name, force, wait=wait)
+    return handle_delete_gefyramount(
+        config, mount_name, force, wait=wait, timeout=timeout
+    )
 
 
 @stopwatch

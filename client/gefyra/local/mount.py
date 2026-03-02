@@ -35,7 +35,11 @@ def handle_create_gefyrabridgemount(config: ClientConfiguration, body, target: s
 
 
 def handle_delete_gefyramount(
-    config: ClientConfiguration, name: str, force: bool, wait: bool
+    config: ClientConfiguration,
+    name: str,
+    force: bool,
+    wait: bool,
+    timeout: Optional[int],
 ) -> bool:
     from kubernetes.client import ApiException
 
@@ -57,7 +61,8 @@ def handle_delete_gefyramount(
             version="v1",
         )
         if wait:
-            timeout = 30
+            if not timeout:
+                timeout = 60
             counter = 0
             while counter < timeout:
                 try:
@@ -69,7 +74,7 @@ def handle_delete_gefyramount(
                     return True
                 time.sleep(1)
                 counter += 1
-            return False
+            raise TimeoutError
         return True
     except ApiException as e:
         logger.debug(e)

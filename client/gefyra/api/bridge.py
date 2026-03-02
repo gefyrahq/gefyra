@@ -117,7 +117,9 @@ def create_bridge(
     return GefyraBridge.from_raw(bridge, config)
 
 
-def wait_for_deletion(gefyra_bridges: List, config: "ClientConfiguration"):
+def wait_for_deletion(
+    gefyra_bridges: List, config: "ClientConfiguration", timeout: int = 60
+):
     from kubernetes.watch import Watch
 
     w = Watch()
@@ -129,12 +131,14 @@ def wait_for_deletion(gefyra_bridges: List, config: "ClientConfiguration"):
         group="gefyra.dev",
         version="v1",
         plural="gefyrabridges",
+        timeout_seconds=timeout,
+        _request_timeout=timeout,
     ):
         if event["type"] == "DELETED":
             if event["object"]["metadata"]["uid"] in uids:
                 deleted.append(event["object"]["metadata"]["uid"])
                 if set(deleted) == set(uids):
-                    break
+                    return True
 
 
 @stopwatch
@@ -143,6 +147,7 @@ def delete_bridge(
     mount_name: Optional[str] = None,
     connection_name: str = "",
     wait: bool = False,
+    timeout: Optional[int] = 60,
 ) -> bool:
     from gefyra.local.bridge import handle_delete_gefyrabridge
     from gefyra.configuration import ClientConfiguration
@@ -152,7 +157,11 @@ def delete_bridge(
         gefyra_bridge = handle_delete_gefyrabridge(config, name)
         if gefyra_bridge:
             if wait:
-                wait_for_deletion([gefyra_bridge], config=config)
+                success = wait_for_deletion(
+                    [gefyra_bridge], config=config, timeout=timeout
+                )
+                if not success:
+                    raise TimeoutError("Timeout for this operation reached.")
             logger.info(f"Bridge {name} removed")
         return gefyra_bridge
     elif mount_name:
@@ -169,7 +178,9 @@ def delete_bridge(
             )
             if gefyra_bridge:
                 if wait:
-                    wait_for_deletion([gefyra_bridge], config=config)
+                    success = wait_for_deletion([gefyra_bridge], config=config)
+                    if not success:
+                        raise TimeoutError("Timeout for this operation reached.")
                 logger.info(f"Bridge {bridge['metadata']['name']} removed")
         else:
             raise RuntimeError(
@@ -197,7 +208,9 @@ def unbridge_all(
         logger.info(f"Removing Bridge {name}")
         handle_delete_gefyrabridge(config, name)
     if wait:
-        wait_for_deletion(config=config, gefyra_bridges=gefyra_bridges)
+        success = wait_for_deletion(config=config, gefyra_bridges=gefyra_bridges)
+        if not success:
+            raise TimeoutError("Timeout for this operation reached.")
     return True
 
 
