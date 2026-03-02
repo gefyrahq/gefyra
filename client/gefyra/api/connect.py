@@ -174,7 +174,7 @@ def list_connections() -> List[GefyraConnectionItem]:
 
 
 @stopwatch
-def remove_connection(connection_name: str):
+def remove_connection(connection_name: str, force: bool = False) -> bool:
     import docker
 
     config = ClientConfiguration(connection_name=connection_name)
@@ -190,9 +190,14 @@ def remove_connection(connection_name: str):
             f"{config.CARGO_CONTAINER_NAME}",
         )
         cargo_container.remove(force=True)
-    except docker.errors.NotFound:
+    except docker.errors.NotFound as e:
+        logger.debug(e)
         pass
-    handle_remove_network(config)
+    try:
+        handle_remove_network(config)
+    except docker.errors.NotFound as e:
+        logger.debug(e)
+        pass
     try:
         # remove kubeconfig file
         os.remove(os.path.join(get_gefyra_config_location(), f"{connection_name}.yaml"))
