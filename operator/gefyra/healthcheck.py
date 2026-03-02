@@ -1,6 +1,5 @@
 import requests
 
-
 res = requests.post(
     "https://gefyra-admission.gefyra.svc/client-parameters",
     json={

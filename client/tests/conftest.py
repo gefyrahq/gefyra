@@ -58,7 +58,7 @@ def operator(k3d: AClusterManager, operator_image, stowaway_image):
 
     not_found = True
     _i = 0
-    while not_found and _i < 120:
+    while not_found and _i < 240:
         sleep(1)
         events = k3d.kubectl(["get", "events", "-n", "gefyra"])
         _i += 1
