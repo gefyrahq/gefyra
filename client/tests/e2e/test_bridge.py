@@ -243,6 +243,13 @@ class TestGefyraBridge(GefyraTestCase):
             ],
         )
 
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
         operator.kubectl(
             [
                 "patch",
@@ -366,6 +373,13 @@ class TestGefyraBridge(GefyraTestCase):
                 "--name",
                 "pytest-gefyra-bridge",
             ],
+        )
+
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
         )
 
         operator.kubectl(
