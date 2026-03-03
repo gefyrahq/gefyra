@@ -72,6 +72,8 @@ class TestGefyraClients(GefyraTestCase):
             k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-f"])
 
     def test_e_failing_reconnect(self, operator: AClusterManager, tmp_path):
+        import docker
+
         self.cmd(
             operator.kubeconfig, "client", ["create", "--client-id", "client-recon"]
         )
@@ -101,6 +103,9 @@ class TestGefyraClients(GefyraTestCase):
             namespace="gefyra",
             timeout=60,
         )
+        docker_client = docker.from_env()
+        docker_client.containers.get("gefyra-cargo-recon-test").remove(force=True)
+
         res = self.cmd(
             operator.kubeconfig,
             "connection",
