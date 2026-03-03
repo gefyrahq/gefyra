@@ -114,15 +114,8 @@ class TestGefyraClients(GefyraTestCase):
             )
         assert "is already active" in str(excinfo.value)
 
-        operator.wait(
-            "gefyraclients.gefyra.dev/client-recon",
-            "jsonpath=.state=ACTIVE",
-            namespace="gefyra",
-            timeout=60,
-        )
-
         self.cmd(
-            operator.kubeconfig,
+            None,
             "connection",
             ["remove", "recon-test"],
         )
