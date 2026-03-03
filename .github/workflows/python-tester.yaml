@@ -269,6 +269,7 @@ jobs:
       - build_cargo
       - build_operator
       - build_carrier
+      - build_stowaway
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -314,13 +315,20 @@ jobs:
           docker load --input /tmp/cargo/cargo.tar
           docker load --input /tmp/operator/operator.tar
           docker load --input /tmp/carrier/carrier.tar
+          docker load --input /tmp/stowaway/stowaway.tar
           docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
           docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:pytest
           docker tag ${{ needs.build_carrier.outputs.tags }} quay.io/gefyra/carrier:pytest
+          docker tag ${{ needs.build_stowaway.outputs.tags }} quay.io/gefyra/stowaway:pytest
           docker image ls -a
       - name: Run PyTest
         working-directory: ./client
         run: poetry run coverage run -m pytest -s tests/
+        env:
+          CARRIER_IN_CACHE: true
+          OPERATOR_IN_CACHE: true
+          CARGO_IN_CACHE: true
+          STOWAWAY_IN_CACHE: true
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client

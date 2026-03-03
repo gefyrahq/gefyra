@@ -7,6 +7,10 @@ from alive_progress import config_handler
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
+CARRIER_IN_CACHE = os.environ.get("CARRIER_IN_CACHE", "false").lower() == "true"
+OPERATOR_IN_CACHE = os.environ.get("OPERATOR_IN_CACHE", "false").lower() == "true"
+STOWAWAY_IN_CACHE = os.environ.get("STOWAWAY_IN_CACHE", "false").lower() == "true"
+
 
 @pytest.fixture(scope="session")
 def demo_backend_image(request):
@@ -54,14 +58,17 @@ def k3d(k8s_manager):
 @pytest.fixture(scope="session")
 def operator_image(request):
     name = "operator:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} --platform linux/amd64 --build-arg COMMIT_SHA=cipipeline -f"
-            f" {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not OPERATOR_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} --platform linux/amd64 --build-arg COMMIT_SHA=cipipeline -f"
+                f" {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
+            ),
+            shell=True,
+        )
+    else:
+        print("Skipping operator image build since OPERATOR_IN_CACHE is set to true")
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
@@ -69,14 +76,17 @@ def operator_image(request):
 @pytest.fixture(scope="session")
 def stowaway_image(request):
     name = "stowaway:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not STOWAWAY_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} -f"
+                f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
+            ),
+            shell=True,
+        )
+    else:
+        print("Skipping stowaway image build since STOWAWAY_IN_CACHE is set to true")
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
@@ -84,14 +94,15 @@ def stowaway_image(request):
 @pytest.fixture(scope="session")
 def carrier2_image(request):
     name = "carrier2:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../carrier2/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not CARRIER_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} -f"
+                f" {(Path(__file__).parent / Path('../../carrier2/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
+            ),
+            shell=True,
+        )
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
