@@ -135,7 +135,6 @@ Why Gefyra?
 class: "border-t"
 orientation: horizontal
 ---
-:video{autoplay controls loop src="https://res.cloudinary.com/dcrl8q2g3/video/upload/v1745404403/landing_od8epr.mp4"}
 
 #title
 Docker Desktop Extension
