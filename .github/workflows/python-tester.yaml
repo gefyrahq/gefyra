@@ -472,7 +472,7 @@ jobs:
         working-directory: ./operator
         env:
           GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
-        run: poetry run coverage run -m pytest -x --retries 5
+        run: poetry run coverage run -m pytest -s -x --retries 5
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./operator
