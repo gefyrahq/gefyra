@@ -164,6 +164,13 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
+
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+        )
+
         self.cmd(
             operator.kubeconfig,
             "connection",
@@ -216,6 +223,26 @@ class TestGefyraBridge(GefyraTestCase):
             ],
         )
 
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            [
+                "create",
+                "--local",
+                LOCAL_CONTAINER_NAME,
+                "--ports",
+                "80:8000",
+                "--match-header-exact",
+                "x-gefyra:peer",
+                "--mount",
+                "nginx-deployment-gefyra",
+                "--connection-name",
+                "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
+            ],
+        )
+
         operator.kubectl(
             [
                 "patch",
@@ -262,6 +289,11 @@ class TestGefyraBridge(GefyraTestCase):
 
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+        )
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
         self.cmd(
             operator.kubeconfig,
@@ -313,6 +345,26 @@ class TestGefyraBridge(GefyraTestCase):
                 LOCAL_CONTAINER_NAME,
                 "--command",
                 "python3 local.py",
+            ],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            [
+                "create",
+                "--local",
+                LOCAL_CONTAINER_NAME,
+                "--ports",
+                "80:8000",
+                "--match-header-exact",
+                "x-gefyra:peer",
+                "--mount",
+                "nginx-deployment-gefyra",
+                "--connection-name",
+                "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
             ],
         )
 
@@ -440,6 +492,12 @@ class TestGefyraBridge(GefyraTestCase):
             operator.kubeconfig,
             "connection",
             ["connect", "--force", "--connection-name", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
 
         self.cmd(
