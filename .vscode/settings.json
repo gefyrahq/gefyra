@@ -1,13 +1,15 @@
 {
-    "python.testing.pytestArgs": [
-        "client"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true,
-    "python.formatting.provider": "black",
-    "gefyra.up": {
-        "minikube": false
-    },
+  "python.testing.pytestArgs": [
+      "client"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.formatting.provider": "black",
+  "gefyra.up": {
+      "minikube": false
+  },
+
+  "editor.gotoLocation.multipleDefinitions": "goto",
 
   // Disable the default formatter, use eslint instead
   "prettier.enable": false,
