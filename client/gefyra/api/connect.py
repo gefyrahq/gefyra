@@ -112,18 +112,22 @@ def connect(  # noqa: C901
 
         config.CARGO_PROBE_TIMEOUT = probe_timeout
 
-    if not known_connection and client._state == GefyraClientState.ACTIVE and not force:
+    if (
+        not known_connection
+        and client._state == GefyraClientState.ACTIVE.value
+        and not force
+    ):
         logger.error(f"Connection {connection_name} is already active.")
         raise GefyraConnectionError(
             f"Connection {connection_name} is already active. Use --force to reconnect."
         )
 
-    if client._state == GefyraClientState.ACTIVE and force:
-        logger.info(
+    if client._state == GefyraClientState.ACTIVE.value and force:
+        update_callback(
             f"Connection {connection_name} is already active, but --force is set, diconnecting client..."
         )
-        disconnect(connection_name=connection_name)
-        logger.info(f"Connection {connection_name} reconnecting...")
+        client.disconnect()
+        update_callback(f"Connection {connection_name} reconnecting...")
 
     return client.connect(
         update_callback=update_callback,

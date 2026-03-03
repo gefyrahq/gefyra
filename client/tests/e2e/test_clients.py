@@ -103,6 +103,7 @@ class TestGefyraClients(GefyraTestCase):
             namespace="gefyra",
             timeout=60,
         )
+
         docker_client = docker.from_env()
         docker_client.containers.get("gefyra-cargo-recon-test").remove(force=True)
 
