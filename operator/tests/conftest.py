@@ -158,21 +158,6 @@ def operator_image(request):
 
 
 @pytest.fixture(scope="session")
-def carrier_image(request):
-    name = "carrier:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../carrier/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../carrier/')).resolve()}"
-        ),
-        shell=True,
-    )
-    # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
-    return name
-
-
-@pytest.fixture(scope="session")
 def carrier2_image(request):
     name = "carrier2:pytest"
     subprocess.run(

@@ -211,6 +211,7 @@ jobs:
     name: Pytest Gefyra Client
     needs:
       - build_cargo
+      - build_operator
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -241,10 +242,17 @@ jobs:
         with:
           name: cargo
           path: /tmp/cargo
+      - name: Download operator artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: operator
+          path: /tmp/operator
       - name: Load pre-built cargo image
         run: |
           docker load --input /tmp/cargo/cargo.tar
+          docker load --input /tmp/operator/operator.tar
           docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
+          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:pytest
           docker image ls -a
       - name: Run PyTest
         working-directory: ./client
