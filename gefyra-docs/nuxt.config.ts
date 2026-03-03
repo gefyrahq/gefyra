@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/i18n', '@nuxt/eslint', '@nuxt/scripts'],
+  modules: ['@nuxtjs/i18n', '@nuxt/eslint', '@nuxt/scripts', '@barzhsieh/nuxt-content-mermaid'],
 
   css: ['~/assets/scss/main.scss'],
 
