@@ -184,9 +184,9 @@ def remove_connection(connection_name: str, force: bool = False) -> bool:
 
     config = ClientConfiguration(connection_name=connection_name)
     try:
-        get_client(
-            config.CLIENT_ID, connection_name=connection_name
-        ).deactivate_connection()
+        client = get_client(config.CLIENT_ID, connection_name=connection_name)
+        client.deactivate_connection()
+        client.wait_for_state(GefyraClientState.WAITING, timeout=60)
     except Exception as e:  # noqa E722
         logger.debug(e)
         pass
