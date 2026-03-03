@@ -256,7 +256,7 @@ jobs:
           docker image ls -a
       - name: Run PyTest
         working-directory: ./client
-        run: poetry run coverage run -m pytest tests/
+        run: poetry run coverage run -m pytest -s tests/
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
