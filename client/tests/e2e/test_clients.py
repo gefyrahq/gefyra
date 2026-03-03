@@ -1,4 +1,5 @@
 from time import sleep
+from gefyra.exceptions import GefyraConnectionError
 from gefyra.types import GefyraClient, GefyraClientState
 import pytest
 from pytest_kubernetes.providers import AClusterManager
@@ -106,15 +107,15 @@ class TestGefyraClients(GefyraTestCase):
 
         docker_client = docker.from_env()
         docker_client.containers.get("gefyra-cargo-recon-test").remove(force=True)
+        with pytest.raises(GefyraConnectionError) as excinfo:
+            self.cmd(
+                operator.kubeconfig,
+                "connection",
+                ["connect", "-f", client_file_path, "--connection-name", "recon-test"],
+            )
+        assert "is already active" in str(excinfo.value)
 
-        res = self.cmd(
-            operator.kubeconfig,
-            "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "recon-test"],
-        )
-        assert "is already active" in res.output
-
-        res = self.cmd(
+        self.cmd(
             operator.kubeconfig,
             "connection",
             ["rm", "recon-test"],
