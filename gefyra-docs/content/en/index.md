@@ -30,7 +30,7 @@ Blazingly-fast, rock-solid, local application development with Kubernetes.
   to: https://github.com/gefyrahq/gefyra
   variant: outline
   ---
-  Star on GitHub
+  We're open source
   :::
 ::
 
@@ -69,7 +69,7 @@ Why Gefyra?
   ---
   #title
   Supercharge Development Speed
-  
+
   #description
   Run your code directly in a Kubernetes cluster and overcome [CI/CD waiting times]{.font-bold}.
   :::
@@ -80,7 +80,7 @@ Why Gefyra?
   ---
   #title
   Fight Environment Bugs
-  
+
   #description
   Uncover bugs [before]{.font-bold} they appear on staging or production environments.
   :::
@@ -91,7 +91,7 @@ Why Gefyra?
   ---
   #title
   Promote Collaboration
-  
+
   #description
   Share [running code instantly]{.font-bold} and let your team work in a realistic environment.
   :::
@@ -102,7 +102,7 @@ Why Gefyra?
   ---
   #title
   One Click and Go
-  
+
   #description
   Gefyra is [ready in seconds]{.font-bold}, not hours or days.
   :::
@@ -113,7 +113,7 @@ Why Gefyra?
   ---
   #title
   Flexible Workflows
-  
+
   #description
   Integrate Gefyra [into existing workflows]{.font-bold}. Make Gefyra part of your CI/CD pipeline.
   :::
@@ -124,7 +124,7 @@ Why Gefyra?
   ---
   #title
   Cost Efficient
-  
+
   #description
   Improve time-to-market and utilization of resources. Spent [less]{.font-bold} on CI/CD pipelines and container builds.
   :::
