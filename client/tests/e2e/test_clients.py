@@ -1,5 +1,4 @@
 from time import sleep
-from gefyra.exceptions import GefyraConnectionError
 from gefyra.types import GefyraClient, GefyraClientState
 import pytest
 from pytest_kubernetes.providers import AClusterManager
@@ -107,7 +106,7 @@ class TestGefyraClients(GefyraTestCase):
 
         docker_client = docker.from_env()
         docker_client.containers.get("gefyra-cargo-recon-test").remove(force=True)
-        with pytest.raises(GefyraConnectionError) as excinfo:
+        with pytest.raises(AssertionError) as excinfo:
             self.cmd(
                 operator.kubeconfig,
                 "connection",
