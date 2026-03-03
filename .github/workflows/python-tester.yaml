@@ -485,9 +485,13 @@ jobs:
           docker image ls -a
       - name: Run PyTest
         working-directory: ./operator
+        run: poetry run coverage run -m pytest -s -x --retries 5
         env:
           GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
-        run: poetry run coverage run -m pytest -s -x --retries 5
+          CARRIER_IN_CACHE: true
+          OPERATOR_IN_CACHE: true
+          CARGO_IN_CACHE: true
+          STOWAWAY_IN_CACHE: true
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./operator
