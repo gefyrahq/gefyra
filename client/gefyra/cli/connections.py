@@ -212,7 +212,7 @@ def list_connections():
 @click.argument(
     "connection_name", type=str, default="default", callback=check_connection_name
 )
-# @standard_error_handler
+@standard_error_handler
 def remove_connection(connection_name: str):
     from gefyra import api
 

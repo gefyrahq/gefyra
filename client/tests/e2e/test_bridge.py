@@ -51,7 +51,14 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
         )
         operator.wait(
             "gefyraclients.gefyra.dev/client-a",
@@ -174,7 +181,14 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
         )
 
         self.cmd(
@@ -262,7 +276,14 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
         )
 
         self.cmd(
@@ -408,7 +429,7 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "--connection-name", "pytest-gefyra"],
+            ["connect", "--force", "--connection-name", "pytest-gefyra"],
         )
 
         self.cmd(
