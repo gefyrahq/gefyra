@@ -115,7 +115,7 @@ class TestGefyraClients(GefyraTestCase):
         assert "is already active" in str(excinfo.value)
 
         self.cmd(
-            None,
+            operator.kubeconfig,
             "connection",
             ["remove", "recon-test"],
         )
