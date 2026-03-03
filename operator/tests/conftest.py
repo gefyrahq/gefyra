@@ -77,14 +77,14 @@ def short_env():
 
 
 @pytest.fixture(scope="module")
-def operator(k3d, stowaway_image, carrier_image):
+def operator(k3d, stowaway_image, carrier2_image):
     from kopf.testing import KopfRunner
 
     os.environ["GEFYRA_STOWAWAY_IMAGE"] = stowaway_image.split(":")[0]
     os.environ["GEFYRA_STOWAWAY_TAG"] = stowaway_image.split(":")[1]
     os.environ["GEFYRA_STOWAWAY_IMAGE_PULLPOLICY"] = "Never"
-    os.environ["GEFYRA_CARRIER_IMAGE"] = carrier_image.split(":")[0]
-    os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier_image.split(":")[1]
+    os.environ["GEFYRA_CARRIER_IMAGE"] = carrier2_image.split(":")[0]
+    os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier2_image.split(":")[1]
     os.environ["GEFYRA_CARRIER2_DEBUG"] = "True"
     os.environ["GEFYRA_OPERATOR_RECONCILIATION_INTERVAL"] = "10"
     loaded_images = subprocess.check_output(
