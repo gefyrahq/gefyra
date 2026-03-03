@@ -88,7 +88,7 @@ class TestGefyraClients(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "client",
-            ["config", "-o", client_file_path, "client-recon"],
+            ["config", "-o", client_file_path, "client-recon", "--local"],
         )
 
         self.cmd(
