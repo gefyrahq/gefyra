@@ -92,7 +92,7 @@ class TestGefyraClients(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            ["connect", "-f", client_file_path, "--connection-name", "recon-test"],
         )
 
         operator.wait(
@@ -104,12 +104,12 @@ class TestGefyraClients(GefyraTestCase):
         res = self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            ["connect", "-f", client_file_path, "--connection-name", "recon-test"],
         )
         assert "is already active" in res.output
 
         res = self.cmd(
             operator.kubeconfig,
             "connection",
-            ["rm", "pytest-gefyra"],
+            ["rm", "recon-test"],
         )
