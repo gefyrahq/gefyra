@@ -323,7 +323,7 @@ jobs:
           docker load --input /tmp/stowaway/stowaway.tar
           docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
           docker tag ${{ needs.build_operator.outputs.tags }} operator:pytest
-          docker tag ${{ needs.build_carrier.outputs.tags }} carrier:pytest
+          docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
           docker tag ${{ needs.build_stowaway.outputs.tags }} stowaway:pytest
           docker image ls -a
       - name: Run PyTest
@@ -502,7 +502,7 @@ jobs:
           docker load --input /tmp/stowaway/stowaway.tar
           docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
           docker tag ${{ needs.build_operator.outputs.tags }} operator:pytest
-          docker tag ${{ needs.build_carrier.outputs.tags }} carrier:pytest
+          docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
           docker tag ${{ needs.build_stowaway.outputs.tags }} stowaway:pytest
           docker tag ${{ needs.build_cargo.outputs.tags }} cargo:pytest
           docker image ls -a
