@@ -164,6 +164,11 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
+        )
 
     def test_image_deployment_patches(
         self, operator: AClusterManager, tmp_path, demo_backend_image
@@ -257,6 +262,11 @@ class TestGefyraBridge(GefyraTestCase):
 
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+        )
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
         )
 
     def test_multiple_cli_commands(
