@@ -310,6 +310,11 @@ jobs:
         with:
           name: carrier
           path: /tmp/carrier
+      - name: Download stowaway artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: stowaway
+          path: /tmp/stowaway
       - name: Load pre-built images
         run: |
           docker load --input /tmp/cargo/cargo.tar
@@ -474,6 +479,21 @@ jobs:
         with:
           name: cargo
           path: /tmp/cargo
+      - name: Download carrier artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: carrier
+          path: /tmp/carrier
+      - name: Download stowaway artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: stowaway
+          path: /tmp/stowaway
+      - name: Download operator artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: operator
+          path: /tmp/operator
       - name: Load pre-built cargo image
         run: |
           docker load --input /tmp/cargo/cargo.tar
