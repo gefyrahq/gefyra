@@ -447,6 +447,9 @@ jobs:
     name: Pytest Gefyra Operator
     needs:
       - build_cargo
+      - build_operator
+      - build_carrier
+      - build_stowaway
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
