@@ -22,7 +22,7 @@ def demo_backend_image(request):
     return name
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def k3d(k8s_manager):
     k8s: AClusterManager = k8s_manager("k3d")("gefyra")
 
