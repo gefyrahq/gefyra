@@ -222,3 +222,30 @@ def remove_connection(connection_name: str):
     except RuntimeError:
         pass
     api.remove_connection(connection_name=connection_name)
+
+
+@connections.command(
+    "inspect",
+    help="Inspect a Gefyra connection",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["json", "text"]),
+    default="text",
+    help="Output format for the connection details",
+)
+@click.argument("connection_name", type=str, default="default")
+@standard_error_handler
+def inspect_connection(connection_name: str, output: str):
+    from gefyra import api
+
+    conn = api.inspect_connection(connection_name=connection_name)
+    if output == "json":
+        click.echo(conn.json)
+    else:
+        console.heading(conn.name)
+        console.info(f"Version: {conn.version}")
+        console.info(f"Created: {conn.created}")
+        console.info(f"Cargo Status: {conn.status}")
+        console.info(f"Gefyra Client (Cluster) Status: {conn.client_status}")

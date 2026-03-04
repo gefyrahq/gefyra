@@ -172,10 +172,30 @@ def list_connections() -> List[GefyraConnectionItem]:
                     "version": cargo_container.labels.get(VERSION_LABEL, "unknown"),
                     "created": cargo_container.attrs.get("Created", "unknown"),
                     "status": state,
+                    "client_status": None,
                 }
             )
         )
     return result
+
+
+@stopwatch
+def inspect_connection(connection_name: str) -> GefyraConnectionItem:
+    connections = list_connections()
+    result = next(
+        (conn for conn in connections if conn.name == connection_name),
+        None,
+    )
+    config = ClientConfiguration(connection_name=connection_name)
+    cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+    client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)
+    return GefyraConnectionItem(
+        name=result.name,
+        client_status=client._state,
+        status=cargo_container.status,
+        created=result.created,
+        version=result.version,
+    )
 
 
 @stopwatch

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import json
 import logging
 
 from gefyra.types.bridge_mount import GefyraBridgeMount
@@ -37,6 +38,11 @@ class GefyraConnectionItem:
     version: str
     created: str
     status: str
+    client_status: str
+
+    @property
+    def json(self):
+        return json.dumps(self.__dict__)
 
 
 @dataclass
