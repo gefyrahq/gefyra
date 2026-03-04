@@ -27,6 +27,7 @@ def k3d(k8s_manager):
     k8s: AClusterManager = k8s_manager("k3d")("gefyra")
 
     # check if we are running against an existing cluster
+    print("Checking for existing cluster...")
     cluster_exists = k8s.ready(timeout=1)
     if not cluster_exists:
         print("No existing cluster found, creating a new one...")
