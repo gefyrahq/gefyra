@@ -413,6 +413,13 @@ class TestGefyraBridge(GefyraTestCase):
         transitions = mount.get("stateTransitions", {})
         assert "RESTORING" in transitions, "Expected RESTORING state transition"
 
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         self.assert_get_contains(
