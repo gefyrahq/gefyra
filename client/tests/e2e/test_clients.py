@@ -137,5 +137,5 @@ class TestGefyraClients(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["disconnect", "--yes", "recon-test"],
+            ["rm", "--yes", "recon-test"],
         )
