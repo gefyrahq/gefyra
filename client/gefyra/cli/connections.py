@@ -169,9 +169,7 @@ def connect_client(
     is_flag=True,
     help="Do not wait for the GefyraClient to be in state 'WAITING'",
 )
-@click.argument(
-    "connection_name", type=str, default="default", callback=check_connection_name
-)
+@click.argument("connection_name", type=str, default="default")
 @standard_error_handler
 def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
     from gefyra import api
