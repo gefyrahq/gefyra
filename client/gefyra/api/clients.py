@@ -67,7 +67,6 @@ def get_client(
         config_params.update({"kube_context": kubecontext})
     config = ClientConfiguration(**config_params)  # type: ignore
     gclient = handle_get_gefyraclient(config, client_id)
-    print(client_id)
     return GefyraClient(gclient, config)
 
 
