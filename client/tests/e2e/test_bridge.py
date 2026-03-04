@@ -108,12 +108,14 @@ class TestGefyraBridge(GefyraTestCase):
                 "pytest-gefyra",
             ],
         )
+        print("Waiting for mount to become ACTIVE...")
         operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=60,
         )
+        print("Mount is ACTIVE. Waiting for deployment to be patched...")
         operator.wait(
             "deployment/nginx-deployment-gefyra",
             "jsonpath=.spec.template.spec.containers[0].image=nginx:1.14.2",
@@ -151,7 +153,7 @@ class TestGefyraBridge(GefyraTestCase):
         )
 
         bridge_name = result["items"][0]["metadata"]["name"]
-
+        print(f"Waiting for bridge {bridge_name} to become ACTIVE...")
         operator.wait(
             f"gefyrabridges.gefyra.dev/{bridge_name}",
             "jsonpath=.state=ACTIVE",
@@ -164,7 +166,7 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
-
+        print("Test successful, cleaning up...")
         self.cmd(
             operator.kubeconfig,
             "bridge",
