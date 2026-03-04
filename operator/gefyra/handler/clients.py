@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 import click
 import kopf
@@ -90,7 +91,9 @@ try:
     if "priority" in _ctx.params and _ctx.params["priority"] == 666:
         RECONCILIATION_INTERVAL = 2
     else:
-        RECONCILIATION_INTERVAL = 1800
+        interval = os.environ.get("GEFYRA_OPERATOR_RECONCILIATION_INTERVAL", 1800)
+        RECONCILIATION_INTERVAL = int(interval)
+        print("interval is set to", RECONCILIATION_INTERVAL)
 except RuntimeError:
     # this module is not imported via kopf CLI
     RECONCILIATION_INTERVAL = 2

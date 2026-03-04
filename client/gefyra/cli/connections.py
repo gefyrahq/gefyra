@@ -97,6 +97,11 @@ def connections(ctx):
     type=str,
     default=None,
 )
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Force re-connection of client, even if it is already active.",
+)
 @click.pass_context
 @standard_error_handler
 def connect_client(
@@ -106,6 +111,7 @@ def connect_client(
     minikube: Optional[str] = None,
     mtu: int = 1340,
     cargo_image: Optional[str] = None,
+    force: bool = False,
 ):
     from alive_progress import alive_bar
     from gefyra import api
@@ -138,6 +144,7 @@ def connect_client(
             mtu=mtu,
             update_callback=bar.text,
             cargo_image=cargo_image,
+            force=force,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "
@@ -162,15 +169,16 @@ def connect_client(
     is_flag=True,
     help="Do not wait for the GefyraClient to be in state 'WAITING'",
 )
-@click.argument(
-    "connection_name", type=str, default="default", callback=check_connection_name
-)
+@click.argument("connection_name", type=str, default="default")
 @standard_error_handler
 def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
     from gefyra import api
 
-    _manage_container_and_bridges(connection_name=connection_name, force=yes)
     console.info(f"Disconnecting Gefyra connection '{connection_name}'...")
+    try:
+        _manage_container_and_bridges(connection_name=connection_name, force=yes)
+    except (RuntimeError, Exception):
+        console.info(f"No local connection '{connection_name}'...")
     if not nowait:
         console.info("Waiting for the GefyraClient to be in state 'WAITING'...")
     api.disconnect(connection_name=connection_name, nowait=nowait)
@@ -205,7 +213,7 @@ def list_connections():
 @click.argument(
     "connection_name", type=str, default="default", callback=check_connection_name
 )
-# @standard_error_handler
+@standard_error_handler
 def remove_connection(connection_name: str):
     from gefyra import api
 

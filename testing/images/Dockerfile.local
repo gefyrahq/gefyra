@@ -4,4 +4,4 @@ RUN apt update && apt install -y iproute2 iputils-ping python3 traceroute wget c
 COPY local.py local.py
 COPY client-cert.pem /tmp/client-cert.pem
 COPY client-key.pem /tmp/client-key.pem
-CMD python3 local.py
+CMD ["python3", "local.py"]

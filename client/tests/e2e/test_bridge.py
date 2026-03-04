@@ -51,7 +51,14 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
         )
         operator.wait(
             "gefyraclients.gefyra.dev/client-a",
@@ -158,6 +165,18 @@ class TestGefyraBridge(GefyraTestCase):
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
 
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
+        )
+
     def test_image_deployment_patches(
         self, operator: AClusterManager, tmp_path, demo_backend_image
     ):
@@ -174,7 +193,14 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
         )
 
         self.cmd(
@@ -195,6 +221,33 @@ class TestGefyraBridge(GefyraTestCase):
                 "--command",
                 "python3 local.py",
             ],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            [
+                "create",
+                "--local",
+                LOCAL_CONTAINER_NAME,
+                "--ports",
+                "80:8000",
+                "--match-header-exact",
+                "x-gefyra:peer",
+                "--mount",
+                "nginx-deployment-gefyra",
+                "--connection-name",
+                "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
+            ],
+        )
+
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
         )
 
         operator.kubectl(
@@ -244,6 +297,16 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+        )
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
+        )
 
     def test_multiple_cli_commands(
         self, operator: AClusterManager, tmp_path, demo_backend_image
@@ -262,7 +325,14 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
         )
 
         self.cmd(
@@ -283,6 +353,33 @@ class TestGefyraBridge(GefyraTestCase):
                 "--command",
                 "python3 local.py",
             ],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            [
+                "create",
+                "--local",
+                LOCAL_CONTAINER_NAME,
+                "--ports",
+                "80:8000",
+                "--match-header-exact",
+                "x-gefyra:peer",
+                "--mount",
+                "nginx-deployment-gefyra",
+                "--connection-name",
+                "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
+            ],
+        )
+
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
         )
 
         operator.kubectl(
@@ -315,6 +412,13 @@ class TestGefyraBridge(GefyraTestCase):
         )
         transitions = mount.get("stateTransitions", {})
         assert "RESTORING" in transitions, "Expected RESTORING state transition"
+
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
@@ -408,7 +512,13 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["connect", "--connection-name", "pytest-gefyra"],
+            ["connect", "--force", "--connection-name", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
 
         self.cmd(

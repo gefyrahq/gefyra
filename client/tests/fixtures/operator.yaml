@@ -49,3 +49,5 @@ spec:
           value: Never
         - name: GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT
           value: "False"
+        - name: GEFYRA_OPERATOR_RECONCILIATION_INTERVAL
+          value: "10"
