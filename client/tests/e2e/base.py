@@ -830,7 +830,7 @@ class GefyraTestCase:
         """
         while retries > 0:
             try:
-                response = requests.get(url, headers=headers)
+                response = requests.get(url, headers=headers, timeout=5)
             except Exception:
                 continue
             if expected_content in response.text:
