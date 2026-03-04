@@ -29,6 +29,7 @@ def k3d(k8s_manager):
     # check if we are running against an existing cluster
     cluster_exists = k8s.ready(timeout=1)
     if not cluster_exists:
+        print("No existing cluster found, creating a new one...")
         k8s.create(
             None,
             options=[
@@ -41,6 +42,7 @@ def k3d(k8s_manager):
     if "gefyra" not in k8s.kubectl(["get", "ns"], as_dict=False):
         k8s.kubectl(["create", "ns", "gefyra"])
         k8s.wait("ns/gefyra", "jsonpath='{.status.phase}'=Active")
+        print("Namespace 'gefyra' created and active")
     else:
         purge_gefyra_objects(k8s)
     os.environ["KUBECONFIG"] = str(k8s.kubeconfig)
