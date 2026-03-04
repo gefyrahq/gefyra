@@ -98,7 +98,7 @@ jobs:
         load: false
         tags: ${{ steps.carrier_meta.outputs.tags }}
         labels: ${{ steps.carrier_meta.outputs.labels }}
-        cache-from: type=registry,ref=quay.io/gefyra/carrier:latest
+        cache-from: type=registry,ref=quay.io/gefyra/carrier2:latest
         outputs: type=docker,dest=/tmp/carrier.tar
         build-args: COMMIT_SHA=${{ github.sha }}
     - name: Upload carrier image
