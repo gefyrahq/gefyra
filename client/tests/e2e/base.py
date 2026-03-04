@@ -770,6 +770,7 @@ class GefyraTestCase:
     @pytest.fixture(autouse=True)
     def _clear_namespace(self, operator: AClusterManager):
         yield
+        print("Clearing namespace...")
         operator.kubectl(["delete", "ns", "gefyra"], as_dict=False)
 
     @pytest.fixture(autouse=True)
