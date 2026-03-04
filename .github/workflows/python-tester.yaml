@@ -155,7 +155,8 @@ jobs:
         load: false
         tags: ${{ steps.operator_meta.outputs.tags }}
         labels: ${{ steps.operator_meta.outputs.labels }}
-        cache-from: type=registry,ref=quay.io/gefyra/operator:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/operator.tar
         build-args: COMMIT_SHA=${{ github.sha }}
     - name: Upload operator image
@@ -207,7 +208,8 @@ jobs:
         target: cargo
         tags: ${{ steps.cargo_meta.outputs.tags }}
         labels: ${{ steps.cargo_meta.outputs.labels }}
-        cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/cargo.tar
     - name: Upload cargo image
       uses: actions/upload-artifact@v6
@@ -255,7 +257,8 @@ jobs:
         push: false
         tags: ${{ steps.stowaway_meta.outputs.tags }}
         labels: ${{ steps.stowaway_meta.outputs.labels }}
-        cache-from: type=registry,ref=quay.io/gefyra/stowaway:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/stowaway.tar
     - name: Upload stowaway image
       uses: actions/upload-artifact@v6
