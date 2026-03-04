@@ -92,7 +92,7 @@ jobs:
       env:
         DOCKER_BUILD_SUMMARY: false
       with:
-        context: carrier/
+        context: carrier2/
         platforms: linux/amd64
         push: true
         load: false
