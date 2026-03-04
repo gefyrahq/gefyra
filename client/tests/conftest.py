@@ -122,6 +122,7 @@ def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
     now = datetime.now(timezone.utc)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator.yaml"))
     check_operator_running(k3d, after=now)
+    print("Operator is running, proceeding with tests...")
     yield k3d
 
 
@@ -132,6 +133,7 @@ def operator_no_sa(k3d: AClusterManager, operator_image, stowaway_image):
     now = datetime.now(timezone.utc)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator_no_sa.yaml"))
     check_operator_running(k3d, after=now)
+    print("Operator is running, proceeding with tests...")
     yield k3d
 
 
