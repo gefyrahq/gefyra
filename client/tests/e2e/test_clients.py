@@ -117,5 +117,25 @@ class TestGefyraClients(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["disconnect", "--yes", "recon-test"],
+            [
+                "connect",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "recon-test",
+                "--force",
+            ],
+        )
+
+        operator.wait(
+            "gefyraclients.gefyra.dev/client-recon",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["rm", "recon-test"],
         )

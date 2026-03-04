@@ -177,7 +177,7 @@ def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
     console.info(f"Disconnecting Gefyra connection '{connection_name}'...")
     try:
         _manage_container_and_bridges(connection_name=connection_name, force=yes)
-    except RuntimeError:
+    except (RuntimeError, Exception):
         console.info(f"No local connection '{connection_name}'...")
     if not nowait:
         console.info("Waiting for the GefyraClient to be in state 'WAITING'...")

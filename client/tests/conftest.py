@@ -22,11 +22,12 @@ def demo_backend_image(request):
     return name
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def k3d(k8s_manager):
     k8s: AClusterManager = k8s_manager("k3d")("gefyra")
 
     # check if we are running against an existing cluster
+    print("Checking for existing cluster...")
     cluster_exists = k8s.ready(timeout=1)
     if not cluster_exists:
         print("No existing cluster found, creating a new one...")
@@ -109,7 +110,7 @@ def carrier2_image(request):
     return name
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def operator(request):
     if hasattr(request, "param") and request.param:
         return request.getfixturevalue(request.param)
@@ -117,7 +118,7 @@ def operator(request):
         return request.getfixturevalue("operator_with_sa")
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
@@ -128,7 +129,7 @@ def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
     yield k3d
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def operator_no_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
