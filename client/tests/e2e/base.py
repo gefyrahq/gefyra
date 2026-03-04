@@ -830,12 +830,13 @@ class GefyraTestCase:
         """
         while retries > 0:
             try:
-                response = requests.get(url, headers=headers, timeout=5)
+                response = requests.get(url, headers=headers, timeout=2)
             except Exception:
                 continue
             if expected_content in response.text:
                 return
             retries -= 1
+            print("Expected content not found, retrying...")
             sleep(1)
         raise AssertionError(
             f"Expected content '{expected_content}' not found in response from {url}."
