@@ -768,6 +768,11 @@ class GefyraTestCase:
         self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
 
     @pytest.fixture(autouse=True)
+    def _clear_namespace(self, operator: AClusterManager):
+        yield
+        operator.kubectl(["delete", "ns", "gefyra"], as_dict=False)
+
+    @pytest.fixture(autouse=True)
     def _remove_containers(self, _init_docker):
         yield
         containers = ["gefyra-cargo-pytest-gefyra", LOCAL_CONTAINER_NAME]
