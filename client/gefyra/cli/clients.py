@@ -184,9 +184,10 @@ def inspect_client(ctx, client_id, output: Literal["json", "text"] = "text"):
             console.info(
                 "Wireguard: \n" + pprint.pformat(status["wg_status"], width=60)
             )
-        console.heading("Events")
-        for event in status["events"]:
-            console.info(event)
+        if "events" in status:
+            console.heading("Events")
+            for event in status["events"]:
+                console.info(event)
     elif output == "json":
         click.echo(json.dumps(status))
     else:
