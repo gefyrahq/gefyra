@@ -111,6 +111,12 @@ def connections(ctx):
     is_flag=True,
     help="Force re-connection of client, even if it is already active.",
 )
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout for each connection step in seconds.",
+    default=60,
+)
 @click.pass_context
 @standard_error_handler
 def connect_client(
@@ -121,6 +127,7 @@ def connect_client(
     mtu: int = 1340,
     cargo_image: Optional[str] = None,
     force: bool = False,
+    timeout: int = 60,
 ):
     from gefyra import api
 
@@ -153,6 +160,7 @@ def connect_client(
             update_callback=bar.text,
             cargo_image=cargo_image,
             force=force,
+            timeout=timeout,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "

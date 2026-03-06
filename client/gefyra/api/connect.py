@@ -50,6 +50,7 @@ def connect(  # noqa: C901
     update_callback: Optional[callable] = None,
     cargo_image: Optional[str] = None,
     force: bool = False,
+    timeout: int = 60,
 ) -> bool:
     cargo_container = None
     known_connection = connection_name in [conns.name for conns in list_connections()]
@@ -115,7 +116,7 @@ def connect(  # noqa: C901
         gclient = handle_get_gefyraclient(config, gclient_conf.client_id)
         client = GefyraClient(gclient, config)
 
-        config.CARGO_PROBE_TIMEOUT = probe_timeout
+        config.CARGO_PROBE_TIMEOUT = timeout or probe_timeout
 
     if (
         not known_connection
@@ -138,6 +139,7 @@ def connect(  # noqa: C901
         update_callback=update_callback,
         cargo_container=cargo_container,
         minikube_profile=minikube_profile,
+        timeout=timeout,
     )
 
 

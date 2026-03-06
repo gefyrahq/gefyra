@@ -296,6 +296,7 @@ class GefyraClient(WatchEventsMixin):
         update_callback: Callable[[str], None] | None = None,
         cargo_container=None,
         minikube_profile=None,
+        timeout: int | None = None,
     ):
         import kubernetes
         from gefyra.local.cargo import (
@@ -332,7 +333,8 @@ class GefyraClient(WatchEventsMixin):
 
         # busy wait for the client to enter the ACTIVE state
         _i = 0
-        while _i < self._config.CONNECTION_TIMEOUT:
+        timeout = timeout or self._config.CONNECTION_TIMEOUT
+        while _i < timeout:
             if self.state == GefyraClientState.ACTIVE:
                 if update_callback:
                     update_callback("Cluster connection activated")
