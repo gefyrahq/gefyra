@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 
-from typing import IO, List, Optional, TYPE_CHECKING
+from typing import IO, Callable, List, Optional, TYPE_CHECKING
 from gefyra.api.clients import get_client
 from gefyra.exceptions import GefyraConnectionError
 from gefyra.local.clients import handle_get_gefyraclient
@@ -137,10 +137,16 @@ def connect(  # noqa: C901
 
 
 @stopwatch
-def disconnect(connection_name: str, nowait: bool = False) -> bool:
+def disconnect(
+    connection_name: str,
+    nowait: bool = False,
+    update_callback: Callable[[str], None] | None = None,
+) -> bool:
     config = ClientConfiguration(connection_name=connection_name)
+    if update_callback:
+        update_callback(f"Disconnecting Gefyra client '{config.CLIENT_ID}'...")
     client = get_client(config.CLIENT_ID, connection_name=connection_name)
-    return client.disconnect(nowait=nowait)
+    return client.disconnect(nowait=nowait, update_callback=update_callback)
 
 
 @stopwatch

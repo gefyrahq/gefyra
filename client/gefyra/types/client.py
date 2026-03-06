@@ -4,7 +4,7 @@ import json
 import logging
 import os
 import socket
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 import time
 
 import docker
@@ -265,8 +265,14 @@ class GefyraClient(WatchEventsMixin):
                 f" {self.state}"
             )
 
-    def disconnect(self, nowait: bool = False):
+    def disconnect(
+        self, nowait: bool = False, update_callback: Callable[[str], None] | None = None
+    ) -> bool:
         get_or_create_gefyra_network(self._config)
+        if update_callback:
+            update_callback(
+                f"Stopping Cargo container for client '{self.client_id}'..."
+            )
         try:
             cargo_container = self._config.DOCKER.containers.get(
                 f"{self._config.CARGO_CONTAINER_NAME}",
@@ -274,13 +280,22 @@ class GefyraClient(WatchEventsMixin):
             cargo_container.stop()
         except docker.errors.NotFound:
             pass
+        if update_callback:
+            update_callback(f"Deactivating connection for client '{self.client_id}'...")
         self.deactivate_connection()
         if not nowait:
+            if update_callback:
+                update_callback(
+                    f"Waiting for client '{self.client_id}' to be in state 'WAITING'..."
+                )
             self.wait_for_state(GefyraClientState.WAITING)
         return True
 
     def connect(
-        self, update_callback=None, cargo_container=None, minikube_profile=None
+        self,
+        update_callback: Callable[[str], None] | None = None,
+        cargo_container=None,
+        minikube_profile=None,
     ):
         import kubernetes
         from gefyra.local.cargo import (

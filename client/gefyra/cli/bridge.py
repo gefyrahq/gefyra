@@ -180,7 +180,7 @@ def create_bridge(
             if not nowait:
                 timeout_reached = bridge.watch_events(bar.text, timeout=timeout)
         if timeout_reached:
-            raise TimeoutError("Timeout for this operation reached.")
+            raise CommandTimeoutError("Timeout for this operation reached.")
         else:
             console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
     except RuntimeError as e:

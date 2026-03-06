@@ -1,7 +1,8 @@
 import dataclasses
 import logging
-from typing import Optional
+from typing import Callable, Optional
 import click
+from alive_progress import alive_bar
 
 from gefyra.cli.utils import AliasedGroup, check_connection_name, standard_error_handler
 from gefyra.cli import console
@@ -10,7 +11,11 @@ from tabulate import tabulate
 logger = logging.getLogger(__name__)
 
 
-def _manage_container_and_bridges(connection_name: str, force: bool = False):
+def _manage_container_and_bridges(
+    connection_name: str,
+    force: bool = False,
+    update_callback: Callable[[str], None] | None = None,
+):
     import kubernetes
     import urllib3
     from gefyra import api
@@ -28,6 +33,8 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
                 _del = True
             if _del:
                 for gbridge in _bridges:
+                    if update_callback:
+                        update_callback(f"Removing GefyraBridge '{gbridge.name}'...")
                     api.delete_bridge(
                         name=gbridge.name,
                         connection_name=connection_name,
@@ -48,6 +55,8 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
             _del = True
         if _del:
             for gcontainers in _containers[0][1]:
+                if update_callback:
+                    update_callback(f"Removing Gefyra cargo '{gcontainers.name}'...")
                 container = ClientConfiguration(
                     connection_name=connection_name
                 ).DOCKER.containers.get(gcontainers.name)
@@ -113,7 +122,6 @@ def connect_client(
     cargo_image: Optional[str] = None,
     force: bool = False,
 ):
-    from alive_progress import alive_bar
     from gefyra import api
 
     conn_list = api.list_connections()
@@ -174,14 +182,27 @@ def connect_client(
 def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
     from gefyra import api
 
-    console.info(f"Disconnecting Gefyra connection '{connection_name}'...")
-    try:
-        _manage_container_and_bridges(connection_name=connection_name, force=yes)
-    except (RuntimeError, Exception):
-        console.info(f"No local connection '{connection_name}'...")
-    if not nowait:
-        console.info("Waiting for the GefyraClient to be in state 'WAITING'...")
-    api.disconnect(connection_name=connection_name, nowait=nowait)
+    with alive_bar(
+        total=None,
+        length=20,
+        title=f"Disconnecting '{connection_name}'",
+        bar="smooth",
+        spinner="classic",
+        stats=False,
+        dual_line=True,
+    ) as bar:
+        bar.text(f"Disconnecting Gefyra connection '{connection_name}'...")
+        try:
+            _manage_container_and_bridges(
+                connection_name=connection_name, force=yes, update_callback=bar.text
+            )
+        except (RuntimeError, Exception):
+            bar.text(f"No local connection '{connection_name}'...")
+        if not nowait:
+            bar.text("Waiting for the GefyraClient to be in state 'WAITING'...")
+        api.disconnect(
+            connection_name=connection_name, nowait=nowait, update_callback=bar.text
+        )
 
 
 @connections.command(
