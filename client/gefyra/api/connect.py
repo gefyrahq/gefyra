@@ -185,6 +185,7 @@ def list_connections() -> List[GefyraConnectionItem]:
                     "created": cargo_container.attrs.get("Created", "unknown"),
                     "status": state,
                     "client_status": None,
+                    "wireguard_probe": False,
                 }
             )
         )

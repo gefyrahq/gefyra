@@ -1,4 +1,4 @@
-import dataclasses
+import json
 import logging
 from typing import Callable, Optional
 import click
@@ -218,20 +218,37 @@ def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
     alias=["ls"],
     help="List all Gefyra connections",
 )
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["json", "text"]),
+    default="text",
+    help="Output format for the connection list",
+)
 @standard_error_handler
-def list_connections():
+def list_connections(output: str):
     from gefyra import api
 
     conns = api.list_connections()
-    data = [dataclasses.asdict(conn).values() for conn in conns]
-    if data:
-        click.echo(
-            tabulate(
-                data, headers=["NAME", "VERSION", "CREATED", "STATUS"], tablefmt="plain"
+    if output == "text":
+        data = [conn.list_values for conn in conns]
+        if data:
+            click.echo(
+                tabulate(
+                    data,
+                    headers=["NAME", "VERSION", "CREATED", "STATUS"],
+                    tablefmt="plain",
+                )
             )
-        )
+        else:
+            console.info("No Gefyra connection found")
+    elif output == "json":
+        res = {}
+        for conn in conns:
+            res[conn.name] = conn.list_dict
+        click.echo(json.dumps(res))
     else:
-        console.info("No Gefyra connection found")
+        raise ValueError(f"Unsupported output format: {output}")
 
 
 @connections.command(

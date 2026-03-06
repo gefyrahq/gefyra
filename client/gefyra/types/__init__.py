@@ -45,6 +45,17 @@ class GefyraConnectionItem:
     def json(self):
         return json.dumps(self.__dict__)
 
+    @property
+    def list_values(self):
+        return [self.name, self.version, self.created, self.status]
+
+    @property
+    def list_dict(self):
+        res = self.__dict__.copy()
+        res.pop("wireguard_probe", None)
+        res.pop("client_status", None)
+        return res
+
 
 @dataclass
 class GefyraClusterStatus:
