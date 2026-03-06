@@ -7,7 +7,6 @@ from typing import IO, Callable, List, Optional, TYPE_CHECKING
 import docker
 from gefyra.api.clients import get_client
 from gefyra.exceptions import (
-    GefyraCargoNotFound,
     GefyraClientNotFound,
     GefyraConnectionError,
 )
@@ -195,28 +194,30 @@ def list_connections() -> List[GefyraConnectionItem]:
 @stopwatch
 def inspect_connection(connection_name: str) -> GefyraConnectionItem:
     connections = list_connections()
-    result = next(
-        (conn for conn in connections if conn.name == connection_name),
-        None,
-    )
+    if connections:
+        result = next(
+            (conn for conn in connections if conn.name == connection_name),
+            None,
+        )
+    else:
+        result = None
     config = ClientConfiguration(connection_name=connection_name)
     try:
         cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+        cargo_status = cargo_container.status
     except docker.errors.NotFound:
-        raise GefyraCargoNotFound(
-            f"Cargo container for connection '{connection_name}' not found. Is the connection active?"
-        )
+        cargo_status = "not found"
     try:
         client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)
-    except GefyraClientNotFound as e:
-        e.exit_code = 1
-        raise e
+        client_state = client._state.lower()
+    except (GefyraClientNotFound, KeyError):
+        client_state = "not found"
     return GefyraConnectionItem(
-        name=result.name,
-        client_status=client._state,
-        status=cargo_container.status,
-        created=result.created,
-        version=result.version,
+        name=connection_name,
+        client_status=client_state,
+        status=cargo_status,
+        created=result.created if result else None,
+        version=result.version if result else None,
     )
 
 
