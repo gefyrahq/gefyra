@@ -6,6 +6,7 @@ from docker.models.containers import Container
 
 from gefyra.cli import console
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import GefyraBridgeNotFound
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
 from gefyra.types import GefyraLocalContainer, ExactMatchHeader
 
@@ -94,7 +95,7 @@ def get_gefyrabridge(config: ClientConfiguration, name: str):
         if e.status != 404:
             logger.warning("Error getting GefyraBridge: " + str(e))
             raise e from None
-        raise e
+        raise GefyraBridgeNotFound(f"GefyraBridge with name '{name}' not found.")
 
 
 def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer]:

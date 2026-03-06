@@ -4,8 +4,13 @@ import os
 from pathlib import Path
 
 from typing import IO, Callable, List, Optional, TYPE_CHECKING
+import docker
 from gefyra.api.clients import get_client
-from gefyra.exceptions import GefyraConnectionError
+from gefyra.exceptions import (
+    GefyraCargoNotFound,
+    GefyraClientNotFound,
+    GefyraConnectionError,
+)
 from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.local.minikube import detect_minikube_config
 from .utils import stopwatch
@@ -193,8 +198,17 @@ def inspect_connection(connection_name: str) -> GefyraConnectionItem:
         None,
     )
     config = ClientConfiguration(connection_name=connection_name)
-    cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
-    client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)
+    try:
+        cargo_container = config.DOCKER.containers.get(config.CARGO_CONTAINER_NAME)
+    except docker.errors.NotFound:
+        raise GefyraCargoNotFound(
+            f"Cargo container for connection '{connection_name}' not found. Is the connection active?"
+        )
+    try:
+        client = get_client(config.CLIENT_ID, connection_name=config.CONNECTION_NAME)
+    except GefyraClientNotFound as e:
+        e.exit_code = 1
+        raise e
     return GefyraConnectionItem(
         name=result.name,
         client_status=client._state,

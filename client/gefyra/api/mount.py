@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from gefyra.api.utils import get_workload_information, random_string, stopwatch
 from gefyra.configuration import ClientConfiguration
-from gefyra.exceptions import CommandTimeoutError
+from gefyra.exceptions import CommandTimeoutError, GefyraBridgeMountNotFound
 from gefyra.local.mount import (
     get_gefyrabridgemount,
     get_gbridgemount_body,
@@ -91,6 +91,10 @@ def get_mount(
         config_params.update({"kube_context": kubecontext})
     config = ClientConfiguration(**config_params)  # type: ignore
     mount = get_gefyrabridgemount(config, mount_name)
+    if not mount:
+        raise GefyraBridgeMountNotFound(
+            f"GefyraBridgeMount with name '{mount_name}' not found."
+        )
     return GefyraBridgeMount(config, mount)
 
 
