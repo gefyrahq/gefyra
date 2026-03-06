@@ -1,0 +1,536 @@
+from typing import Any, Callable, Dict, Optional
+from kopf import TemporaryError
+import kopf
+import kubernetes as k8s
+from kubernetes.client import ApiException, V1PodList, V1Pod
+import asyncio
+
+from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
+from gefyra.configuration import OperatorConfiguration
+
+from gefyra.bridge.carrier2.config import (
+    Carrier2Config,
+    Carrier2Proxy,
+    CarrierProbe,
+)
+from gefyra.bridge_mount.utils import (
+    _get_tls_from_provider_parameters,
+    get_all_probes,
+    get_upstreams_for_svc,
+)
+from gefyra.bridge.carrier2.utils import get_ttl_hash, read_carrier2_config
+
+
+app_api = k8s.client.AppsV1Api()
+core_v1_api = k8s.client.CoreV1Api()
+custom_object_api = k8s.client.CustomObjectsApi()
+
+BUSYBOX_COMMAND = "/bin/busybox"
+CARRIER_CONFIGURE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setroute.sh"]
+CARRIER_CONFIGURE_PROBE_COMMAND_BASE = [BUSYBOX_COMMAND, "sh", "setprobe.sh"]
+CARRIER_ORIGINAL_CONFIGMAP = "gefyra-carrier-restore-configmap"
+
+
+class Carrier2(AbstractGefyraBridgeProvider):
+    def __init__(
+        self,
+        configuration: OperatorConfiguration,
+        name: str,
+        target_namespace: str,
+        target: str,
+        target_container: str,
+        post_event_function: Callable[[str, str, str], None],
+        logger,
+    ) -> None:
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+
+        self.configuration = configuration
+        self.bridge_name = name
+        self.bridge_mount_name = target  # BridgeMount
+        self.logger = logger
+        self.carrier_config = Carrier2Config()
+        self.post_event = post_event_function
+        self.bridge_mount: Carrier2BridgeMount = None  # type: ignore
+
+    async def _async_init_(self):
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+
+        bridge_mount = await self._get_bridge_mount_resource()
+
+        self.bridge_mount = Carrier2BridgeMount(
+            self.configuration,
+            self.bridge_mount_name,
+            bridge_mount["targetNamespace"],
+            bridge_mount["target"],
+            bridge_mount["targetContainer"],
+            self.post_event,
+            self.logger,
+            provider_parameter=bridge_mount.get("providerParameter"),
+        )
+
+    provider_type = "carrier2"
+
+    async def install(self, parameters: Optional[Dict[Any, Any]] = None):
+        """
+        Install this Gefyra bridge provider to the Kubernetes Pod
+        """
+
+        # Done by GefyraBridgeMount, hence nothing todo here
+        return
+
+    async def installed(self) -> bool:
+        """
+        Check if this Gefyra bridge provider is properly installed
+        """
+
+        # 1. Call self.ready() (retry), return result
+        return await self.ready()
+
+    async def ready(self) -> bool:
+        """
+        Check if this Gefyra bridge provider is ready for bridges
+        """
+        if not await self.bridge_mount.ready():
+            raise TemporaryError(
+                f"GefyraBridgeMount '{self.bridge_mount.name}' is not yet ready"
+            )
+        # self.pods is an async property
+        pods = await self.pods
+        if not all(
+            [self.pod_ready_and_healthy(pod, self.container) for pod in pods.items]
+        ):
+            raise TemporaryError("Pods are not ready")
+        return True
+
+    async def uninstall(self):
+        """
+        Uninstall this Gefyra bridge from the Kubernetes Pod
+        """
+
+        # Done by GefyraBridgeMount, nothing todo here
+        return
+
+    async def add_proxy_route(
+        self,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+        parameters: Optional[Dict[Any, Any]] = None,
+    ):
+        # params not needed since carrier just updates based on all objects
+        """
+        Add a new proxy_route to the bridge provider
+        """
+        # if the bridge has been added already (through a loo in the statemachine), skip another update for this bridge object
+        if hasattr(self, "updated") and self.updated:
+            return
+        if not await self.ready():
+            raise RuntimeError(
+                "Not able to configure Carrier in Pods. See error above."
+            )
+        pods = await self.pods
+        pod_updates = []
+        for _, pod in enumerate(pods.items):
+            # await self.post_event(
+            #     "Updating routing rules",
+            #     f"Now updating routing rules in Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s))",
+            #     "Normal",
+            # )
+            pod_updates.append(self.update_carrier_config_add(pod))
+        await asyncio.gather(*pod_updates)
+        self.updated = True
+
+        # 1. Call self.ready() (retry)
+        # 2. Select all currently active GefyraBridges for this target
+        # 3. Construct Carrier2 config based on ref. GefyraBridgeTarget
+        #    + all active bridges and the requested bridge (including rules)
+        # 4. Retrive actual config from running Carrier2 instance, raise TemporaryError on error (retry)
+        # 5. Compare constructed config with actual config, return result
+
+    async def _cluster_upstream(
+        self, proxy: Carrier2Proxy, rport: int
+    ) -> Carrier2Proxy:
+        svc = await asyncio.to_thread(
+            core_v1_api.read_namespaced_service,
+            name=self.bridge_mount.gefyra_svc_name(),
+            namespace=self.namespace,
+        )
+        proxy.clusterUpstream = get_upstreams_for_svc(svc=svc, rport=rport)
+        return proxy
+
+    async def _tls(self, proxy: Carrier2Proxy, rport: int) -> Carrier2Proxy:
+        if await self._get_bridge_mount_provider_parameter():
+            proxy.tls = _get_tls_from_provider_parameters(
+                await self._get_bridge_mount_provider_parameter(), rport
+            )
+        return proxy
+
+    async def _set_probes(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
+        upstream_ports = []
+        if config.proxy:
+            upstream_ports = [int(p.port) for p in config.proxy if p.port]
+
+        for container in pod.spec.containers:
+            if container.name == self.container:
+                probes = get_all_probes(container)
+                if probes:
+                    config.probes = CarrierProbe(
+                        httpGet=list(
+                            set(
+                                probe.http_get.port
+                                for probe in probes
+                                if probe.http_get.port not in upstream_ports
+                                and (
+                                    not probe.http_get.scheme
+                                    or probe.http_get.scheme.lower() == "http"
+                                )
+                            )
+                        ),
+                        httpsGet=list(
+                            set(
+                                probe.http_get.port
+                                for probe in probes
+                                if probe.http_get.port not in upstream_ports
+                                and (
+                                    probe.http_get.scheme
+                                    and probe.http_get.scheme.lower() == "https"
+                                )
+                            )
+                        ),
+                    )
+        return config
+
+    async def _set_proxies(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:
+        proxies = []
+        for container in pod.spec.containers:
+            if container.name == self.container:
+                for cport in container.ports:
+                    proxy = Carrier2Proxy(port=cport.container_port)
+                    proxy = await self._cluster_upstream(
+                        proxy=proxy, rport=cport.container_port
+                    )
+                    proxy = await self._tls(proxy=proxy, rport=cport.container_port)
+                    proxies.append(proxy)
+        config.proxy = proxies
+        return config
+
+    async def update_carrier_config_add(self, pod: V1Pod):
+        carrier_config = await self._base_carrier_config(pod)
+        await carrier_config.add_bridge_rules_for_mount(
+            self.bridge_mount_name, self.configuration.NAMESPACE, self.bridge_name, None
+        )
+        await carrier_config.commit(
+            logger=self.logger,
+            pod_name=pod.metadata.name,
+            container_name=self.container,
+            namespace=self.namespace,
+            debug=self.configuration.CARRIER2_DEBUG,
+        )
+
+    async def update_carrier_config_remove(self, pod: V1Pod):
+        carrier_config = await self._base_carrier_config(pod)
+        await carrier_config.add_bridge_rules_for_mount(
+            self.bridge_mount_name, self.configuration.NAMESPACE, None, self.bridge_name
+        )
+        await carrier_config.commit(
+            logger=self.logger,
+            pod_name=pod.metadata.name,
+            container_name=self.container,
+            namespace=self.namespace,
+            debug=self.configuration.CARRIER2_DEBUG,
+        )
+
+    async def _base_carrier_config(self, pod):
+        carrier_config = Carrier2Config()
+        # order of these calls is important
+        carrier_config = await self._set_proxies(carrier_config, pod)
+        carrier_config = await self._set_probes(carrier_config, pod)
+        return carrier_config
+
+    async def _get_pods_workload(
+        self, name: str, namespace: str, workload_type: str
+    ) -> V1PodList:
+        API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
+        NOT_FOUND_MSG = f"{workload_type.capitalize()} not found."
+        # a simple cache
+        if not hasattr(
+            self, f"_get_pods_workload_cache_{name}-{namespace}-{workload_type}"
+        ):
+            self.logger.info(
+                f"Getting pods for {workload_type} - {name} in {namespace}"
+            )
+            try:
+                if workload_type == "deployment":
+                    workload = await asyncio.to_thread(
+                        app_api.read_namespaced_deployment,
+                        name=name,
+                        namespace=namespace,
+                    )
+                elif workload_type == "statefulset":
+                    workload = await asyncio.to_thread(
+                        app_api.read_namespaced_stateful_set,
+                        name=name,
+                        namespace=namespace,
+                    )
+            except ApiException as e:
+                if e.status == 404:
+                    # TODO better exception typing here
+                    raise Exception(NOT_FOUND_MSG)
+                raise RuntimeError(API_EXCEPTION_MSG.format(e))
+
+            v1_label_selector = workload.spec.selector.match_labels
+
+            label_selector = ",".join(
+                [f"{key}={value}" for key, value in v1_label_selector.items()]
+            )
+
+            if not label_selector:
+                # TODO better exception typing here
+                raise Exception(f"No label selector set for {workload_type} - {name}.")
+            pods = await asyncio.to_thread(
+                core_v1_api.list_namespaced_pod,
+                namespace=namespace,
+                label_selector=label_selector,
+            )
+            setattr(
+                self,
+                f"_get_pods_workload_cache_{name}-{namespace}-{workload_type}",
+                pods,
+            )
+        return getattr(
+            self, f"_get_pods_workload_cache_{name}-{namespace}-{workload_type}"
+        )
+
+    async def _get_bridge_mount_resource(self) -> dict:
+        """
+        Get the bridge mount resource
+        """
+        # a simple cache
+        if not hasattr(self, "_get_bridge_mount_resource_cache"):
+            bridge_mount = await asyncio.to_thread(
+                custom_object_api.get_namespaced_custom_object,
+                "gefyra.dev",
+                "v1",
+                self.configuration.NAMESPACE,
+                "gefyrabridgemounts",
+                self.bridge_mount_name,
+            )
+            self.namespace = bridge_mount["targetNamespace"]
+            self.container = bridge_mount["targetContainer"]
+            self.target = bridge_mount["target"]
+            setattr(self, "_get_bridge_mount_resource_cache", bridge_mount)
+        return getattr(self, "_get_bridge_mount_resource_cache")
+
+    async def _get_bridge_mount_provider_parameter(self) -> Optional[dict]:
+        """
+        Get the bridge mount provider parameter
+        """
+        bmr = await self._get_bridge_mount_resource()
+        return bmr.get("providerParameter")
+
+    @property
+    def _bridge_mount_target(self) -> str:
+        return self.target
+
+    async def _get_pods_from_bridge_mount(
+        self,
+    ) -> V1PodList:  # Changed return type to V1PodList
+        """
+        Get the pods from the bridge mount
+        """
+        return await self.bridge_mount.get_pods_workload(
+            self.bridge_mount.target, self.bridge_mount.namespace
+        )
+
+    def pod_ready_and_healthy(self, pod: V1Pod, container_name: str) -> bool:
+        if not pod.status.container_statuses:
+            return False
+        container_idx = next(
+            i
+            for i, container_status in enumerate(pod.status.container_statuses)
+            if container_status.name == container_name
+        )
+        return (
+            self._pod_is_running(pod)
+            and pod.status.container_statuses[container_idx].ready
+            and pod.status.container_statuses[container_idx].started
+            and pod.status.container_statuses[container_idx].state.running
+            and pod.status.container_statuses[container_idx].state.running.started_at
+        )
+
+    @property
+    async def pods(self) -> V1PodList:
+        return await self._get_pods_from_bridge_mount()
+
+    def _pod_is_running(self, pod: V1Pod) -> bool:
+        return pod.status.phase == "Running"
+
+    async def _pod_running(self, pod: V1Pod):
+        timeout = self.configuration.CARRIER_RUNNING_TIMEOUT
+        waiting_pod = await core_v1_api.read_namespaced_pod(
+            name=pod.metadata.name, namespace=self.namespace
+        )
+        # wait for pod to be ready
+        while not await self._pod_is_running(waiting_pod) and timeout > 0:
+            await asyncio.sleep(1)  # Changed sleep to asyncio.sleep
+            timeout -= 1
+            waiting_pod = await core_v1_api.read_namespaced_pod(
+                name=pod.metadata.name, namespace=self.namespace
+            )
+        if timeout == 0:
+            raise RuntimeError(f"Pod {pod.metadata.name} did not become ready in time")
+        self.logger.debug(f"Pod {pod.metadata.name} is ready")
+
+    async def remove_proxy_route(
+        self, container_port: int, destination_host: str, destination_port: int
+    ):
+        """
+        Remove a bridge from the bridge provider
+
+        :param proxy_route: the proxy_route to be removed in the form of IP:PORT
+        """
+        if not await self.ready():
+            raise RuntimeError(
+                "Not able to configure Carrier in Pods. See error above."
+            )
+        pods = await self.pods
+        pod_updates = []
+        for pod in pods.items:
+            pod_updates.append(self.update_carrier_config_remove(pod))
+        await asyncio.gather(*pod_updates)
+
+    async def proxy_route_exists(
+        self,
+        container_port: int,
+        destination_host: str,
+        destination_port: int,
+        name: str | None = None,
+    ) -> bool:
+        """
+        Returns True if a proxy route exists for this port, otherwise False
+        """
+
+        # 1. Call self.ready() (retry)
+        # 2. Retrive actual config to running Carrier2 instance, raise TemporaryError on error (retry)
+        # 3. Check this brige (client-id) is in the config, return the result
+        try:
+            pods = await self.pods
+            pod: V1Pod = pods.items[0]
+        except Exception as e:
+            # if the deployment, pod, etc. does not exist anymore
+            self.logger.error(e)
+            return False
+        config_str_list = await asyncio.to_thread(
+            read_carrier2_config,
+            self.logger,
+            pod.metadata.name,
+            pod.metadata.namespace,
+            get_ttl_hash(5),
+        )
+        config_str = "\n".join(config_str_list)
+        pod_config = Carrier2Config.from_string(config_str)
+        if not any([bool(proxy.bridges) for proxy in pod_config.proxy]):
+            return False
+
+        proxy = next(
+            (proxy for proxy in pod_config.proxy if proxy.port == int(container_port)),
+            None,
+        )
+        if proxy is None:
+            return False
+
+        if name and name not in proxy.bridges.keys():
+            return False
+
+        bridge_exists = any(
+            bridge.endpoint == f"{destination_host}:{destination_port}"
+            for bridge in proxy.bridges.values()
+        )
+        return bridge_exists
+        # raise NotImplementedError
+
+    async def validate(self, bridge_request: dict, hints: dict | None):
+        """
+        Validate the bridge request
+        """
+        # check if labels set
+        if (
+            "labels" not in bridge_request["metadata"]
+            or "gefyra.dev/bridge-mount"
+            not in bridge_request["metadata"]["labels"].keys()
+            or "gefyra.dev/client" not in bridge_request["metadata"]["labels"].keys()
+        ):
+            raise kopf.AdmissionError(
+                "The requested GefyraBridge does not set the labels 'gefyra.dev/bridge-mount' and 'gefyra.dev/client'"
+            )
+
+        try:
+            bridge_mount = await asyncio.to_thread(
+                custom_object_api.get_namespaced_custom_object,
+                "gefyra.dev",
+                "v1",
+                self.configuration.NAMESPACE,
+                "gefyrabridgemounts",
+                bridge_request["target"],
+            )
+        except Exception:
+            raise kopf.AdmissionError(
+                "The target GefyraBridgeMounts does not exist or cannot be read"
+            ) from None
+
+        if bridge_mount["state"] != "ACTIVE":
+            raise kopf.AdmissionError(
+                "The target GefyraBridgeMounts is not in ACTIVE state. Please try again soon."
+            ) from None
+
+        try:
+            bridges = await asyncio.to_thread(
+                custom_object_api.list_namespaced_custom_object,
+                group="gefyra.dev",
+                version="v1",
+                plural="gefyrabridges",
+                namespace=self.configuration.NAMESPACE,
+            )
+        except Exception as e:
+            raise kopf.AdmissionError(f"Cannot read GefyraBridges: {e}")
+
+        for existing_bridge in bridges.get("items"):
+            if (
+                existing_bridge["target"] == bridge_request["target"]
+                and existing_bridge["metadata"]["labels"]
+                == bridge_request["metadata"]["labels"]
+                and existing_bridge["destinationIP"] == bridge_request["destinationIP"]
+                and existing_bridge["providerParameter"]
+                == bridge_request["providerParameter"]
+            ):
+                raise kopf.AdmissionError(
+                    "A GefyraBridge with these target parameters already exists."
+                )
+
+
+class Carrier2Builder:
+    def __init__(self):
+        self._instances = {}
+
+    async def __call__(
+        self,
+        configuration: OperatorConfiguration,
+        name: str,
+        target_namespace: str,
+        target: str,
+        target_container: str,
+        post_event_function: Callable[[str, str, str], None],
+        logger,
+        **_ignored,
+    ):
+        instance = Carrier2(
+            configuration=configuration,
+            name=name,
+            target_namespace=target_namespace,
+            target=target,
+            target_container=target_container,
+            post_event_function=post_event_function,
+            logger=logger,
+        )
+        await instance._async_init_()
+        return instance

@@ -1,5 +1,7 @@
 FROM ubuntu
-# run a server on port 8000
+# run a server on port 8000 and 9000
 RUN apt update && apt install -y iproute2 iputils-ping python3 traceroute wget curl
 COPY local.py local.py
-CMD python3 local.py
+COPY client-cert.pem /tmp/client-cert.pem
+COPY client-key.pem /tmp/client-key.pem
+CMD ["python3", "local.py"]

@@ -41,6 +41,36 @@ from gefyra.cli.utils import (
     callback=parse_workload,
 )
 @click.option(
+    "--cpu-from",
+    help="Inherit CPU limit from a workload, e.g. 'pod/<name>', 'deployment/<name>' or 'statefulset/<name>'",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--memory-from",
+    help="Inherit memory limit from a workload, e.g. 'pod/<name>', 'deployment/<name>' or 'statefulset/<name>'",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--cpu",
+    help="CPU limit for the container (e.g. '500m' or '2')",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--memory",
+    help="Memory limit for the container (e.g. '512Mi', '1Gi', or '1g')",
+    type=str,
+    required=False,
+)
+@click.option(
+    "--user",
+    help="Username or UID (format: <name|uid>[:<group|gid>])",
+    type=str,
+    required=False,
+)
+@click.option(
     "-v",
     "--volume",
     help=(
@@ -95,13 +125,34 @@ from gefyra.cli.utils import (
     default="linux/amd64",
 )
 @click.option(
+    "--security-opt",
+    type=str,
+    help="Security Options",
+    required=False,
+    multiple=True,
+    default=[],
+)
+@click.option(
     "--connection-name", type=str, callback=check_connection_name, required=False
+)
+@click.option(
+    "--privileged",
+    "privileged",
+    help="Give extended privileges to this container",
+    type=bool,
+    is_flag=True,
+    default=False,
 )
 def run(
     detach,
     auto_remove,
     expose,
     env_from,
+    cpu_from,
+    memory_from,
+    cpu,
+    memory,
+    user,
     volume,
     env,
     namespace,
@@ -111,17 +162,35 @@ def run(
     pull,
     platform,
     connection_name,
+    security_opt,
+    privileged,
 ):
     from gefyra import api
 
     if command:
         command = ast.literal_eval(command)[0]
-    api.run(
+    # Validate mutually exclusive options
+    if memory and memory_from:
+        raise click.UsageError(
+            "Option conflict: --memory and --memory-from cannot be used together. Please specify only one."
+        )
+    if cpu and cpu_from:
+        raise click.UsageError(
+            "Option conflict: --cpu and --cpu-from cannot be used together. Please specify only one."
+        )
+
+    security_opt = list(security_opt)
+    result = api.run(
         image=image,
         name=name,
         command=command,
         namespace=namespace,
         env_from=env_from,
+        cpu_from=cpu_from,
+        memory_from=memory_from,
+        cpu=cpu,
+        memory=memory,
+        user=user,
         env=env,
         ports=expose,
         auto_remove=auto_remove,
@@ -129,5 +198,9 @@ def run(
         detach=detach,
         pull=pull,
         platform=platform,
+        security_opts=security_opt,
+        privileged=privileged,
         connection_name=connection_name,
     )
+    if not result:
+        exit(1)

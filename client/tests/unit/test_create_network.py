@@ -1,17 +1,25 @@
+from unittest.mock import patch
+
 import pytest
 from docker.errors import APIError
 
 from gefyra.configuration import ClientConfiguration
-from gefyra.local.networking import get_or_create_gefyra_network
 
 
-def test_cycle_gefyra_network():
+@patch("gefyra.local.networking._get_client_networks")
+def test_cycle_gefyra_network(_get_client_networks):
     config = ClientConfiguration()
+    _get_client_networks.return_value = []
+    from gefyra.local.networking import get_or_create_gefyra_network
+
     gefyra_network = get_or_create_gefyra_network(config)
     gefyra_network.remove()
 
 
 def test_gefyra_network_create_failed(monkeypatch):
+
+    from gefyra.local.networking import get_or_create_gefyra_network
+
     def _raise_apierror_for_docker_network_create(*args, **kwargs):
         raise APIError("Something with pool overlap")
 
@@ -20,5 +28,5 @@ def test_gefyra_network_create_failed(monkeypatch):
         _raise_apierror_for_docker_network_create,
     )
     config = ClientConfiguration()
-    with pytest.raises(APIError):
+    with pytest.raises(RuntimeError):
         get_or_create_gefyra_network(config)

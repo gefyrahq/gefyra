@@ -3,13 +3,14 @@ from pathlib import Path
 from typing import Iterable, List, Optional
 import uuid
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import CommandTimeoutError
 from gefyra.local.clients import (
     get_gefyraclient_body,
     handle_create_gefyraclient,
     handle_delete_gefyraclient,
     handle_get_gefyraclient,
 )
-from gefyra.types import GefyraClient
+from gefyra.types import LOCAL_SERVER, GefyraClient
 from .utils import stopwatch
 
 logger = logging.getLogger(__name__)
@@ -77,6 +78,7 @@ def delete_client(
     kubecontext: Optional[str] = None,
     connection_name: Optional[str] = None,
     wait: bool = False,
+    timeout: Optional[int] = None,
 ) -> bool:
     """
     Delete a GefyraClient configuration
@@ -87,7 +89,12 @@ def delete_client(
         connection_name=connection_name if connection_name else "no-connection-name",
         # use no-connection-name to make sure you use admin access to the cluster
     )
-    return handle_delete_gefyraclient(config, client_id, force, wait=wait)
+    try:
+        return handle_delete_gefyraclient(
+            config, client_id, force, wait=wait, timeout=timeout
+        )
+    except TimeoutError:
+        raise CommandTimeoutError("Timeout for deleting GefyraClient exceeded")
 
 
 @stopwatch
@@ -100,6 +107,7 @@ def write_client_file(
     kubecontext: Optional[str] = None,
     registry: Optional[str] = None,
     wireguard_mtu: Optional[int] = 1340,
+    local: bool = False,
 ) -> str:
     """
     Write a client file
@@ -117,6 +125,8 @@ def write_client_file(
         port = "31820"
     if host:
         gefyra_server = f"{host}:{port}"
+    elif local:
+        gefyra_server = LOCAL_SERVER
     else:
         gefyra_server = config.get_stowaway_host(port)
     logger.debug(f"gefyra_server: {gefyra_server}")

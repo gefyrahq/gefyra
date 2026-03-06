@@ -1,0 +1,169 @@
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
+
+from gefyra.configuration import ClientConfiguration
+from gefyra.local.utils import WatchEventsMixin
+
+
+@dataclass
+class CarrierHeaderMatchBase:
+    # the name of the header to match
+    name: str
+    # the exact header value to match
+    value: str
+
+    def to_dict(self) -> dict[str, dict[str, str]]:
+        return {
+            "matchHeader": {"name": self.name, "value": self.value, "type": self.type}
+        }
+
+
+@dataclass
+class CarrierPathMatchBase:
+    # the path to match
+    path: str
+
+    def to_dict(self):
+        return {"matchPath": {"path": self.path, "type": self.type}}
+
+
+@dataclass
+class ExactMatchHeader(CarrierHeaderMatchBase):
+    type: str = "exact"
+
+
+@dataclass
+class PrefixMatchHeader(CarrierHeaderMatchBase):
+    type: str = "prefix"
+
+
+@dataclass
+class RegexMatchHeader(CarrierHeaderMatchBase):
+    type: str = "regex"
+
+
+@dataclass
+class ExactMatchPath(CarrierPathMatchBase):
+    type: str = "exact"
+
+
+@dataclass
+class PrefixMatchPath(CarrierPathMatchBase):
+    type: str = "prefix"
+
+
+@dataclass
+class RegexMatchPath(CarrierPathMatchBase):
+    type: str = "regex"
+
+
+@dataclass
+class GefyraBridge(WatchEventsMixin):
+    """
+    A GefyraBridge object
+    """
+
+    # the name of the bridge
+    name: str
+    # the client_id of the user requesting the bridge
+    client: str
+    # the ip if the local container
+    local_container_ip: str
+    # the local container name
+    local_container_name: str | None
+    # mapping ports [local:remote]
+    port_mappings: List[str]
+    # the name of the GefyraBridgeMount object
+    target: str
+    # also handle probes of this container (legacy)
+    handle_probes: bool = True
+
+    # the state of the bridge
+    _state: str | None = None
+    _state_transitions: Dict[str, str] | None = None
+    _created: Optional[str] | None = None
+
+    # bridge provider {carrier, carrier2}
+    provider: str = "carrier2"
+    # the connection provider, needed to create a reverse path beweet cluster and local {stowaway}
+    connection_provider: str = "stowaway"
+    # additional provider parameters for this bridge
+    rules: List[ExactMatchHeader] | None = None
+
+    # legacy (global bridge)
+    target_namespace: str = ""
+    target_container: str = ""
+
+    def inspect(self, fetch_events: bool = False) -> dict[str, Any]:
+        res = {
+            "name": self.name,
+            "state": self._state,
+            "_state_transitions": self._state_transitions,
+            "target": self.target,
+            "client": self.client,
+            "port_mappings": self.port_mappings,
+            "target_container": self.target_container,
+            "target_namespace": self.target_namespace,
+            "rules": [rule for rule in self.rules] if self.rules else None,
+        }
+        if fetch_events:
+            events: List[str] = []
+            self.watch_events(events.append, None, 1)
+            if events:
+                res["events"] = events
+        return res
+
+    @classmethod
+    def from_raw(
+        cls, bridge_raw: Dict[Any, Any], config: ClientConfiguration
+    ) -> "GefyraBridge":
+        bridge = cls(
+            provider=bridge_raw["provider"],
+            name=bridge_raw["metadata"]["name"],
+            client=bridge_raw["client"],
+            local_container_ip=bridge_raw["destinationIP"],
+            port_mappings=bridge_raw["portMappings"] or [],
+            target_container=bridge_raw["targetContainer"],
+            target_namespace=bridge_raw["targetNamespace"],
+            target=bridge_raw["target"],
+            rules=bridge_raw.get("providerParameter").get("rules", None),
+            local_container_name=bridge_raw["metadata"]["labels"].get(
+                "gefyra.dev/client-container"
+            ),
+        )
+        bridge._state = bridge_raw["state"]
+        bridge._state_transitions = bridge_raw.get("stateTransitions", None)
+        bridge._created = bridge_raw["metadata"].get("creationTimestamp", None)
+        bridge._config = config
+        return bridge
+
+    def get_k8s_bridge_body(self, config: ClientConfiguration):
+        from gefyra.local.bridge import get_bridge_rules
+
+        if self.rules:
+            params = {"rules": get_bridge_rules(self.rules)}
+        else:
+            params = {}
+        return {
+            "apiVersion": "gefyra.dev/v1",
+            "kind": "gefyrabridge",
+            "metadata": {
+                "name": self.name,
+                "namespace": config.NAMESPACE,
+                "labels": {
+                    "gefyra.dev/bridge-mount": self.target,
+                    "gefyra.dev/client": self.client,
+                    "gefyra.dev/client-container": self.local_container_name,
+                },
+            },
+            "provider": self.provider,
+            "connectionProvider": self.connection_provider,
+            "providerParameter": params,
+            "client": self.client,
+            "destinationIP": self.local_container_ip,
+            "target": self.target,
+            "targetNamespace": self.target_namespace,
+            "targetContainer": self.target_container,
+            "portMappings": self.port_mappings,
+            "handleProbes": self.handle_probes,
+        }

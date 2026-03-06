@@ -1,0 +1,25 @@
+version: 1
+threads: 4
+pid_file: /tmp/carrier2.pid
+error_log: /tmp/carrier.log
+upgrade_sock: /tmp/carrier2.sock
+upstream_keepalive_pool_size: 100
+probes: 
+  httpGet:
+      - 8001
+  httpsGet:
+      - 8002
+proxy:
+  - port: 5002
+    clusterUpstream: 
+      - "localhost:9090"
+    bridges:
+        user-1:
+            endpoint: "www.blueshoe.io:443"
+            tls: true
+            sni: "www.blueshoe.io"
+            rules:
+                - match:
+                    - matchHeader:
+                        name: "x-gefyra"
+                        value: "user-1"

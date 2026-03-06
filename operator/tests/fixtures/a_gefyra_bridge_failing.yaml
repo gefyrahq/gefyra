@@ -1,0 +1,14 @@
+apiVersion: gefyra.dev/v1
+kind: gefyrabridge
+metadata:
+  name: bridge-a
+  namespace: gefyra
+provider: carrier
+connectionProvider: stowaway
+client: client-a
+targetNamespace: demo-failing
+targetPod: frontend
+targetContainer: frontend
+portMappings:
+  - "8080:80"
+destinationIP: "192.168.101.1"

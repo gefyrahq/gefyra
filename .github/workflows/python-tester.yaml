@@ -4,14 +4,14 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ "**" ]
 
 jobs:
   build_test_image:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -46,10 +46,67 @@ jobs:
         tags: pyserver
         outputs: type=docker,dest=/tmp/pyserver.tar
     - name: Upload pyserver image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: pyserver
         path: /tmp/pyserver.tar
+  
+  build_carrier:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.carrier_meta.outputs.tags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    # https://github.com/docker/setup-qemu-action
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    # https://github.com/docker/setup-buildx-action
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to quay.io
+      uses: docker/login-action@v3
+      with:
+        registry: quay.io
+        username: ${{ secrets.QUAY_ROBOT }}
+        password: ${{ secrets.QUAY_ROBOT_TOKEN }}
+    #
+    # Gefyra Operator
+    #
+    - name: Carrier Image meta
+      id: carrier_meta
+      uses: docker/metadata-action@v5
+      with:
+        flavor: |
+          latest=false
+        images: |
+          quay.io/gefyra/carrier
+        tags: |
+          type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
+          type=ref,event=pr,enable=${{ !!github.event.pull_request }}
+        labels: |
+          quay.expires-after=24h
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_SUMMARY: false
+      with:
+        context: carrier2/
+        platforms: linux/amd64
+        push: true
+        load: false
+        tags: ${{ steps.carrier_meta.outputs.tags }}
+        labels: ${{ steps.carrier_meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        outputs: type=docker,dest=/tmp/carrier.tar
+        build-args: COMMIT_SHA=${{ github.sha }}
+    - name: Upload carrier image
+      uses: actions/upload-artifact@v6
+      with:
+        name: carrier
+        path: /tmp/carrier.tar
 
   build_operator:
     runs-on: ubuntu-latest
@@ -57,7 +114,7 @@ jobs:
       tags: ${{ steps.operator_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -98,10 +155,12 @@ jobs:
         load: false
         tags: ${{ steps.operator_meta.outputs.tags }}
         labels: ${{ steps.operator_meta.outputs.labels }}
-        cache-from: type=registry,ref=quay.io/gefyra/operator:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/operator.tar
+        build-args: COMMIT_SHA=${{ github.sha }}
     - name: Upload operator image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: operator
         path: /tmp/operator.tar
@@ -114,7 +173,7 @@ jobs:
       tags: ${{ steps.cargo_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
@@ -149,19 +208,76 @@ jobs:
         target: cargo
         tags: ${{ steps.cargo_meta.outputs.tags }}
         labels: ${{ steps.cargo_meta.outputs.labels }}
-        cache-from: type=registry,ref=quay.io/gefyra/cargo:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/cargo.tar
     - name: Upload cargo image
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: cargo
         path: /tmp/cargo.tar
 
-  test_python:
+  build_stowaway:
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.stowaway_meta.outputs.tags }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    # https://github.com/docker/setup-qemu-action
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+    # https://github.com/docker/setup-buildx-action
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v3
+    #
+    # Gefyra Stowaway
+    #
+    - name: Stowaway Image meta
+      id: stowaway_meta
+      uses: docker/metadata-action@v5
+      with:
+        flavor: |
+          latest=false
+        images: |
+          quay.io/gefyra/stowaway
+        tags: |
+          type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
+          type=ref,event=pr,enable=${{ !!github.event.pull_request }}
+        labels: |
+          quay.expires-after=24h
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      env:
+        DOCKER_BUILD_SUMMARY: false
+      with:
+        context: stowaway/
+        platforms: linux/amd64
+        push: false
+        tags: ${{ steps.stowaway_meta.outputs.tags }}
+        labels: ${{ steps.stowaway_meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        outputs: type=docker,dest=/tmp/stowaway.tar
+    - name: Upload stowaway image
+      uses: actions/upload-artifact@v6
+      with:
+        name: stowaway
+        path: /tmp/stowaway.tar
+        
+
+  test_client:
+    name: Pytest Gefyra Client
+    needs:
+      - build_cargo
+      - build_operator
+      - build_carrier
+      - build_stowaway
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set fake kubeconfig
         shell: bash
         run: |
@@ -169,17 +285,9 @@ jobs:
           cd ~/.kube
           touch config
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
-      - name: Set Gefyra tracking config / fake kubeconfig
-        shell: bash
-        run: |
-          mkdir -p ~/.gefyra
-          cd ~/.gefyra
-          touch config.ini
-          echo "[telemetry]" >> config.ini
-          echo "track = False" >> config.ini
+          python-version: '3.11'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -191,10 +299,46 @@ jobs:
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
-        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+      - name: Download cargo artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: cargo
+          path: /tmp/cargo
+      - name: Download operator artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: operator
+          path: /tmp/operator
+      - name: Download carrier artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: carrier
+          path: /tmp/carrier
+      - name: Download stowaway artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: stowaway
+          path: /tmp/stowaway
+      - name: Load pre-built images
+        run: |
+          docker load --input /tmp/cargo/cargo.tar
+          docker load --input /tmp/operator/operator.tar
+          docker load --input /tmp/carrier/carrier.tar
+          docker load --input /tmp/stowaway/stowaway.tar
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
+          docker tag ${{ needs.build_operator.outputs.tags }} operator:pytest
+          docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
+          docker tag ${{ needs.build_stowaway.outputs.tags }} stowaway:pytest
+          docker image ls -a
       - name: Run PyTest
         working-directory: ./client
-        run: poetry run coverage run -m pytest tests/unit/
+        run: poetry run coverage run -m pytest -x -s tests/
+        env:
+          CARRIER_IN_CACHE: true
+          OPERATOR_IN_CACHE: true
+          CARGO_IN_CACHE: true
+          STOWAWAY_IN_CACHE: true
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
@@ -204,7 +348,7 @@ jobs:
           COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: coverage_data
           path: ./client/.coverage*
@@ -222,23 +366,16 @@ jobs:
       - build_operator
       - build_cargo
       - build_test_image
+      - build_stowaway
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.9'
+          python-version: '3.11'
       # https://github.com/opensafely-core/job-server/issues/3429
-      - run: brew install docker
-        if: ${{ matrix.os == 'macos-13' }}
-      - name: Install QEMU 9.0.2
-        uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@ea5e6b5583a8fd470ffecc0b3f4670e5ce4f8ed2
-        if: ${{ matrix.os == 'macos-13' }}
-      - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v4
-        if: ${{ matrix.os == 'macos-13' }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -249,16 +386,11 @@ jobs:
       - name: Set Gefyra tracking config / fake kubeconfig
         shell: bash
         run: |
-          mkdir -p ~/.gefyra
           mkdir -p ~/.kube
-          cd ~/.gefyra
-          touch config.ini
-          echo "[telemetry]" >> config.ini
-          echo "track = False" >> config.ini
           cd ~/.kube
           touch config
       - name: Download artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           path: /tmp
       - name: start minikube
@@ -269,20 +401,22 @@ jobs:
       - name: Load Cargo image on host Docker
         run: |
           docker load --input /tmp/cargo/cargo.tar
-          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.1.6
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
           docker image ls -a
       - name: Load Gefyra images into Minikube
         run: |
           eval $(minikube docker-env)
           docker load --input /tmp/pyserver/pyserver.tar
+          docker load --input /tmp/stowaway/stowaway.tar
           docker load --input /tmp/operator/operator.tar
-          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.1.6
+          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.4.0
+          docker tag ${{ needs.build_stowaway.outputs.tags }} quay.io/gefyra/stowaway:2.4.0
           docker image ls -a
       - name: Install dependencies
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
       - name: Run gefyra up
-        timeout-minutes: 8
+        timeout-minutes: 15
         working-directory: ./client
         run: |
           poetry run coverage run -a -m gefyra.cli.main --debug up --minikube
@@ -315,135 +449,26 @@ jobs:
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: coverage_data-${{ matrix.os }}
           path: ./client/.coverage*
 
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        k3d: [v1.25.16-k3s4, v1.26.15-k3s1, v1.27.16-k3s1, v1.28.15-k3s1, v1.29.13-k3s1, v1.30.9-k3s1, v1.31.5-k3s1, v1.32.1-k3s1]
+  test_operator:
+    name: Pytest Gefyra Operator
     needs:
       - build_cargo
       - build_operator
-      - build_test_image
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      # https://github.com/docker/setup-qemu-action
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: '2.1.1'
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
-      - name: Set Gefyra tracking config / fake kubeconfig
-        shell: bash
-        run: |
-          mkdir -p ~/.gefyra
-          mkdir -p ~/.kube
-          cd ~/.gefyra
-          touch config.ini
-          echo "[telemetry]" >> config.ini
-          echo "track = False" >> config.ini
-          cd ~/.kube
-          touch config
-      #
-      # Create a cluster with registry
-      #
-      - uses: AbsaOSS/k3d-action@v2
-        name: Create Single Cluster
-        with:
-          cluster-name: "mycluster"
-          k3d-version: v5.8.1
-          args: >-
-            --agents 1
-            -p "31820:31820/UDP@agent:0"
-            --image docker.io/rancher/k3s:${{ matrix.k3d }}
-            --kubeconfig-update-default
-            --kubeconfig-switch-context
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          path: /tmp
-      - name: Load Operator image
-        run: |
-          docker load --input /tmp/pyserver/pyserver.tar
-          docker load --input /tmp/cargo/cargo.tar
-          docker load --input /tmp/operator/operator.tar
-          docker image ls -a
-          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.1.6
-      - name: Import Operator to k3d
-        run: |
-          k3d image import quay.io/gefyra/operator:2.1.6 -c mycluster --verbose
-      - name: Pytest
-        working-directory: ./client
-        run: poetry install --with dev --no-interaction --no-root
-      # Run the 'Try it yourself'
-      - name: Apply some workload
-        run: |
-          kubectl apply -f testing/workloads/hello.yaml
-
-      - name: Run Gefyra K3D Tests
-        working-directory: ./client
-        run: |
-          poetry run coverage run -m pytest -vvv -s -x --full-trace --timeout=240 tests/e2e/
-      - name: Show gefyra-operator logs
-        working-directory: ./client
-        if: ${{ failure() }}
-        run: |
-          kubectl get pods -n gefyra
-          kubectl describe deployment -n gefyra gefyra-operator
-          kubectl describe deployment -n gefyra gefyra-operator-webhook
-          kubectl logs -n gefyra deployment/gefyra-operator
-          kubectl logs -n gefyra deployment/gefyra-operator-webhook
-          kubectl get -A ValidatingWebhookConfiguration
-          kubectl get cm -n gefyra
-          kubectl describe cm -n gefyra gefyra-stowaway-proxyroutes
-          kubectl describe cm -n gefyra gefyra-stowaway-config
-          kubectl describe pod -n gefyra gefyra-stowaway-0
-          kubectl logs -n gefyra pod/gefyra-stowaway-0
-          kubectl get pvc -A
-          kubectl describe -n gefyra pvc stowaway-config-gefyra-stowaway-0
-      - name: Show coverage report
-        working-directory: ./client
-        run: |
-          poetry run coverage report
-      - name: Upload coverage data to coveralls.io
-        if: github.repository == 'gefyrahq/gefyra'
-        working-directory: ./client
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-          COVERALLS_FLAG_NAME: client
-          COVERALLS_PARALLEL: true
-        run: |
-          poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v4
-        with:
-          name: coverage_data-${{ matrix.k3d }}
-          path: ./client/.coverage*
-  test_operator:
-    name: Test Gefyra Operator
-    needs:
-      - build_cargo
+      - build_carrier
+      - build_stowaway
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -455,22 +480,48 @@ jobs:
         working-directory: ./operator
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
-        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.5.1 bash
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
       - name: Download cargo artifact
         uses: actions/download-artifact@v7
         with:
           name: cargo
           path: /tmp/cargo
+      - name: Download carrier artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: carrier
+          path: /tmp/carrier
+      - name: Download stowaway artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: stowaway
+          path: /tmp/stowaway
+      - name: Download operator artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: operator
+          path: /tmp/operator
       - name: Load pre-built cargo image
         run: |
           docker load --input /tmp/cargo/cargo.tar
+          docker load --input /tmp/operator/operator.tar
+          docker load --input /tmp/carrier/carrier.tar
+          docker load --input /tmp/stowaway/stowaway.tar
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
+          docker tag ${{ needs.build_operator.outputs.tags }} operator:pytest
+          docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
+          docker tag ${{ needs.build_stowaway.outputs.tags }} stowaway:pytest
           docker tag ${{ needs.build_cargo.outputs.tags }} cargo:pytest
           docker image ls -a
       - name: Run PyTest
         working-directory: ./operator
+        run: poetry run coverage run -m pytest -s -x --retries 5
         env:
           GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
-        run: poetry run coverage run -m pytest -s -x --retries 5
+          CARRIER_IN_CACHE: true
+          OPERATOR_IN_CACHE: true
+          CARGO_IN_CACHE: true
+          STOWAWAY_IN_CACHE: true
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./operator
@@ -486,9 +537,8 @@ jobs:
     if: github.repository == 'gefyrahq/gefyra'
     # need secrets.GITHUB_TOKEN
     needs:
-      - test
       - test_minikube
-      - test_python
+      - test_client
       - test_operator
     runs-on: ubuntu-latest
     container: python:3-slim

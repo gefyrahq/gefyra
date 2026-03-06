@@ -1,68 +1,109 @@
+import json
 import os
+import pprint
+from typing import Literal
 import click
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
+from gefyra.types import GefyraClient
+from gefyra.types.client import GefyraClientState
 from tabulate import tabulate
 
 
 @click.group(
-    "clients", cls=AliasedGroup, help="Manage clients for a Gefyra installation"
+    "clients", cls=AliasedGroup, help="Manage GefyraClients for a Gefyra installation"
 )
 @click.pass_context
 def clients(ctx):
-    # for management of clients we always sourcing the kubeconfig and context from env if not passed
+    # for management of GefyraClient we always sourcing the kubeconfig and context from env if not passed
     if ctx.obj["kubeconfig"] is None:
         ctx.obj["kubeconfig"] = os.environ.get("KUBECONFIG") or os.path.expanduser(
             "~/.kube/config"
         )
 
 
-@clients.command("create", help="Create a new Gefyra client")
-@click.option("--client-id", help="The client id", type=str)
+@clients.command("create", help="Create a new GefyraClient")
+@click.option(
+    "--client-id", "--name", help="The client id/name of the GefyraClient", type=str
+)
 @click.option(
     "-n",
     "quantity",
-    help="Number of clients to be generated (not allowed with explicit client-id)",
+    help="Number of GefyraClient to be generated (not allowed with explicit --client-id/--name)",
     type=int,
     default=1,
 )
 @click.option("--registry", help="The registry URL for the images", type=str)
+@click.option(
+    "--nowait", is_flag=True, help="Do not wait for the GefyraClient to be ready"
+)
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout in seconds for the GefyraClient to be ready",
+    default=60,
+)
 @click.pass_context
 @standard_error_handler
-def create_clients(ctx, client_id, quantity, registry):
+def create_clients(
+    ctx, client_id, quantity, registry, nowait: bool = False, timeout: int = 60
+):
     from gefyra import api
 
-    api.add_clients(
+    clients: list[GefyraClient] = api.add_clients(
         client_id,
         quantity,
         registry=registry,
         kubeconfig=ctx.obj["kubeconfig"],
         kubecontext=ctx.obj["context"],
     )
-    console.success(f"{quantity} client(s) created successfully")
+    if not nowait:
+        console.info("Waiting for GefyraClient(s) to be ready...")
+        for client in clients:
+            client.wait_for_state(GefyraClientState.WAITING, timeout=timeout)
+
+    console.success(f"{quantity} GefyraClient(s) created successfully")
 
 
 @clients.command(
-    "delete", alias=["rm", "remove"], help="Mark a Gefyra client for deletion"
+    "delete", alias=["rm", "remove"], help="Mark a GefyraClient for deletion"
 )
 @click.argument("client_id", nargs=-1, required=True)
+@click.option(
+    "--nowait", is_flag=True, help="Do not wait for the GefyraClient to be deleted"
+)
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout in seconds for the GefyraClient to be deleted",
+    default=60,
+)
+@click.option("--force", is_flag=True, help="Force deletion of the GefyraClient")
 @click.pass_context
 @standard_error_handler
-def delete_client(ctx, client_id):
+def delete_client(
+    ctx, client_id, nowait: bool = False, timeout: int = 60, force: bool = False
+):
     from gefyra import api
 
     for _del in list(client_id):
         deleted = api.delete_client(
-            _del, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+            _del,
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            wait=not nowait,
+            timeout=timeout,
+            force=force,
         )
         if deleted:
-            console.success(f"Client {_del} marked for deletion")
+            console.success(f"GefyraClient {_del} marked for deletion")
 
 
-@clients.command("list", alias=["ls"], help="List all Gefyra clients")
+@clients.command("list", alias=["ls"], help="List all GefyraClients")
+@click.option("-o", "--output", type=click.Choice(["json", "text"]), default="text")
 @click.pass_context
 @standard_error_handler
-def list_client(ctx):
+def list_client(ctx, output: Literal["json", "text"] = "text"):
     from gefyra import api
 
     gefyraclients = api.list_client(
@@ -71,27 +112,86 @@ def list_client(ctx):
     clients = [
         [
             c.client_id,
-            c.state,
+            GefyraClientState(c._state).value,
             c.state_transitions.get("CREATING", "Creating..."),
+            c._wg_handshake or "-",
         ]
         for c in gefyraclients
     ]
-    click.echo(tabulate(clients, headers=["ID", "STATE", "CREATED"], tablefmt="plain"))
+    if clients:
+        if output == "text":
+            click.echo(
+                tabulate(
+                    clients,
+                    headers=["ID", "STATE", "CREATED", "WIREGUARD HANDSHAKE"],
+                    tablefmt="plain",
+                )
+            )
+        elif output == "json":
+            res = {}
+            for c in gefyraclients:
+                res[c.client_id] = c.inspect()
+            click.echo(json.dumps(res))
+        else:
+            raise ValueError(f"Unsupported output format: {output}")
+    else:
+        console.info("No GefyraClients found")
 
 
-@clients.command("inspect", alias=["show", "get"], help="Describe a Gefyra client")
+@clients.command(
+    "disconnect", alias=["deactivate", "stop"], help="Disconnect a GefyraClient"
+)
 @click.argument("client_id")
 @click.pass_context
 @standard_error_handler
-def inspect_client(ctx, client_id):
+def disconnect_client(ctx, client_id):
     from gefyra import api
 
     client = api.get_client(
         client_id, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
     )
-    console.heading(client.client_id)
-    console.info(f"uid: {client.uid}")
-    console.info(f"States: {client.state_transitions}")
+    client.deactivate_connection()
+    console.success(f"GefyraClient {client.name} marked for disconnection")
+
+
+@clients.command(
+    "inspect", alias=["describe", "show", "get"], help="Describe a GefyraClient"
+)
+@click.argument("client_id")
+@click.option(
+    "-o",
+    "--output",
+    help="Output format (json, text)",
+    default="text",
+    type=click.Choice(["json", "text"]),
+)
+@click.pass_context
+@standard_error_handler
+def inspect_client(ctx, client_id, output: Literal["json", "text"] = "text"):
+    from gefyra import api
+
+    client = api.get_client(
+        client_id, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+    )
+    status = client.inspect()
+    if output == "text":
+        console.heading(status["client_id"])
+        console.info(f"uid: {status['uid']}")
+        console.info(
+            "States:\n" + pprint.pformat(status["state_transitions"], width=60)
+        )
+        if status["wg_status"]:
+            console.info(
+                "Wireguard: \n" + pprint.pformat(status["wg_status"], width=60)
+            )
+        if "events" in status:
+            console.heading("Events")
+            for event in status["events"]:
+                console.info(event)
+    elif output == "json":
+        click.echo(json.dumps(status))
+    else:
+        raise ValueError(f"Unsupported output format: {output}")
 
 
 @clients.command(
@@ -127,6 +227,12 @@ def inspect_client(ctx, client_id):
     type=int,
     default=1340,
 )
+@click.option(
+    "--local",
+    is_flag=True,
+    help="Whether the target cluster is a local k8s cluster",
+    default=False,
+)
 @click.pass_context
 @standard_error_handler
 def get_config(
@@ -138,6 +244,7 @@ def get_config(
     output,
     registry,
     mtu,
+    local: bool = False,
 ):
     from gefyra import api
 
@@ -150,6 +257,7 @@ def get_config(
         kubecontext=ctx.obj["context"],
         registry=registry,
         wireguard_mtu=mtu,
+        local=local,
     )
     if output:
         output.write(json_str.encode("utf-8"))

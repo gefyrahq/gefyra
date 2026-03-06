@@ -1,0 +1,18 @@
+version: 1
+threads: 2
+proxy:
+    - port: 8080
+      clusterUpstream: 
+        - "127.0.0.1:4443"
+      bridges:
+        user-1:
+            endpoint: "127.0.0.1:5442"
+            rules:
+                - match:
+                    - matchPath: 
+                        path: "/what/a/path"
+                        type: "prefix"
+                - match:
+                    - matchHeader:
+                        name: "x-gefyra"
+                        value: "peer"

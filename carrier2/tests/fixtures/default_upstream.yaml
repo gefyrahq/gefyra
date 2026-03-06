@@ -1,0 +1,10 @@
+version: 1
+threads: 2
+proxy:
+    - port: 8080
+      clusterUpstream: 
+        - "127.0.0.1:4443"
+probes: 
+    httpGet:
+        - 8001
+        - 8002

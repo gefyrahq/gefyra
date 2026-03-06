@@ -1,0 +1,1 @@
+CONNECTION_NAME = "default"

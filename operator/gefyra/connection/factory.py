@@ -1,8 +1,7 @@
 from enum import Enum
 
 from gefyra.configuration import OperatorConfiguration
-from gefyra.connection.abstract import AbstractGefyraConnectionProvider
-from gefyra.connection.stowaway import StowawayBuilder
+from gefyra.connection.stowaway import Stowaway, StowawayBuilder
 
 
 class ConnectionProviderType(Enum):
@@ -21,7 +20,7 @@ class GefyraConnectionFactory:
         provider_type: ConnectionProviderType,
         configuration: OperatorConfiguration,
         logger,
-        **kwargs
+        **kwargs,
     ):
         builder = self._builders.get(provider_type.value)
         if not builder:
@@ -33,8 +32,8 @@ class GefyraConnectionFactory:
         provider_type: ConnectionProviderType,
         configuration: OperatorConfiguration,
         logger,
-        **kwargs
-    ) -> AbstractGefyraConnectionProvider:
+        **kwargs,
+    ) -> Stowaway:  # we currently have only this one connection provider
         return self.__create(provider_type, configuration, logger, **kwargs)
 
 

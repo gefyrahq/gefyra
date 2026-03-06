@@ -1,5 +1,6 @@
 from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
 import kubernetes as k8s
+import asyncio
 
 from gefyra.configuration import OperatorConfiguration
 from gefyra.connection.stowaway.resources import (
@@ -14,11 +15,13 @@ core_v1_api = k8s.client.CoreV1Api()
 app = k8s.client.AppsV1Api()
 
 
-def handle_serviceaccount(logger, configuration: OperatorConfiguration):
+async def handle_serviceaccount(logger, configuration: OperatorConfiguration):
     serviceaccount = create_stowaway_serviceaccount()
     try:
-        core_v1_api.create_namespaced_service_account(
-            body=serviceaccount, namespace=configuration.NAMESPACE
+        await asyncio.to_thread(
+            core_v1_api.create_namespaced_service_account,
+            body=serviceaccount,
+            namespace=configuration.NAMESPACE,
         )
         logger.info("Gefyra Stowaway Serviceaccount created")
     except k8s.client.exceptions.ApiException as e:
@@ -26,11 +29,13 @@ def handle_serviceaccount(logger, configuration: OperatorConfiguration):
             raise e
 
 
-def check_serviceaccount(logger):
+async def check_serviceaccount(logger):
     serviceaccount = create_stowaway_serviceaccount()
     try:
-        core_v1_api.read_namespaced_service_account(
-            serviceaccount.metadata.name, serviceaccount.metadata.namespace
+        await asyncio.to_thread(
+            core_v1_api.read_namespaced_service_account,
+            serviceaccount.metadata.name,
+            serviceaccount.metadata.namespace,
         )
         return True
     except k8s.client.exceptions.ApiException as e:
@@ -41,15 +46,17 @@ def check_serviceaccount(logger):
             raise e
 
 
-def handle_proxyroute_configmap(
+async def handle_proxyroute_configmap(
     logger, configuration: OperatorConfiguration
 ) -> k8s.client.V1ConfigMap:
     # Todo recover from restart; read in all <InterceptRequests>
     configmap_proxyroute = create_stowaway_proxyroute_configmap()
 
     try:
-        core_v1_api.create_namespaced_config_map(
-            body=configmap_proxyroute, namespace=configuration.NAMESPACE
+        await asyncio.to_thread(
+            core_v1_api.create_namespaced_config_map,
+            body=configmap_proxyroute,
+            namespace=configuration.NAMESPACE,
         )
         logger.info("Stowaway proxy route configmap created")
     except k8s.client.exceptions.ApiException as e:
@@ -59,7 +66,8 @@ def handle_proxyroute_configmap(
                 "Stowaway proxy route configmap already available, now patching it with"
                 " current configuration"
             )
-            core_v1_api.replace_namespaced_config_map(
+            await asyncio.to_thread(
+                core_v1_api.replace_namespaced_config_map,
                 name=configmap_proxyroute.metadata.name,
                 body=configmap_proxyroute,
                 namespace=configuration.NAMESPACE,
@@ -70,11 +78,13 @@ def handle_proxyroute_configmap(
     return configmap_proxyroute
 
 
-def check_proxyroute_configmap(logger) -> k8s.client.V1ConfigMap:
+async def check_proxyroute_configmap(logger) -> k8s.client.V1ConfigMap:
     configmap_proxyroute = create_stowaway_proxyroute_configmap()
     try:
-        core_v1_api.read_namespaced_config_map(
-            configmap_proxyroute.metadata.name, configmap_proxyroute.metadata.namespace
+        await asyncio.to_thread(
+            core_v1_api.read_namespaced_config_map,
+            configmap_proxyroute.metadata.name,
+            configmap_proxyroute.metadata.namespace,
         )
         return True
     except k8s.client.exceptions.ApiException as e:
@@ -85,14 +95,16 @@ def check_proxyroute_configmap(logger) -> k8s.client.V1ConfigMap:
             raise e
 
 
-def handle_config_configmap(
+async def handle_config_configmap(
     logger, configuration: OperatorConfiguration
 ) -> k8s.client.V1ConfigMap:
     configmap = create_stowaway_configmap()
 
     try:
-        core_v1_api.create_namespaced_config_map(
-            body=configmap, namespace=configuration.NAMESPACE
+        await asyncio.to_thread(
+            core_v1_api.create_namespaced_config_map,
+            body=configmap,
+            namespace=configuration.NAMESPACE,
         )
         logger.info("Stowaway config configmap created")
     except k8s.client.exceptions.ApiException as e:
@@ -101,7 +113,8 @@ def handle_config_configmap(
                 "Stowaway config configmap already available, now patching it with"
                 " current configuration"
             )
-            core_v1_api.replace_namespaced_config_map(
+            await asyncio.to_thread(
+                core_v1_api.replace_namespaced_config_map,
                 name=configmap.metadata.name,
                 body=configmap,
                 namespace=configuration.NAMESPACE,
@@ -112,13 +125,15 @@ def handle_config_configmap(
     return configmap
 
 
-def check_config_configmap(
+async def check_config_configmap(
     logger,
 ) -> k8s.client.V1ConfigMap:
     configmap = create_stowaway_configmap()
     try:
-        core_v1_api.read_namespaced_config_map(
-            configmap.metadata.name, configmap.metadata.namespace
+        await asyncio.to_thread(
+            core_v1_api.read_namespaced_config_map,
+            configmap.metadata.name,
+            configmap.metadata.namespace,
         )
         return True
     except k8s.client.exceptions.ApiException as e:
@@ -129,14 +144,16 @@ def check_config_configmap(
             raise e
 
 
-def handle_stowaway_statefulset(
+async def handle_stowaway_statefulset(
     logger, configuration: OperatorConfiguration, labels: dict[str, str]
 ) -> k8s.client.V1StatefulSet:
     stowaway_sts = create_stowaway_statefulset(labels, configuration)
 
     try:
-        app.create_namespaced_stateful_set(
-            body=stowaway_sts, namespace=configuration.NAMESPACE
+        await asyncio.to_thread(
+            app.create_namespaced_stateful_set,
+            body=stowaway_sts,
+            namespace=configuration.NAMESPACE,
         )
         logger.info("Stowaway deployment created")
     except k8s.client.exceptions.ApiException as e:
@@ -146,7 +163,8 @@ def handle_stowaway_statefulset(
                 "Stowaway deployment already available, now patching it with current"
                 " configuration"
             )
-            app.patch_namespaced_stateful_set(
+            await asyncio.to_thread(
+                app.patch_namespaced_stateful_set,
                 name=stowaway_sts.metadata.name,
                 body=stowaway_sts,
                 namespace=configuration.NAMESPACE,
@@ -157,59 +175,77 @@ def handle_stowaway_statefulset(
     return stowaway_sts
 
 
-def check_stowaway_statefulset(
+async def check_stowaway_statefulset(
     logger, configuration: OperatorConfiguration, labels: dict[str, str]
 ) -> bool:
     stowaway_sts = create_stowaway_statefulset(labels, configuration)
     try:
-        app.read_namespaced_stateful_set(
-            stowaway_sts.metadata.name, stowaway_sts.metadata.namespace
+        sts = await asyncio.to_thread(
+            app.read_namespaced_stateful_set,
+            stowaway_sts.metadata.name,
+            stowaway_sts.metadata.namespace,
         )
+        if (
+            sts.spec.template.spec.containers[0].image
+            != stowaway_sts.spec.template.spec.containers[0].image  # type: ignore
+        ):
+            logger.warning("Stowaway image does not match, reinstalling...")
+            await asyncio.to_thread(
+                app.delete_namespaced_stateful_set,
+                name=stowaway_sts.metadata.name,
+                namespace=stowaway_sts.metadata.namespace,
+            )
+            await handle_stowaway_statefulset(logger, configuration, labels)
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            logger.warning("Stowaway deployment does not exist")
+            logger.warning("Stowaway statefulset does not exist")
             return False
         else:
             raise e
 
 
-def handle_stowaway_nodeport_service(
+async def handle_stowaway_nodeport_service(
     logger,
     configuration: OperatorConfiguration,
     stowaway_sts: k8s.client.V1StatefulSet,
 ):
     nodeport_service_stowaway = create_stowaway_nodeport_service(stowaway_sts)
     try:
-        core_v1_api.create_namespaced_service(
-            body=nodeport_service_stowaway, namespace=configuration.NAMESPACE
+        await asyncio.to_thread(
+            core_v1_api.create_namespaced_service,
+            body=nodeport_service_stowaway,
+            namespace=configuration.NAMESPACE,
         )
         logger.info("Stowaway nodeport service created")
     except k8s.client.exceptions.ApiException as e:
         if e.status in [409, 422]:
+            logger.info("Stowaway service already exist")
             # the Stowaway service already exist
+            # TODO check with installed service from 'gefyra install'
             # status == 422 is nodeport already allocated
-            logger.warning(
-                "Stowaway nodeport service already available, now patching it with"
-                " current configuration"
-            )
-            core_v1_api.patch_namespaced_service(
-                name=nodeport_service_stowaway.metadata.name,
-                body=nodeport_service_stowaway,
-                namespace=configuration.NAMESPACE,
-            )
-            logger.info("Stowaway nodeport service patched")
+            # logger.warning(
+            #     "Stowaway nodeport service already available, now patching it with"
+            #     " current configuration"
+            # )
+            # await asyncio.to_thread(core_v1_api.patch_namespaced_service,
+            #     name=nodeport_service_stowaway.metadata.name,
+            #     body=nodeport_service_stowaway,
+            #     namespace=configuration.NAMESPACE,
+            # )
+            # logger.info("Stowaway nodeport service patched")
         else:
             raise e
 
 
-def check_stowaway_nodeport_service(
+async def check_stowaway_nodeport_service(
     logger,
     stowaway_sts: k8s.client.V1StatefulSet,
 ):
     nodeport_service_stowaway = create_stowaway_nodeport_service(stowaway_sts)
     try:
-        core_v1_api.read_namespaced_service(
+        await asyncio.to_thread(
+            core_v1_api.read_namespaced_service,
             nodeport_service_stowaway.metadata.name,
             nodeport_service_stowaway.metadata.namespace,
         )
@@ -222,24 +258,29 @@ def check_stowaway_nodeport_service(
             raise e
 
 
-def remove_stowaway_services(logger, configuration: OperatorConfiguration):
+async def remove_stowaway_services(logger, configuration: OperatorConfiguration):
     logger.info("Removing Stowaway services")
     try:
-        svc_list = core_v1_api.list_namespaced_service(
-            namespace=configuration.NAMESPACE, label_selector="gefyra.dev/app=stowaway"
+        svc_list = await asyncio.to_thread(
+            core_v1_api.list_namespaced_service,
+            namespace=configuration.NAMESPACE,
+            label_selector="gefyra.dev/app=stowaway",
         )
         for svc in svc_list.items:
-            core_v1_api.delete_namespaced_service(
-                name=svc.metadata.name, namespace=configuration.NAMESPACE
+            await asyncio.to_thread(
+                core_v1_api.delete_namespaced_service,
+                name=svc.metadata.name,
+                namespace=configuration.NAMESPACE,
             )
     except k8s.client.exceptions.ApiException as e:
         logger.error("Error removing Stowaway services: " + str(e))
 
 
-def remove_stowaway_statefulset(logger, stowaway_sts: k8s.client.V1StatefulSet):
+async def remove_stowaway_statefulset(logger, stowaway_sts: k8s.client.V1StatefulSet):
     logger.info("Removing Stowaway StatefulSet")
     try:
-        app.delete_namespaced_stateful_set(
+        await asyncio.to_thread(
+            app.delete_namespaced_stateful_set,
             name=stowaway_sts.metadata.name,
             namespace=stowaway_sts.metadata.namespace,
         )
@@ -247,14 +288,17 @@ def remove_stowaway_statefulset(logger, stowaway_sts: k8s.client.V1StatefulSet):
         logger.error("Error Stowaway StatefulSet: " + str(e))
 
 
-def remove_stowaway_configmaps(logger, configuration: OperatorConfiguration):
+async def remove_stowaway_configmaps(logger, configuration: OperatorConfiguration):
     logger.info("Removing Stowaway configmaps")
     try:
-        configmaps = core_v1_api.list_namespaced_config_map(
-            namespace=configuration.NAMESPACE, label_selector="gefyra.dev/app=stowaway"
+        configmaps = await asyncio.to_thread(
+            core_v1_api.list_namespaced_config_map,
+            namespace=configuration.NAMESPACE,
+            label_selector="gefyra.dev/app=stowaway",
         )
         for cm in configmaps.items:
-            core_v1_api.delete_namespaced_config_map(
+            await asyncio.to_thread(
+                core_v1_api.delete_namespaced_config_map,
                 name=cm.metadata.name,
                 namespace=cm.metadata.namespace,
             )
@@ -262,30 +306,32 @@ def remove_stowaway_configmaps(logger, configuration: OperatorConfiguration):
         logger.error("Error removing Stowaway configmap: " + str(e))
 
 
-def handle_stowaway_proxy_service(
+async def handle_stowaway_proxy_service(
     logger,
     configuration: OperatorConfiguration,
     deployment_stowaway: k8s.client.V1Deployment,
     port: int,
+    destination: str,
     client_id: str,
 ) -> k8s.client.V1Service:
     proxy_service_stowaway = create_stowaway_proxy_service(
-        deployment_stowaway, port, client_id
+        deployment_stowaway, port, destination, client_id
     )
     try:
-        core_v1_api.create_namespaced_service(
-            body=proxy_service_stowaway, namespace=configuration.NAMESPACE
+        await asyncio.to_thread(
+            core_v1_api.create_namespaced_service,
+            body=proxy_service_stowaway,
+            namespace=configuration.NAMESPACE,
         )
         logger.info(f"Stowaway proxy service for port {port} created")
     except k8s.client.exceptions.ApiException as e:
         if e.status in [409, 422]:
-            # the Stowaway service already exist
-            # status == 422 is nodeport already allocated
-            logger.warn(
+            logger.warning(
                 f"Stowaway proxy service for port {port} already available, now"
                 " patching it with current configuration"
             )
-            core_v1_api.patch_namespaced_service(
+            await asyncio.to_thread(
+                core_v1_api.patch_namespaced_service,
                 name=proxy_service_stowaway.metadata.name,
                 body=proxy_service_stowaway,
                 namespace=configuration.NAMESPACE,

@@ -1,3 +1,4 @@
+import datetime
 import os
 from typing import List, Optional, TYPE_CHECKING
 import uuid
@@ -142,3 +143,49 @@ users:
     user:
       token: {token}
     """
+
+
+class WatchEventsMixin:
+    def watch_events(
+        self,
+        update_callback: Optional[callable] = None,
+        stop_reason: str = "Ready",
+        timeout: int = 60,
+    ) -> bool:
+        # returns if timeout is reached
+        import kubernetes as k8s
+
+        core_api = self._config.K8S_CORE_API
+
+        if self._created is None:
+            self.update()
+
+        created = datetime.datetime.fromisoformat(self._created)
+        w = k8s.watch.Watch()
+        try:
+            for event in w.stream(
+                core_api.list_namespaced_event,
+                namespace=self._config.NAMESPACE,
+                timeout_seconds=timeout,
+            ):
+                if (
+                    "object" in event
+                    and event["object"].involved_object
+                    and event["object"].event_time
+                    and event["object"].event_time > created
+                ):
+                    if self.name in event["object"].involved_object.name:
+                        if update_callback:
+                            if event["object"].message:
+                                update_callback(event["object"].message)
+
+                    if event["object"].reason == stop_reason:
+                        w.stop()
+                        return False
+            else:
+                return True
+        except k8s.client.exceptions.ApiException as e:
+            if e.status == 403:
+                raise RuntimeError(
+                    f"Cannot 'watch' events in namespace '{self._config.NAMESPACE}'"
+                ) from None

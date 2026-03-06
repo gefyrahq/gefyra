@@ -1,0 +1,22 @@
+apiVersion: gefyra.dev/v1
+kind: gefyrabridge
+metadata:
+  name: bridge-b
+  namespace: gefyra
+  labels:
+    gefyra.dev/bridge-mount: bridgemount-a
+provider: carrier2
+providerParameter:
+  rules:
+    - match:
+        - matchHeader:
+            name: "x-gefyra"
+            value: "peer2"
+connectionProvider: stowaway
+client: client-b
+targetNamespace: default
+target: bridgemount-a
+targetContainer: nginx
+portMappings:
+  - "8080:80"
+destinationIP: "192.168.101.2"

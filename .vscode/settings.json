@@ -1,10 +1,10 @@
 {
     "python.testing.pytestArgs": [
-        "client"
+        "operator"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "python.formatting.provider": "black",
+    "python.formatting.provider": "ruff",
     "gefyra.up": {
         "minikube": false
     },

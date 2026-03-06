@@ -1,0 +1,150 @@
+import logging
+from pathlib import Path
+from time import sleep
+from typing import List, Optional
+
+from gefyra.api.utils import get_workload_information, random_string, stopwatch
+from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import CommandTimeoutError, GefyraBridgeMountNotFound
+from gefyra.local.mount import (
+    get_gefyrabridgemount,
+    get_gbridgemount_body,
+    handle_create_gefyrabridgemount,
+    handle_delete_gefyramount,
+)
+from gefyra.types import GefyraBridgeMount
+
+logger = logging.getLogger(__name__)
+
+
+def create_mount(
+    namespace: str,
+    target: str,
+    kubeconfig: Path,
+    kubecontext: str,
+    connection_name: str = "",
+    wait: bool = False,
+    timeout: int = 0,
+    mount_name: str | None = None,
+    provider: str = "carrier2mount",
+    tls_certificate: Optional[str] = None,
+    tls_key: Optional[str] = None,
+    tls_sni: Optional[str] = None,
+) -> GefyraBridgeMount:
+    from gefyra.configuration import ClientConfiguration
+
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        connection_name=connection_name,
+    )
+    workload_type, workload_name, container_name = get_workload_information(target)
+    if not mount_name:
+        mount_name = f"{workload_name[:25]}-{namespace[:20]}-{random_string(5)}"
+    if len(mount_name) > 63:
+        raise RuntimeError("The name must be no more than 63 characters")
+    bridge_mount_body = get_gbridgemount_body(
+        config,
+        mount_name,
+        f"{workload_type}/{workload_name}",
+        provider,
+        namespace,
+        container_name,
+        tls_certificate,
+        tls_key,
+        tls_sni,
+    )
+    bridge_mount = handle_create_gefyrabridgemount(config, bridge_mount_body, target)
+    waiting_time = 0
+    if timeout:
+        waiting_time = timeout
+    while True and wait:
+        # watch whether all relevant mounts have been established
+        mount = get_gefyrabridgemount(config, mount_name)
+        gmount = GefyraBridgeMount(config, mount)
+        if gmount.uid in bridge_mount["metadata"]["uid"] and gmount._state == "ACTIVE":
+            logger.info(f"Bridge mount {gmount.name} established.")
+            break
+        sleep(1)
+        # Raise exception in case timeout is reached
+        waiting_time -= 1
+        if timeout and waiting_time <= 0:
+            raise CommandTimeoutError("Timeout for bridging operation exceeded")
+    return GefyraBridgeMount(config, bridge_mount)
+
+
+@stopwatch
+def get_mount(
+    mount_name: str,
+    connection_name: str = "",
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+) -> GefyraBridgeMount:
+    """
+    Get a GefyraBridgeMount object
+    """
+    config_params = {"connection_name": connection_name}
+    if kubeconfig:
+        config_params.update({"kube_config_file": str(kubeconfig)})
+
+    if kubecontext:
+        config_params.update({"kube_context": kubecontext})
+    config = ClientConfiguration(**config_params)  # type: ignore
+    mount = get_gefyrabridgemount(config, mount_name)
+    if not mount:
+        raise GefyraBridgeMountNotFound(
+            f"GefyraBridgeMount with name '{mount_name}' not found."
+        )
+    return GefyraBridgeMount(config, mount)
+
+
+@stopwatch
+def delete_mount(
+    mount_name: str,
+    force: bool = False,
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+    connection_name: Optional[str] = None,
+    wait: bool = False,
+    timeout: Optional[int] = None,
+) -> bool:
+    """
+    Delete a GefyraClient configuration
+    """
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        connection_name=connection_name if connection_name else "no-connection-name",
+        # use no-connection-name to make sure you use admin access to the cluster
+    )
+    return handle_delete_gefyramount(
+        config, mount_name, force, wait=wait, timeout=timeout
+    )
+
+
+@stopwatch
+def list_mounts(
+    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
+) -> List[GefyraBridgeMount]:
+    """
+    List all GefyraBridgeMount objects
+    """
+    from kubernetes.client import ApiException
+
+    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    try:
+        bridge_mounts = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+            namespace=config.NAMESPACE,
+            group="gefyra.dev",
+            plural="gefyrabridgemounts",
+            version="v1",
+        )
+    except ApiException as e:
+        raise RuntimeError(
+            f"Error listing GefyraBridgeMounts: {e}Is Gefyra installed and running in this cluster?"
+        ) from None
+
+    return [
+        GefyraBridgeMount(config, bridge_mount)
+        for bridge_mount in bridge_mounts["items"]
+    ]

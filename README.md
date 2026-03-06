@@ -33,6 +33,9 @@
   </p>
 </div>
 
+**Important** - Gefyra release 2.4 contains major breaking changes, big parts of the operator have been refactored.
+The carrier has been completely re-written to support [user specific bridges](https://github.com/gefyrahq/gefyra/issues/733).
+
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
