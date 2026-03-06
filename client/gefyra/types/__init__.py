@@ -39,6 +39,7 @@ class GefyraConnectionItem:
     created: str
     status: str
     client_status: str
+    wireguard_probe: bool = False
 
     @property
     def json(self):

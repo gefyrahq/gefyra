@@ -212,12 +212,22 @@ def inspect_connection(connection_name: str) -> GefyraConnectionItem:
         client_state = client._state.lower()
     except (GefyraClientNotFound, KeyError):
         client_state = "not found"
+
+    wireguard_probe_successful = False
+    if client_state == "active" and cargo_status == "running":
+        config.CARGO_PROBE_TIMEOUT = 1
+        try:
+            probe_wireguard_connection(config)
+            wireguard_probe_successful = True
+        except GefyraConnectionError:
+            wireguard_probe_successful = False
     return GefyraConnectionItem(
         name=connection_name,
         client_status=client_state,
         status=cargo_status,
         created=result.created if result else None,
         version=result.version if result else None,
+        wireguard_probe=wireguard_probe_successful,
     )
 
 
