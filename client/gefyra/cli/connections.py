@@ -32,7 +32,7 @@ def _manage_container_and_bridges(
             elif click.confirm("Do you want to remove them?", abort=True):
                 _del = True
             if _del:
-                for gbridge in _bridges:
+                for _container, gbridge in _bridges:
                     if update_callback:
                         update_callback(f"Removing GefyraBridge '{gbridge.name}'...")
                     api.delete_bridge(

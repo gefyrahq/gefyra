@@ -221,7 +221,7 @@ def list_bridges(
     connection_name: str = "",
     filter_client: bool = True,
     get_containers: bool = False,
-) -> List[GefyraBridge] | List[Tuple[GefyraLocalContainer | None, GefyraBridge]]:
+) -> List[Tuple[GefyraLocalContainer | None, GefyraBridge]]:
     """
     Retrieve all GefyraBridge objects
     """
@@ -268,7 +268,8 @@ def list_bridges(
         return result
     else:
         return [
-            GefyraBridge.from_raw(raw_bridge, config) for raw_bridge in bridges["items"]
+            (None, GefyraBridge.from_raw(raw_bridge, config))
+            for raw_bridge in bridges["items"]
         ]
 
 
