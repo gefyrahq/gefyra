@@ -342,7 +342,6 @@ def inspect_bridge(
 ):
     from gefyra import api
 
-    # TODO add connection-name support
     bridge_obj = api.get_bridge(
         bridge_name,
         kubeconfig=ctx.obj["kubeconfig"],
@@ -355,9 +354,10 @@ def inspect_bridge(
         console.info(f"States: {status['_state_transitions']}")
         console.info(f"GefyraBridgeMount: {status['target']}")
         console.info(f"Provider Parameters: {status['rules']}")
-        console.heading("Events")
-        for event in status["events"]:
-            console.info(event)
+        if "events" in status:
+            console.heading("Events")
+            for event in status["events"]:
+                console.info(event)
     elif output == "json":
         click.echo(json.dumps(status))
     else:

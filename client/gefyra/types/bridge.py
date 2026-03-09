@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import WatchEventsMixin
+from gefyra.types import GefyraLocalContainer
 
 
 @dataclass
@@ -90,9 +91,30 @@ class GefyraBridge(WatchEventsMixin):
     # additional provider parameters for this bridge
     rules: List[ExactMatchHeader] | None = None
 
+    # local container status
+    container: GefyraLocalContainer | None = None
+
     # legacy (global bridge)
     target_namespace: str = ""
     target_container: str = ""
+
+    def resolve_local_container(self, config: ClientConfiguration) -> None:
+        """populate the containers field of this dataclass"""
+        from gefyra.local.bridge import get_all_containers
+
+        all_containers = get_all_containers(config=config)
+        for container in all_containers:
+            if container.address == self.local_container_ip:
+                self.container = GefyraLocalContainer(
+                    id=container.id,
+                    short_id=container.short_id,
+                    name=container.name,
+                    address=container.addres,
+                    namespace=self.target_namespace,
+                )
+                break
+            else:
+                continue
 
     def inspect(self, fetch_events: bool = False) -> dict[str, Any]:
         res = {
@@ -105,7 +127,22 @@ class GefyraBridge(WatchEventsMixin):
             "target_container": self.target_container,
             "target_namespace": self.target_namespace,
             "rules": [rule for rule in self.rules] if self.rules else None,
+            "local_container_ip": self.local_container_ip
+            if self.local_container_ip
+            else None,
+            "local_container_name": self.local_container_name
+            if self.local_container_name
+            else None,
+            "container": None,
         }
+        if self.container:
+            res["container"] = {
+                "id": self.container.id,
+                "short_id": self.container.short_id,
+                "name": self.container.name,
+                "address": self.container.addres,
+                "namespace": self.target_namespace,
+            }
         if fetch_events:
             events: List[str] = []
             self.watch_events(events.append, None, 1)

@@ -246,9 +246,10 @@ def inspect_mount(
             f"Target: {status['target']} in namespace {status['target_namespace']}"
         )
         console.info(f"States: {status['_state_transitions']}")
-        console.heading("Events")
-        for event in status["events"]:
-            console.info(event)
+        if "events" in status:
+            console.heading("Events")
+            for event in status["events"]:
+                console.info(event)
     elif output == "json":
         click.echo(json.dumps(status))
     else:

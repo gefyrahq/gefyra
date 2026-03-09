@@ -279,6 +279,7 @@ def get_bridge(
     connection_name: str = "",
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
+    resolve_container: bool = True,
 ) -> GefyraBridge:
     """
     Get a GefyraBridge object
@@ -291,4 +292,7 @@ def get_bridge(
         config_params.update({"kube_context": kubecontext})
     config = ClientConfiguration(**config_params)  # type: ignore
     bridge = get_gefyrabridge(config, bridge_name)
-    return GefyraBridge.from_raw(bridge, config)
+    gefyra_bridge = GefyraBridge.from_raw(bridge, config)
+    if resolve_container:
+        gefyra_bridge.resolve_local_container(config)
+    return gefyra_bridge
