@@ -105,13 +105,7 @@ class GefyraBridge(WatchEventsMixin):
         all_containers = get_all_containers(config=config)
         for container in all_containers:
             if container.address == self.local_container_ip:
-                self.container = GefyraLocalContainer(
-                    id=container.id,
-                    short_id=container.short_id,
-                    name=container.name,
-                    address=container.addres,
-                    namespace=self.target_namespace,
-                )
+                self.container = container
                 break
             else:
                 continue
