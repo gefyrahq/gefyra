@@ -5,7 +5,7 @@ from typing_extensions import Literal
 from alive_progress import alive_bar
 import click
 from gefyra.cli import console
-from gefyra.cli.utils import AliasedGroup, standard_error_handler
+from gefyra.cli.utils import AliasedGroup, check_connection_name, standard_error_handler
 from gefyra.exceptions import CommandTimeoutError
 from gefyra.types import GefyraBridgeMount
 from tabulate import tabulate
@@ -133,11 +133,20 @@ def create(
     is_flag=True,
     help="Do not wait for the GefyraBridgeMount to be deleted.",
 )
+@click.option(
+    "--connection-name", type=str, default="default", callback=check_connection_name
+)
 @click.argument("mount_name", nargs=-1, required=True)
 @click.option("--timeout", type=int, default=60, required=False)
 @click.pass_context
 @standard_error_handler
-def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
+def delete_mount(
+    ctx,
+    mount_name,
+    nowait: bool = False,
+    timeout: int = 60,
+    connection_name: str = "default",
+):
     from gefyra import api
 
     # TODO add connection-name support
@@ -149,6 +158,7 @@ def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
                 kubecontext=ctx.obj["context"],
                 wait=not nowait,
                 timeout=timeout,
+                connection_name=connection_name,
             )
         except TimeoutError:
             raise CommandTimeoutError("Timeout for deleting GefyraBridgeMount exceeded")
@@ -158,15 +168,21 @@ def delete_mount(ctx, mount_name, nowait: bool = False, timeout: int = 60):
 
 @mount.command("list", alias=["ls"], help="List all GefyraBridgeMounts")
 @click.option("--output", "-o", type=click.Choice(["json", "text"]), default="text")
+@click.option(
+    "--connection-name", type=str, default="default", callback=check_connection_name
+)
 @click.pass_context
 @standard_error_handler
-def list_mounts(ctx, output: Literal["json", "text"] = "text"):
+def list_mounts(
+    ctx, output: Literal["json", "text"] = "text", connection_name: str = "default"
+):
     from gefyra import api
 
     # TODO add connection-name support
     bridge_mounts = api.list_mounts(
         kubeconfig=ctx.obj["kubeconfig"],
         kubecontext=ctx.obj["context"],
+        connection_name=connection_name,
     )
 
     if bridge_mounts:
@@ -202,14 +218,25 @@ def list_mounts(ctx, output: Literal["json", "text"] = "text"):
 )
 @click.argument("mount_name")
 @click.option("-o", "--output", type=click.Choice(["json", "text"]), default="text")
+@click.option(
+    "--connection-name", type=str, default="default", callback=check_connection_name
+)
 @click.pass_context
 @standard_error_handler
-def inspect_mount(ctx, mount_name, output: Literal["json", "text"] = "text"):
+def inspect_mount(
+    ctx,
+    mount_name,
+    output: Literal["json", "text"] = "text",
+    connection_name: str = "default",
+):
     from gefyra import api
 
     # TODO add connection-name support
     mount_obj = api.get_mount(
-        mount_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+        mount_name,
+        kubeconfig=ctx.obj["kubeconfig"],
+        kubecontext=ctx.obj["context"],
+        connection_name=connection_name,
     )
     status = mount_obj.inspect(fetch_events=True)
     if output == "text":
