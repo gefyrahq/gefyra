@@ -124,14 +124,20 @@ def delete_mount(
 
 @stopwatch
 def list_mounts(
-    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+    connection_name: Optional[str] = None,
 ) -> List[GefyraBridgeMount]:
     """
     List all GefyraBridgeMount objects
     """
     from kubernetes.client import ApiException
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        connection_name=connection_name if connection_name else "no-connection-name",
+    )
     try:
         bridge_mounts = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             namespace=config.NAMESPACE,

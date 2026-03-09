@@ -13,6 +13,7 @@ from gefyra.types.client import (
 )
 from gefyra.types.install import GefyraInstallOptions
 from gefyra.types.stowaway import StowawayParameter, StowawayConfig
+from gefyra.types.container import GefyraLocalContainer
 
 
 __all__ = [
@@ -106,16 +107,3 @@ class GefyraStatus:
     summary: StatusSummary
     cluster: GefyraClusterStatus
     client: GefyraClientStatus
-
-
-@dataclass
-class GefyraLocalContainer:
-    """
-    A container managed(/started) by Gefyra
-    """
-
-    id: str
-    short_id: str
-    name: str
-    address: str
-    namespace: str

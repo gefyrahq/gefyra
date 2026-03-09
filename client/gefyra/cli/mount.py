@@ -178,7 +178,6 @@ def list_mounts(
 ):
     from gefyra import api
 
-    # TODO add connection-name support
     bridge_mounts = api.list_mounts(
         kubeconfig=ctx.obj["kubeconfig"],
         kubecontext=ctx.obj["context"],

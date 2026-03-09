@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import WatchEventsMixin
-from gefyra.types import GefyraLocalContainer
+from .container import GefyraLocalContainer
 
 
 @dataclass
@@ -134,7 +134,7 @@ class GefyraBridge(WatchEventsMixin):
                 "id": self.container.id,
                 "short_id": self.container.short_id,
                 "name": self.container.name,
-                "address": self.container.addres,
+                "address": self.container.address,
                 "namespace": self.target_namespace,
             }
         if fetch_events:
