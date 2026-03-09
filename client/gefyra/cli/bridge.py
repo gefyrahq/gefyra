@@ -331,14 +331,23 @@ def list_bridges(
 )
 @click.argument("bridge_name")
 @click.option("--output", "-o", type=click.Choice(["json", "text"]), default="text")
+@click.option("--connection-name", "-c", type=str, default="default")
 @click.pass_context
 @standard_error_handler
-def inspect_bridge(ctx, bridge_name, output: Literal["json", "text"] = "text"):
+def inspect_bridge(
+    ctx,
+    bridge_name,
+    output: Literal["json", "text"] = "text",
+    connection_name: str = "default",
+):
     from gefyra import api
 
     # TODO add connection-name support
     bridge_obj = api.get_bridge(
-        bridge_name, kubeconfig=ctx.obj["kubeconfig"], kubecontext=ctx.obj["context"]
+        bridge_name,
+        kubeconfig=ctx.obj["kubeconfig"],
+        kubecontext=ctx.obj["context"],
+        connection_name=connection_name,
     )
     status = bridge_obj.inspect(fetch_events=True)
     if output == "text":
