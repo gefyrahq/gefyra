@@ -3,6 +3,7 @@ import time
 from typing import Optional
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import GefyraBridgeMountNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def handle_delete_gefyramount(
     name: str,
     force: bool,
     wait: bool,
-    timeout: Optional[int],
+    timeout: Optional[int] = None,
 ) -> bool:
     from kubernetes.client import ApiException
 
@@ -69,8 +70,8 @@ def handle_delete_gefyramount(
                     result = get_gefyrabridgemount(config=config, name=name)
                     # return early if object is not available anymore
                     if not result:
-                        return
-                except ApiException:
+                        return True
+                except (ApiException, GefyraBridgeMountNotFound):
                     return True
                 time.sleep(1)
                 counter += 1
@@ -78,8 +79,14 @@ def handle_delete_gefyramount(
         return True
     except ApiException as e:
         logger.debug(e)
-        if e.status in [404, 403]:
-            return False
+        if e.status == 403:
+            raise RuntimeError(
+                "Permission denied: You don't have permission to delete this mount."
+            )
+        if e.status == 404:
+            raise GefyraBridgeMountNotFound(
+                f"GefyraBridgeMount with name '{name}' not found."
+            )
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
@@ -152,7 +159,10 @@ def get_gefyrabridgemount(config: ClientConfiguration, name: str):
         )
         return mount
     except ApiException as e:
-        if e.status != 404:
+        if e.status == 404:
+            raise GefyraBridgeMountNotFound(
+                f"GefyraBridgeMount with name '{name}' not found."
+            )
+        else:
             logger.warning("Error getting GefyraBridgeMounts: " + str(e))
             raise e from None
-        return {}
