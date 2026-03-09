@@ -7,6 +7,7 @@ from typing import IO, Callable, List, Optional, TYPE_CHECKING
 import docker
 from gefyra.api.clients import get_client
 from gefyra.exceptions import (
+    ClientConfigurationError,
     GefyraClientNotFound,
     GefyraConnectionError,
 )
@@ -151,6 +152,11 @@ def disconnect(
     config = ClientConfiguration(connection_name=connection_name)
     if update_callback:
         update_callback(f"Disconnecting Gefyra client '{config.CLIENT_ID}'...")
+    if not config.CLIENT_ID:
+        raise ClientConfigurationError(
+            f"Could not determine client's ID for connection '{connection_name}'. Is gefyra cargo running?"
+        )
+
     client = get_client(config.CLIENT_ID, connection_name=connection_name)
     return client.disconnect(nowait=nowait, update_callback=update_callback)
 
