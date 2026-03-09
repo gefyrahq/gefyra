@@ -162,7 +162,7 @@ def create_bridge(
         with alive_bar(
             total=None,
             length=20,
-            title=f"Creating the requested GefyraBridge (timeout={timeout}s))",
+            title=f"Creating the requested GefyraBridge (timeout={timeout}s)",
             bar="smooth",
             spinner="classic",
             stats=False,
