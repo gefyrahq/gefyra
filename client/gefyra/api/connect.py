@@ -148,6 +148,7 @@ def disconnect(
     connection_name: str,
     nowait: bool = False,
     update_callback: Callable[[str], None] | None = None,
+    timeout: int = 60,
 ) -> bool:
     config = ClientConfiguration(connection_name=connection_name)
     if update_callback:
@@ -158,7 +159,9 @@ def disconnect(
         )
 
     client = get_client(config.CLIENT_ID, connection_name=connection_name)
-    return client.disconnect(nowait=nowait, update_callback=update_callback)
+    return client.disconnect(
+        nowait=nowait, update_callback=update_callback, timeout=timeout
+    )
 
 
 @stopwatch

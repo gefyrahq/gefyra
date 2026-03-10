@@ -185,9 +185,17 @@ def connect_client(
     is_flag=True,
     help="Do not wait for the GefyraClient to be in state 'WAITING'",
 )
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout for disconnect in seconds.",
+    default=60,
+)
 @click.argument("connection_name", type=str, default="default")
 @standard_error_handler
-def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
+def disconnect_client(
+    yes: bool, connection_name: str, timeout: int, nowait: bool = False
+):
     from gefyra import api
 
     with alive_bar(
@@ -209,7 +217,10 @@ def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
         if not nowait:
             bar.text("Waiting for the GefyraClient to be in state 'WAITING'...")
         api.disconnect(
-            connection_name=connection_name, nowait=nowait, update_callback=bar.text
+            connection_name=connection_name,
+            nowait=nowait,
+            update_callback=bar.text,
+            timeout=timeout,
         )
 
 

@@ -266,7 +266,10 @@ class GefyraClient(WatchEventsMixin):
             )
 
     def disconnect(
-        self, nowait: bool = False, update_callback: Callable[[str], None] | None = None
+        self,
+        nowait: bool = False,
+        update_callback: Callable[[str], None] | None = None,
+        timeout: int = 60,
     ) -> bool:
         get_or_create_gefyra_network(self._config)
         if update_callback:
@@ -288,7 +291,7 @@ class GefyraClient(WatchEventsMixin):
                 update_callback(
                     f"Waiting for client '{self.client_id}' to be in state 'WAITING'..."
                 )
-            self.wait_for_state(GefyraClientState.WAITING)
+            self.wait_for_state(GefyraClientState.WAITING, timeout)
         return True
 
     def connect(
