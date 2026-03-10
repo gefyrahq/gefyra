@@ -293,6 +293,6 @@ def get_bridge(
     config = ClientConfiguration(**config_params)  # type: ignore
     bridge = get_gefyrabridge(config, bridge_name)
     gefyra_bridge = GefyraBridge.from_raw(bridge, config)
-    if resolve_container:
+    if resolve_container and config.CLIENT_ID:  # only set with active connection
         gefyra_bridge.resolve_local_container(config)
     return gefyra_bridge

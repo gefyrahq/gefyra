@@ -168,9 +168,7 @@ def delete_mount(
 
 @mount.command("list", alias=["ls"], help="List all GefyraBridgeMounts")
 @click.option("--output", "-o", type=click.Choice(["json", "text"]), default="text")
-@click.option(
-    "--connection-name", type=str, default="default", callback=check_connection_name
-)
+@click.option("--connection-name", type=str, default="default")
 @click.pass_context
 @standard_error_handler
 def list_mounts(
