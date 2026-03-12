@@ -3,6 +3,7 @@ import time
 from typing import Optional
 
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import GefyraBridgeMountNotFound
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,11 @@ def handle_create_gefyrabridgemount(config: ClientConfiguration, body, target: s
 
 
 def handle_delete_gefyramount(
-    config: ClientConfiguration, name: str, force: bool, wait: bool
+    config: ClientConfiguration,
+    name: str,
+    force: bool,
+    wait: bool,
+    timeout: Optional[int] = None,
 ) -> bool:
     from kubernetes.client import ApiException
 
@@ -57,21 +62,31 @@ def handle_delete_gefyramount(
             version="v1",
         )
         if wait:
-            timeout = 30
+            if not timeout:
+                timeout = 60
             counter = 0
             while counter < timeout:
                 try:
-                    get_gefyrabridgemount(config=config, name=name)
-                except ApiException:
+                    result = get_gefyrabridgemount(config=config, name=name)
+                    # return early if object is not available anymore
+                    if not result:
+                        return True
+                except (ApiException, GefyraBridgeMountNotFound):
                     return True
                 time.sleep(1)
                 counter += 1
-            return False
+            raise TimeoutError
         return True
     except ApiException as e:
         logger.debug(e)
-        if e.status in [404, 403]:
-            return False
+        if e.status == 403:
+            raise RuntimeError(
+                "Permission denied: You don't have permission to delete this mount."
+            )
+        if e.status == 404:
+            raise GefyraBridgeMountNotFound(
+                f"GefyraBridgeMount with name '{name}' not found."
+            )
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
@@ -144,7 +159,10 @@ def get_gefyrabridgemount(config: ClientConfiguration, name: str):
         )
         return mount
     except ApiException as e:
-        if e.status != 404:
+        if e.status == 404:
+            raise GefyraBridgeMountNotFound(
+                f"GefyraBridgeMount with name '{name}' not found."
+            )
+        else:
             logger.warning("Error getting GefyraBridgeMounts: " + str(e))
             raise e from None
-        return {}

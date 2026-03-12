@@ -7,6 +7,10 @@ from alive_progress import config_handler
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
+CARRIER_IN_CACHE = os.environ.get("CARRIER_IN_CACHE", "false").lower() == "true"
+OPERATOR_IN_CACHE = os.environ.get("OPERATOR_IN_CACHE", "false").lower() == "true"
+STOWAWAY_IN_CACHE = os.environ.get("STOWAWAY_IN_CACHE", "false").lower() == "true"
+
 
 @pytest.fixture(scope="session")
 def demo_backend_image(request):
@@ -18,13 +22,15 @@ def demo_backend_image(request):
     return name
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def k3d(k8s_manager):
     k8s: AClusterManager = k8s_manager("k3d")("gefyra")
 
     # check if we are running against an existing cluster
+    print("Checking for existing cluster...")
     cluster_exists = k8s.ready(timeout=1)
     if not cluster_exists:
+        print("No existing cluster found, creating a new one...")
         k8s.create(
             None,
             options=[
@@ -37,6 +43,7 @@ def k3d(k8s_manager):
     if "gefyra" not in k8s.kubectl(["get", "ns"], as_dict=False):
         k8s.kubectl(["create", "ns", "gefyra"])
         k8s.wait("ns/gefyra", "jsonpath='{.status.phase}'=Active")
+        print("Namespace 'gefyra' created and active")
     else:
         purge_gefyra_objects(k8s)
     os.environ["KUBECONFIG"] = str(k8s.kubeconfig)
@@ -54,14 +61,17 @@ def k3d(k8s_manager):
 @pytest.fixture(scope="session")
 def operator_image(request):
     name = "operator:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} --platform linux/amd64 --build-arg COMMIT_SHA=cipipeline -f"
-            f" {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not OPERATOR_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} --platform linux/amd64 --build-arg COMMIT_SHA=cipipeline -f"
+                f" {(Path(__file__).parent / Path('../../operator/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
+            ),
+            shell=True,
+        )
+    else:
+        print("Skipping operator image build since OPERATOR_IN_CACHE is set to true")
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
@@ -69,14 +79,17 @@ def operator_image(request):
 @pytest.fixture(scope="session")
 def stowaway_image(request):
     name = "stowaway:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not STOWAWAY_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} -f"
+                f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
+            ),
+            shell=True,
+        )
+    else:
+        print("Skipping stowaway image build since STOWAWAY_IN_CACHE is set to true")
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
@@ -84,19 +97,20 @@ def stowaway_image(request):
 @pytest.fixture(scope="session")
 def carrier2_image(request):
     name = "carrier2:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../carrier2/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not CARRIER_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} -f"
+                f" {(Path(__file__).parent / Path('../../carrier2/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
+            ),
+            shell=True,
+        )
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def operator(request):
     if hasattr(request, "param") and request.param:
         return request.getfixturevalue(request.param)
@@ -104,30 +118,32 @@ def operator(request):
         return request.getfixturevalue("operator_with_sa")
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
     now = datetime.now(timezone.utc)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator.yaml"))
     check_operator_running(k3d, after=now)
+    print("Operator is running, proceeding with tests...")
     yield k3d
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture(scope="session")
 def operator_no_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
     now = datetime.now(timezone.utc)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator_no_sa.yaml"))
     check_operator_running(k3d, after=now)
+    print("Operator is running, proceeding with tests...")
     yield k3d
 
 
 def check_operator_running(k3d, after: datetime):
     not_found = True
     _i = 0
-    while not_found and _i < 120:
+    while not_found and _i < 240:
         sleep(1)
         events = k3d.kubectl(["get", "events", "-n", "gefyra"])
         _i += 1

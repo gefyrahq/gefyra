@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import WatchEventsMixin
+from .container import GefyraLocalContainer
 
 
 @dataclass
@@ -12,7 +13,7 @@ class CarrierHeaderMatchBase:
     # the exact header value to match
     value: str
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, dict[str, str]]:
         return {
             "matchHeader": {"name": self.name, "value": self.value, "type": self.type}
         }
@@ -69,6 +70,8 @@ class GefyraBridge(WatchEventsMixin):
     client: str
     # the ip if the local container
     local_container_ip: str
+    # the local container name
+    local_container_name: str | None
     # mapping ports [local:remote]
     port_mappings: List[str]
     # the name of the GefyraBridgeMount object
@@ -88,9 +91,58 @@ class GefyraBridge(WatchEventsMixin):
     # additional provider parameters for this bridge
     rules: List[ExactMatchHeader] | None = None
 
+    # local container status
+    container: GefyraLocalContainer | None = None
+
     # legacy (global bridge)
     target_namespace: str = ""
     target_container: str = ""
+
+    def resolve_local_container(self, config: ClientConfiguration) -> None:
+        """populate the containers field of this dataclass"""
+        from gefyra.local.bridge import get_all_containers
+
+        all_containers = get_all_containers(config=config)
+        for container in all_containers:
+            if container.address == self.local_container_ip:
+                self.container = container
+                break
+            else:
+                continue
+
+    def inspect(self, fetch_events: bool = False) -> dict[str, Any]:
+        res = {
+            "name": self.name,
+            "state": self._state,
+            "_state_transitions": self._state_transitions,
+            "target": self.target,
+            "client": self.client,
+            "port_mappings": self.port_mappings,
+            "target_container": self.target_container,
+            "target_namespace": self.target_namespace,
+            "rules": [rule for rule in self.rules] if self.rules else None,
+            "local_container_ip": self.local_container_ip
+            if self.local_container_ip
+            else None,
+            "local_container_name": self.local_container_name
+            if self.local_container_name
+            else None,
+            "container": None,
+        }
+        if self.container:
+            res["container"] = {
+                "id": self.container.id,
+                "short_id": self.container.short_id,
+                "name": self.container.name,
+                "address": self.container.address,
+                "namespace": self.target_namespace,
+            }
+        if fetch_events:
+            events: List[str] = []
+            self.watch_events(events.append, None, 1)
+            if events:
+                res["events"] = events
+        return res
 
     @classmethod
     def from_raw(
@@ -105,7 +157,10 @@ class GefyraBridge(WatchEventsMixin):
             target_container=bridge_raw["targetContainer"],
             target_namespace=bridge_raw["targetNamespace"],
             target=bridge_raw["target"],
-            rules=bridge_raw.get("providerParameter"),
+            rules=bridge_raw.get("providerParameter").get("rules", None),
+            local_container_name=bridge_raw["metadata"]["labels"].get(
+                "gefyra.dev/client-container"
+            ),
         )
         bridge._state = bridge_raw["state"]
         bridge._state_transitions = bridge_raw.get("stateTransitions", None)
@@ -129,6 +184,7 @@ class GefyraBridge(WatchEventsMixin):
                 "labels": {
                     "gefyra.dev/bridge-mount": self.target,
                     "gefyra.dev/client": self.client,
+                    "gefyra.dev/client-container": self.local_container_name,
                 },
             },
             "provider": self.provider,

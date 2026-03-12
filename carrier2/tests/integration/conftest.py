@@ -8,7 +8,7 @@ from pytest_kubernetes.options import ClusterOptions
 
 
 @pytest.fixture(scope="session")
-def carrier_image(request):
+def carrier2_image(request):
     name = "carrier2:pytest"
     subprocess.run(
         (

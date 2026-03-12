@@ -1,11 +1,12 @@
 import kopf
 import kubernetes as k8s
+import asyncio
 
 rbac_v1_api = k8s.client.RbacAuthorizationV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 
 
-def handle_create_gefyraclient_serviceaccount(
+async def handle_create_gefyraclient_serviceaccount(
     logger, name: str, namespace: str, client_name: str
 ) -> None:
     """
@@ -18,12 +19,14 @@ def handle_create_gefyraclient_serviceaccount(
     :type namespace: str
     """
     try:
-        role = rbac_v1_api.read_cluster_role(
+        role = await asyncio.to_thread(
+            rbac_v1_api.read_cluster_role,
             name="gefyra-client",
         )
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
-            role = rbac_v1_api.create_cluster_role(
+            role = await asyncio.to_thread(
+                rbac_v1_api.create_cluster_role,
                 body=k8s.client.V1ClusterRole(
                     metadata=k8s.client.V1ObjectMeta(name="gefyra-client"),
                     rules=[
@@ -83,13 +86,15 @@ def handle_create_gefyraclient_serviceaccount(
         else:
             raise e
     try:
-        sa = core_v1_api.create_namespaced_service_account(
+        sa = await asyncio.to_thread(
+            core_v1_api.create_namespaced_service_account,
             namespace=namespace,
             body=k8s.client.V1ServiceAccount(
                 metadata=k8s.client.V1ObjectMeta(name=name, namespace=namespace)
             ),
         )
-        rbac_v1_api.create_cluster_role_binding(
+        await asyncio.to_thread(
+            rbac_v1_api.create_cluster_role_binding,
             body=k8s.client.V1ClusterRoleBinding(
                 metadata=k8s.client.V1ObjectMeta(
                     name=f"gefyra-rolebinding-{sa.metadata.name}"
@@ -114,7 +119,7 @@ def handle_create_gefyraclient_serviceaccount(
             raise e
 
 
-def handle_delete_gefyraclient_serviceaccount(
+async def handle_delete_gefyraclient_serviceaccount(
     logger,
     name: str,
     namespace: str,
@@ -131,11 +136,18 @@ def handle_delete_gefyraclient_serviceaccount(
         e: Exception if the service account could not be deleted and the status code is not 404
     """
     try:
-        sa = core_v1_api.read_namespaced_service_account(name=name, namespace=namespace)
-        rbac_v1_api.delete_cluster_role_binding(
-            name=f"gefyra-rolebinding-{sa.metadata.name}"
+        sa = await asyncio.to_thread(
+            core_v1_api.read_namespaced_service_account, name=name, namespace=namespace
         )
-        core_v1_api.delete_namespaced_service_account(name=name, namespace=namespace)
+        await asyncio.to_thread(
+            rbac_v1_api.delete_cluster_role_binding,
+            name=f"gefyra-rolebinding-{sa.metadata.name}",
+        )
+        await asyncio.to_thread(
+            core_v1_api.delete_namespaced_service_account,
+            name=name,
+            namespace=namespace,
+        )
         logger.info(f"Deleted serviceaccount and permissions for GefyraClient: {name}")
     except k8s.client.exceptions.ApiException as e:
         logger.warning(f"Could not delete serviceaccount {name}: {e}")
@@ -143,17 +155,20 @@ def handle_delete_gefyraclient_serviceaccount(
             raise e
 
 
-def get_serviceaccount_data(name: str, namespace: str) -> dict[str, str]:
+async def get_serviceaccount_data(name: str, namespace: str) -> dict[str, str]:
     token_secret_name = f"{name}-token"
     try:
-        token_secret = core_v1_api.read_namespaced_secret(
-            name=token_secret_name, namespace=namespace
+        token_secret = await asyncio.to_thread(
+            core_v1_api.read_namespaced_secret,
+            name=token_secret_name,
+            namespace=namespace,
         )
         data = token_secret.data
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:
             try:
-                token_secret = core_v1_api.create_namespaced_secret(
+                token_secret = await asyncio.to_thread(
+                    core_v1_api.create_namespaced_secret,
                     namespace=namespace,
                     body=k8s.client.V1Secret(
                         metadata=k8s.client.V1ObjectMeta(

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+import json
 import logging
 
 from gefyra.types.bridge_mount import GefyraBridgeMount
@@ -12,6 +13,7 @@ from gefyra.types.client import (
 )
 from gefyra.types.install import GefyraInstallOptions
 from gefyra.types.stowaway import StowawayParameter, StowawayConfig
+from gefyra.types.container import GefyraLocalContainer
 
 
 __all__ = [
@@ -37,6 +39,23 @@ class GefyraConnectionItem:
     version: str
     created: str
     status: str
+    client_status: str
+    wireguard_probe: bool = False
+
+    @property
+    def json(self):
+        return json.dumps(self.__dict__)
+
+    @property
+    def list_values(self):
+        return [self.name, self.version, self.created, self.status]
+
+    @property
+    def list_dict(self):
+        res = self.__dict__.copy()
+        res.pop("wireguard_probe", None)
+        res.pop("client_status", None)
+        return res
 
 
 @dataclass
@@ -88,16 +107,3 @@ class GefyraStatus:
     summary: StatusSummary
     cluster: GefyraClusterStatus
     client: GefyraClientStatus
-
-
-@dataclass
-class GefyraLocalContainer:
-    """
-    A container managed(/started) by Gefyra
-    """
-
-    id: str
-    short_id: str
-    name: str
-    address: str
-    namespace: str

@@ -1,3 +1,4 @@
+import asyncio
 from enum import StrEnum
 from functools import partial
 import logging
@@ -104,21 +105,27 @@ class Carrier2Config(BaseModel):
             self.model_dump(by_alias=True, exclude_none=True), sort_keys=False
         )
 
-    def commit(
-        self, pod_name: str, container_name: str, namespace: str, debug: bool = False
+    async def commit(
+        self,
+        logger,
+        pod_name: str,
+        container_name: str,
+        namespace: str,
+        debug: bool = False,
     ):
         core_v1 = k8s.client.CoreV1Api()
         read_func = partial(core_v1.read_namespaced_pod_status, pod_name, namespace)
 
         # busy wait for pod to get ready, raises RuntimeError on timeout
         # TODO raise TemporaryError to handle longer pulls via async
-        wait_until_condition(
+        await asyncio.to_thread(
+            wait_until_condition,
             read_func,
             lambda s: all(
                 [container.started for container in s.status.container_statuses]
             ),
             timeout=120,
-            backoff=0.2,
+            backoff=2,
         )
 
         config_str = self.model_dump_yaml()
@@ -133,39 +140,47 @@ class Carrier2Config(BaseModel):
             f"cat {ERROR_LOG_PATH}",
         ]
 
+        def _check_carrier2_output(s):
+            return (
+                isinstance(s, str)
+                and "Bootstrap starting" in s
+                and "thread 'main' panicked" not in s
+            )
+
         read_func = partial(
             stream_exec_retries,
+            logger,
             pod_name,
             namespace,
             container_name,
             config_commands,
             10,
+            _check_carrier2_output,
         )
 
         # TODO raise TemporaryError to handle longer Carrier2 pulls via async
-        def _check_carrier2_output(s):
-            return (
-                isinstance(s, str)
-                and "Daemonizing the server" in s
-                and "thread 'main' panicked" not in s
-            )
-
-        wait_until_condition(
+        await asyncio.to_thread(
+            wait_until_condition,
             read_func,
             _check_carrier2_output,
             timeout=30,
-            backoff=1,
+            backoff=2,
         )
 
     @classmethod
     def from_string(cls, content_str: str):
         return Carrier2Config(**yaml.safe_load(content_str))
 
-    def add_bridge_rules_for_mount(
-        self, bridge_mount_name: str, namespace: str, current_bridge: str | None
+    async def add_bridge_rules_for_mount(
+        self,
+        bridge_mount_name: str,
+        namespace: str,
+        current_bridge_add: str | None,
+        current_bridge_rm: str | None,
     ) -> "Carrier2Config":
         custom_object_api = k8s.client.CustomObjectsApi()
-        bridges = custom_object_api.list_namespaced_custom_object(
+        bridges = await asyncio.to_thread(
+            custom_object_api.list_namespaced_custom_object,
             "gefyra.dev",
             "v1",
             namespace,
@@ -177,8 +192,11 @@ class Carrier2Config(BaseModel):
 
         for bridge in bridges["items"]:
             logger.debug(f"BRIDGE State {bridge['state']}")
-            if bridge["state"] != "REMOVING" and bridge["portMappings"]:
-                bridge_name = bridge["metadata"]["name"]
+            bridge_name = bridge["metadata"]["name"]
+            if bridge_name == current_bridge_rm:
+                # exclude this bridge from the full configuration as it is about to be removed
+                continue
+            if bridge["portMappings"]:
                 rport = -1
                 try:
                     for port in bridge["portMappings"]:
@@ -208,7 +226,7 @@ class Carrier2Config(BaseModel):
                                 bridge_name: self._convert_bridge_to_rule(bridge, rport)
                             }
                 except Exception as e:
-                    if current_bridge and bridge_name == current_bridge:
+                    if current_bridge_add and bridge_name == current_bridge_add:
                         raise BridgeInstallException(
                             f"Could not install GefyraBridge: {e}"
                         ) from None

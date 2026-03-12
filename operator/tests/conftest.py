@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 import platform
@@ -10,6 +11,10 @@ from pytest_kubernetes.providers import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
 
 from tests.utils import GefyraDockerClient
+
+CARRIER_IN_CACHE = os.environ.get("CARRIER_IN_CACHE", "false").lower() == "true"
+OPERATOR_IN_CACHE = os.environ.get("OPERATOR_IN_CACHE", "false").lower() == "true"
+STOWAWAY_IN_CACHE = os.environ.get("STOWAWAY_IN_CACHE", "false").lower() == "true"
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -76,15 +81,16 @@ def short_env():
 
 
 @pytest.fixture(scope="module")
-def operator(k3d, stowaway_image, carrier_image):
+def operator(k3d, stowaway_image, carrier2_image):
     from kopf.testing import KopfRunner
 
     os.environ["GEFYRA_STOWAWAY_IMAGE"] = stowaway_image.split(":")[0]
     os.environ["GEFYRA_STOWAWAY_TAG"] = stowaway_image.split(":")[1]
     os.environ["GEFYRA_STOWAWAY_IMAGE_PULLPOLICY"] = "Never"
-    os.environ["GEFYRA_CARRIER_IMAGE"] = carrier_image.split(":")[0]
-    os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier_image.split(":")[1]
+    os.environ["GEFYRA_CARRIER_IMAGE"] = carrier2_image.split(":")[0]
+    os.environ["GEFYRA_CARRIER_IMAGE_TAG"] = carrier2_image.split(":")[1]
     os.environ["GEFYRA_CARRIER2_DEBUG"] = "True"
+    os.environ["GEFYRA_OPERATOR_RECONCILIATION_INTERVAL"] = "10"
     loaded_images = subprocess.check_output(
         f"docker exec k3d-{k3d.cluster_name}-server-0 crictl images", shell=True
     ).decode("utf-8")
@@ -128,14 +134,17 @@ def operator(k3d, stowaway_image, carrier_image):
 @pytest.fixture(scope="session")
 def stowaway_image(request):
     name = "stowaway:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not STOWAWAY_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} -f"
+                f" {(Path(__file__).parent / Path('../../stowaway/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
+            ),
+            shell=True,
+        )
+    else:
+        print("Skipping stowaway image build since STOWAWAY_IN_CACHE is set to true")
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
@@ -143,29 +152,17 @@ def stowaway_image(request):
 @pytest.fixture(scope="session")
 def operator_image(request):
     name = "operator:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../')).resolve()}"
-        ),
-        shell=True,
-    )
-    # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
-    return name
-
-
-@pytest.fixture(scope="session")
-def carrier_image(request):
-    name = "carrier:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../carrier/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../carrier/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not OPERATOR_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} -f"
+                f" {(Path(__file__).parent / Path('../Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../')).resolve()}"
+            ),
+            shell=True,
+        )
+    else:
+        print("Skipping operator image build since OPERATOR_IN_CACHE is set to true")
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
@@ -173,14 +170,17 @@ def carrier_image(request):
 @pytest.fixture(scope="session")
 def carrier2_image(request):
     name = "carrier2:pytest"
-    subprocess.run(
-        (
-            f"docker build -t {name} -f"
-            f" {(Path(__file__).parent / Path('../../carrier2/Dockerfile')).resolve()}"
-            f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
-        ),
-        shell=True,
-    )
+    if not CARRIER_IN_CACHE:
+        subprocess.run(
+            (
+                f"docker build -t {name} -f"
+                f" {(Path(__file__).parent / Path('../../carrier2/Dockerfile')).resolve()}"
+                f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
+            ),
+            shell=True,
+        )
+    else:
+        print("Skipping carrier2 image build since CARRIER_IN_CACHE is set to true")
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
 
@@ -193,7 +193,7 @@ def gefyra_crd(k3d):
     from gefyra.handler.startup import handle_crds
 
     logger = logging.getLogger()
-    handle_crds(logger)
+    asyncio.run(handle_crds(logger))
 
     yield k3d
 
@@ -220,6 +220,11 @@ def demo_frontend_image():
 
 @pytest.fixture(scope="session")
 def cargo_image(request):
+    # In CI, the cargo image is pre-built and loaded via artifact
+    prebuilt = os.environ.get("GEFYRA_CARGO_IMAGE_PREBUILT")
+    if prebuilt:
+        return prebuilt
+    # Local dev: build from source
     name = "cargo:pytest"
     if sys.platform == "win32" or "microsoft-standard" in platform.release():
         target = "cargo-win"

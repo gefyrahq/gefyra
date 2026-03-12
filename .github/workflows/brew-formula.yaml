@@ -10,7 +10,7 @@ on:
 
 jobs:
   update_homebrew:
-    runs-on: macos-15-intel
+    runs-on: macos-15
     steps:
     - uses: actions/checkout@v6
     - name: Update Homebrew formula

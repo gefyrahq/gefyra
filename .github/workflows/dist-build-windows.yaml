@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
     - uses: actions/checkout@v6
     - name: Set up Python
@@ -20,6 +20,8 @@ jobs:
         python-version: '3.11'
     - name: Install Poetry
       uses: snok/install-poetry@v1
+      with:
+        version: '2.1.1'
     - name: Determine App Version
       working-directory: client/
       run: |

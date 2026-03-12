@@ -170,6 +170,9 @@ def run(
         f"Container image '{', '.join(container.image.tags)}' started with name"
         f" '{container.name}' in Kubernetes namespace '{namespace}' (from {ns_source})"
     )
+
+    # TODO restore existing briges via [metadata][name][labels][gefyra.dev/container-name] for local instance
+
     if detach:
         return True
     else:

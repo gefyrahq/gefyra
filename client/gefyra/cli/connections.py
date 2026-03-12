@@ -1,7 +1,8 @@
-import dataclasses
+import json
 import logging
-from typing import Optional
+from typing import Callable, Optional
 import click
+from alive_progress import alive_bar
 
 from gefyra.cli.utils import AliasedGroup, check_connection_name, standard_error_handler
 from gefyra.cli import console
@@ -10,7 +11,11 @@ from tabulate import tabulate
 logger = logging.getLogger(__name__)
 
 
-def _manage_container_and_bridges(connection_name: str, force: bool = False):
+def _manage_container_and_bridges(
+    connection_name: str,
+    force: bool = False,
+    update_callback: Callable[[str], None] | None = None,
+):
     import kubernetes
     import urllib3
     from gefyra import api
@@ -27,7 +32,9 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
             elif click.confirm("Do you want to remove them?", abort=True):
                 _del = True
             if _del:
-                for gbridge in _bridges:
+                for _container, gbridge in _bridges:
+                    if update_callback:
+                        update_callback(f"Removing GefyraBridge '{gbridge.name}'...")
                     api.delete_bridge(
                         name=gbridge.name,
                         connection_name=connection_name,
@@ -48,6 +55,8 @@ def _manage_container_and_bridges(connection_name: str, force: bool = False):
             _del = True
         if _del:
             for gcontainers in _containers[0][1]:
+                if update_callback:
+                    update_callback(f"Removing Gefyra cargo '{gcontainers.name}'...")
                 container = ClientConfiguration(
                     connection_name=connection_name
                 ).DOCKER.containers.get(gcontainers.name)
@@ -91,6 +100,23 @@ def connections(ctx):
     type=int,
     default=1340,
 )
+@click.option(
+    "--cargo-image",
+    help="Use a custom Cargo container image",
+    type=str,
+    default=None,
+)
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Force re-connection of client, even if it is already active.",
+)
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout for each connection step in seconds.",
+    default=60,
+)
 @click.pass_context
 @standard_error_handler
 def connect_client(
@@ -99,8 +125,10 @@ def connect_client(
     connection_name: str,
     minikube: Optional[str] = None,
     mtu: int = 1340,
+    cargo_image: Optional[str] = None,
+    force: bool = False,
+    timeout: int = 60,
 ):
-    from alive_progress import alive_bar
     from gefyra import api
 
     conn_list = api.list_connections()
@@ -130,6 +158,9 @@ def connect_client(
             minikube_profile=minikube,
             mtu=mtu,
             update_callback=bar.text,
+            cargo_image=cargo_image,
+            force=force,
+            timeout=timeout,
         )
     console.success(
         f"Connection established with connection name '{connection_name}'. "
@@ -154,18 +185,43 @@ def connect_client(
     is_flag=True,
     help="Do not wait for the GefyraClient to be in state 'WAITING'",
 )
-@click.argument(
-    "connection_name", type=str, default="default", callback=check_connection_name
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout for disconnect in seconds.",
+    default=60,
 )
+@click.argument("connection_name", type=str, default="default")
 @standard_error_handler
-def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
+def disconnect_client(
+    yes: bool, connection_name: str, timeout: int, nowait: bool = False
+):
     from gefyra import api
 
-    _manage_container_and_bridges(connection_name=connection_name, force=yes)
-    console.info(f"Disconnecting Gefyra connection '{connection_name}'...")
-    if not nowait:
-        console.info("Waiting for the GefyraClient to be in state 'WAITING'...")
-    api.disconnect(connection_name=connection_name, nowait=nowait)
+    with alive_bar(
+        total=None,
+        length=20,
+        title=f"Disconnecting '{connection_name}'",
+        bar="smooth",
+        spinner="classic",
+        stats=False,
+        dual_line=True,
+    ) as bar:
+        bar.text(f"Disconnecting Gefyra connection '{connection_name}'...")
+        try:
+            _manage_container_and_bridges(
+                connection_name=connection_name, force=yes, update_callback=bar.text
+            )
+        except (RuntimeError, Exception):
+            bar.text(f"No local connection '{connection_name}'...")
+        if not nowait:
+            bar.text("Waiting for the GefyraClient to be in state 'WAITING'...")
+        api.disconnect(
+            connection_name=connection_name,
+            nowait=nowait,
+            update_callback=bar.text,
+            timeout=timeout,
+        )
 
 
 @connections.command(
@@ -173,20 +229,37 @@ def disconnect_client(yes: bool, connection_name: str, nowait: bool = False):
     alias=["ls"],
     help="List all Gefyra connections",
 )
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["json", "text"]),
+    default="text",
+    help="Output format for the connection list",
+)
 @standard_error_handler
-def list_connections():
+def list_connections(output: str):
     from gefyra import api
 
     conns = api.list_connections()
-    data = [dataclasses.asdict(conn).values() for conn in conns]
-    if data:
-        click.echo(
-            tabulate(
-                data, headers=["NAME", "VERSION", "CREATED", "STATUS"], tablefmt="plain"
+    if output == "text":
+        data = [conn.list_values for conn in conns]
+        if data:
+            click.echo(
+                tabulate(
+                    data,
+                    headers=["NAME", "VERSION", "CREATED", "STATUS"],
+                    tablefmt="plain",
+                )
             )
-        )
+        else:
+            console.info("No Gefyra connection found")
+    elif output == "json":
+        res = {}
+        for conn in conns:
+            res[conn.name] = conn.list_dict
+        click.echo(json.dumps(res))
     else:
-        console.info("No Gefyra connection found")
+        raise ValueError(f"Unsupported output format: {output}")
 
 
 @connections.command(
@@ -197,9 +270,39 @@ def list_connections():
 @click.argument(
     "connection_name", type=str, default="default", callback=check_connection_name
 )
-# @standard_error_handler
+@standard_error_handler
 def remove_connection(connection_name: str):
     from gefyra import api
 
-    _manage_container_and_bridges(connection_name=connection_name)
+    try:
+        _manage_container_and_bridges(connection_name=connection_name)
+    except RuntimeError:
+        pass
     api.remove_connection(connection_name=connection_name)
+
+
+@connections.command(
+    "inspect",
+    help="Inspect a Gefyra connection",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Choice(["json", "text"]),
+    default="text",
+    help="Output format for the connection details",
+)
+@click.argument("connection_name", type=str, default="default")
+@standard_error_handler
+def inspect_connection(connection_name: str, output: str):
+    from gefyra import api
+
+    conn = api.inspect_connection(connection_name=connection_name)
+    if output == "json":
+        click.echo(conn.json)
+    else:
+        console.heading(conn.name)
+        console.info(f"Version: {conn.version}")
+        console.info(f"Created: {conn.created}")
+        console.info(f"Cargo Status: {conn.status}")
+        console.info(f"Gefyra Client (Cluster) Status: {conn.client_status}")

@@ -10,7 +10,7 @@ python = ">=3.11.7,<3.14"
 kopf = "^1.38.0"
 kubernetes = "^33.1.0"
 python-decouple = "^3.8"
-python-statemachine = "^2.5.0"
+python-statemachine = "^3.0.0"
 pydantic = "^2.11.5"
 
 [tool.poetry.group.dev.dependencies]
@@ -46,6 +46,7 @@ pythonpath = "operator"
 pythonpath = [
   "."
 ]
+asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true

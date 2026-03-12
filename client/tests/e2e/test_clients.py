@@ -70,3 +70,72 @@ class TestGefyraClients(GefyraTestCase):
         sleep(5)
         with pytest.raises(RuntimeError):
             k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-f"])
+
+    def test_e_failing_reconnect(self, operator: AClusterManager, tmp_path):
+        import docker
+
+        self.cmd(
+            operator.kubeconfig, "client", ["create", "--client-id", "client-recon"]
+        )
+
+        operator.wait(
+            "gefyraclients.gefyra.dev/client-recon",
+            "jsonpath=.state=WAITING",
+            namespace="gefyra",
+            timeout=60,
+        )
+        client_file_path = tmp_path / "client-recon.json"
+        self.cmd(
+            operator.kubeconfig,
+            "client",
+            ["config", "-o", client_file_path, "client-recon", "--local"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["connect", "-f", client_file_path, "--connection-name", "recon-test"],
+        )
+
+        operator.wait(
+            "gefyraclients.gefyra.dev/client-recon",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        docker_client = docker.from_env()
+        docker_client.containers.get("gefyra-cargo-recon-test").remove(force=True)
+        with pytest.raises(AssertionError) as excinfo:
+            self.cmd(
+                operator.kubeconfig,
+                "connection",
+                ["connect", "-f", client_file_path, "--connection-name", "recon-test"],
+            )
+        assert "is already active" in str(excinfo.value)
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            [
+                "connect",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "recon-test",
+                "--force",
+            ],
+        )
+
+        operator.wait(
+            "gefyraclients.gefyra.dev/client-recon",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["rm", "recon-test"],
+        )

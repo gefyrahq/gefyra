@@ -22,7 +22,7 @@ INTERFACE_PRIVATE_KEY_STR = "Interface.PrivateKey"
 class TestStowaway:
     configuration = OperatorConfiguration()
 
-    def test_a_install(self, k3d: AClusterManager, stowaway_image):
+    async def test_a_install(self, k3d: AClusterManager, stowaway_image):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -42,19 +42,19 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        stowaway.install()
-        assert stowaway.installed() is True
-        assert stowaway.ready() is False
+        await stowaway.install()
+        assert await stowaway.installed() is True
+        assert await stowaway.ready() is False
         k3d.wait(
             STOWAWAY_POD_NAME,
             CONDITION_READY_STR,
             namespace="gefyra",
             timeout=120,
         )
-        assert stowaway.installed() is True
-        assert stowaway.ready() is True
+        assert await stowaway.installed() is True
+        assert await stowaway.ready() is True
 
-    def test_b_add_peer(self, k3d: AClusterManager):
+    async def test_b_add_peer(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -68,7 +68,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        stowaway.add_peer("test1", {"subnet": "192.168.100.0/24"})
+        await stowaway.add_peer("test1", {"subnet": "192.168.100.0/24"})
 
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test1,0"
@@ -78,9 +78,9 @@ class TestStowaway:
             as_dict=False,
         )
         assert "peer_test1" in output
-        assert stowaway.peer_exists("test1") is True
+        assert await stowaway.peer_exists("test1") is True
 
-    def test_c_add_another_peer(self, k3d: AClusterManager):
+    async def test_c_add_another_peer(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -94,7 +94,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        stowaway.add_peer("test2", {"subnet": "192.168.101.0/24"})
+        await stowaway.add_peer("test2", {"subnet": "192.168.101.0/24"})
 
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test2,test1,0"
@@ -112,10 +112,10 @@ class TestStowaway:
         )
         assert "peer_test1" in output
         assert "peer_test2" in output
-        assert stowaway.peer_exists("test1") is True
-        assert stowaway.peer_exists("test2") is True
+        assert await stowaway.peer_exists("test1") is True
+        assert await stowaway.peer_exists("test2") is True
 
-    def test_d_get_peer_config(self, k3d: AClusterManager):
+    async def test_d_get_peer_config(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -130,7 +130,7 @@ class TestStowaway:
             logger,
         )
 
-        peer1_config = stowaway.get_peer_config("test1")
+        peer1_config = await stowaway.get_peer_config("test1")
         # {'Interface.Address': '192.168.99.4', 'Interface.PrivateKey':
         # 'MFQ3v+y612uZSsLXjW1smlJIFeDWWFcZCCtmW4mC624=',
         #  'Interface.ListenPort': '51820', 'Interface.DNS': '192.168.99.1',
@@ -141,7 +141,7 @@ class TestStowaway:
         assert "Peer.PublicKey" in peer1_config
         assert "Peer.Endpoint" in peer1_config
 
-        peer2_config = stowaway.get_peer_config("test2")
+        peer2_config = await stowaway.get_peer_config("test2")
         assert INTERFACE_PRIVATE_KEY_STR in peer2_config
         assert "Peer.PublicKey" in peer2_config
         assert "Peer.Endpoint" in peer2_config
@@ -152,7 +152,7 @@ class TestStowaway:
             != peer2_config[INTERFACE_PRIVATE_KEY_STR]
         )
 
-    def test_e_remove_peer(self, k3d: AClusterManager):
+    async def test_e_remove_peer(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -166,7 +166,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        assert stowaway.remove_peer("test1") is True
+        assert await stowaway.remove_peer("test1") is True
 
         cm = k3d.kubectl(["get", "configmap", "gefyra-stowaway-config", "-n", "gefyra"])
         assert cm["data"]["PEERS"] == "test2,0"
@@ -183,9 +183,9 @@ class TestStowaway:
         )
         assert "peer_test1" not in output
         assert "peer_test2" in output
-        assert stowaway.peer_exists("test2") is True
-        assert stowaway.peer_exists("test1") is False
-        assert stowaway.peer_exists("test3") is False
+        assert await stowaway.peer_exists("test2") is True
+        assert await stowaway.peer_exists("test1") is False
+        assert await stowaway.peer_exists("test3") is False
         k3d.wait(
             STOWAWAY_POD_NAME,
             CONDITION_READY_STR,
@@ -207,7 +207,7 @@ class TestStowaway:
         assert "192.168.100.0/24" not in output
         assert "192.168.101.0/24" in output
 
-    def test_f_add_route(self, k3d: AClusterManager):
+    async def test_f_add_route(self, k3d: AClusterManager):
         from gefyra.connection.factory import (
             ConnectionProviderType,
             connection_provider_factory,
@@ -218,7 +218,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        proxy_host = stowaway.add_destination("test2", "192.168.100.10", 8080)
+        proxy_host = await stowaway.add_destination("test2", "192.168.100.10", 8080)
         assert (
             proxy_host == "gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000"
         )
@@ -226,11 +226,15 @@ class TestStowaway:
             ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
         )
         assert len(proxy_configmap["data"].keys()) == 1
-        assert stowaway.destination_exists("test2", "192.168.100.10", 8080) is True
-        assert stowaway.destination_exists("test2", "192.168.100.11", 8080) is False
+        assert (
+            await stowaway.destination_exists("test2", "192.168.100.10", 8080) is True
+        )
+        assert (
+            await stowaway.destination_exists("test2", "192.168.100.11", 8080) is False
+        )
 
         assert (
-            stowaway.get_destination("test2", "192.168.100.10", 8080)
+            await stowaway.get_destination("test2", "192.168.100.10", 8080)
             == "gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000"
         )
 
@@ -238,15 +242,15 @@ class TestStowaway:
         assert len(svc["items"]) == 1
 
         assert (
-            stowaway.add_destination("test2", "192.168.100.11", 8080)
+            await stowaway.add_destination("test2", "192.168.100.11", 8080)
             == "gefyra-stowaway-proxy-10001.gefyra.svc.cluster.local:10001"
         )
         assert (
-            stowaway.add_destination("test2", "192.168.100.12", 8080)
+            await stowaway.add_destination("test2", "192.168.100.12", 8080)
             == "gefyra-stowaway-proxy-10002.gefyra.svc.cluster.local:10002"
         )
         assert (
-            stowaway.add_destination("test2", "192.168.100.13", 8080)
+            await stowaway.add_destination("test2", "192.168.100.13", 8080)
             == "gefyra-stowaway-proxy-10003.gefyra.svc.cluster.local:10003"
         )
         proxy_configmap = k3d.kubectl(
@@ -258,7 +262,7 @@ class TestStowaway:
         svc = k3d.kubectl(["-n", "gefyra", "get", "svc", "-l", "gefyra.dev/role=proxy"])
         assert len(svc["items"]) == 4
 
-    def test_g_delete_route(self, k3d: AClusterManager):
+    async def test_g_delete_route(self, k3d: AClusterManager):
         from gefyra.connection.factory import (
             ConnectionProviderType,
             connection_provider_factory,
@@ -269,7 +273,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        stowaway.remove_destination("test2", "192.168.100.10", 8080)
+        await stowaway.remove_destination("test2", "192.168.100.10", 8080)
 
         proxy_configmap = k3d.kubectl(
             ["-n", "gefyra", "get", "configmap", "gefyra-stowaway-proxyroutes"]
@@ -281,7 +285,7 @@ class TestStowaway:
         svc = k3d.kubectl(["-n", "gefyra", "get", "svc", "-l", "gefyra.dev/role=proxy"])
         assert len(svc["items"]) == 3
 
-    def test_h_provider_notexists(self, k3d: AClusterManager):
+    async def test_h_provider_notexists(self, k3d: AClusterManager):
         from gefyra.connection.factory import (
             ConnectionProviderType,
             connection_provider_factory,
@@ -294,43 +298,45 @@ class TestStowaway:
             logger,
         )
 
-        stowaway.validate({})
-        stowaway.validate(
+        await stowaway.validate({})
+        await stowaway.validate(
             {"providerParameter": {"subnet": "192.168.200.1/24"}},
             {"added": "providerParameter"},
         )
         with pytest.raises(kopf.AdmissionError):
-            stowaway.validate(
+            await stowaway.validate(
                 {"providerParameter": {"subnet": "192.168.200.1"}},
                 {"added": "providerParameter"},
             )
-        stowaway.add_peer("test1", {"subnet": "192.168.200.0/24"})
+        await stowaway.add_peer("test1", {"subnet": "192.168.200.0/24"})
         with pytest.raises(kopf.AdmissionError):
-            stowaway.validate(
+            await stowaway.validate(
                 {"providerParameter": {"subnet": "192.168.200.0/24"}},
                 {"added": "providerParameter"},
             )
-            stowaway.validate(
+            await stowaway.validate(
                 {"providerParameter": {"subnet": "192.168.200.0/25"}},
                 {"added": "providerParameter"},
             )
-        stowaway.validate(
+        await stowaway.validate(
             {"providerParameter": {"subnet": "192.168.201.0/24"}},
             {"added": "providerParameter"},
         )
-        stowaway.add_peer("test2", {"subnet": "192.168.201.0/24"})
+        await stowaway.add_peer("test2", {"subnet": "192.168.201.0/24"})
         with pytest.raises(kopf.AdmissionError):
-            stowaway.validate(
+            await stowaway.validate(
                 {"providerParameter": {"subnet": "192.168.200.0/24"}},
                 {"added": "providerParameter"},
             )
-            stowaway.validate(
+            await stowaway.validate(
                 {"providerParameter": {"subnet": "192.168.201.0/24"}},
                 {"added": "providerParameter"},
             )
-        stowaway.validate({"providerParameter": {}}, {"added": "providerParameter"})
+        await stowaway.validate(
+            {"providerParameter": {}}, {"added": "providerParameter"}
+        )
 
-    def test_y_provider_notexists(self, k3d: AClusterManager):
+    async def test_y_provider_notexists(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -348,7 +354,7 @@ class TestStowaway:
                 logger,
             )
 
-    def test_z_remove_stowaway(self, k3d: AClusterManager):
+    async def test_z_remove_stowaway(self, k3d: AClusterManager):
         import kubernetes
 
         kubernetes.config.load_kube_config(config_file=str(k3d.kubeconfig))
@@ -362,7 +368,7 @@ class TestStowaway:
             self.configuration,
             logger,
         )
-        stowaway.uninstall()
+        await stowaway.uninstall()
         output = k3d.kubectl(
             ["get", "sts", "-n", "gefyra"],
             as_dict=False,

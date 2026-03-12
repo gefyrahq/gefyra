@@ -5,7 +5,7 @@ from typing import List, Optional
 
 from gefyra.api.utils import get_workload_information, random_string, stopwatch
 from gefyra.configuration import ClientConfiguration
-from gefyra.exceptions import CommandTimeoutError
+from gefyra.exceptions import CommandTimeoutError, GefyraBridgeMountNotFound
 from gefyra.local.mount import (
     get_gefyrabridgemount,
     get_gbridgemount_body,
@@ -91,6 +91,10 @@ def get_mount(
         config_params.update({"kube_context": kubecontext})
     config = ClientConfiguration(**config_params)  # type: ignore
     mount = get_gefyrabridgemount(config, mount_name)
+    if not mount:
+        raise GefyraBridgeMountNotFound(
+            f"GefyraBridgeMount with name '{mount_name}' not found."
+        )
     return GefyraBridgeMount(config, mount)
 
 
@@ -102,6 +106,7 @@ def delete_mount(
     kubecontext: Optional[str] = None,
     connection_name: Optional[str] = None,
     wait: bool = False,
+    timeout: Optional[int] = None,
 ) -> bool:
     """
     Delete a GefyraClient configuration
@@ -112,19 +117,27 @@ def delete_mount(
         connection_name=connection_name if connection_name else "no-connection-name",
         # use no-connection-name to make sure you use admin access to the cluster
     )
-    return handle_delete_gefyramount(config, mount_name, force, wait=wait)
+    return handle_delete_gefyramount(
+        config, mount_name, force, wait=wait, timeout=timeout
+    )
 
 
 @stopwatch
 def list_mounts(
-    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
+    kubeconfig: Optional[Path] = None,
+    kubecontext: Optional[str] = None,
+    connection_name: Optional[str] = None,
 ) -> List[GefyraBridgeMount]:
     """
     List all GefyraBridgeMount objects
     """
     from kubernetes.client import ApiException
 
-    config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    config = ClientConfiguration(
+        kube_config_file=kubeconfig,
+        kube_context=kubecontext,
+        connection_name=connection_name if connection_name else "no-connection-name",
+    )
     try:
         bridge_mounts = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             namespace=config.NAMESPACE,

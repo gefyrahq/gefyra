@@ -43,9 +43,7 @@ PersistentKeepalive = 21 \\n\
 AllowedIPs = '"$ALLOWED_IPS" > /config/wg0.conf
 
 RUN cat /config/wg0.conf
-""".encode(
-            "utf-8"
-        )
+""".encode("utf-8")
     )
 
 
@@ -154,3 +152,7 @@ class GefyraDockerClient:
         if hasattr(self, "container") and self.container:
             self.container.stop()
             self.container = None
+
+
+async def post_event_noop(a, b, c):
+    pass

@@ -6,8 +6,8 @@ from requests.adapters import HTTPAdapter, Retry
 import utils
 
 
-def test_a_run_pod(k3d: AClusterManager, carrier_image):
-    k3d.load_image(carrier_image)
+def test_a_run_pod(k3d: AClusterManager, carrier2_image):
+    k3d.load_image(carrier2_image)
 
     k3d.apply("tests/fixtures/carrier2_pod.yaml")
     k3d.wait(
@@ -54,7 +54,7 @@ def test_a_run_pod(k3d: AClusterManager, carrier_image):
         assert pod["status"]["containerStatuses"][0]["restartCount"] == 0
 
 
-def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image):
+def test_b_patch_carrier(k3d: AClusterManager, carrier2_image, demo_backend_image):
     k3d.load_image(demo_backend_image)
 
     retries = Retry(total=25, backoff_factor=0.2)
@@ -88,16 +88,16 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
 
     # -- this is a core of the patch operation --
     pod = core_v1.read_namespaced_pod(name="backend", namespace="demo")
-    pod.spec.containers[0].image = carrier_image
+    pod.spec.containers[0].image = carrier2_image
     core_v1.patch_namespaced_pod(name="backend", namespace="demo", body=pod)
 
     backend_pod = k3d.kubectl(["get", "pod", "backend", "-n", "demo"])
-    assert backend_pod["spec"]["containers"][0]["image"] == carrier_image
+    assert backend_pod["spec"]["containers"][0]["image"] == carrier2_image
 
     k3d.wait(
         "pod/backend",
         "jsonpath='{.status.containerStatuses[0].image}'=docker.io/library/"
-        + carrier_image,
+        + carrier2_image,
         namespace="demo",
         timeout=60,
     )
@@ -110,7 +110,7 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
     sleep(5)
 
     backend_pod = k3d.kubectl(["get", "pod", "backend", "-n", "demo"])
-    assert backend_pod["spec"]["containers"][0]["image"] == carrier_image
+    assert backend_pod["spec"]["containers"][0]["image"] == carrier2_image
     assert backend_pod["status"]["containerStatuses"][0]["ready"]
     assert backend_pod["status"]["containerStatuses"][0]["restartCount"] == 1
     # -- end patch operation --

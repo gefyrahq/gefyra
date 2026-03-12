@@ -6,6 +6,8 @@ from kubernetes.client import V1Deployment, V1Probe
 
 import logging
 
+from tests.utils import post_event_noop
+
 from ..factories import (
     NginxDeploymentFactory,
     NginxPodFactory,
@@ -30,7 +32,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
 
@@ -46,21 +48,19 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
 
         deployment = NginxDeploymentFactory()
 
-        new_deployment = mount._clone_workload_structure(deployment)
-        self.assertEqual(new_deployment.metadata.name, "nginx-gefyra")
-        self.assertIn(("app", "nginx-gefyra"), new_deployment.metadata.labels.items())
-        self.assertIn(
-            ("app", "nginx"), new_deployment.spec.selector.match_labels.items()
-        )
+        new_workload = mount._clone_workload_structure(deployment)
+        self.assertEqual(new_workload.metadata.name, "nginx-gefyra")
+        self.assertIn(("app", "nginx-gefyra"), new_workload.metadata.labels.items())
+        self.assertIn(("app", "nginx"), new_workload.spec.selector.match_labels.items())
         self.assertIn(
             ("app", "nginx"),
-            new_deployment.spec.template.metadata.labels.items(),
+            new_workload.spec.template.metadata.labels.items(),
         )
 
     def test_cleaning_annotations(self):
@@ -72,7 +72,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=None,
         )
 
@@ -91,7 +91,9 @@ class TestBridgeMountObject(TestCase):
         core_v1_api=DEFAULT,
         custom_object_api=DEFAULT,
     )
-    def test_carrier_patch(self, app, core_v1_api, custom_object_api):
+    async def test_carrier_patch(
+        self, app, core_v1_api, custom_object_api
+    ):  # Made async
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
@@ -108,10 +110,10 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()  # Await
         app.read_namespaced_deployment.assert_called_once()
         app.create_namespaced_deployment.assert_called_once()
 
@@ -123,7 +125,7 @@ class TestBridgeMountObject(TestCase):
         carrier_config.add_bridge_rules_for_mount._return_value_ = True
         mount._set_carrier_upstream = carrier_config
 
-        mount.install()
+        await mount.install()  # Await
         app.read_namespaced_deployment.assert_called_once()
         core_v1_api.patch_namespaced_pod.assert_called_once()
         args = core_v1_api.patch_namespaced_pod.call_args
@@ -146,7 +148,7 @@ class TestBridgeMountObject(TestCase):
             args[1]["body"].spec.containers[0].image, "quay.io/gefyra/carrier2:latest"
         )
 
-        mount.uninstall()
+        await mount.uninstall()  # Await
         app.patch_namespaced_deployment.assert_called_once()
         call_args = app.patch_namespaced_deployment.call_args
         body: V1Deployment = call_args[1]["body"]
@@ -161,7 +163,7 @@ class TestBridgeMountObject(TestCase):
         core_v1_api=DEFAULT,
         custom_object_api=DEFAULT,
     )
-    def test_duplicate_already_exists_patches(
+    async def test_duplicate_already_exists_patches(  # Made async
         self, app, core_v1_api, custom_object_api
     ):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
@@ -190,10 +192,10 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()  # Await
         app.patch_namespaced_deployment.assert_called_once()
         core_v1_api.patch_namespaced_service.assert_called_once()
 
@@ -201,7 +203,7 @@ class TestBridgeMountObject(TestCase):
         "gefyra.bridge_mount.carrier2mount",
         core_v1_api=DEFAULT,
     )
-    def test_carrier_upstream(self, core_v1_api):
+    async def test_carrier_upstream(self, core_v1_api):  # Made async
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         mount = Carrier2BridgeMount(
@@ -210,7 +212,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
         svc = V1ServiceFactory()
@@ -218,7 +220,7 @@ class TestBridgeMountObject(TestCase):
         port = svc.spec.ports[0].port
         # config creation works
         probe: V1Probe = V1ProbeFactory()
-        carrier_config = mount._set_carrier_upstream(
+        carrier_config = await mount._set_carrier_upstream(  # Await
             upstream_ports=[port], probes=[probe]
         )
 
@@ -234,7 +236,9 @@ class TestBridgeMountObject(TestCase):
         core_v1_api=DEFAULT,
         read_carrier2_config=DEFAULT,
     )
-    def test_upstream_set_property(self, app, core_v1_api, read_carrier2_config):
+    async def test_upstream_set_property(
+        self, app, core_v1_api, read_carrier2_config
+    ):  # Made async
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         mount = Carrier2BridgeMount(
@@ -243,7 +247,7 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
 
@@ -271,7 +275,8 @@ class TestBridgeMountObject(TestCase):
             "port: 5002",
         ]
 
-        assert not mount._upstream_set
+        # Await the property
+        assert not await mount._upstream_set
 
         # Test case 2: all clusterUpstream set correctly
         read_carrier2_config.return_value = [
@@ -287,9 +292,9 @@ class TestBridgeMountObject(TestCase):
             "    - 'nginx-service.default.svc.cluster.local:80'",
         ]
 
-        assert mount._upstream_set
+        assert await mount._upstream_set  # Await
 
-    def test_pod_ready_and_healthy(self):
+    async def test_pod_ready_and_healthy(self):  # Made async
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from kubernetes.client import V1ContainerState, V1ContainerStateRunning
         import datetime
@@ -300,36 +305,38 @@ class TestBridgeMountObject(TestCase):
             target_namespace="default",
             target="deploy/nginx",
             target_container="nginx",
-            post_event_function=lambda a, b, c: None,
+            post_event_function=post_event_noop,
             logger=logger,
         )
 
         # Test case 1: Pod with no container statuses
         pod_no_status = NginxPodFactory()
         pod_no_status.status.container_statuses = None
-        assert not mount.pod_ready_and_healthy(pod_no_status, "nginx")
+        assert not await mount.pod_ready_and_healthy(pod_no_status, "nginx")  # Await
 
         # Test case 2: Pod not running
         pod_not_running = NginxPodFactory()
         pod_not_running.status.phase = "Pending"
-        assert not mount.pod_ready_and_healthy(pod_not_running, "nginx")
+        assert not await mount.pod_ready_and_healthy(pod_not_running, "nginx")  # Await
 
         # Test case 3: Container not ready
         pod_not_ready = NginxPodFactory()
         pod_not_ready.status.container_statuses[0].ready = False
-        assert not mount.pod_ready_and_healthy(pod_not_ready, "nginx")
+        assert not await mount.pod_ready_and_healthy(pod_not_ready, "nginx")  # Await
 
         # Test case 4: Container not started
         pod_not_started = NginxPodFactory()
         pod_not_started.status.container_statuses[0].started = False
-        assert not mount.pod_ready_and_healthy(pod_not_started, "nginx")
+        assert not await mount.pod_ready_and_healthy(pod_not_started, "nginx")  # Await
 
         # Test case 5: Container state not running
         pod_state_not_running = NginxPodFactory()
         pod_state_not_running.status.container_statuses[0].state = V1ContainerState(
             running=True
         )
-        assert not mount.pod_ready_and_healthy(pod_state_not_running, "nginx")
+        assert not await mount.pod_ready_and_healthy(
+            pod_state_not_running, "nginx"
+        )  # Await
 
         # Test case 6: Container running but no started_at time
         pod_no_started_at = NginxPodFactory()
@@ -337,7 +344,9 @@ class TestBridgeMountObject(TestCase):
         pod_no_started_at.status.container_statuses[0].state = V1ContainerState(
             running=running_state
         )
-        assert not mount.pod_ready_and_healthy(pod_no_started_at, "nginx")
+        assert not await mount.pod_ready_and_healthy(
+            pod_no_started_at, "nginx"
+        )  # Await
 
         # Test case 7: Healthy pod - all conditions met
         healthy_pod = NginxPodFactory()
@@ -348,4 +357,4 @@ class TestBridgeMountObject(TestCase):
         healthy_pod.status.container_statuses[0].state = V1ContainerState(
             running=running_state
         )
-        assert mount.pod_ready_and_healthy(healthy_pod, "nginx")
+        assert await mount.pod_ready_and_healthy(healthy_pod, "nginx")  # Await

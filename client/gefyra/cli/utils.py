@@ -22,6 +22,8 @@ def standard_error_handler(func):
             return result
         except Exception as e:  # noqa
             ce = ClickException(message=str(e))
+            if hasattr(e, "exit_code"):
+                ce.exit_code = e.exit_code
             raise ce
 
     return wrapper
