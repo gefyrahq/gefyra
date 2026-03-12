@@ -1,5 +1,5 @@
 import json
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import DEFAULT, MagicMock, patch
 
 from kubernetes.client import V1Deployment, V1Probe
@@ -22,7 +22,7 @@ from gefyra.configuration import OperatorConfiguration
 logger = logging.getLogger(__name__)
 
 
-class TestBridgeMountObject(TestCase):
+class TestBridgeMountObject(IsolatedAsyncioTestCase):
     def test_bridge_mount_label_duplication(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
