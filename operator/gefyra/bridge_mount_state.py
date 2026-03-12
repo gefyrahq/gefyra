@@ -196,7 +196,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         per_resource = self.data.get("missingGracePeriod")
         if per_resource is not None:
             return int(per_resource)
-        return self.configuration.BRIDGE_MOUNT_MISSING_GRACE_PERIOD
+        return self.operator_configuration.BRIDGE_MOUNT_MISSING_GRACE_PERIOD
 
     @property
     def missing_grace_period_expired(self) -> bool:

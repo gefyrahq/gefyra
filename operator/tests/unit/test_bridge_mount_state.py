@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from unittest import TestCase
-from unittest.mock import MagicMock, patch
+from unittest import IsolatedAsyncioTestCase, TestCase
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from statemachine.exceptions import TransitionNotAllowed
 
@@ -47,75 +47,75 @@ def _make_bridge_mount(state="REQUESTED", missing_grace_period=None, state_trans
     obj = GefyraBridgeMountObject(data)
     obj._write_state = MagicMock()
     configuration = OperatorConfiguration()
-    bridge_mount = GefyraBridgeMount(obj, configuration, logger)
-    bridge_mount.post_event = MagicMock()
+    bridge_mount = GefyraBridgeMount(obj, configuration, logger, initial=state)
+    bridge_mount.post_event = AsyncMock()
     return bridge_mount
 
 
-class TestBridgeMountMissingState(TestCase):
+class TestBridgeMountMissingState(IsolatedAsyncioTestCase):
     """Test the MISSING state transitions in the GefyraBridgeMount state machine."""
 
-    def test_mark_missing_from_active(self):
+    async def test_mark_missing_from_active(self):
         bm = _make_bridge_mount(state="ACTIVE")
-        bm.bridge_mount_provider.uninstall = MagicMock()
-        bm.mark_missing()
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        await bm.mark_missing()
         assert bm.missing.is_active
 
-    def test_mark_missing_from_error(self):
+    async def test_mark_missing_from_error(self):
         bm = _make_bridge_mount(state="ERROR")
-        bm.bridge_mount_provider.uninstall = MagicMock()
-        bm.mark_missing()
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        await bm.mark_missing()
         assert bm.missing.is_active
 
-    def test_mark_missing_from_restoring(self):
+    async def test_mark_missing_from_restoring(self):
         bm = _make_bridge_mount(state="RESTORING")
-        bm.bridge_mount_provider.uninstall = MagicMock()
-        bm.mark_missing()
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        await bm.mark_missing()
         assert bm.missing.is_active
 
-    def test_mark_missing_from_preparing(self):
+    async def test_mark_missing_from_preparing(self):
         bm = _make_bridge_mount(state="PREPARING")
-        bm.bridge_mount_provider.uninstall = MagicMock()
-        bm.mark_missing()
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        await bm.mark_missing()
         assert bm.missing.is_active
 
-    def test_mark_missing_from_installing(self):
+    async def test_mark_missing_from_installing(self):
         bm = _make_bridge_mount(state="INSTALLING")
-        bm.bridge_mount_provider.uninstall = MagicMock()
-        bm.mark_missing()
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        await bm.mark_missing()
         assert bm.missing.is_active
 
-    def test_mark_missing_from_requested(self):
+    async def test_mark_missing_from_requested(self):
         bm = _make_bridge_mount(state="REQUESTED")
-        bm.bridge_mount_provider.uninstall = MagicMock()
-        bm.mark_missing()
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        await bm.mark_missing()
         assert bm.missing.is_active
 
-    def test_mark_missing_from_terminated_raises(self):
+    async def test_mark_missing_from_terminated_raises(self):
         bm = _make_bridge_mount(state="TERMINATED")
         with self.assertRaises(TransitionNotAllowed):
-            bm.mark_missing()
+            await bm.mark_missing()
 
-    def test_mark_missing_from_missing_raises(self):
+    async def test_mark_missing_from_missing_raises(self):
         bm = _make_bridge_mount(state="MISSING")
         with self.assertRaises(TransitionNotAllowed):
-            bm.mark_missing()
+            await bm.mark_missing()
 
-    def test_recover_from_missing(self):
+    async def test_recover_from_missing(self):
         bm = _make_bridge_mount(state="MISSING")
-        bm.recover()
+        await bm.recover()
         assert bm.preparing.is_active
 
-    def test_recover_from_non_missing_raises(self):
+    async def test_recover_from_non_missing_raises(self):
         bm = _make_bridge_mount(state="ACTIVE")
         with self.assertRaises(TransitionNotAllowed):
-            bm.recover()
+            await bm.recover()
 
-    def test_terminate_from_missing(self):
+    async def test_terminate_from_missing(self):
         bm = _make_bridge_mount(state="MISSING")
-        bm.bridge_mount_provider.uninstall = MagicMock()
-        bm.cleanup_all_bridges = MagicMock()
-        bm.terminate()
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        bm.cleanup_all_bridges = AsyncMock()
+        await bm.terminate()
         assert bm.terminated.is_active
 
 
@@ -167,60 +167,60 @@ class TestBridgeMountGracePeriod(TestCase):
         assert bm.missing_grace_period_expired is False
 
 
-class TestBridgeMountTargetExists(TestCase):
+class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
     """Test the Carrier2BridgeMount.target_exists() method with mocked K8s API."""
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    def test_target_exists_returns_true(self, mock_app, mock_core_v1_api):
+    async def test_target_exists_returns_true(self, mock_app, mock_core_v1_api):
         from tests.factories import NginxDeploymentFactory
 
         mock_app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
         bm = _make_bridge_mount()
-        assert bm.bridge_mount_provider.target_exists() is True
+        assert await bm.bridge_mount_provider.target_exists() is True
         mock_core_v1_api.read_namespace.assert_called_once_with("default")
         mock_app.read_namespaced_deployment.assert_called_once()
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    def test_target_exists_workload_404(self, mock_app, mock_core_v1_api):
+    async def test_target_exists_workload_404(self, mock_app, mock_core_v1_api):
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=404)
         bm = _make_bridge_mount()
-        assert bm.bridge_mount_provider.target_exists() is False
+        assert await bm.bridge_mount_provider.target_exists() is False
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
-    def test_target_exists_namespace_404(self, mock_core_v1_api):
+    async def test_target_exists_namespace_404(self, mock_core_v1_api):
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=404)
         bm = _make_bridge_mount()
-        assert bm.bridge_mount_provider.target_exists() is False
+        assert await bm.bridge_mount_provider.target_exists() is False
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
-    def test_target_exists_namespace_403_raises(self, mock_core_v1_api):
+    async def test_target_exists_namespace_403_raises(self, mock_core_v1_api):
         """Non-404 errors (e.g. RBAC 403) must propagate from the provider layer."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=403)
         bm = _make_bridge_mount()
         with self.assertRaises(ApiException):
-            bm.bridge_mount_provider.target_exists()
+            await bm.bridge_mount_provider.target_exists()
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
-    def test_target_exists_namespace_500_raises(self, mock_core_v1_api):
+    async def test_target_exists_namespace_500_raises(self, mock_core_v1_api):
         """Transient server errors must propagate from the provider layer."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=500)
         bm = _make_bridge_mount()
         with self.assertRaises(ApiException):
-            bm.bridge_mount_provider.target_exists()
+            await bm.bridge_mount_provider.target_exists()
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    def test_target_exists_workload_403_raises(self, mock_app, mock_core_v1_api):
+    async def test_target_exists_workload_403_raises(self, mock_app, mock_core_v1_api):
         """Non-404 on the workload read (AppsV1Api) must propagate as RuntimeError.
 
         _get_workload wraps non-404 ApiExceptions in a RuntimeError.
@@ -230,21 +230,21 @@ class TestBridgeMountTargetExists(TestCase):
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=403)
         bm = _make_bridge_mount()
         with self.assertRaises(RuntimeError):
-            bm.bridge_mount_provider.target_exists()
+            await bm.bridge_mount_provider.target_exists()
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    def test_target_exists_workload_500_raises(self, mock_app, mock_core_v1_api):
+    async def test_target_exists_workload_500_raises(self, mock_app, mock_core_v1_api):
         """Transient 500 on the workload read (AppsV1Api) must propagate as RuntimeError."""
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=500)
         bm = _make_bridge_mount()
         with self.assertRaises(RuntimeError):
-            bm.bridge_mount_provider.target_exists()
+            await bm.bridge_mount_provider.target_exists()
 
 
-class TestBridgeMountTargetExistsStateMachine(TestCase):
+class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
     """Test the state-machine-level target_exists property.
 
     The state machine wraps the provider's target_exists() and catches *all*
@@ -254,39 +254,39 @@ class TestBridgeMountTargetExistsStateMachine(TestCase):
     """
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
-    def test_state_machine_target_exists_returns_false_on_namespace_403(self, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_namespace_403(self, mock_core_v1_api):
         """A 403 on namespace read becomes False at the state machine level."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=403)
         bm = _make_bridge_mount()
-        assert bm.target_exists is False
+        assert await bm.target_exists is False
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
-    def test_state_machine_target_exists_returns_false_on_namespace_500(self, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_namespace_500(self, mock_core_v1_api):
         """A 500 on namespace read becomes False at the state machine level."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=500)
         bm = _make_bridge_mount()
-        assert bm.target_exists is False
+        assert await bm.target_exists is False
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    def test_state_machine_target_exists_returns_false_on_workload_403(self, mock_app, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_workload_403(self, mock_app, mock_core_v1_api):
         """A 403 on workload read (RuntimeError from _get_workload) becomes False."""
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=403)
         bm = _make_bridge_mount()
-        assert bm.target_exists is False
+        assert await bm.target_exists is False
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    def test_state_machine_target_exists_returns_false_on_workload_500(self, mock_app, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_workload_500(self, mock_app, mock_core_v1_api):
         """A 500 on workload read (RuntimeError from _get_workload) becomes False."""
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=500)
         bm = _make_bridge_mount()
-        assert bm.target_exists is False
+        assert await bm.target_exists is False

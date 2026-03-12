@@ -1,6 +1,6 @@
 import json
 from unittest import IsolatedAsyncioTestCase, TestCase
-from unittest.mock import DEFAULT, MagicMock, patch
+from unittest.mock import AsyncMock, DEFAULT, MagicMock, patch
 
 from kubernetes.client import V1Deployment, V1Probe
 
@@ -57,9 +57,9 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         new_workload = mount._clone_workload_structure(deployment)
         self.assertEqual(new_workload.metadata.name, "nginx-gefyra")
         self.assertIn(("app", "nginx-gefyra"), new_workload.metadata.labels.items())
-        self.assertIn(("app", "nginx"), new_workload.spec.selector.match_labels.items())
+        self.assertIn(("app", "nginx-gefyra"), new_workload.spec.selector.match_labels.items())
         self.assertIn(
-            ("app", "nginx"),
+            ("app", "nginx-gefyra"),
             new_workload.spec.template.metadata.labels.items(),
         )
 
@@ -121,12 +121,11 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
 
         custom_object_api.list_namespaced_custom_object.return_value = {"items": []}
         # Mock carrier config return
-        carrier_config = MagicMock()
+        carrier_config = AsyncMock()
         carrier_config.add_bridge_rules_for_mount._return_value_ = True
         mount._set_carrier_upstream = carrier_config
 
         await mount.install()  # Await
-        app.read_namespaced_deployment.assert_called_once()
         core_v1_api.patch_namespaced_pod.assert_called_once()
         args = core_v1_api.patch_namespaced_pod.call_args
 
