@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deployment
+  labels:
+    app: demo
+spec:
+  selector:
+    matchLabels:
+      app: demo
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      containers:
+      - name: demo
+        image: quay.io/gefyra/gefyra-demo-backend:gefyra
+        ports:
+        - containerPort: 8000
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthcheck 
+            port: 9000
+            scheme: HTTPS
+          initialDelaySeconds: 30 
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 60
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthcheck 
+            port: 9000
+            scheme: HTTPS
+          initialDelaySeconds: 30 
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 60

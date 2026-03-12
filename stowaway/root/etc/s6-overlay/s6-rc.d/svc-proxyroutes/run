@@ -1,0 +1,18 @@
+#!/usr/bin/with-contenv bash
+
+MONITOR_DIR="/stowaway/proxyroutes/"
+SCRIPT_TO_RUN="/generate-proxyroutes.sh /stowaway/proxyroutes/"
+
+s6-echo "Running proxy routes watcher on "$MONITOR_DIR
+bash $SCRIPT_TO_RUN
+
+inotifywait -m -e modify,create,delete,move --format '%f' "$MONITOR_DIR" |
+    while read -r FILE; do
+        s6-echo "Event detected on: $FILE"
+        
+        # Execute your script
+        bash $SCRIPT_TO_RUN
+        
+        s6-echo "Waiting for next change..."
+        sleep 1 
+    done

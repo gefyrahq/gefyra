@@ -1,16 +1,19 @@
-from datetime import datetime
+import asyncio
+from datetime import datetime, timezone
+from logging import Logger
 import tarfile
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import kopf
 import kubernetes as k8s
-from statemachine import State, StateMachine
+from statemachine import State, StateChart
 
 from gefyra.base import GefyraStateObject, StateControllerMixin
 from gefyra.configuration import OperatorConfiguration
 from gefyra.resources.serviceaccounts import (
     get_serviceaccount_data,
     handle_create_gefyraclient_serviceaccount,
+    handle_delete_gefyraclient_serviceaccount,
 )
 
 
@@ -18,10 +21,15 @@ class GefyraClientObject(GefyraStateObject):
     plural = "gefyraclients"
 
 
-class GefyraClient(StateMachine, StateControllerMixin):
+class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachine
     """
     A Gefyra client is implemented as a state machine
     """
+
+    atomic_configuration_update = True
+    catch_errors_as_events = False
+    enable_self_transition_entries = False
+    allow_event_without_transition = False
 
     kind = "GefyraClient"
     plural = "gefyraclients"
@@ -42,10 +50,10 @@ class GefyraClient(StateMachine, StateControllerMixin):
         | creating.to.itself()
     )
     wait = (
-        creating.to(waiting)
+        creating.to(waiting, on="on_waiting")
         | waiting.to.itself()
         | error.to(waiting)
-        | disabling.to(waiting, before="disable_connection")
+        | disabling.to(waiting, before="disable_connection", on="on_waiting")
     )
     enable = waiting.to(enabling, cond="can_add_client") | error.to(enabling)
     activate = (
@@ -63,12 +71,15 @@ class GefyraClient(StateMachine, StateControllerMixin):
         self,
         model: GefyraClientObject,
         configuration: OperatorConfiguration,
-        logger: Any,
+        logger: Logger,
+        initial: Optional[State] = None,  # Added initial state parameter
     ):
-        super().__init__()
+        super().__init__(
+            start_value=initial or GefyraClient.requested.id
+        )  # Pass initial state to super
         self.model = model
         self.data = model.data
-        self.configuration = configuration
+        self.operator_configuration = configuration
         self.logger = logger
         self.custom_api = k8s.client.CustomObjectsApi()
         self.events_api = k8s.client.EventsV1Api()
@@ -80,7 +91,10 @@ class GefyraClient(StateMachine, StateControllerMixin):
         It returns the name of the GefyraClient
         :return: The name of the GefyraClient.
         """
-        return self.model.name
+        if self.model and hasattr(self.model, "name"):
+            return self.model.name
+        else:
+            return "unknown"
 
     @property
     def namespace(self) -> str:
@@ -98,121 +112,246 @@ class GefyraClient(StateMachine, StateControllerMixin):
             return None
 
     @property
-    def should_terminate(self) -> bool:
+    def max_connection_age(self) -> Optional[int]:
+        if (
+            self.operator_configuration.STOWAWAY_MAX_CONNECTION_AGE
+            and self.operator_configuration.STOWAWAY_MAX_CONNECTION_AGE > 0
+        ):
+            return self.operator_configuration.STOWAWAY_MAX_CONNECTION_AGE
+        return None
+
+    async def should_disable(self) -> bool:  # Made async
+        # Check if client is currently active
+        if not self.active.is_active:
+            return False
+        # Check if max_connection_age is configured
+        max_age_seconds = self.max_connection_age
+        if max_age_seconds is None:
+            return False
+        # Get the timestamp when client transitioned to active state
+        active_transition_time = self.completed_transition(GefyraClient.active.value)
+        if active_transition_time is None:
+            return False
+        self.logger.info(f"Active transition time: {active_transition_time}")
+        # Calculate time since the active transition
+        active_timestamp = datetime.fromisoformat(active_transition_time)
+        time_since_active = (
+            datetime.now(timezone.utc) - active_timestamp
+        ).total_seconds()
+        self.logger.info(f"Time since active: {time_since_active} seconds")
+        # Return True if the connection has exceeded max_connection_age
+        return time_since_active > max_age_seconds
+
+    async def should_terminate(self) -> bool:  # Made async
         if self.sunset and self.sunset <= datetime.utcnow():
             # remove this client because the sunset time is in the past
-            self.logger.warning(
-                f"Client '{self.object_name}' should be terminated "
-                "due to reached sunset date"
+            await self.post_event(  # Await post_event
+                reason="Sunset reached",
+                message=f"GefyraClient '{self.object_name}' should be terminated "
+                "due to reached sunset date",
             )
             return True
         else:
             return False
 
-    def on_create(self):
-        self.logger.info(f"Client '{self.object_name}' is being created")
-        self.create_service_account()
+    async def on_create(self):  # Made async
+        await self.post_event(  # Await post_event
+            reason="GefyraClient state change",
+            message=f"GefyraClient '{self.object_name}' is being created",
+        )
+        if self.operator_configuration.DISABLE_CLIENT_SA_MANAGEMENT:
+            await self.post_event(  # Await post_event
+                reason="GefyraClient ServiceAccount",
+                message=f"Skipping the ServiceAccount for GefyraClient '{self.object_name}' (ServiceAccount management is disabled)",
+            )
+            await self.wait()  # Await wait
+        else:
+            await self.create_service_account()  # Await create_service_account
 
-    def create_service_account(self):
+    async def create_service_account(self) -> None:  # Made async
         """
         This method is called when the GefyraClient is creating
         :return: None
         """
-        self.logger.info(
-            f"Creating service account for GefyraClient '{self.object_name}'"
-        )
+
         sa_name = f"gefyra-client-{self.object_name}"
-        handle_create_gefyraclient_serviceaccount(
-            self.logger, sa_name, self.configuration.NAMESPACE, self.object_name
+        await handle_create_gefyraclient_serviceaccount(  # Await handle_create_gefyraclient_serviceaccount
+            self.logger,
+            sa_name,
+            self.operator_configuration.NAMESPACE,
+            self.object_name,
         )
-        token_data = get_serviceaccount_data(sa_name, self.configuration.NAMESPACE)
-        self._patch_object(
+        try:
+            token_data = await get_serviceaccount_data(
+                sa_name, self.operator_configuration.NAMESPACE
+            )  # Await get_serviceaccount_data
+        except kopf.TemporaryError as e:
+            await self.post_event(  # Await post_event
+                reason="GefyraClient ServiceAccount",
+                message=f"Creating ServiceAccount waiting: {e}",
+            )
+            raise e
+        await self._patch_object(  # Await _patch_object
             {"serviceAccountName": sa_name, "serviceAccountData": token_data}
         )
-        self.wait()
+        await self.post_event(  # Await post_event
+            reason="GefyraClient ServiceAccount",
+            message=f"ServiceAccount for GefyraClient '{self.object_name}' created '{sa_name}' in namespace '{self.operator_configuration.NAMESPACE}' ",
+        )
+        await self.wait()  # Await wait
 
-    def on_enable(self):
-        self.logger.info(f"Client '{self.object_name}' is being enabled")
+    async def on_enable(self):  # Made async
+        await self.post_event(  # Await post_event
+            reason="GefyraClient state change",
+            message=f"GefyraClient '{self.object_name}' is being enabled",
+        )
 
-    def on_activate(self):
-        self.logger.info(f"Client '{self.object_name}' is being activated")
+    async def on_activate(self):  # Made async
+        await self.post_event(  # Await post_event
+            reason="GefyraClient state change",
+            message=f"GefyraClient '{self.object_name}' is active",
+        )
 
-    def on_disable(self):
-        self.logger.info(f"Client '{self.object_name}' is being disabled")
-        self.cleanup_all_bridges()
-        self.wait()
+    async def on_disable(self):  # Made async
+        await self.post_event(  # Await post_event
+            reason="GefyraClient state change",
+            message=f"GefyraClient '{self.object_name}' is being disabled",
+        )
+        await self.cleanup_all_bridges()  # Await cleanup_all_bridges
+        await self.wait()  # Await wait
 
-    def on_terminate(self):
-        self.logger.info(f"Client '{self.object_name}' is being terminated")
-        if self.connection_provider.peer_exists(self.object_name):
-            self.logger.warning(
-                f"Removing '{self.object_name}' from connection provider"
+    async def on_waiting(self):  # Made async
+        await self.post_event(  # Await post_event
+            reason="Ready",
+            message=f"GefyraClient '{self.object_name}' is ready to accept a client connection request",
+        )
+
+    async def on_terminate(self):  # Made async
+        try:
+            await self.post_event(  # Await post_event
+                reason="GefyraClient state change",
+                message=f"GefyraClient '{self.object_name}' is being terminated",
             )
-            self.connection_provider.remove_peer(self.object_name)
-        # TODO delete SA, Rolebinding
+            if await self.connection_provider.peer_exists(
+                self.object_name
+            ):  # Await peer_exists
+                self.logger.warning(
+                    f"Removing GefyraClient '{self.object_name}' from connection provider"
+                )
+                await self.connection_provider.remove_peer(
+                    self.object_name
+                )  # Await remove_peer
 
-    def can_add_client(self):
-        if self.connection_provider.peer_exists(self.object_name):
-            self.logger.warning(f"Client '{self.object_name}' already exists.")
+            sa_name = f"gefyra-client-{self.object_name}"
+            await handle_delete_gefyraclient_serviceaccount(
+                self.logger, sa_name, self.namespace
+            )  # Await handle_delete_gefyraclient_serviceaccount
+            await self.cleanup_all_bridges()  # Await cleanup_all_bridges
+        except Exception as e:
+            self.logger.warning(f"Error during termination of GefyraClient: {e}")
+            pass
+
+    async def can_add_client(self):  # Made async
+        if await self.connection_provider.peer_exists(
+            self.object_name
+        ):  # Await peer_exists
+            self.logger.warning(f"GefyraClient '{self.object_name}' already exists.")
             return True
         else:
-            self.connection_provider.add_peer(
+            await self.connection_provider.add_peer(  # Await add_peer
                 self.object_name, self.data["providerParameter"]
+            )
+            await self.post_event(  # Await post_event
+                reason="GefyraClient connection",
+                message=f"GefyraClient '{self.object_name}' connection requested with '{self.data['providerParameter']}'",
             )
             return True
 
-    def enable_connection(self):
+    async def enable_connection(self):  # Made async
         try:
-            conn_data = self.connection_provider.get_peer_config(self.object_name)
+            conn_data = await self.connection_provider.get_peer_config(
+                self.object_name
+            )  # Await get_peer_config
         except (tarfile.ReadError, KeyError, k8s.client.rest.ApiException) as e:
+            await self.post_event(  # Await post_event
+                reason="GefyraClient connection",
+                message=f"Cannot read connection data from provider: {e}",
+                type="Warning",
+            )
             raise kopf.TemporaryError(
                 f"Cannot read connection data from provider: {e}", delay=1
             )
         try:
-            self._patch_object({"providerConfig": conn_data})
+            await self._patch_object(
+                {"providerConfig": conn_data}
+            )  # Await _patch_object
+            await self.post_event(  # Await post_event
+                reason="GefyraClient connection",
+                message=f"GefyraClient '{self.object_name}' connecting via 'Interface.Address {str(conn_data['Interface.Address'])}'",
+            )
         except k8s.client.ApiException as e:
             if e.status == 500:
+                await self.post_event(  # Await post_event
+                    reason="GefyraClient connection",
+                    message=f"Cannot enable connection: {e.reason}",
+                    type="Warning",
+                )
                 raise kopf.TemporaryError(
                     f"Cannot enable connection: {e.reason}", delay=1
                 )
 
-    def disable_connection(self):
+    async def disable_connection(self):  # Made async
         try:
-            if not self.connection_provider.peer_exists(self.object_name):
+            if not await self.connection_provider.peer_exists(
+                self.object_name
+            ):  # Await peer_exists
                 self.logger.warning(
                     f"Client '{self.object_name}' does not exist, noting to disable."
                 )
                 return
-            self.connection_provider.remove_peer(self.object_name)
+            await self.connection_provider.remove_peer(
+                self.object_name
+            )  # Await remove_peer
         except k8s.client.rest.ApiException as e:
             if e.status == 500:
                 raise kopf.TemporaryError(
                     f"Cannot disable connection: {e.reason}", delay=1
                 )
-        self._patch_object({"providerConfig": None})
+        await self._patch_object({"providerConfig": None})  # Await _patch_object
 
-    def cleanup_all_bridges(self):
-        bridges = self.custom_api.list_namespaced_custom_object(
+    async def cleanup_all_bridges(self) -> None:  # Made async
+        bridges = await asyncio.to_thread(
+            self.custom_api.list_namespaced_custom_object,
             group="gefyra.dev",
             version="v1",
             plural="gefyrabridges",
-            namespace=self.configuration.NAMESPACE,
+            namespace=self.operator_configuration.NAMESPACE,
+            label_selector=f"gefyra.dev/client={self.client_name}",
         )
         for bridge in bridges.get("items"):
             if bridge.get("client") == self.client_name:
                 self.logger.warning(
-                    "Now going to delete remaining Gefyra bridge "
+                    "Now going to delete remaining GefyraBridge "
                     f"'{bridge['metadata']['name']}' for client {self.client_name}"
                 )
-                self.custom_api.delete_namespaced_custom_object(
+                # obj = GefyraBridgeObject(bridge)
+                # GefyraBridge needs to be async, but it's not fully converted yet, so deferring async init
+                # bridge_obj = GefyraBridge(obj, self.operator_configuration, self.logger)
+                # await bridge_obj.post_event( # Await post_event
+                #     "Client deleted",
+                #     f"This GefyraBridge will be removed since the related GefyraClient '{self.client_name}' is currently being removed",
+                # )
+
+                await asyncio.to_thread(
+                    self.custom_api.delete_namespaced_custom_object,
                     group="gefyra.dev",
                     version="v1",
                     plural="gefyrabridges",
-                    namespace=self.configuration.NAMESPACE,
+                    namespace=self.operator_configuration.NAMESPACE,
                     name=bridge["metadata"]["name"],
                 )
 
-    def get_latest_transition(self) -> Optional[datetime]:
+    async def get_latest_transition(self) -> Optional[datetime]:  # Made async
         """
         > Get the latest transition time for a GefyraClient
         :return: The latest transition times
@@ -221,11 +360,21 @@ class GefyraClient(StateMachine, StateControllerMixin):
             filter(
                 lambda k: k is not None,
                 [
-                    self.completed_transition(GefyraClient.creating.value),
-                    self.completed_transition(GefyraClient.waiting.value),
-                    self.completed_transition(GefyraClient.enabling.value),
-                    self.completed_transition(GefyraClient.active.value),
-                    self.completed_transition(GefyraClient.error.value),
+                    await self.completed_transition(
+                        GefyraClient.creating.value
+                    ),  # Await completed_transition
+                    await self.completed_transition(
+                        GefyraClient.waiting.value
+                    ),  # Await completed_transition
+                    await self.completed_transition(
+                        GefyraClient.enabling.value
+                    ),  # Await completed_transition
+                    await self.completed_transition(
+                        GefyraClient.active.value
+                    ),  # Await completed_transition
+                    await self.completed_transition(
+                        GefyraClient.error.value
+                    ),  # Await completed_transition
                 ],
             )
         )
@@ -239,7 +388,7 @@ class GefyraClient(StateMachine, StateControllerMixin):
         else:
             return None
 
-    def get_latest_state(self) -> Optional[Tuple[str, datetime]]:
+    async def get_latest_state(self) -> Optional[Tuple[str, datetime]]:  # Made async
         """
         It returns the latest state of the GefyraClient, and the timestamp of
         when it was in that state
@@ -250,19 +399,19 @@ class GefyraClient(StateMachine, StateControllerMixin):
             filter(
                 lambda k: k[1] is not None,
                 {
-                    GefyraClient.creating.value: self.completed_transition(
+                    GefyraClient.creating.value: await self.completed_transition(  # Await completed_transition
                         GefyraClient.creating.value
                     ),
-                    GefyraClient.waiting.value: self.completed_transition(
+                    GefyraClient.waiting.value: await self.completed_transition(  # Await completed_transition
                         GefyraClient.waiting.value
                     ),
-                    GefyraClient.enabling.value: self.completed_transition(
+                    GefyraClient.enabling.value: await self.completed_transition(  # Await completed_transition
                         GefyraClient.enabling.value
                     ),
-                    GefyraClient.active.value: self.completed_transition(
+                    GefyraClient.active.value: await self.completed_transition(  # Await completed_transition
                         GefyraClient.active.value
                     ),
-                    GefyraClient.error.value: self.completed_transition(
+                    GefyraClient.error.value: await self.completed_transition(  # Await completed_transition
                         GefyraClient.error.value
                     ),
                 }.items(),

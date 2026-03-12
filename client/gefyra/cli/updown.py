@@ -11,6 +11,7 @@ from gefyra.cli.utils import standard_error_handler
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.exceptions import ClientConfigurationError, GefyraConnectionError
 from gefyra.types import StatusSummary
+from gefyra.types.client import GefyraClientState
 
 logger = logging.getLogger("gefyra")
 
@@ -131,6 +132,7 @@ def cluster_up(
                     kubeconfig=config.KUBE_CONFIG_FILE,
                     kubecontext=config.KUBE_CONTEXT,
                 )[0]
+                client.wait_for_state(GefyraClientState.WAITING)
             except GefyraClientAlreadyExists:
                 client = api.get_client(
                     client_id,

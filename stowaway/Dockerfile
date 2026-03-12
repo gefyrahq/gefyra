@@ -23,7 +23,7 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
     make && \
     make install
 
-FROM ghcr.io/linuxserver/baseimage-alpine:3.17
+FROM ghcr.io/linuxserver/baseimage-alpine:3.20
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/
 
@@ -49,6 +49,7 @@ RUN \
     bc \
     wget \
     coredns \
+    inotify-tools \
     gnupg \
     grep \
     iproute2 \
@@ -59,6 +60,7 @@ RUN \
     libqrencode \
     net-tools \
     openresolv \
+    python3 \
     perl && \
   echo "**** clean up ****" && \
   apk del --no-network build-dependencies && \
@@ -66,7 +68,7 @@ RUN \
     /tmp/*
 
 
-ENV NGINX_VERSION 1.24.0
+ENV NGINX_VERSION 1.26.2
 ENV PKG_RELEASE   1
 
 ARG UID=101
@@ -186,3 +188,5 @@ COPY /root /
 
 # ports and volumes
 EXPOSE 51820/udp
+# for wireguard health check
+EXPOSE 51822/tcp

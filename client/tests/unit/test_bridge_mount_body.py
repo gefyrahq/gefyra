@@ -14,6 +14,7 @@ def test_bridge_mount_body_generation():
         tls_certificate="test-cert",
         tls_key="test-key",
         tls_sni="test-sni",
+        provider="carrier2mount",
     )
     # check body structure
     assert body["apiVersion"] == "gefyra.dev/v1"
@@ -23,7 +24,7 @@ def test_bridge_mount_body_generation():
     assert body["targetNamespace"] == "test-namespace"
     assert body["target"] == "test-target"
     assert body["targetContainer"] == "test-container"
-    assert body["provider"] == "carrier2"
+    assert body["provider"] == "carrier2mount"
     assert body["providerParameter"]["tls"]["certificate"] == "test-cert"
     assert body["providerParameter"]["tls"]["key"] == "test-key"
     assert body["providerParameter"]["tls"]["sni"] == "test-sni"
@@ -37,6 +38,7 @@ def test_bridge_mount_body_generation_no_tls():
         target="test-target",
         target_namespace="test-namespace",
         target_container="test-container",
+        provider="carrier2mount",
     )
     # check body structure
     assert body["apiVersion"] == "gefyra.dev/v1"
@@ -46,7 +48,7 @@ def test_bridge_mount_body_generation_no_tls():
     assert body["targetNamespace"] == "test-namespace"
     assert body["target"] == "test-target"
     assert body["targetContainer"] == "test-container"
-    assert body["provider"] == "carrier2"
+    assert body["provider"] == "carrier2mount"
     assert "tls" not in body["providerParameter"]
 
 
@@ -60,6 +62,7 @@ def test_bridge_mount_body_generation_invalid_tls():
             target_namespace="test-namespace",
             target_container="test-container",
             tls_key="test-key",
+            provider="carrier2mount",
         )
     assert (
         str(excinfo.value)
@@ -73,6 +76,7 @@ def test_bridge_mount_body_generation_invalid_tls():
             target_namespace="test-namespace",
             target_container="test-container",
             tls_certificate="test-cert",
+            provider="carrier2mount",
         )
     assert (
         str(excinfo.value)

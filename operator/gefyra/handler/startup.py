@@ -1,5 +1,9 @@
+import collections
+import threading
+
 import kopf
 import kubernetes as k8s
+import asyncio
 
 from gefyra.resources.crds import (
     create_gefyraclient_definition,
@@ -18,10 +22,12 @@ extension_api = k8s.client.ApiextensionsV1Api()
 events = k8s.client.EventsV1Api()
 
 
-def handle_crds(logger) -> None:
+async def handle_crds(logger) -> None:
     ireqs = create_gefyrabridge_definition()
     try:
-        extension_api.create_custom_resource_definition(body=ireqs)
+        await asyncio.to_thread(
+            extension_api.create_custom_resource_definition, body=ireqs
+        )
         logger.info("Gefyra CRD gefyrabridge created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
@@ -33,7 +39,9 @@ def handle_crds(logger) -> None:
             raise e
     gclients = create_gefyraclient_definition()
     try:
-        extension_api.create_custom_resource_definition(body=gclients)
+        await asyncio.to_thread(
+            extension_api.create_custom_resource_definition, body=gclients
+        )
         logger.info("Gefyra CRD gefyraclient created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
@@ -46,7 +54,9 @@ def handle_crds(logger) -> None:
 
     gbridgemounts = create_bridge_mount_definition()
     try:
-        extension_api.create_custom_resource_definition(body=gbridgemounts)
+        await asyncio.to_thread(
+            extension_api.create_custom_resource_definition, body=gbridgemounts
+        )
         logger.info("Gefyra CRD gefyrabridgemount created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
@@ -71,7 +81,7 @@ async def check_gefyra_components(logger, **kwargs) -> None:
         f"Ensuring Gefyra components with the following configuration: {configuration}"
     )
     # handle Gefyra CRDs and Permissions
-    handle_crds(logger)
+    await handle_crds(logger)  # Await
 
 
 @kopf.on.startup()
@@ -84,21 +94,21 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
     logger.info("Starting up connection providers")
     not_ready_providers = []
     for gefyra_connector in ConnectionProviderType:
-        provider = connection_provider_factory.get(
+        provider = connection_provider_factory.get(  # Await
             gefyra_connector,
             configuration,
             logger,
         )
-        if not provider.installed():
-            provider.install()
+        if not await provider.installed():  # Await
+            await provider.install()  # Await
             logger.info(f"Installing connection provider {gefyra_connector.name}")
-        if provider.installed() and not provider.ready():
+        if await provider.installed() and not await provider.ready():  # Await
             not_ready_providers.append(gefyra_connector)
 
     if not_ready_providers:
         if retry > configuration.CONNECTION_PROVIDER_STARTUP_TIMEOUT:
             info = "No pod found"
-            pod = provider._get_stowaway_pod()
+            pod = await provider._get_stowaway_pod()  # Await
             if pod:
                 info = (
                     f"Pod {pod.metadata.name} in namespace {pod.metadata.namespace} is in state "
@@ -118,9 +128,10 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
                 delay=1,
             )
 
-    def _write_startup_task():
+    async def _write_startup_task():  # Made async
         try:
-            events.create_namespaced_event(
+            await asyncio.to_thread(
+                events.create_namespaced_event,  # Await
                 body=create_operator_ready_event(configuration.NAMESPACE),
                 namespace=configuration.NAMESPACE,
             )
@@ -128,5 +139,10 @@ async def start_connection_providers(logger, retry, **kwargs) -> None:
             if e.status != 409:
                 logger.error("Could not create startup event: " + str(e))
 
-    _write_startup_task()
+    await _write_startup_task()  # Await
     logger.info("Gefyra components installed/patched")
+
+
+@kopf.on.startup()
+def setup_locks(memo, **_):
+    memo.locks = collections.defaultdict(threading.Lock)

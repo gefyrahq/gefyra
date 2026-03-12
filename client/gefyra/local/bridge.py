@@ -6,8 +6,9 @@ from docker.models.containers import Container
 
 from gefyra.cli import console
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import GefyraBridgeNotFound
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
-from gefyra.types import GefyraLocalContainer, MatchHeader
+from gefyra.types import GefyraLocalContainer, ExactMatchHeader
 
 from .utils import handle_docker_run_container
 
@@ -28,6 +29,10 @@ def handle_create_gefyrabridge(config: ClientConfiguration, body, target: str):
     except ApiException as e:
         if e.status == 409:
             raise RuntimeError(f"Workload {target} already bridged.")
+        elif e.status == 500:
+            import json
+
+            raise RuntimeError(str(json.loads(e.body).get("message")))
         logger.error(
             f"A Kubernetes API Error occured. \nReason: {e.reason} \nBody: {e.body}"
         )
@@ -49,9 +54,9 @@ def handle_delete_gefyrabridge(config: ClientConfiguration, name: str) -> bool:
         return ireq
     except ApiException as e:
         if e.status == 404:
-            logger.debug(f"InterceptRequest {name} not found")
+            logger.debug(f"GefyraBridge {name} not found")
         else:
-            logger.debug("Error removing InterceptRequest: " + str(e))
+            logger.debug("Error removing GefyraBridge: " + str(e))
         return False
 
 
@@ -64,21 +69,33 @@ def get_all_gefyrabridges(config: ClientConfiguration) -> list:
             group="gefyra.dev",
             plural="gefyrabridges",
             version="v1",
+            label_selector=f"gefyra.dev/client={config.CLIENT_ID}",
         )
-        if ireq_list:
-            # filter bridges for this client
-            return list(
-                item
-                for item in ireq_list.get("items")
-                if item["client"] == config.CLIENT_ID
-            )
-        else:
-            return []
+        return ireq_list.get("items", [])
     except ApiException as e:
         if e.status != 404:
             logger.warning("Error getting GefyraBridges: " + str(e))
             raise e from None
         return []
+
+
+def get_gefyrabridge(config: ClientConfiguration, name: str):
+    from kubernetes.client import ApiException
+
+    try:
+        bridge = config.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(
+            name=name,
+            namespace=config.NAMESPACE,
+            group="gefyra.dev",
+            plural="gefyrabridges",
+            version="v1",
+        )
+        return bridge
+    except ApiException as e:
+        if e.status != 404:
+            logger.warning("Error getting GefyraBridge: " + str(e))
+            raise e from None
+        raise GefyraBridgeNotFound(f"GefyraBridge with name '{name}' not found.")
 
 
 def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer]:
@@ -88,38 +105,38 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
     # filter out gefyra-cargo container as well as fields other than name and ip
     for container in containers:
         if not container.name.startswith("gefyra-cargo"):
+            try:
+                address = container.attrs["NetworkSettings"]["Networks"][
+                    config.NETWORK_NAME
+                ]["IPAddress"].split("/")[0]
+            except Exception:
+                address = "unknown"
+            try:
+                namespace = container.attrs["HostConfig"]["DnsSearch"][0].split(".")[0]
+            except Exception:
+                namespace = "unknown"
             container_information.append(
                 GefyraLocalContainer(
+                    id=container.id,
+                    short_id=container.short_id,
                     name=container.name,
-                    address=container.attrs["NetworkSettings"]["Networks"][
-                        config.NETWORK_NAME
-                    ]["IPAddress"].split("/")[0],
-                    namespace=container.attrs["HostConfig"]["DnsSearch"][0].split(".")[
-                        0
-                    ],
+                    address=address,
+                    namespace=namespace,
                 )
             )
     return container_information
 
 
-def get_match_header_rules(
-    match_header: List[MatchHeader] = [],
+def get_match_rules(
+    rule_set: List[List] = [],
 ) -> List[Dict[str, Dict[str, str]]]:
-    return [
-        {
-            "matchHeader": {
-                "name": header.name,
-                "value": header.value,
-            }
-        }
-        for header in match_header
-    ]
+    return [rule.to_dict() for rules in rule_set for rule in rules]
 
 
 def get_bridge_rules(
-    match_header: List[MatchHeader] = [],
+    rules: List[ExactMatchHeader] = [],
 ) -> List[Dict[str, List[Dict[str, Dict[str, str]]]]]:
-    return [{"match": get_match_header_rules(match_header)}]
+    return [{"match": get_match_rules(rules)}]
 
 
 def get_gbridge_body(
@@ -131,7 +148,7 @@ def get_gbridge_body(
     target_container,
     port_mappings,
     handle_probes,
-    match_header: List[MatchHeader] = [],
+    match_header: List[ExactMatchHeader] = [],
 ):
     return {
         "apiVersion": "gefyra.dev/v1",
@@ -168,6 +185,11 @@ def deploy_app_container(
     dns_search: Optional[List[str]] = None,
     pull: Optional[str] = "missing",
     platform: Optional[str] = "linux/amd64",
+    cpu_quota: Optional[str] = None,
+    mem_limit: Optional[str] = None,
+    user: Optional[str] = None,
+    security_opts: Optional[List[str]] = None,
+    privileged: Optional[bool] = None,
 ) -> Container:
     import docker
 
@@ -199,6 +221,11 @@ def deploy_app_container(
         "auto_remove": auto_remove,
         "environment": env,
         "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",  # noqa: E231
+        "cpu_quota": cpu_quota,
+        "mem_limit": mem_limit,
+        "user": user,
+        "security_opt": security_opts,
+        "privileged": privileged,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
 

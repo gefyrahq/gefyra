@@ -1,0 +1,193 @@
+"""
+Remove local Gefyra containers and their associated GefyraBridge CRDs.
+
+When a local container is removed via `docker rm`, the GefyraBridge CRD in
+Kubernetes is not cleaned up — the Carrier sidecar keeps intercepting traffic
+and routing it to a dead destination. This module provides `rm()` and `rm_all()`
+which first delete any matching bridges (by matching the container's IP against
+the bridge's `destinationIP`), then remove the container.
+"""
+
+import logging
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from gefyra.configuration import ClientConfiguration
+
+from .utils import stopwatch
+
+__all__ = ["rm", "rm_all", "cleanup_stale_bridges"]
+
+logger = logging.getLogger(__name__)
+
+
+def _get_bridges_for_container(
+    config: "ClientConfiguration", container_ip: str
+) -> list:
+    from gefyra.local.bridge import get_all_gefyrabridges
+
+    gefyra_bridges = get_all_gefyrabridges(config)
+    return [
+        bridge
+        for bridge in gefyra_bridges
+        if bridge.get("destinationIP") == container_ip
+    ]
+
+
+@stopwatch
+def rm(
+    name: str,
+    connection_name: str = "",
+    wait: bool = False,
+    force: bool = False,
+) -> bool:
+    from docker.errors import NotFound
+    from gefyra.configuration import ClientConfiguration
+    from gefyra.local.bridge import handle_delete_gefyrabridge
+    from gefyra.api.bridge import wait_for_deletion
+
+    config = ClientConfiguration(connection_name=connection_name)
+
+    try:
+        container = config.DOCKER.containers.get(name)
+    except NotFound:
+        raise RuntimeError(f"Could not find container '{name}'") from None
+
+    try:
+        container_ip = container.attrs["NetworkSettings"]["Networks"][
+            config.NETWORK_NAME
+        ]["IPAddress"]
+    except KeyError:
+        container_ip = None
+
+    if container_ip:
+        matching_bridges = _get_bridges_for_container(config, container_ip)
+        for bridge in matching_bridges:
+            bridge_name = bridge["metadata"]["name"]
+            logger.info(f"Removing bridge {bridge_name}")
+            handle_delete_gefyrabridge(config, bridge_name)
+        if wait and matching_bridges:
+            wait_for_deletion(matching_bridges, config=config)
+    else:
+        matching_bridges = []
+
+    logger.info(f"Removing container {name}")
+    container.remove(force=force)
+
+    if matching_bridges:
+        logger.info(f"Removed {len(matching_bridges)} bridge(s) and container '{name}'")
+    else:
+        logger.info(f"Removed container '{name}' (no bridges found)")
+    return True
+
+
+@stopwatch
+def rm_all(
+    connection_name: str = "",
+    wait: bool = False,
+    force: bool = False,
+) -> bool:
+    from docker.errors import NotFound
+    from gefyra.configuration import ClientConfiguration
+    from gefyra.local.bridge import (
+        get_all_containers,
+        handle_delete_gefyrabridge,
+    )
+    from gefyra.api.bridge import wait_for_deletion
+
+    config = ClientConfiguration(connection_name=connection_name)
+    containers = get_all_containers(config)
+
+    if not containers:
+        logger.info("No Gefyra containers found; cleaning up stale bridges if any")
+        cleanup_stale_bridges(config=config)
+        return True
+
+    # 1) Collect all bridges and delete them in one pass
+    all_bridges = []
+    container_names = []
+    for container_info in containers:
+        container_names.append(container_info.name)
+        try:
+            container = config.DOCKER.containers.get(container_info.name)
+            container_ip = container.attrs["NetworkSettings"]["Networks"][
+                config.NETWORK_NAME
+            ]["IPAddress"]
+        except (NotFound, KeyError):
+            continue
+
+        matching_bridges = _get_bridges_for_container(config, container_ip)
+        for bridge in matching_bridges:
+            bridge_name = bridge["metadata"]["name"]
+            logger.info(f"Removing bridge {bridge_name}")
+            handle_delete_gefyrabridge(config, bridge_name)
+        all_bridges.extend(matching_bridges)
+
+    # 2) Wait once for all bridge deletions
+    if wait and all_bridges:
+        wait_for_deletion(all_bridges, config=config)
+
+    # 3) Remove all containers
+    for name in container_names:
+        try:
+            container = config.DOCKER.containers.get(name)
+            logger.info(f"Removing container {name}")
+            container.remove(force=force)
+        except NotFound:
+            logger.warning(f"Container '{name}' already removed")
+        except Exception as e:
+            logger.warning(f"Failed to remove container '{name}': {e}")
+
+    return True
+
+
+def cleanup_stale_bridges(
+    connection_name: str = "",
+    config: Optional["ClientConfiguration"] = None,
+) -> int:
+    """Remove GefyraBridges whose destinationIP no longer matches any running
+    Gefyra container.  Returns the number of stale bridges removed.
+
+    This is intentionally best-effort: if the cluster or Docker is unreachable
+    the function logs a warning and returns 0.
+    """
+    from gefyra.configuration import ClientConfiguration
+    from gefyra.local.bridge import (
+        get_all_containers,
+        get_all_gefyrabridges,
+        handle_delete_gefyrabridge,
+    )
+
+    if config is None:
+        try:
+            config = ClientConfiguration(connection_name=connection_name)
+        except Exception as e:
+            logger.warning(
+                "cleanup_stale_bridges: no active connection, skipping: %s", e
+            )
+            return 0
+
+    try:
+        containers = get_all_containers(config)
+    except Exception as e:
+        logger.warning("cleanup_stale_bridges: cannot list containers, skipping: %s", e)
+        return 0
+
+    live_ips = {c.address for c in containers if c.address != "unknown"}
+
+    try:
+        all_bridges = get_all_gefyrabridges(config)
+    except Exception as e:
+        logger.warning("cleanup_stale_bridges: cannot list bridges, skipping: %s", e)
+        return 0
+
+    stale = [b for b in all_bridges if b.get("destinationIP") not in live_ips]
+
+    for bridge in stale:
+        bridge_name = bridge["metadata"]["name"]
+        logger.info(f"Cleaning up stale bridge {bridge_name}")
+        handle_delete_gefyrabridge(config, bridge_name)
+
+    if stale:
+        logger.info(f"Cleaned up {len(stale)} stale bridge(s)")
+    return len(stale)

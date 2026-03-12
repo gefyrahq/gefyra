@@ -1,22 +1,20 @@
 import logging
 from pathlib import Path
 from time import sleep
-import time
 from pytest_kubernetes.providers import AClusterManager
 import requests
 from requests.adapters import HTTPAdapter, Retry
 
-from tests.integration.utils import read_carrier2_config
+from utils import read_carrier2_config
+from tests.utils import post_event_noop
 
 
 logger = logging.getLogger()
 
 
 class TestCarrier2:
-
-    def test_a_commit_config(self, gefyra_crd: AClusterManager, carrier2_image):
-
-        from gefyra.bridge.carrier2.config import Carrier2Config
+    async def test_a_commit_config(self, gefyra_crd: AClusterManager, carrier2_image):
+        from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy
 
         test_pod = str(
             Path(Path(__file__).parent.parent, "fixtures/test_pod.yaml").absolute()
@@ -32,11 +30,14 @@ class TestCarrier2:
         )
 
         config = Carrier2Config()
-        config.clusterUpstream = ["blueshoe.io:443"]
-        config.port = 5000
-        start = time.time()
-        config.commit(pod_name="backend", container_name="backend", namespace="default")
-        end = time.time()
+        config.proxy = [Carrier2Proxy(port=5000, clusterUpstream=["blueshoe.io:443"])]
+        await config.commit(
+            logger,
+            pod_name="backend",
+            container_name="backend",
+            namespace="default",
+            debug=True,
+        )
         # print(f"commit time: {end - start}")
 
         from kubernetes.client.api import core_v1_api
@@ -45,12 +46,12 @@ class TestCarrier2:
         config = read_carrier2_config(core_v1, "backend", "default")
         config = config[0].replace("\n", "").replace(" ", "")
         assert (
-            "version:1threads:4port:5000error_log:/tmp/carrier.error.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100clusterUpstream:-blueshoe.io:443"
+            "version:1threads:4error_log:/tmp/carrier.logpid_file:/tmp/carrier2.pidupgrade_sock:/tmp/carrier2.sockupstream_keepalive_pool_size:100proxy:-port:5000clusterUpstream:-blueshoe.io:443bridges:{}"
             in config
         )
 
-    def test_carrier2_duplicated_svc_available(self, gefyra_crd: AClusterManager):
-        from gefyra.bridge_mount.duplicate import DuplicateBridgeMount
+    async def test_carrier2_duplicated_svc_available(self, gefyra_crd: AClusterManager):
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from gefyra.configuration import OperatorConfiguration
 
         nginx_fixture = str(
@@ -71,17 +72,18 @@ class TestCarrier2:
         configuration = OperatorConfiguration()
         namespace = "default"
 
-        mount = DuplicateBridgeMount(
+        mount = Carrier2BridgeMount(
             name="bridgemount-a",
             configuration=configuration,
             target_namespace=namespace,
-            target=name,
+            target=f"deploy/{name}",
             target_container="nginx",
+            post_event_function=post_event_noop,
             logger=logger,
         )
-        mount.prepare()
+        await mount.prepare()
         # todo reconcile eventually
-        mount.install()
+        await mount.install()
         retries = Retry(total=60, backoff_factor=0.2, status_forcelist=[404, 500])
         session = requests.Session()
         session.mount("http://localhost:8080", HTTPAdapter(max_retries=retries))

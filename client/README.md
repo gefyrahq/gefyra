@@ -41,5 +41,11 @@ Requirements:
 - successful `gefyra up`
 - successful `gefyra run ...`
 
-# More Information
-Find more information and issues on Github: https://github.com/gefyrahq/gefyra
+
+## Testing
+
+Run unit tests via:
+
+```sh
+poetry run pytest tests/unit
+```

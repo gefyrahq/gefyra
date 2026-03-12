@@ -2,7 +2,6 @@ from multiprocessing import Process, Queue
 import subprocess
 import requests
 from requests.adapters import HTTPAdapter, Retry
-from time import sleep
 
 CARRIER_TIMEOUT = 2
 
@@ -126,6 +125,10 @@ def test_f_simple_probes_tls_upstream_all(carrier2, https_upstream):
     assert "Gefyra upstream rockz!" in res.text
 
     res = session.get(
+        "https://localhost:4444/what/a/path/", verify="./tests/fixtures/test_ca.pem"
+    )
+    assert res.status_code == 200
+    res = session.get(
         "https://localhost:8080/what/a/path/", verify="./tests/fixtures/test_ca.pem"
     )
     assert res.status_code == 200
@@ -133,7 +136,7 @@ def test_f_simple_probes_tls_upstream_all(carrier2, https_upstream):
 
     p.join()
     res = queue.get(timeout=1)
-    assert "running with tls config" in res
+    assert "Running with tls config" in res
     assert "Server starting" in res
 
 
@@ -195,15 +198,26 @@ def test_h_probes_three_peer_mixed_https(
     session.mount("http://localhost:8019", HTTPAdapter(max_retries=retries))
     session.mount("http://localhost:8020", HTTPAdapter(max_retries=retries))
     session.mount("http://localhost:8021", HTTPAdapter(max_retries=retries))
+    # probe ports 8023 (https scheme)
+    session.mount("http://localhost:8023", HTTPAdapter(max_retries=retries))
     # cluster upstream
     session.mount("https://localhost:8080", HTTPAdapter(max_retries=retries))
+    session.mount("https://localhost:8081", HTTPAdapter(max_retries=retries))
 
     for req in [8019, 8020, 8021]:
         res = session.get(f"http://localhost:{req}")
         assert res.status_code == 200
 
+    # this is a httpsGet probe with fake SSL
+    res = session.get("https://localhost:8023", verify=False)
+
     # this request gets upstreamed to https://localhost:4443
     res = session.get("https://localhost:8080", verify="./tests/fixtures/test_ca.pem")
+    assert res.status_code == 200
+    assert "Gefyra upstream rockz" in res.text
+
+    # there is a second port (identical config)
+    res = session.get("https://localhost:8081", verify="./tests/fixtures/test_ca.pem")
     assert res.status_code == 200
     assert "Gefyra upstream rockz" in res.text
 
@@ -227,6 +241,14 @@ def test_h_probes_three_peer_mixed_https(
     # rule: header match x-gefyra:user-2
     res = session.get(
         "https://localhost:8080/gefyra/",
+        headers={"x-gefyra": "user-2"},
+        verify="./tests/fixtures/test_ca.pem",
+    )
+    assert res.status_code == 200
+    assert "Gefyra peer with different output, here!" in res.text
+
+    res = session.get(
+        "https://localhost:8081/gefyra/",
         headers={"x-gefyra": "user-2"},
         verify="./tests/fixtures/test_ca.pem",
     )

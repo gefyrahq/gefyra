@@ -7,7 +7,8 @@ if TYPE_CHECKING:
 
 
 def synthesize_config_as_dict(
-    options: "GefyraInstallOptions", components: Optional[List[str]] = []  # noqa: B006
+    options: "GefyraInstallOptions",
+    components: Optional[List[str]] = [],  # noqa: B006
 ) -> list[dict]:
     req_comps = []
     if components:
@@ -33,7 +34,8 @@ def synthesize_config_as_dict(
 
 
 def synthesize_config_as_yaml(
-    options: "GefyraInstallOptions", components: Optional[List[str]] = []  # noqa: B006
+    options: "GefyraInstallOptions",
+    components: Optional[List[str]] = [],  # noqa: B006
 ) -> str:
     import yaml
 

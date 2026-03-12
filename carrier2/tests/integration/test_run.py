@@ -2,14 +2,12 @@ from time import sleep
 from pytest_kubernetes.providers import AClusterManager
 import requests
 from requests.adapters import HTTPAdapter, Retry
-import tempfile
 
 import utils
 
 
-def test_a_run_pod(k3d: AClusterManager, carrier_image):
-
-    k3d.load_image(carrier_image)
+def test_a_run_pod(k3d: AClusterManager, carrier2_image):
+    k3d.load_image(carrier2_image)
 
     k3d.apply("tests/fixtures/carrier2_pod.yaml")
     k3d.wait(
@@ -52,12 +50,11 @@ def test_a_run_pod(k3d: AClusterManager, carrier_image):
         "pod/carrier-nosec",
     ]:
         pod = k3d.kubectl(["get", pod])
-        assert pod["status"]["containerStatuses"][0]["ready"] == True
+        assert pod["status"]["containerStatuses"][0]["ready"]
         assert pod["status"]["containerStatuses"][0]["restartCount"] == 0
 
 
-def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image):
-
+def test_b_patch_carrier(k3d: AClusterManager, carrier2_image, demo_backend_image):
     k3d.load_image(demo_backend_image)
 
     retries = Retry(total=25, backoff_factor=0.2)
@@ -83,23 +80,24 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
         timeout=60,
     )
 
+    sleep(5)
     # test ingress from demo workload
     resp = session.get("http://localhost:8091/color")
     assert resp.status_code == 200
-    assert "blue" in resp.text  # { "color": "blue" }
+    assert "green" in resp.text  # { "color": "green" }
 
     # -- this is a core of the patch operation --
     pod = core_v1.read_namespaced_pod(name="backend", namespace="demo")
-    pod.spec.containers[0].image = carrier_image
+    pod.spec.containers[0].image = carrier2_image
     core_v1.patch_namespaced_pod(name="backend", namespace="demo", body=pod)
 
     backend_pod = k3d.kubectl(["get", "pod", "backend", "-n", "demo"])
-    assert backend_pod["spec"]["containers"][0]["image"] == carrier_image
+    assert backend_pod["spec"]["containers"][0]["image"] == carrier2_image
 
     k3d.wait(
         "pod/backend",
         "jsonpath='{.status.containerStatuses[0].image}'=docker.io/library/"
-        + carrier_image,
+        + carrier2_image,
         namespace="demo",
         timeout=60,
     )
@@ -112,8 +110,8 @@ def test_b_patch_carrier(k3d: AClusterManager, carrier_image, demo_backend_image
     sleep(5)
 
     backend_pod = k3d.kubectl(["get", "pod", "backend", "-n", "demo"])
-    assert backend_pod["spec"]["containers"][0]["image"] == carrier_image
-    assert backend_pod["status"]["containerStatuses"][0]["ready"] == True
+    assert backend_pod["spec"]["containers"][0]["image"] == carrier2_image
+    assert backend_pod["status"]["containerStatuses"][0]["ready"]
     assert backend_pod["status"]["containerStatuses"][0]["restartCount"] == 1
     # -- end patch operation --
 
@@ -134,9 +132,10 @@ def test_c_configure_cluster_upstream(k3d: AClusterManager):
     error_log: /tmp/carrier.error.log
     upgrade_sock: /tmp/carrier2.sock
     upstream_keepalive_pool_size: 100
-    port: 5002
-    clusterUpstream: 
-        - \"{ip}:5002\"
+    proxy:
+      - port: 5002
+        clusterUpstream: 
+            - \"{ip}:5002\"
     """
     )
 
@@ -159,4 +158,4 @@ def test_c_configure_cluster_upstream(k3d: AClusterManager):
     # the is now served from backend-shadow (from the cluster) via Carrier2
     resp = session.get("http://localhost:8091/color")
     assert resp.status_code == 200
-    assert "blue" in resp.text  # { "color": "blue" }
+    assert "green" in resp.text  # { "color": "green" }

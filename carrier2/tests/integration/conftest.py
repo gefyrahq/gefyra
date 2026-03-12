@@ -8,7 +8,7 @@ from pytest_kubernetes.options import ClusterOptions
 
 
 @pytest.fixture(scope="session")
-def carrier_image(request):
+def carrier2_image(request):
     name = "carrier2:pytest"
     subprocess.run(
         (
@@ -26,11 +26,11 @@ def carrier_image(request):
 def demo_backend_image(request):
     name = "gefyra-demo-backend:pytest"
     subprocess.run(
-        (f"docker pull quay.io/gefyra/gefyra-demo-backend"),
+        ("docker pull quay.io/gefyra/gefyra-demo-backend"),
         shell=True,
     )
     subprocess.run(
-        (f"docker tag quay.io/gefyra/gefyra-demo-backend " + name),
+        ("docker tag quay.io/gefyra/gefyra-demo-backend " + name),
         shell=True,
     )
     return name

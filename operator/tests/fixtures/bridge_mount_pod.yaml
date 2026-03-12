@@ -1,0 +1,9 @@
+apiVersion: gefyra.dev/v1
+kind: gefyrabridgemount
+metadata:
+  name: bridgemount-a
+  namespace: gefyra
+provider: carrier2mount
+targetNamespace: default
+target: pod/nginx
+targetContainer: nginx

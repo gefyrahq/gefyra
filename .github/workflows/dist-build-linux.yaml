@@ -14,15 +14,17 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     - name: Install Poetry
       uses: snok/install-poetry@v1
+      with:
+        version: '2.1.1'
     - name: Determine App Version
       working-directory: client/
       run: |
@@ -45,7 +47,7 @@ jobs:
         mv target/release/pyapp ../../gefyra && chmod +x ../../gefyra
         cp ../README.md ../../README.md
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-linux-amd64
         path: |

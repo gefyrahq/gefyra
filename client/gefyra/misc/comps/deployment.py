@@ -62,6 +62,30 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                         "name": "GEFYRA_STOWAWAY_STORAGE",
                                         "value": str(params.stowaway_storage),
                                     },
+                                    {
+                                        "name": "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
+                                        "value": str(
+                                            params.max_client_connection_age or -1
+                                        ),
+                                    },
+                                    {
+                                        "name": "GEFYRA_CARRIER2_IMAGE",
+                                        "value": f"{params.registry}/carrier2",
+                                    },
+                                    {
+                                        "name": "GEFYRA_CARRIER2_IMAGE_TAG",
+                                        "value": params.version,
+                                    },
+                                    {
+                                        "name": "GEFYRA_CARRIER2_DEBUG",
+                                        "value": str(params.bridge_debug),
+                                    },
+                                    {
+                                        "name": "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT",
+                                        "value": str(
+                                            params.disable_client_sa_management
+                                        ),
+                                    },
                                 ],
                             }
                         ],
@@ -124,6 +148,18 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                     {
                                         "name": "GEFYRA_STOWAWAY_STORAGE",
                                         "value": str(params.stowaway_storage),
+                                    },
+                                    {
+                                        "name": "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
+                                        "value": str(
+                                            params.max_client_connection_age or -1
+                                        ),
+                                    },
+                                    {
+                                        "name": "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT",
+                                        "value": str(
+                                            params.disable_client_sa_management
+                                        ),
                                     },
                                 ],
                                 "livenessProbe": {

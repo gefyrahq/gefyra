@@ -1,6 +1,7 @@
 import time
 
 import logging
+from typing import Optional
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import (
     GefyraClientAlreadyExists,
@@ -56,8 +57,10 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
             version="v1",
         )
     except ApiException as e:
-        if e.status in [404, 403]:
-            raise GefyraClientNotFound(f"Client {client_id} does not exist.")
+        if e.status in [401, 404, 403]:
+            raise GefyraClientNotFound(
+                f"GefyraClient '{client_id}' does not exist or the Gefyra client file is stale. Please check with your Gefyra administrator."
+            ) from None
         else:
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
@@ -67,7 +70,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
         # this connection does not work (at the moment)
         raise GefyraConnectionError(
             f"This connection does not work. Is the cluster at {e.pool.host}:{e.pool.port} reachable? "
-            f"Is the client '{client_id}' stale (e.g. from an old connection)? "
+            f"Is the GefyraClient '{client_id}' stale (e.g. from an old connection)? "
             f"Remove it with 'gefyra connection remove {client_id}' and try again."
         )
 
@@ -75,7 +78,11 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
 
 
 def handle_delete_gefyraclient(
-    config: ClientConfiguration, client_id: str, force: bool, wait: bool = False
+    config: ClientConfiguration,
+    client_id: str,
+    force: bool,
+    wait: bool = False,
+    timeout: Optional[int] = None,
 ) -> bool:
     from kubernetes.client import ApiException
 
@@ -97,7 +104,8 @@ def handle_delete_gefyraclient(
             version="v1",
         )
         if wait:
-            timeout = 30
+            if not timeout:
+                timeout = 60
             counter = 0
             while counter < timeout:
                 try:
@@ -106,7 +114,7 @@ def handle_delete_gefyraclient(
                     return True
                 time.sleep(1)
                 counter += 1
-            return False
+            raise TimeoutError
         return True
     except ApiException as e:
         logger.debug(e)
@@ -130,4 +138,5 @@ def get_gefyraclient_body(
             "namespace": config.NAMESPACE,
         },
         "provider": provider,
+        "status": {},
     }

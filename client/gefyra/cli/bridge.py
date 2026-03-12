@@ -1,21 +1,61 @@
-import dataclasses
-from time import sleep
+import json
+import os
 from typing import List, Optional
+from typing_extensions import Literal
+from alive_progress import alive_bar
 import click
-from gefyra.types import MatchHeader
+from gefyra.exceptions import CommandTimeoutError
+from gefyra.types import ExactMatchHeader
 from gefyra.cli import console
 from gefyra.cli.utils import (
+    AliasedGroup,
     check_connection_name,
     parse_ip_port_map,
     parse_match_header,
+    parse_match_path,
     standard_error_handler,
+)
+from gefyra.types.bridge import (
+    ExactMatchPath,
+    GefyraBridge,
+    PrefixMatchHeader,
+    PrefixMatchPath,
+    RegexMatchHeader,
+    RegexMatchPath,
 )
 from tabulate import tabulate
 
 
-@click.command("bridge", help="Establish a Gefyra bridge to a container in the cluster")
+@click.group(
+    "bridge",
+    cls=AliasedGroup,
+    help="Manage your GefyraBridges to redirect traffic from a GefyraBridgeMount target",
+)
+@click.pass_context
+def bridge(ctx):
+    # for management of bridges we always sourcing the kubeconfig and context from env if not passed
+    if ctx.obj["kubeconfig"] is None:
+        ctx.obj["kubeconfig"] = os.environ.get("KUBECONFIG") or os.path.expanduser(
+            "~/.kube/config"
+        )
+
+
+@bridge.command(
+    "create",
+    help="Establish a GefyraBridge from a GefyraBridgeMount in the cluster to a local container",
+)
 @click.option(
-    "-N", "--name", help="The name of the container running in Gefyra", required=True
+    "-t",
+    "--local",
+    "--target",
+    help="The name of the local container running in Gefyra",
+    required=True,
+)
+@click.option(
+    "-N",
+    "--name",
+    help="Assign a custom name to this GefyraBridge",
+    required=False,
 )
 @click.option(
     "-p",
@@ -26,11 +66,46 @@ from tabulate import tabulate
     callback=parse_ip_port_map,
 )
 @click.option(
-    "--match-header",
-    help="Match header to forward traffic based to this client. E.g.: --matchHeader name:x-gefyra:peer",
-    required=True,
+    "--match-header-exact",
+    help="Match header exactly to forward traffic to this client. E.g.: --match-header-exact x-gefyra:peer",
+    required=False,
     multiple=True,
     callback=parse_match_header,
+)
+@click.option(
+    "--match-header-regex",
+    help="Match header regex expression to forward traffic to this client. E.g.: --match-header-regex x-gefyra:(.*))",
+    required=False,
+    multiple=True,
+    callback=parse_match_header,
+)
+@click.option(
+    "--match-header-prefix",
+    help="Match header value prefix (and name exactly) to forward traffic to this client. E.g.: --match-header-prefix x-gefyra:peer1,",
+    required=False,
+    multiple=True,
+    callback=parse_match_header,
+)
+@click.option(
+    "--match-path-prefix",
+    help="Match path prefix to forward traffic to this client. E.g.: --match-path-prefix myroute/",
+    required=False,
+    multiple=True,
+    callback=parse_match_path,
+)
+@click.option(
+    "--match-path-regex",
+    help="Match patch regex to forward traffic to this client. E.g.: --match-path-regex myroute/(.*)/all",
+    required=False,
+    multiple=True,
+    callback=parse_match_path,
+)
+@click.option(
+    "--match-path-exact",
+    help="Match path exactly to forward traffic to this client. E.g.: --match-path-exact /only/this",
+    required=False,
+    multiple=True,
+    callback=parse_match_path,
 )
 @click.option(
     "-P",
@@ -40,103 +115,86 @@ from tabulate import tabulate
     default=False,
 )
 @click.option(
-    "--target",
-    help=(
-        "Intercept the container given in the notation 'resource/name/container'. "
-        "Resource can be one of 'deployment', 'statefulset' or 'pod'. "
-        "E.g.: --target deployment/hello-nginx/nginx"
-    ),
+    "--mount",
+    help="The target GefyraBridgeMount to install this GefyraBridge on",
     required=True,
 )
 @click.option(
     "--connection-name", type=str, default="default", callback=check_connection_name
 )
+@click.option(
+    "--nowait", is_flag=True, help="Do not wait for the GefyraBridgeMount to be ready"
+)
 @click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
 def create_bridge(
     name,
+    local,
     ports,
-    target,
-    match_header: List[MatchHeader],
+    mount,
+    match_header_exact: List[ExactMatchHeader],
+    match_header_prefix: List[PrefixMatchHeader],
+    match_header_regex: List[RegexMatchHeader],
+    match_path_exact: List[ExactMatchPath],
+    match_path_prefix: List[PrefixMatchPath],
+    match_path_regex: List[RegexMatchPath],
     no_probe_handling,
     connection_name,
+    nowait,
     timeout,
 ):
-    from alive_progress import alive_bar
     from gefyra import api
 
-    print_keys = {
-        "name": "NAME",
-        "port_mappings": "PORTS",
-        "local_container_ip": "LOCAL ADDRESS",
-        "target_container": "TARGET CONTAINER",
-        "target": "TARGET",
-        "target_namespace": "NAMESPACE",
-    }
-    # we are not blocking this call
-    _created_bridges = api.bridge(
-        name=name,
-        ports=ports,
-        bridge_mount_name=target,
-        handle_probes=no_probe_handling,
-        wait=False,
-        connection_name=connection_name,
-        match_header=match_header,
-    )
-    with alive_bar(
-        total=None,
-        length=20,
-        title=f"Creating the requested bridge(s) (timeout={timeout}))",
-        bar="smooth",
-        spinner="classic",
-        stats=False,
-        dual_line=True,
-    ) as bar:
-        for _i in range(timeout):
-            all_bridges = api.list_gefyra_bridges(connection_name=connection_name)[0][1]
-            _created_bridges = [
-                bridge
-                for bridge in all_bridges
-                if bridge.name in [_bridge.name for _bridge in _created_bridges]
-            ]
-            bar.text(
-                "\n".join(
-                    [f"{bridge.name}: {bridge.state}" for bridge in _created_bridges]
-                )
-            )
-            if all(bridge.state == "ACTIVE" for bridge in _created_bridges):
-                break
-            else:
-                sleep(1)
-        bar.text(f"{len(_created_bridges)} bridge(s) active")
-
-    if _created_bridges:
-        bridges_print = [
-            {
-                k: v
-                for k, v in dataclasses.asdict(bridge).items()
-                if k in print_keys.keys()
-            }
-            for bridge in _created_bridges
-        ]
-        console.success(
-            "The following bridges have been created. Run 'gefyra list --bridges' to see all bridges."
+    rules = [
+        match_header_exact,
+        match_header_regex,
+        match_header_prefix,
+        match_path_exact,
+        match_path_prefix,
+        match_path_regex,
+    ]
+    if not any(rules):
+        raise click.MissingParameter(
+            "You have to pass at least one rule to match traffic in the target GefyraBridgeMount"
         )
-        click.echo(
-            tabulate(
-                bridges_print,
-                headers=print_keys,
-                tablefmt="plain",
+    timeout_reached = False
+    try:
+        with alive_bar(
+            total=None,
+            length=20,
+            title=f"Creating the requested GefyraBridge (timeout={timeout}s)",
+            bar="smooth",
+            spinner="classic",
+            stats=False,
+            dual_line=True,
+        ) as bar:
+            bridge: GefyraBridge = api.create_bridge(
+                name=name,
+                local=local,
+                ports=ports,
+                bridge_mount_name=mount,
+                connection_name=connection_name,
+                rules=rules,
             )
-        )
+            bar.text("GefyraBridge requested")
+            if not nowait:
+                timeout_reached = bridge.watch_events(bar.text, timeout=timeout)
+        if timeout_reached:
+            raise CommandTimeoutError("Timeout for this operation reached.")
+        else:
+            console.success(f"Successfully created GefyraBridge '{bridge.name}'.")
+    except RuntimeError as e:
+        raise click.ClickException(f"Could not create GefyraBridge: {e}")
 
 
-@click.command("unbridge", help="Remove a Gefyra bridge (from 'gefyra list --bridges')")
+@bridge.command(
+    "delete", alias=["rm", "remove"], help="Mark a GefyraBridge for deletion"
+)
 @click.argument("name", required=False)
 @click.option(
     "-A",
     "--all",
-    help="Unbridge all bridges",
+    help="Unbridge all GefyraBridges with local target containers",
     required=False,
     is_flag=True,
     default=False,
@@ -149,23 +207,158 @@ def create_bridge(
     default=None,
 )
 @click.option(
+    "--nowait",
+    is_flag=True,
+    help="Do not wait for the GefyraBridge to be deleted.",
+)
+@click.option(
     "--connection-name", type=str, default="default", callback=check_connection_name
 )
+@click.option("--timeout", type=int, default=60, required=False)
 @standard_error_handler
-def unbridge(
-    name: str, connection_name: str, all: bool = False, mount: Optional[str] = None
+def delete_bridge(
+    name: str,
+    connection_name: str,
+    all: bool = False,
+    mount: Optional[str] = None,
+    nowait: bool = False,
+    timeout: Optional[int] = 60,
 ):
     from gefyra import api
 
     if not all and not name and not mount:
         console.error("Provide a name or use --all flag to unbridge.")
-    if all:
-        api.unbridge_all(connection_name=connection_name, wait=True)
-    elif mount:
-        api.unbridge(
+        exit(1)
+    try:
+        if all:
+            api.unbridge_all(connection_name=connection_name, wait=not nowait)
+            return
+        elif mount:
+            deleted = api.delete_bridge(
+                connection_name=connection_name,
+                mount_name=mount,
+                wait=not nowait,
+                timeout=timeout,
+            )
+        else:
+            deleted = api.delete_bridge(
+                connection_name=connection_name, name=name, wait=not nowait
+            )
+        if deleted and not nowait:
+            console.success(f"GefyraBridge '{name}' deleted")
+        if deleted and nowait:
+            console.success(f"GefyraBridge '{name}' marked for deletion")
+    except TimeoutError:
+        raise CommandTimeoutError("Timeout for this operation reached.")
+
+
+@bridge.command(
+    "list", alias=["ls"], help="List all GefyraBridges with local target containers"
+)
+@click.option(
+    "-A",
+    "--all",
+    help="List all GefyraBridges from all GefyraClients",
+    required=False,
+    is_flag=True,
+    default=False,
+)
+@click.option("--connection-name", type=str, default="default")
+@click.option("-o", "--output", type=click.Choice(["json", "text"]), default="text")
+@click.pass_context
+@standard_error_handler
+def list_bridges(
+    ctx, all: bool, connection_name: str, output: Literal["json", "text"] = "text"
+):
+    from gefyra import api
+
+    if not all and connection_name:
+        check_connection_name(None, None, connection_name)
+        bridges = api.list_bridges(
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
             connection_name=connection_name,
-            mount_name=mount,
-            wait=True,
+            filter_client=True,
+            get_containers=True,
         )
     else:
-        api.unbridge(connection_name=connection_name, name=name, wait=True)
+        bridges = api.list_bridges(
+            kubeconfig=ctx.obj["kubeconfig"],
+            kubecontext=ctx.obj["context"],
+            filter_client=False,
+        )
+
+    if bridges:
+        if output == "text":
+            bridges = [
+                [
+                    b.name,
+                    b._state,
+                    b.target,
+                    b.client,
+                    b.port_mappings,
+                    c.short_id if c else "-",
+                    c.name if c else "-",
+                ]
+                for c, b in bridges
+            ]
+            click.echo(
+                tabulate(
+                    bridges,
+                    headers=[
+                        "ID",
+                        "STATE",
+                        "BRIDGEMOUNT",
+                        "CLIENT",
+                        "PORT MAPPING",
+                        "TARGET CONTAINER",
+                        "TARGET CONTAINER NAME",
+                    ],
+                    tablefmt="plain",
+                )
+            )
+        elif output == "json":
+            res = {bridge.name: bridge.inspect() for _, bridge in bridges}
+            click.echo(json.dumps(res))
+        else:
+            raise ValueError(f"Unsupported output format: {output}")
+    else:
+        console.info("No GefyraBridges found")
+
+
+@bridge.command(
+    "inspect", alias=["describe", "show", "get"], help="Describe a GefyraBridge"
+)
+@click.argument("bridge_name")
+@click.option("--output", "-o", type=click.Choice(["json", "text"]), default="text")
+@click.option("--connection-name", "-c", type=str, default="default")
+@click.pass_context
+@standard_error_handler
+def inspect_bridge(
+    ctx,
+    bridge_name,
+    output: Literal["json", "text"] = "text",
+    connection_name: str = "default",
+):
+    from gefyra import api
+
+    bridge_obj = api.get_bridge(
+        bridge_name,
+        kubeconfig=ctx.obj["kubeconfig"],
+        kubecontext=ctx.obj["context"],
+        connection_name=connection_name,
+    )
+    status = bridge_obj.inspect(fetch_events=True)
+    if output == "text":
+        console.heading(status["name"])
+        console.info(f"States: {status['_state_transitions']}")
+        console.info(f"GefyraBridgeMount: {status['target']}")
+        console.info(f"Provider Parameters: {status['rules']}")
+        if "events" in status:
+            console.heading("Events")
+            for event in status["events"]:
+                console.info(event)
+    elif output == "json":
+        click.echo(json.dumps(status))
+    else:
+        raise ValueError(f"Unsupported output format: {output}")

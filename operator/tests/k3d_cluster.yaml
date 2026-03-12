@@ -1,0 +1,16 @@
+apiVersion: k3d.io/v1alpha3 
+kind: Simple
+name: gefyra
+servers: 1 # same as `--servers 1`
+agents: 1 # same as `--agents 2`
+ports:
+  - port: 31820:31820/UDP
+    nodeFilters:
+        - agent:0
+  - port: 8080:80
+    nodeFilters:
+        - agent:0
+options:
+  kubeconfig:
+    updateDefaultKubeconfig: false 
+    switchCurrentContext: false

@@ -32,6 +32,11 @@ class OperatorConfiguration:
         self.STOWAWAY_STORAGE = config(
             "GEFYRA_STOWAWAY_STORAGE", cast=int, default=64
         )  # see https://github.com/gefyrahq/gefyra/issues/670
+        self.STOWAWAY_MAX_CONNECTION_AGE = config(
+            "GEFYRA_STOWAWAY_MAX_CONNECTION_AGE",
+            cast=lambda v: int(v) if v else -1,
+            default=-1,
+        )
         # Carrier
         self.CARRIER_IMAGE = config(
             "GEFYRA_CARRIER_IMAGE", default="quay.io/gefyra/carrier"
@@ -44,10 +49,16 @@ class OperatorConfiguration:
         self.CARRIER2_IMAGE = config(
             "GEFYRA_CARRIER2_IMAGE", default="quay.io/gefyra/carrier2"
         )
+        self.CARRIER2_DEBUG = config("GEFYRA_CARRIER2_DEBUG", default=False, cast=bool)
         self.CARRIER2_IMAGE_TAG = config("GEFYRA_CARRIER2_IMAGE_TAG", default="latest")
         self.CARRIER_RUNNING_TIMEOUT = config(
             "GEFYRA_CARRIER_RUNNING_TIMEOUT", cast=int, default=30
         )
+
+        self.DISABLE_CLIENT_SA_MANAGEMENT = config(
+            "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT", default=False, cast=bool
+        )
+        self.APP_REVISION = config("GEFYRA_APP_REVISION", default="unknown")
 
     def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if k.isupper()}

@@ -2,8 +2,17 @@ from dataclasses import fields
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 import click
 from click import ClickException
+import logging
+from gefyra.types import ExactMatchHeader
+from gefyra.types.bridge import (
+    ExactMatchPath,
+    PrefixMatchHeader,
+    PrefixMatchPath,
+    RegexMatchHeader,
+)
 
-from gefyra.types import MatchHeader
+
+logger = logging.getLogger(__name__)
 
 
 def standard_error_handler(func):
@@ -13,6 +22,8 @@ def standard_error_handler(func):
             return result
         except Exception as e:  # noqa
             ce = ClickException(message=str(e))
+            if hasattr(e, "exit_code"):
+                ce.exit_code = e.exit_code
             raise ce
 
     return wrapper
@@ -170,6 +181,7 @@ def multi_options(options):
                 required=opt_params["required"],
                 type=map_to_types.get(opt_params["type"], opt_params["type"]),
                 help=opt_params.get("help", ""),
+                is_flag=opt_params.get("is_flag", False),
             )
             if opt_params["type"] == "array":
                 attrs["cls"] = OptionEatAll
@@ -194,6 +206,7 @@ def installoptions_to_cli_options() -> List[Dict[str, Union[bool, str, Any, None
             required=False,
             help=_field.metadata.get("help"),
             type=_field.metadata.get("type") or "string",
+            is_flag=_field.metadata.get("is_flag", False),
         )
         result.append(_data)
     return result
@@ -269,9 +282,35 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
         return connection_name
 
 
-def parse_match_header(ctx, param, match_header_raw: Tuple[str]) -> List[MatchHeader]:
+def parse_match_header(
+    ctx, param, match_header_raw: Tuple[str]
+) -> List[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]:
     res = []
     for match_header in match_header_raw:
-        name, value = match_header.split(":")
-        res.append(MatchHeader(name=name, value=value))
+        try:
+            name, value = match_header.split(":")
+        except ValueError:
+            raise click.BadParameter(
+                "Please provide the header matching like <name>:<value>"
+            )
+        if param.name == "match_header_exact":
+            res.append(ExactMatchHeader(name=name, value=value))
+        if param.name == "match_header_prefix":
+            res.append(PrefixMatchHeader(name=name, value=value))
+        if param.name == "match_header_regex":
+            res.append(RegexMatchHeader(name=name, value=value))
+    return res
+
+
+def parse_match_path(
+    ctx, param, match_path_raw: Tuple[str]
+) -> List[ExactMatchPath | PrefixMatchPath | RegexMatchHeader]:
+    res = []
+    for match_path in match_path_raw:
+        if param.name == "match_path_exact":
+            res.append(ExactMatchPath(path=match_path))
+        if param.name == "match_path_prefix":
+            res.append(PrefixMatchPath(path=match_path))
+        if param.name == "match_path_regex":
+            res.append(RegexMatchHeader(path=match_path))
     return res

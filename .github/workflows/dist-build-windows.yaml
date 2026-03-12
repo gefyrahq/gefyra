@@ -11,15 +11,17 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Set up Python
-      uses: actions/setup-python@v5
+      uses: actions/setup-python@v6
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     - name: Install Poetry
       uses: snok/install-poetry@v1
+      with:
+        version: '2.1.1'
     - name: Determine App Version
       working-directory: client/
       run: |
@@ -50,7 +52,7 @@ jobs:
         copy README.md ../dist-exe/
         ls ../dist-exe
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64
         path: |

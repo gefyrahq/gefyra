@@ -1,4 +1,4 @@
-FROM quay.io/blueshoe/python3.11-slim AS builder
+FROM quay.io/blueshoe/python3.13-slim AS builder
 
 # python
 ENV PYTHONUNBUFFERED=1 \
@@ -12,7 +12,7 @@ ENV PYTHONUNBUFFERED=1 \
     \
     # poetry
     # https://python-poetry.org/docs/configuration/#using-environment-variables
-    POETRY_VERSION=2.0.0 \
+    POETRY_VERSION=2.2.1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false \
     POETRY_CACHE_DIR='/var/cache/pypoetry' \
@@ -49,10 +49,17 @@ COPY poetry.lock pyproject.toml ./
 
 # install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
 RUN bash -c 'source $VENV_PATH/bin/activate && poetry install'
-
+ARG COMMIT_SHA
+RUN if [ -z "$COMMIT_SHA" ]; then \
+      echo "Error: COMMIT_SHA build argument is required but not set."; \
+      exit 1; \
+    fi
 
 FROM gcr.io/distroless/python3
-COPY --from=builder /opt/pysetup/venv/lib/python3.11/site-packages /usr/lib/python3.11/
+ARG COMMIT_SHA
+ENV GEFYRA_APP_REVISION=$COMMIT_SHA
+LABEL gefyra-revision=$COMMIT_SHA
+COPY --from=builder /opt/pysetup/venv/lib/python3.13/site-packages /usr/lib/python3.13/
 COPY . /app/
 WORKDIR /app
 CMD ["-m", "kopf", "run", "-A", "main.py"]

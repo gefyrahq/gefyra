@@ -23,6 +23,8 @@ kind: Deployment
 metadata:
   name: gefyra-operator
   namespace: gefyra
+  labels:
+    gefyra.dev/role: operator
 spec:
   selector:
     matchLabels:
@@ -31,6 +33,7 @@ spec:
     metadata:
       labels:
         app: gefyra-operator
+        gefyra.dev/role: operator
     spec:
       serviceAccountName: gefyra-operator
       containers:
@@ -44,3 +47,7 @@ spec:
           value: pytest
         - name: GEFYRA_STOWAWAY_IMAGE_PULLPOLICY
           value: Never
+        - name: GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT
+          value: "False"
+        - name: GEFYRA_OPERATOR_RECONCILIATION_INTERVAL
+          value: "10"

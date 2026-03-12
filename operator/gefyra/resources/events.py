@@ -11,7 +11,8 @@ def create_operator_ready_event(namespace: str) -> k8s.client.EventsV1Event:
     now = _get_now()
     return k8s.client.EventsV1Event(
         metadata=k8s.client.V1ObjectMeta(
-            name="gefyra-operator-startup", namespace=namespace
+            name=f"gefyra-operator-startup-{datetime.utcnow().timestamp()}",
+            namespace=namespace,
         ),
         reason="Gefyra-Ready",
         note="Operator has been started configured successfully",

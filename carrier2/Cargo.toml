@@ -12,6 +12,7 @@ pingora = { version = "0.4.0", features = ["lb", "boringssl"] }
 regex = "1.11.1"
 serde = "1.0.218"
 serde_yaml = "0.9.34"
+uuid = { version  = "1.19.0", features = ["v4"] }
 
 [dev-dependencies]
 criterion = "0.5.1"

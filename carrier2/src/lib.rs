@@ -1,4 +1,4 @@
-use log::debug;
+use log::{debug, info};
 use pingora::{http::RequestHeader, prelude::HttpPeer};
 use regex::Regex;
 use serde::Deserialize;
@@ -41,12 +41,28 @@ pub struct MatchHeader {
 impl MatchHeader {
     fn is_hit(&self, name: &str, value: &str) -> bool {
         match self.match_type {
-            MatchType::PrefixLookup => self.name == name && value.starts_with(&self.value),
-            MatchType::RegexLookup => {
-                Regex::new(self.name.as_str()).unwrap().is_match(name)
-                    && Regex::new(self.value.as_str()).unwrap().is_match(value)
+            MatchType::PrefixLookup => {
+                let hit = self.name == name && value.starts_with(&self.value);
+                if hit {
+                    debug!("MatchHeader hit on PrefixLookup for {}:{}", name, value);
+                }
+                hit
             }
-            MatchType::ExactLookup => self.name == name && self.value == value,
+            MatchType::RegexLookup => {
+                let hit = Regex::new(self.name.as_str()).unwrap().is_match(name)
+                    && Regex::new(self.value.as_str()).unwrap().is_match(value);
+                if hit {
+                    debug!("MatchHeader hit on RegexLookup for {}:{}", name, value);
+                }
+                hit
+            }
+            MatchType::ExactLookup => {
+                let hit = self.name == name && self.value == value;
+                if hit {
+                    debug!("MatchHeader hit on ExactLookup for {}:{}", name, value);
+                }
+                hit
+            }
         }
     }
 }
@@ -87,6 +103,9 @@ impl MatchAndCondition {
                     }
                 }
         }
+        if hit {
+            debug!("MatchAndCondition hit for {:?}", self.and_match);
+        }
         hit
     }
 }
@@ -101,6 +120,9 @@ impl MatchOrCondition {
         let mut hit = false;
         for cond in &self.or_rules {
             hit = hit || cond.is_hit(req);
+        }
+        if hit {
+            info!("MatchOrCondition hit for {:?}", self.or_rules);
         }
         hit
     }

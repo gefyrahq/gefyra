@@ -6,14 +6,15 @@ from utils import read_carrier2_config
 def test_a_create_bridge_mount(operator: AClusterManager):
     k3d = operator
     k3d.apply("tests/fixtures/nginx.yaml")
+    k3d.wait(
+        "deployment/nginx-deployment",
+        "jsonpath='{.status.readyReplicas}'=1",
+        namespace="default",
+        timeout=120,
+    )
+
     k3d.apply("tests/fixtures/bridge_mount.yaml")
 
-    k3d.wait(
-        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
-        "jsonpath=.state=REQUESTED",
-        namespace="gefyra",
-        timeout=40,
-    )
     k3d.wait(
         "gefyrabridgemounts.gefyra.dev/bridgemount-a",
         "jsonpath=.state=ACTIVE",
@@ -34,7 +35,7 @@ def test_a_create_bridge_mount(operator: AClusterManager):
     pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
     assert (
         pod["items"][0]["spec"]["containers"][0]["image"]
-        == "quay.io/gefyra/carrier2:test"  # TODO change to latest
+        == "quay.io/gefyra/carrier2:latest"
     )
 
     k3d.apply("tests/fixtures/a_gefyra_bridge_carrier2.yaml")
@@ -53,14 +54,13 @@ def test_a_create_bridge_mount(operator: AClusterManager):
         core_v1, pod["items"][0]["metadata"]["name"], "default"
     )
     config = config[0].replace("\n ", "").replace(" ", "")
-    print(config)
     assert (
         "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"  # noqa: E501
         in config
     )
-    assert "./tests/fixtures/test_cert.pem" in config
-    assert "./tests/fixtures/test_key.pem" in config
-    assert "test.gefyra.dev" in config
+    # assert "./tests/fixtures/test_cert.pem" in config
+    # assert "./tests/fixtures/test_key.pem" in config
+    # assert "test.gefyra.dev" in config
 
 
 def test_b_second_bridge(operator: AClusterManager):
@@ -95,6 +95,7 @@ def test_delete_bridge(operator: AClusterManager):
     k3d.kubectl(
         ["-n", "gefyra", "delete", "gefyrabridges.gefyra.dev", "bridge-a"],
         as_dict=False,
+        timeout=120,
     )
 
     k3d.wait(

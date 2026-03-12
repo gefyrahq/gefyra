@@ -47,7 +47,9 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
                 items=k8s.client.V1JSONSchemaProps(type="string"),
             ),
             # Service name + port of the corresponding client stowaway proxy
-            "clusterEndpoint": k8s.client.V1JSONSchemaProps(type="string", default=""),
+            "clusterEndpoint": k8s.client.V1JSONSchemaProps(
+                type="object", x_kubernetes_preserve_unknown_fields=True
+            ),
             # "syncDownDirectories": k8s.client.V1JSONSchemaProps(
             #     type="array",
             #     default=[],
@@ -127,6 +129,8 @@ def create_gefyraclient_definition() -> k8s.client.V1CustomResourceDefinition:
             ),
             # datetime when this client is to be removed from the cluster
             "sunset": k8s.client.V1JSONSchemaProps(type="string"),
+            # time after which the connection is automatically closed
+            "maxConnectionAge": k8s.client.V1JSONSchemaProps(type="integer"),
             # datetime when this client was last contacted
             "lastClientContact": k8s.client.V1JSONSchemaProps(type="string"),
             "state": k8s.client.V1JSONSchemaProps(type="string", default="REQUESTED"),

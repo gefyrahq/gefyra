@@ -1,117 +1,66 @@
-from time import sleep
-from typing import List
-import docker
-import docker.errors
-from kubernetes.config import load_kube_config
-
-import requests
-
-from kubernetes.client import (
-    CoreV1Api,
-    RbacAuthorizationV1Api,
-    AppsV1Api,
-    CustomObjectsApi,
-)
-from pytest_kubernetes.providers import AClusterManager
 import pytest
-from unittest import TestCase
 
-from click.testing import CliRunner
+from pytest_kubernetes.providers import AClusterManager
+
+from tests.e2e.base import GefyraTestCase
+
 
 LOCAL_CONTAINER_NAME = "gefyra-new-backend"
 
 
-@pytest.mark.usefixtures("operator")
-@pytest.mark.usefixtures("tmp_path")
-@pytest.mark.usefixtures("demo_backend_image")
-class GefyraBridgeTest(TestCase):
+@pytest.mark.parametrize("operator", ["operator_no_sa", "operator_with_sa"])
+@pytest.fixture(scope="class", autouse=True)
+def workloads_for_bridgetests(operator):
+    operator.apply("tests/fixtures/nginx_exposed.yaml")
+    yield
+    operator.kubectl(
+        ["delete", "-f", "tests/fixtures/nginx_exposed.yaml"], as_dict=False
+    )
+    try:
+        operator.kubectl(["delete", "deploy", "nginx-deployment-gefyra"], as_dict=False)
+    except RuntimeError:
+        # if this has never been run from a test
+        pass
+
+
+class TestGefyraBridge(GefyraTestCase):
     provider = "k3d"
 
-    @pytest.fixture(autouse=True)
-    def _capture_request(self, request):
-        self._request = request
+    def test_bridge(self, operator: AClusterManager, tmp_path, demo_backend_image):
+        # Check help flag is working (format group for click)
+        self.cmd(operator.kubeconfig, "client", ["--help"])
+        with pytest.raises(AssertionError):
+            res = self.cmd(operator.kubeconfig, "connection", ["remove"])
+            assert "No Gefyra connection found." in res.output
 
-    def _init_docker(self):
-        self.DOCKER_API = docker.from_env()
+        self.cmd(operator.kubeconfig, "client", ["create", "--client-id", "client-a"])
 
-    def _init_kube_api(self):
-        load_kube_config(self.kubeconfig)
-        self.K8S_CORE_API = CoreV1Api()
-        self.K8S_RBAC_API = RbacAuthorizationV1Api()
-        self.K8S_APP_API = AppsV1Api()
-        self.K8S_CUSTOM_OBJECT_API = CustomObjectsApi()
-
-    def setUp(self):
-        self.operator: AClusterManager = self._request.getfixturevalue("operator")
-        self.tmp_path = self._request.getfixturevalue("tmp_path")
-        self.demo_backend_image = self._request.getfixturevalue("demo_backend_image")
-        self.kubeconfig = str(self.operator.kubeconfig)
-        self._init_kube_api()
-        self._init_docker()
-        self.operator.apply("tests/fixtures/nginx_exposed.yaml")
-
-    def tearDown(self):
-        containers = ["gefyra-cargo-pytest-gefyra", LOCAL_CONTAINER_NAME]
-        for container in containers:
-            try:
-                self.DOCKER_API.containers.get(container).remove(force=True)
-            except docker.errors.NotFound:
-                pass
-        return super().tearDown()
-
-    def cmd(self, command: str, params: List[str]):
-        load_kube_config(self.kubeconfig)
-        from gefyra.cli.main import cli
-
-        runner = CliRunner()
-        res = runner.invoke(
-            cli,
-            ["--kubeconfig", str(self.operator.kubeconfig), command, *params],
-            catch_exceptions=True,
-        )
-        if res.exit_code != 0:
-            raise AssertionError(
-                f"Command failed: {res.output}\nExit code: " + str(res.exit_code)
-            )
-        return res
-
-    def assert_get_contains(
-        self, url: str, expected_content: str, retries: int = 10, headers: dict = None
-    ):
-        """
-        Helper function to assert that a GET request to a URL contains expected content.
-        Retries the request if the content is not found.
-        """
-        while retries > 0:
-            try:
-                response = requests.get(url, headers=headers)
-            except Exception:
-                continue
-            if expected_content in response.text:
-                return
-            retries -= 1
-            sleep(1)
-        raise AssertionError(
-            f"Expected content '{expected_content}' not found in response from {url}."
-        )
-
-    def test_bridge(self):
-        self.cmd("client", ["create", "--client-id", "client-a"])
-
-        self.operator.wait(
+        operator.wait(
             "gefyraclients.gefyra.dev/client-a",
             "jsonpath=.state=WAITING",
             namespace="gefyra",
             timeout=60,
         )
-        client_file_path = self.tmp_path / "client-a.json"
-        self.cmd("client", ["config", "-o", client_file_path, "client-a", "--local"])
+        client_file_path = tmp_path / "client-a.json"
+        self.cmd(
+            operator.kubeconfig,
+            "client",
+            ["config", "-o", client_file_path, "client-a", "--local"],
+        )
 
         self.cmd(
+            operator.kubeconfig,
             "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
         )
-        self.operator.wait(
+        operator.wait(
             "gefyraclients.gefyra.dev/client-a",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
@@ -119,10 +68,11 @@ class GefyraBridgeTest(TestCase):
         )
 
         self.cmd(
+            operator.kubeconfig,
             "run",
             [
                 "-i",
-                self.demo_backend_image,
+                demo_backend_image,
                 "-n",
                 "default",
                 "--connection-name",
@@ -134,6 +84,10 @@ class GefyraBridgeTest(TestCase):
                 LOCAL_CONTAINER_NAME,
                 "--command",
                 "python3 local.py",
+                "--cpu",
+                "1",
+                "--memory",
+                "128m",
             ],
         )
 
@@ -142,23 +96,27 @@ class GefyraBridgeTest(TestCase):
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         self.cmd(
+            operator.kubeconfig,
             "mount",
             [
                 "create",
+                "--name",
+                "nginx-deployment-gefyra",
                 "--target",
                 "deploy/nginx-deployment/nginx",
-                "--wait",
                 "--connection-name",
                 "pytest-gefyra",
             ],
         )
-        self.operator.wait(
+        print("Waiting for mount to become ACTIVE...")
+        operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=60,
         )
-        self.operator.wait(
+        print("Mount is ACTIVE. Waiting for deployment to be patched...")
+        operator.wait(
             "deployment/nginx-deployment-gefyra",
             "jsonpath=.spec.template.spec.containers[0].image=nginx:1.14.2",
             namespace="default",
@@ -170,29 +128,33 @@ class GefyraBridgeTest(TestCase):
         # TODO maybe check the new deployment?
 
         self.cmd(
+            operator.kubeconfig,
             "bridge",
             [
-                "--name",
+                "create",
+                "--local",
                 LOCAL_CONTAINER_NAME,
                 "--ports",
                 "80:8000",
-                "--match-header",
+                "--match-header-exact",
                 "x-gefyra:peer",
-                "--target",
+                "--mount",
                 "nginx-deployment-gefyra",
                 "--connection-name",
                 "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
             ],
         )
 
-        result = self.operator.kubectl(
+        result = operator.kubectl(
             ["get", "gefyrabridges.gefyra.dev", "-n", "gefyra"],
             as_dict=True,
         )
 
         bridge_name = result["items"][0]["metadata"]["name"]
-
-        self.operator.wait(
+        print(f"Waiting for bridge {bridge_name} to become ACTIVE...")
+        operator.wait(
             f"gefyrabridges.gefyra.dev/{bridge_name}",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
@@ -204,24 +166,51 @@ class GefyraBridgeTest(TestCase):
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
-
-    def test_image_deployment_patches(self):
-        """
-        Test if a deployment image patch is detected and the bridge is updated accordingly.
-        """
-        client_file_path = self.tmp_path / "client-a.json"
-        self.cmd("client", ["config", "-o", client_file_path, "client-a", "--local"])
-
+        print("Test successful, cleaning up...")
         self.cmd(
-            "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
 
         self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
+        )
+
+    def test_image_deployment_patches(
+        self, operator: AClusterManager, tmp_path, demo_backend_image
+    ):
+        """
+        Test if a deployment image patch is detected and the bridge is updated accordingly.
+        """
+        client_file_path = tmp_path / "client-a.json"
+        self.cmd(
+            operator.kubeconfig,
+            "client",
+            ["config", "-o", client_file_path, "client-a", "--local"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
             "run",
             [
                 "-i",
-                self.demo_backend_image,
+                demo_backend_image,
                 "-n",
                 "default",
                 "--connection-name",
@@ -236,7 +225,34 @@ class GefyraBridgeTest(TestCase):
             ],
         )
 
-        self.operator.kubectl(
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            [
+                "create",
+                "--local",
+                LOCAL_CONTAINER_NAME,
+                "--ports",
+                "80:8000",
+                "--match-header-exact",
+                "x-gefyra:peer",
+                "--mount",
+                "nginx-deployment-gefyra",
+                "--connection-name",
+                "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
+            ],
+        )
+
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        operator.kubectl(
             [
                 "patch",
                 "deployment",
@@ -248,51 +264,85 @@ class GefyraBridgeTest(TestCase):
             ]
         )
 
-        self.operator.wait(
+        operator.wait(
             "deployment/nginx-deployment-gefyra",
             "jsonpath=.spec.template.spec.containers[0].image=nginx:latest",
             namespace="default",
-            timeout=60,
+            timeout=120,
         )
 
-        # RESTORING state usually lasts just very briefly, so we wait for PREPARING state
-        self.operator.wait(
-            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
-            "jsonpath=.state=PREPARING",
-            namespace="gefyra",
-            timeout=60,
-        )
-
-        self.operator.wait(
+        # Wait for ACTIVE directly — intermediate states (RESTORING, PREPARING) are
+        # too short-lived for kubectl wait to catch reliably.
+        operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
+
+        # Verify the restoration cycle occurred via stateTransitions
+        mount = operator.kubectl(
+            [
+                "get",
+                "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+                "-n",
+                "gefyra",
+                "-o",
+                "json",
+            ],
+        )
+        transitions = mount.get("stateTransitions", {})
+        assert "RESTORING" in transitions, "Expected RESTORING state transition"
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
         )
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+        )
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
+        )
 
-    def test_rollout_bridge_mount_reconciles(self):
+    def test_multiple_cli_commands(
+        self, operator: AClusterManager, tmp_path, demo_backend_image
+    ):
         """
         Test if a deployment rollout is detected and the bridge is updated accordingly.
+        Afterwards check if listing, inspecting and deleting bridges works as expected.
         """
-        client_file_path = self.tmp_path / "client-a.json"
-        self.cmd("client", ["config", "-o", client_file_path, "client-a", "--local"])
-
+        client_file_path = tmp_path / "client-a.json"
         self.cmd(
-            "connection",
-            ["connect", "-f", client_file_path, "--connection-name", "pytest-gefyra"],
+            operator.kubeconfig,
+            "client",
+            ["config", "-o", client_file_path, "client-a", "--local"],
         )
 
         self.cmd(
+            operator.kubeconfig,
+            "connection",
+            [
+                "connect",
+                "--force",
+                "-f",
+                client_file_path,
+                "--connection-name",
+                "pytest-gefyra",
+            ],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
             "run",
             [
                 "-i",
-                self.demo_backend_image,
+                demo_backend_image,
                 "-n",
                 "default",
                 "--connection-name",
@@ -307,7 +357,34 @@ class GefyraBridgeTest(TestCase):
             ],
         )
 
-        self.operator.kubectl(
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            [
+                "create",
+                "--local",
+                LOCAL_CONTAINER_NAME,
+                "--ports",
+                "80:8000",
+                "--match-header-exact",
+                "x-gefyra:peer",
+                "--mount",
+                "nginx-deployment-gefyra",
+                "--connection-name",
+                "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
+            ],
+        )
+
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+            "jsonpath=.state=ACTIVE",
+            namespace="gefyra",
+            timeout=60,
+        )
+
+        operator.kubectl(
             [
                 "rollout",
                 "restart",
@@ -315,15 +392,31 @@ class GefyraBridgeTest(TestCase):
             ]
         )
 
-        self.operator.wait(
+        # Wait for ACTIVE directly — RESTORING is near-instantaneous because
+        # on_restore() immediately calls self.send("prepare").
+        operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
-            "jsonpath=.state=RESTORING",
+            "jsonpath=.state=ACTIVE",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
-        self.operator.wait(
-            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+        # Verify the restoration cycle occurred via stateTransitions
+        mount = operator.kubectl(
+            [
+                "get",
+                "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+                "-n",
+                "gefyra",
+                "-o",
+                "json",
+            ],
+        )
+        transitions = mount.get("stateTransitions", {})
+        assert "RESTORING" in transitions, "Expected RESTORING state transition"
+
+        operator.wait(
+            "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=60,
@@ -333,4 +426,105 @@ class GefyraBridgeTest(TestCase):
 
         self.assert_get_contains(
             "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+        )
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "list",
+            ["--connection-name", "pytest-gefyra"],
+        )
+
+        assert LOCAL_CONTAINER_NAME in res.output
+
+        res = self.cmd(operator.kubeconfig, "list", [])
+
+        assert LOCAL_CONTAINER_NAME in res.output
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["inspect", "pytest-gefyra-bridge"],
+        )
+
+        # Assert the command succeeded (already checked by cmd() but explicit is good)
+        assert res.exit_code == 0
+
+        # Assert the bridge name is in the output
+        assert "pytest-gefyra-bridge" in res.output
+
+        # Assert the mount target is shown
+        assert "nginx-deployment-gefyra" in res.output
+
+        # Assert the header match rule is shown (the x-gefyra:peer header)
+        assert "x-gefyra" in res.output
+
+        # Assert states are shown (ACTIVE state should be present since bridge is active)
+        assert "States:" in res.output
+
+        # Assert the GefyraBridgeMount reference is shown
+        assert "GefyraBridgeMount:" in res.output
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["list", "--connection-name", "pytest-gefyra"],
+        )
+        # Assert the bridge is listed
+        assert "pytest-gefyra-bridge" in res.output
+        # Assert state is shown
+        assert "ACTIVE" in res.output
+        # Assert the mount is shown
+        assert "nginx-deployment-gefyra" in res.output
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+        )
+        # Assert deletion was successful
+        assert "pytest-gefyra-bridge' deleted" in res.output
+
+        # Verify the bridge is actually deleted
+        import time
+
+        for _ in range(50):
+            try:
+                operator.kubectl(
+                    [
+                        "get",
+                        "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
+                        "-n",
+                        "gefyra",
+                    ],
+                    as_dict=False,
+                )
+                time.sleep(2)
+            except RuntimeError:
+                # Resource not found - deletion successful
+                break
+        else:
+            raise AssertionError("Bridge was not deleted within timeout")
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["disconnect", "--yes", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["connect", "--force", "--connection-name", "pytest-gefyra"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+        )
+
+        self.cmd(
+            operator.kubeconfig,
+            "connection",
+            ["remove", "pytest-gefyra"],
         )

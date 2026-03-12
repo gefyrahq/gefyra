@@ -73,6 +73,11 @@ def test_c_client_activate(operator: AClusterManager):
     assert client_a.get("stateTransitions") is not None
     assert client_a["providerConfig"] is not None
 
+    service_accounts = k3d.kubectl(
+        ["-n", "gefyra", "get", "serviceaccount"], as_dict=False
+    )
+    assert "gefyra-client-client-a" in service_accounts
+
 
 def test_d_client_deactivate(operator: AClusterManager):
     k3d = operator
@@ -165,3 +170,6 @@ def test_f_delete_client(operator: AClusterManager):
     )
     with pytest.raises(RuntimeError):
         k3d.kubectl(["-n", "gefyra", "get", "gefyraclients.gefyra.dev", "client-a"])
+
+    service_accounts = k3d.kubectl(["-n", "gefyra", "get", "serviceaccount"])
+    assert "gefyra-client-client-a" not in service_accounts
