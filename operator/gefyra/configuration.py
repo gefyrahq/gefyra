@@ -59,6 +59,9 @@ class OperatorConfiguration:
             "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT", default=False, cast=bool
         )
         self.APP_REVISION = config("GEFYRA_APP_REVISION", default="unknown")
+        self.BRIDGE_MOUNT_MAX_RESTORE_ATTEMPTS = config(
+            "GEFYRA_BRIDGE_MOUNT_MAX_RESTORE_ATTEMPTS", cast=int, default=5
+        )
 
     def to_dict(self):
         return {k: v for k, v in self.__dict__.items() if k.isupper()}

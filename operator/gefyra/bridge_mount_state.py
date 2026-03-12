@@ -54,7 +54,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     activate = installing.to(active) | active.to.itself()
 
     restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
-    impair = error.from_(preparing, requested, installing, active, active, error)
+    impair = error.from_(preparing, requested, installing, active, restoring, error)
     terminate = (
         requested.to(terminated)
         | installing.to(terminated)
@@ -138,12 +138,38 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             return False
 
     async def on_restore(self):
+        max_attempts = self.operator_configuration.BRIDGE_MOUNT_MAX_RESTORE_ATTEMPTS
+        restore_attempts = self.data.get("status", {}).get("restoreAttempts", 0) + 1
+        await self._patch_object({"status": {"restoreAttempts": restore_attempts}})
+
+        if restore_attempts >= max_attempts:
+            await self.post_event(
+                reason="Circuit breaker tripped",
+                message=f"GefyraBridgeMount '{self.object_name}' exceeded maximum "
+                f"restore attempts ({max_attempts}). Transitioning to ERROR. "
+                f"This may indicate an external controller (e.g. HPA) is "
+                f"continuously scaling the target workload.",
+                type="Warning",
+            )
+            await self.send("impair")
+            return
+
         await self.post_event(
             reason="Change detected",
-            message=f"Restoring GefyraBridgeMount '{self.object_name}'",
+            message=f"Restoring GefyraBridgeMount '{self.object_name}' "
+            f"(attempt {restore_attempts}/{max_attempts})",
             type="Warning",
         )
         await self.send("arrange")
+
+    async def on_activate(self):
+        status = self.data.get("status", {})
+        restore_attempts = status.get("restoreAttempts", 0)
+        install_attempts = status.get("installAttempts", 0)
+        if restore_attempts > 0 or install_attempts > 0:
+            await self._patch_object(
+                {"status": {"restoreAttempts": 0, "installAttempts": 0}}
+            )
 
     async def on_arrange(self):
         # await self.post_event( # Await post_event
@@ -170,9 +196,26 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         return True
 
     async def on_install(self):
+        max_attempts = self.operator_configuration.BRIDGE_MOUNT_MAX_RESTORE_ATTEMPTS
+        install_attempts = self.data.get("status", {}).get("installAttempts", 0) + 1
+        await self._patch_object({"status": {"installAttempts": install_attempts}})
+
+        if install_attempts >= max_attempts:
+            await self.post_event(
+                reason="Circuit breaker tripped",
+                message=f"GefyraBridgeMount '{self.object_name}' exceeded maximum "
+                f"install attempts ({max_attempts}). Transitioning to ERROR. "
+                f"This may indicate an external controller (e.g. HPA) is "
+                f"continuously scaling the target workload.",
+                type="Warning",
+            )
+            await self.impair()
+            return
+
         await self.post_event(
             reason="GefyraBridgeMount state change",
-            message=f"GefyraBridgeMount '{self.object_name}' is being installed",
+            message=f"GefyraBridgeMount '{self.object_name}' is being installed "
+            f"(attempt {install_attempts}/{max_attempts})",
         )
         try:
             bmp = self.bridge_mount_provider
