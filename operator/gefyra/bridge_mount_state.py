@@ -146,13 +146,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     @property
     def sunset(self) -> Optional[datetime]:
         if sunset := self.data.get("sunset"):
-            return datetime.fromisoformat(sunset.strip("Z"))
+            return datetime.fromisoformat(sunset.strip("Z")).replace(
+                tzinfo=timezone.utc
+            )
         else:
             return None
 
     @property
     async def should_terminate(self) -> bool:  # Made async
-        if self.sunset and self.sunset <= datetime.utcnow():
+        if self.sunset and self.sunset <= datetime.now(timezone.utc):
             # remove this shadow because the sunset time is in the past
             await self.post_event(
                 reason="GefyraBridgeMount state change",

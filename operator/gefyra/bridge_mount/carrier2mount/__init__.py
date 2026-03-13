@@ -617,6 +617,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     @property
     async def _upstream_set(self) -> bool:
         pods = await self._original_pods  # Await the async property
+        if not pods.items:
+            self.logger.error("Cannot determine original pods")
+            return False
         for pod in pods.items:
             config_str_list = await asyncio.to_thread(
                 read_carrier2_config,
@@ -629,10 +632,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             pod_config = Carrier2Config.from_string(config_str)
             if not any(p.clusterUpstream for p in pod_config.proxy):
                 return False
-            ## TODO check container of pod and port
-            return True
-        self.logger.error("Cannot determine original pods")
-        return False
+        return True
 
     async def restore_original_workload(
         self,
