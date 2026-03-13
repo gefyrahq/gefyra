@@ -55,6 +55,10 @@ class OperatorConfiguration:
             "GEFYRA_CARRIER_RUNNING_TIMEOUT", cast=int, default=30
         )
 
+        self.BRIDGE_MOUNT_MISSING_GRACE_PERIOD = config(
+            "GEFYRA_BRIDGE_MOUNT_MISSING_GRACE_PERIOD", cast=int, default=86400
+        )  # seconds, default 1 day
+
         self.DISABLE_CLIENT_SA_MANAGEMENT = config(
             "GEFYRA_DISABLE_CLIENT_SA_MANAGEMENT", default=False, cast=bool
         )

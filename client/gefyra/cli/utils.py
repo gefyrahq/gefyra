@@ -9,6 +9,7 @@ from gefyra.types.bridge import (
     PrefixMatchHeader,
     PrefixMatchPath,
     RegexMatchHeader,
+    RegexMatchPath,
 )
 
 
@@ -285,7 +286,7 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
 def parse_match_header(
     ctx, param, match_header_raw: Tuple[str]
 ) -> List[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]:
-    res = []
+    res: List[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader] = []
     for match_header in match_header_raw:
         try:
             name, value = match_header.split(":")
@@ -304,13 +305,13 @@ def parse_match_header(
 
 def parse_match_path(
     ctx, param, match_path_raw: Tuple[str]
-) -> List[ExactMatchPath | PrefixMatchPath | RegexMatchHeader]:
-    res = []
+) -> List[ExactMatchPath | PrefixMatchPath | RegexMatchPath]:
+    res: List[ExactMatchPath | PrefixMatchPath | RegexMatchPath] = []
     for match_path in match_path_raw:
         if param.name == "match_path_exact":
             res.append(ExactMatchPath(path=match_path))
         if param.name == "match_path_prefix":
             res.append(PrefixMatchPath(path=match_path))
         if param.name == "match_path_regex":
-            res.append(RegexMatchHeader(path=match_path))
+            res.append(RegexMatchPath(path=match_path))
     return res

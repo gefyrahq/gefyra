@@ -3,7 +3,6 @@ import select
 import tarfile
 from tempfile import TemporaryFile
 import time
-import traceback
 from typing import Any, AsyncIterable, Callable, List
 
 import kubernetes as k8s
@@ -163,8 +162,8 @@ def wait_until_condition(
             resp = read_func()
             if cond_func(resp):
                 return resp
-        except k8s.client.ApiException:
-            logging.warning(f"Failed read_func: {traceback.format_exc()}")
+        except k8s.client.ApiException as e:
+            logging.warning(f"Failed read_func: {e.reason} (status {e.status})")
 
         time.sleep(backoff)
 

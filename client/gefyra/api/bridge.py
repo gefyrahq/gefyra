@@ -172,6 +172,10 @@ def delete_bridge(
             "gefyrabridges",
             label_selector=f"gefyra.dev/bridge-mount={mount_name}",
         )
+        if not bridges["items"]:
+            raise RuntimeError(
+                f"No GefyraBridge found for GefyraBridgeMount {mount_name} or GefyraBridgeMount does not exist."
+            )
         for bridge in bridges["items"]:
             gefyra_bridge = handle_delete_gefyrabridge(
                 config, bridge["metadata"]["name"]
@@ -182,10 +186,6 @@ def delete_bridge(
                     if not success:
                         raise TimeoutError("Timeout for this operation reached.")
                 logger.info(f"Bridge {bridge['metadata']['name']} removed")
-        else:
-            raise RuntimeError(
-                f"No GefyraBridge found for GefyraBridgeMount {mount_name} or GefyraBridgeMount does not exist."
-            )
     return True
 
 

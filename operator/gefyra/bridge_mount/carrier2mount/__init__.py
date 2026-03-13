@@ -322,7 +322,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     raise BridgeMountTargetException(
                         f"Workload target {target} (type '{type_.__name__}') in namespace '{namespace}' not found."
                     )
-                raise RuntimeError(f"Exception when calling Kubernetes API: {e}")
+                raise RuntimeError(f"Exception when calling Kubernetes API: {e}") from e
         return getattr(self, f"_get_workload_cache-{name}-{type_}")
 
     async def prepare(self):
@@ -356,7 +356,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             except ApiException as e:
                 if e.status == 404:
                     raise BridgeMountTargetException(NOT_FOUND_MSG)
-                raise RuntimeError(API_EXCEPTION_MSG.format(e))
+                raise RuntimeError(API_EXCEPTION_MSG.format(e)) from e
 
             # use workloads metadata uuid for owner references with field selector to get pods
             if isinstance(workload, (V1Deployment, V1StatefulSet)):
@@ -515,8 +515,11 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     body=pod,
                 )
             except ApiException as e:
+                self.logger.warning(
+                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})"
+                )
                 raise TemporaryError(
-                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e}",
+                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})",
                     delay=10,
                 )
 
@@ -614,6 +617,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     @property
     async def _upstream_set(self) -> bool:
         pods = await self._original_pods  # Await the async property
+        if not pods.items:
+            self.logger.error("Cannot determine original pods")
+            return False
         for pod in pods.items:
             config_str_list = await asyncio.to_thread(
                 read_carrier2_config,
@@ -626,10 +632,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             pod_config = Carrier2Config.from_string(config_str)
             if not any(p.clusterUpstream for p in pod_config.proxy):
                 return False
-            ## TODO check container of pod and port
-            return True
-        self.logger.error("Cannot determine original pods")
-        return False
+        return True
 
     async def restore_original_workload(
         self,
@@ -837,6 +840,19 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             namespace=self.namespace,
             body=pod,
         )
+
+    async def target_exists(self) -> bool:
+        try:
+            await asyncio.to_thread(core_v1_api.read_namespace, self.namespace)
+        except ApiException as e:
+            if e.status == 404:
+                return False
+            raise
+        try:
+            await self._get_workload(self.target, self.namespace)
+        except BridgeMountTargetException:
+            return False
+        return True
 
     async def uninstall(self):
         await self.uninstall_duplicated_workload()

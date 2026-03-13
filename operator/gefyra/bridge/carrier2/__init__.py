@@ -65,7 +65,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
             bridge_mount["targetContainer"],
             self.post_event,
             self.logger,
-            provider_parameter=bridge_mount.get("providerParameter"),
+            parameter=bridge_mount.get("providerParameter"),
         )
 
     provider_type = "carrier2"
