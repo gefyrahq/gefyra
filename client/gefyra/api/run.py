@@ -22,6 +22,67 @@ logger = logging.getLogger(__name__)
 stop_thread = Event()
 
 
+def _restore_bridges_for_container(
+    config: "ClientConfiguration", container: "Container"
+) -> None:
+    """
+    Look up existing GefyraBridges that reference this container by name
+    (via the gefyra.dev/client-container label) and update their destinationIP
+    to the new container's IP address, triggering the operator-side restore flow.
+    """
+    from kubernetes.client import ApiException
+
+    container_name = container.name
+    try:
+        new_ip = container.attrs["NetworkSettings"]["Networks"][config.NETWORK_NAME][
+            "IPAddress"
+        ]
+    except KeyError:
+        logger.debug(
+            f"Cannot resolve IP for container '{container_name}' on network"
+            f" '{config.NETWORK_NAME}', skipping bridge restore"
+        )
+        return
+
+    try:
+        bridges = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+            group="gefyra.dev",
+            version="v1",
+            namespace=config.NAMESPACE,
+            plural="gefyrabridges",
+            label_selector=f"gefyra.dev/client-container={container_name}",
+        )
+    except ApiException as e:
+        logger.warning(f"Could not query GefyraBridges for restore: {e.reason}")
+        return
+
+    for bridge in bridges.get("items", []):
+        bridge_name = bridge["metadata"]["name"]
+        old_ip = bridge.get("destinationIP", "")
+        if old_ip == new_ip:
+            logger.debug(
+                f"Bridge '{bridge_name}' already has destinationIP={new_ip}, skipping"
+            )
+            continue
+        try:
+            config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                namespace=config.NAMESPACE,
+                plural="gefyrabridges",
+                name=bridge_name,
+                body={"destinationIP": new_ip},
+            )
+            logger.info(
+                f"Restoring bridge '{bridge_name}': updated destinationIP"
+                f" from '{old_ip}' to '{new_ip}'"
+            )
+        except ApiException as e:
+            logger.warning(
+                f"Could not update destinationIP for bridge '{bridge_name}': {e.reason}"
+            )
+
+
 def print_logs(container: "Container"):
     for logline in container.logs(stream=True):
         print(logline.decode("utf-8"), end="")
@@ -171,7 +232,8 @@ def run(
         f" '{container.name}' in Kubernetes namespace '{namespace}' (from {ns_source})"
     )
 
-    # TODO restore existing briges via [metadata][name][labels][gefyra.dev/container-name] for local instance
+    # Restore existing bridges that target this container name
+    _restore_bridges_for_container(config, container)
 
     if detach:
         return True
