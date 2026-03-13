@@ -42,6 +42,10 @@ class AbstractGefyraBridgeMountProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def target_exists(self) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
     async def validate(self, bridge_request: dict, hits: dict | None):
         """
         Validate the bridgemount request

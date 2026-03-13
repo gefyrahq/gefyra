@@ -181,7 +181,11 @@ def cleanup_stale_bridges(
         logger.warning("cleanup_stale_bridges: cannot list bridges, skipping: %s", e)
         return 0
 
-    stale = [b for b in all_bridges if b.get("destinationIP") not in live_ips]
+    stale = [
+        b
+        for b in all_bridges
+        if b.get("destinationIP") and b["destinationIP"] not in live_ips
+    ]
 
     for bridge in stale:
         bridge_name = bridge["metadata"]["name"]

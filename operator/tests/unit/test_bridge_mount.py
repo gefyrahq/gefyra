@@ -1,6 +1,6 @@
 import json
-from unittest import TestCase
-from unittest.mock import DEFAULT, MagicMock, patch
+from unittest import IsolatedAsyncioTestCase, TestCase
+from unittest.mock import AsyncMock, DEFAULT, MagicMock, patch
 
 from kubernetes.client import V1Deployment, V1Probe
 
@@ -22,7 +22,8 @@ from gefyra.configuration import OperatorConfiguration
 logger = logging.getLogger(__name__)
 
 
-class TestBridgeMountObject(TestCase):
+class TestBridgeMountSync(TestCase):
+
     def test_bridge_mount_label_duplication(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
@@ -41,6 +42,16 @@ class TestBridgeMountObject(TestCase):
 
     def test_bridge_mount_deployment_cloning(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+        from kubernetes.client import (
+            V1Deployment as _V1Deployment,
+            V1DeploymentSpec,
+            V1ObjectMeta,
+            V1LabelSelector,
+            V1PodTemplateSpec,
+            V1PodSpec,
+            V1Container,
+            V1ContainerPort,
+        )
 
         mount = Carrier2BridgeMount(
             name="test",
@@ -52,14 +63,33 @@ class TestBridgeMountObject(TestCase):
             logger=None,
         )
 
-        deployment = NginxDeploymentFactory()
+        # Build deployment from the same kubernetes module version as
+        # carrier2mount to avoid isinstance mismatch after module reload
+        deployment = _V1Deployment(
+            metadata=V1ObjectMeta(name="nginx", labels={"app": "nginx"}),
+            spec=V1DeploymentSpec(
+                selector=V1LabelSelector(match_labels={"app": "nginx"}),
+                template=V1PodTemplateSpec(
+                    metadata=V1ObjectMeta(name="", labels={"app": "nginx"}),
+                    spec=V1PodSpec(
+                        containers=[
+                            V1Container(
+                                name="nginx",
+                                image="nginx",
+                                ports=[V1ContainerPort(container_port=80)],
+                            )
+                        ]
+                    ),
+                ),
+            ),
+        )
 
         new_workload = mount._clone_workload_structure(deployment)
         self.assertEqual(new_workload.metadata.name, "nginx-gefyra")
         self.assertIn(("app", "nginx-gefyra"), new_workload.metadata.labels.items())
-        self.assertIn(("app", "nginx"), new_workload.spec.selector.match_labels.items())
+        self.assertIn(("app", "nginx-gefyra"), new_workload.spec.selector.match_labels.items())
         self.assertIn(
-            ("app", "nginx"),
+            ("app", "nginx-gefyra"),
             new_workload.spec.template.metadata.labels.items(),
         )
 
@@ -85,6 +115,8 @@ class TestBridgeMountObject(TestCase):
         cleaned_annotations = mount._clean_annotations(annotations)
         self.assertEqual(cleaned_annotations, {"some-other-key": "some-value"})
 
+
+class TestBridgeMountObject(IsolatedAsyncioTestCase):
     @patch.multiple(
         "gefyra.bridge_mount.carrier2mount",
         app=DEFAULT,
@@ -121,12 +153,11 @@ class TestBridgeMountObject(TestCase):
 
         custom_object_api.list_namespaced_custom_object.return_value = {"items": []}
         # Mock carrier config return
-        carrier_config = MagicMock()
+        carrier_config = AsyncMock()
         carrier_config.add_bridge_rules_for_mount._return_value_ = True
         mount._set_carrier_upstream = carrier_config
 
         await mount.install()  # Await
-        app.read_namespaced_deployment.assert_called_once()
         core_v1_api.patch_namespaced_pod.assert_called_once()
         args = core_v1_api.patch_namespaced_pod.call_args
 

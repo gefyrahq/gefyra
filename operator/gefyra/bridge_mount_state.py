@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import kopf
@@ -14,7 +14,10 @@ from gefyra.bridge_mount.factory import (
     BridgeMountProviderType,
     bridge_mount_provider_factory,
 )
-from gefyra.bridge_mount.exceptions import BridgeMountInstallException
+from gefyra.bridge_mount.exceptions import (
+    BridgeMountInstallException,
+    BridgeMountTargetException,
+)
 
 
 class GefyraBridgeMountObject(GefyraStateObject):
@@ -40,6 +43,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     active = State("Bridge Mount active", value="ACTIVE")
     restoring = State("Bridge Mount restoring workload", value="RESTORING")
     error = State("Bridge Mount error", value="ERROR")
+    missing = State("Bridge Mount target missing", value="MISSING")
     terminated = State("Bridge Mount terminated", value="TERMINATED")
 
     arrange = (
@@ -55,6 +59,17 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
 
     restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
     impair = error.from_(preparing, requested, installing, active, active, error)
+
+    #: Transition to MISSING when the target workload or namespace disappears.
+    #: Allowed from any operational state except TERMINATED and MISSING itself.
+    mark_missing = missing.from_(
+        active, error, restoring, preparing, installing, requested
+    )
+
+    #: Transition from MISSING back to PREPARING when the target reappears
+    #: within the grace period. Re-enters the full install pipeline.
+    recover = missing.to(preparing)
+
     terminate = (
         requested.to(terminated)
         | installing.to(terminated)
@@ -62,6 +77,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         | preparing.to(terminated)
         | restoring.to(terminated)
         | error.to(terminated)
+        | missing.to(terminated)
         | terminated.to.itself()
     )
 
@@ -73,7 +89,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         initial: Optional[State] = None,  # Added initial state parameter
     ):
         super().__init__(
-            start_value=initial or GefyraBridgeMount.requested.id
+            start_value=initial or GefyraBridgeMount.requested.value
         )  # Pass initial state to super
         self.model = model
         self.data = model.data
@@ -106,13 +122,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     @property
     def sunset(self) -> Optional[datetime]:
         if sunset := self.data.get("sunset"):
-            return datetime.fromisoformat(sunset.strip("Z"))
+            return datetime.fromisoformat(sunset.strip("Z")).replace(
+                tzinfo=timezone.utc
+            )
         else:
             return None
 
     @property
     async def should_terminate(self) -> bool:  # Made async
-        if self.sunset and self.sunset <= datetime.utcnow():
+        if self.sunset and self.sunset <= datetime.now(timezone.utc):
             # remove this shadow because the sunset time is in the past
             await self.post_event(
                 reason="GefyraBridgeMount state change",
@@ -124,11 +142,45 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             return False
 
     @property
-    async def is_intact(self) -> bool:
+    async def target_exists(self) -> bool:
+        try:
+            return await self.bridge_mount_provider.target_exists()
+        except Exception as e:
+            self.logger.warning(
+                f"Error checking target existence for '{self.object_name}': {e}"
+            )
+            return False
 
+    @property
+    def missing_grace_period(self) -> int:
+        per_resource = self.data.get("missingGracePeriod")
+        if per_resource is not None:
+            return int(per_resource)
+        return self.operator_configuration.BRIDGE_MOUNT_MISSING_GRACE_PERIOD
+
+    @property
+    def missing_grace_period_expired(self) -> bool:
+        missing_since = self.completed_transition(GefyraBridgeMount.missing.value)
+        if not missing_since:
+            self.logger.warning(
+                f"No MISSING transition recorded for '{self.object_name}'. "
+                "Cannot determine grace period expiry."
+            )
+            return False
+        missing_dt = datetime.fromisoformat(missing_since.strip("Z")).replace(
+            tzinfo=timezone.utc
+        )
+        return datetime.now(timezone.utc) >= missing_dt + timedelta(
+            seconds=self.missing_grace_period
+        )
+
+    @property
+    async def is_intact(self) -> bool:
         try:
             bmp = self.bridge_mount_provider
             return await bmp.prepared() and await bmp.ready()
+        except BridgeMountTargetException:
+            return False
         except Exception as e:
             await self.post_event(
                 reason="Not intact",
@@ -136,6 +188,28 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
                 type="Warning",
             )
             return False
+
+    async def on_mark_missing(self):
+        await self.post_event(
+            reason="Target missing",
+            message=f"GefyraBridgeMount '{self.object_name}' target is missing. "
+            f"Grace period: {self.missing_grace_period}s.",
+            type="Warning",
+        )
+        try:
+            await self.bridge_mount_provider.uninstall()
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to clean up artifacts for missing mount "
+                f"'{self.object_name}': {e}"
+            )
+
+    async def on_recover(self):
+        await self.post_event(
+            reason="Target recovered",
+            message=f"GefyraBridgeMount '{self.object_name}' target has reappeared. "
+            "Recovering to preparing state.",
+        )
 
     async def on_restore(self):
         await self.post_event(
