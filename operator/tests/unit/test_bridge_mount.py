@@ -43,6 +43,16 @@ class TestBridgeMountSync(TestCase):
 
     def test_bridge_mount_deployment_cloning(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+        from kubernetes.client import (
+            V1Deployment as _V1Deployment,
+            V1DeploymentSpec,
+            V1ObjectMeta,
+            V1LabelSelector,
+            V1PodTemplateSpec,
+            V1PodSpec,
+            V1Container,
+            V1ContainerPort,
+        )
 
         mount = Carrier2BridgeMount(
             name="test",
@@ -54,7 +64,26 @@ class TestBridgeMountSync(TestCase):
             logger=None,
         )
 
-        deployment = NginxDeploymentFactory()
+        # Build deployment from the same kubernetes module version as
+        # carrier2mount to avoid isinstance mismatch after module reload
+        deployment = _V1Deployment(
+            metadata=V1ObjectMeta(name="nginx", labels={"app": "nginx"}),
+            spec=V1DeploymentSpec(
+                selector=V1LabelSelector(match_labels={"app": "nginx"}),
+                template=V1PodTemplateSpec(
+                    metadata=V1ObjectMeta(name="", labels={"app": "nginx"}),
+                    spec=V1PodSpec(
+                        containers=[
+                            V1Container(
+                                name="nginx",
+                                image="nginx",
+                                ports=[V1ContainerPort(container_port=80)],
+                            )
+                        ]
+                    ),
+                ),
+            ),
+        )
 
         new_workload = mount._clone_workload_structure(deployment)
         self.assertEqual(new_workload.metadata.name, "nginx-gefyra")
