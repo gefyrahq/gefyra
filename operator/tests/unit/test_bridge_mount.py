@@ -22,7 +22,9 @@ from gefyra.configuration import OperatorConfiguration
 logger = logging.getLogger(__name__)
 
 
-class TestBridgeMountObject(IsolatedAsyncioTestCase):
+class TestBridgeMountSync(TestCase):
+    """Sync tests use plain TestCase to avoid IsolatedAsyncioTestCase/pytest-retry conflicts."""
+
     def test_bridge_mount_label_duplication(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
@@ -85,6 +87,8 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         cleaned_annotations = mount._clean_annotations(annotations)
         self.assertEqual(cleaned_annotations, {"some-other-key": "some-value"})
 
+
+class TestBridgeMountObject(IsolatedAsyncioTestCase):
     @patch.multiple(
         "gefyra.bridge_mount.carrier2mount",
         app=DEFAULT,

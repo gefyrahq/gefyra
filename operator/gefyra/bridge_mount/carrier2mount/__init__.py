@@ -200,7 +200,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             workload.metadata.name
         )
 
-        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+        if type(workload).__name__ in ("V1Deployment", "V1StatefulSet"):
             pod_labels = self._get_duplication_labels(
                 new_workload.spec.template.metadata.labels or {}
             )
@@ -226,7 +226,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         self, workload: V1Deployment | V1StatefulSet | V1Pod
     ) -> V1Service:
         name, _ = self._split_target_type_name(self.target)
-        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+        if type(workload).__name__ in ("V1Deployment", "V1StatefulSet"):
             selector_ = {
                 "bridge.gefyra.dev/duplication-id": workload.spec.template.metadata.labels[
                     "bridge.gefyra.dev/duplication-id"
@@ -359,7 +359,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
             # use workloads metadata uuid for owner references with field selector to get pods
-            if isinstance(workload, (V1Deployment, V1StatefulSet)):
+            if type(workload).__name__ in ("V1Deployment", "V1StatefulSet"):
                 v1_label_selector = workload.spec.selector.match_labels
             else:
                 v1_label_selector = workload.metadata.labels
@@ -515,8 +515,11 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     body=pod,
                 )
             except ApiException as e:
+                self.logger.warning(
+                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})"
+                )
                 raise TemporaryError(
-                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e}",
+                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})",
                     delay=10,
                 )
 

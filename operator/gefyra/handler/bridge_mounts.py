@@ -34,8 +34,9 @@ async def bridge_mount_created(body, logger, **kwargs):
     # or when the condition for the transition is not fulfilled.
     except TransitionNotAllowed as e:
         retry_delay = 15
+        logger.warning(f"Transition not allowed: {e}. Retrying in {retry_delay}s.")
         raise kopf.TemporaryError(
-            f"Transition not allowed: {e}. Retrying in {retry_delay}s.",
+            f"Transition not allowed. Retrying in {retry_delay}s.",
             delay=retry_delay,
         )
 
@@ -162,7 +163,8 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
     # or when the condition for the transition is not fulfilled.
     except TransitionNotAllowed as e:
         retry_delay = 15
+        logger.warning(f"Transition not allowed: {e}. Retrying in {retry_delay}s.")
         raise kopf.TemporaryError(
-            f"Transition not allowed: {e}. Retrying in {retry_delay}s.",
+            f"Transition not allowed. Retrying in {retry_delay}s.",
             delay=retry_delay,
         )
