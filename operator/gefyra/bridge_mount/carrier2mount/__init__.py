@@ -842,20 +842,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         )
 
     async def target_exists(self) -> bool:
-        """
-        Check whether the target namespace and workload still exist in the
-        cluster.
-
-        Checks the namespace first — a deleted namespace implies the
-        workload is gone too, so we can return early. Then checks the
-        workload itself.
-
-        :return: True if both the namespace and workload are found,
-                 False if either returns 404.
-        :raises ApiException: Re-raised for non-404 namespace errors (e.g. 403).
-        :raises RuntimeError: Raised by ``_get_workload`` for non-404 workload
-                 errors (wraps the underlying ``ApiException``).
-        """
         try:
             await asyncio.to_thread(core_v1_api.read_namespace, self.namespace)
         except ApiException as e:

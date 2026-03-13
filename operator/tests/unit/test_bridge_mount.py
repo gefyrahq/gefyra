@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class TestBridgeMountSync(TestCase):
-    """Sync tests use plain TestCase to avoid IsolatedAsyncioTestCase/pytest-retry conflicts."""
 
     def test_bridge_mount_label_duplication(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount

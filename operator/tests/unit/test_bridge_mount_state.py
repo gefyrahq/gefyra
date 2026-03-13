@@ -11,17 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 def _make_bridge_mount(state="REQUESTED", missing_grace_period=None, state_transitions=None):
-    """
-    Factory helper that creates a GefyraBridgeMount state machine instance
-    for testing, with ``_write_state`` and ``post_event`` mocked out so no
-    K8s API calls are made.
-
-    :param state: Initial state value (e.g. "REQUESTED", "ACTIVE", "MISSING").
-    :param missing_grace_period: Optional per-resource grace period override (seconds).
-    :param state_transitions: Optional dict of state transition timestamps,
-        e.g. ``{"MISSING": "2025-01-01T00:00:00"}``.
-    :return: A configured GefyraBridgeMount instance ready for assertions.
-    """
     from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
 
     data = {
@@ -53,7 +42,6 @@ def _make_bridge_mount(state="REQUESTED", missing_grace_period=None, state_trans
 
 
 class TestBridgeMountMissingState(IsolatedAsyncioTestCase):
-    """Test the MISSING state transitions in the GefyraBridgeMount state machine."""
 
     async def test_mark_missing_from_active(self):
         bm = _make_bridge_mount(state="ACTIVE")
@@ -120,7 +108,6 @@ class TestBridgeMountMissingState(IsolatedAsyncioTestCase):
 
 
 class TestBridgeMountGracePeriod(TestCase):
-    """Test grace period resolution (per-resource vs global) and expiry logic."""
 
     def test_missing_grace_period_uses_per_resource(self):
         bm = _make_bridge_mount(missing_grace_period=3600)
@@ -168,7 +155,6 @@ class TestBridgeMountGracePeriod(TestCase):
 
 
 class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
-    """Test the Carrier2BridgeMount.target_exists() method with mocked K8s API."""
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
@@ -200,7 +186,6 @@ class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     async def test_target_exists_namespace_403_raises(self, mock_core_v1_api):
-        """Non-404 errors (e.g. RBAC 403) must propagate from the provider layer."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=403)
@@ -210,7 +195,6 @@ class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     async def test_target_exists_namespace_500_raises(self, mock_core_v1_api):
-        """Transient server errors must propagate from the provider layer."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=500)
@@ -221,10 +205,6 @@ class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
     async def test_target_exists_workload_403_raises(self, mock_app, mock_core_v1_api):
-        """Non-404 on the workload read (AppsV1Api) must propagate as RuntimeError.
-
-        _get_workload wraps non-404 ApiExceptions in a RuntimeError.
-        """
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=403)
@@ -235,7 +215,6 @@ class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
     async def test_target_exists_workload_500_raises(self, mock_app, mock_core_v1_api):
-        """Transient 500 on the workload read (AppsV1Api) must propagate as RuntimeError."""
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=500)
@@ -245,17 +224,9 @@ class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
 
 
 class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
-    """Test the state-machine-level target_exists property.
-
-    The state machine wraps the provider's target_exists() and catches *all*
-    exceptions (including non-404 ApiExceptions) so that transient or RBAC
-    failures don't block reconciliation. Instead it returns False and logs
-    a warning — the reconciliation loop will retry on the next tick.
-    """
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     async def test_state_machine_target_exists_returns_false_on_namespace_403(self, mock_core_v1_api):
-        """A 403 on namespace read becomes False at the state machine level."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=403)
@@ -264,7 +235,6 @@ class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     async def test_state_machine_target_exists_returns_false_on_namespace_500(self, mock_core_v1_api):
-        """A 500 on namespace read becomes False at the state machine level."""
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=500)
@@ -274,7 +244,6 @@ class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
     async def test_state_machine_target_exists_returns_false_on_workload_403(self, mock_app, mock_core_v1_api):
-        """A 403 on workload read (RuntimeError from _get_workload) becomes False."""
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=403)
@@ -284,7 +253,6 @@ class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
     async def test_state_machine_target_exists_returns_false_on_workload_500(self, mock_app, mock_core_v1_api):
-        """A 500 on workload read (RuntimeError from _get_workload) becomes False."""
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=500)
