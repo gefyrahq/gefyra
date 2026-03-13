@@ -50,7 +50,7 @@ def _restore_bridges_for_container(
             version="v1",
             namespace=config.NAMESPACE,
             plural="gefyrabridges",
-            label_selector=f"gefyra.dev/client-container={container_name}",
+            label_selector=f"gefyra.dev/client={config.CLIENT_ID},gefyra.dev/client-container={container_name}",
         )
     except ApiException as e:
         logger.warning(f"Could not query GefyraBridges for restore: {e.reason}")
@@ -79,7 +79,7 @@ def _restore_bridges_for_container(
             )
         except ApiException as e:
             logger.warning(
-                f"Could not update destinationIP for bridge '{bridge_name}': {e.reason}"
+                f"Could not update destinationIP for GefyraBridge '{bridge_name}': {e.reason}"
             )
 
 
