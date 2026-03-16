@@ -1,0 +1,5 @@
+# Loadtest wrapper: applies kernel 6.x overlayfs wg-quick workaround.
+ARG BASE_IMAGE=cargo:pytest-base
+FROM ${BASE_IMAGE}
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
