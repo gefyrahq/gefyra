@@ -1,11 +1,10 @@
 import json
 
 from pytest_kubernetes.providers import AClusterManager
+from tests.e2e.base import GefyraTestCase
 
 from gefyra.api.clients import write_client_file
 from gefyra.types import GefyraClient
-
-from tests.e2e.base import GefyraTestCase
 
 
 class TestCustomRegistry(GefyraTestCase):

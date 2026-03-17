@@ -1,12 +1,13 @@
 import json
 import logging
 from typing import Callable, Optional
+
 import click
 from alive_progress import alive_bar
-
-from gefyra.cli.utils import AliasedGroup, check_connection_name, standard_error_handler
-from gefyra.cli import console
 from tabulate import tabulate
+
+from gefyra.cli import console
+from gefyra.cli.utils import AliasedGroup, check_connection_name, standard_error_handler
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ def _manage_container_and_bridges(
 ):
     import kubernetes
     import urllib3
+
     from gefyra import api
     from gefyra.configuration import ClientConfiguration
 

@@ -1,27 +1,26 @@
-from dataclasses import dataclass, fields
-from enum import Enum
 import json
 import logging
 import os
 import socket
-from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING
 import time
+from dataclasses import dataclass, fields
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 import docker
+
 from gefyra.configuration import get_gefyra_config_location
 from gefyra.exceptions import CommandTimeoutError, GefyraConnectionError
 from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.local.minikube import detect_minikube_config
 from gefyra.local.networking import get_or_create_gefyra_network
-from gefyra.types.stowaway import (
-    StowawayConfig,
-    StowawayParameter,
-)
 from gefyra.local.utils import WatchEventsMixin, handle_docker_get_or_create_container
+from gefyra.types.stowaway import StowawayConfig, StowawayParameter
 
 if TYPE_CHECKING:
-    from gefyra.configuration import ClientConfiguration
     from docker.models.networks import Network
+
+    from gefyra.configuration import ClientConfiguration
 
 
 logger = logging.getLogger(__name__)
@@ -302,11 +301,8 @@ class GefyraClient(WatchEventsMixin):
         timeout: int | None = None,
     ):
         import kubernetes
-        from gefyra.local.cargo import (
-            create_wireguard_config,
-            get_cargo_ip_from_netaddress,
-            probe_wireguard_connection,
-        )
+
+        from gefyra.local.cargo import create_wireguard_config, get_cargo_ip_from_netaddress, probe_wireguard_connection
 
         _retry = 0
 

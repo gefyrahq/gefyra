@@ -2,12 +2,14 @@ import json
 import os
 import pprint
 from typing import Literal
+
 import click
+from tabulate import tabulate
+
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from gefyra.types import GefyraClient
 from gefyra.types.client import GefyraClientState
-from tabulate import tabulate
 
 
 @click.group(
