@@ -156,10 +156,7 @@ class ClientConfiguration(object):
         if kube_context:
             self.KUBE_CONTEXT = kube_context
 
-        if not wireguard_mtu:
-            self.WIREGUARD_MTU = "1340"
-        else:
-            self.WIREGUARD_MTU = wireguard_mtu
+        self.WIREGUARD_MTU = wireguard_mtu
         if not gefyra_config_root:
             self.GEFYRA_LOCATION = Path.home().joinpath(".gefyra")
         else:

@@ -223,9 +223,9 @@ def inspect_client(ctx, client_id, output: Literal["json", "text"] = "text"):
 )
 @click.option(
     "--mtu",
-    help="The MTU for the Wireguard interface",
+    help="The MTU for the Wireguard interface (default: auto-detected by WireGuard)",
     type=int,
-    default=1340,
+    default=None,
 )
 @click.option(
     "--local",
