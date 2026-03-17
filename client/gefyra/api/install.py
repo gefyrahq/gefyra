@@ -1,12 +1,11 @@
 import dataclasses
 import logging
-from pathlib import Path
 import time
+from pathlib import Path
 from typing import List, Optional
+
 from gefyra.cluster.utils import is_operator_running
 from gefyra.exceptions import ClusterError
-
-
 from gefyra.misc.install import synthesize_config_as_dict, synthesize_config_as_yaml
 from gefyra.misc.uninstall import (
     remove_all_clients,
@@ -16,6 +15,7 @@ from gefyra.misc.uninstall import (
     remove_remainder_bridges,
 )
 from gefyra.types import GefyraInstallOptions
+
 from .utils import stopwatch
 
 logger = logging.getLogger("gefyra")
@@ -55,7 +55,7 @@ def install(
         kube_context=kubecontext,
         ignore_docker=True,
         registry=kwargs.get("registry", ""),
-        wireguard_mtu=kwargs.get("mtu", 1340),
+        wireguard_mtu=kwargs.get("mtu"),
     )
     if preset:
         presetoptions = LB_PRESETS.get(preset)  # type: ignore

@@ -1,24 +1,16 @@
 from __future__ import annotations
-from os import path
-import os
-import struct
-import socket
-import sys
+
 import logging
-from typing import Optional, Union
-
+import os
+import socket
+import struct
+import sys
+from os import path
 from pathlib import Path
+from typing import TYPE_CHECKING, Optional, Union
+
 from gefyra.exceptions import ClientConfigurationError
-
-
-from gefyra.local import (
-    CONNECTION_NAME_LABEL,
-    CARGO_ENDPOINT_LABEL,
-    ACTIVE_KUBECONFIG_LABEL,
-    CLIENT_ID_LABEL,
-)
-
-from typing import TYPE_CHECKING
+from gefyra.local import ACTIVE_KUBECONFIG_LABEL, CARGO_ENDPOINT_LABEL, CLIENT_ID_LABEL, CONNECTION_NAME_LABEL
 
 if TYPE_CHECKING:
     from docker import DockerClient
@@ -156,10 +148,7 @@ class ClientConfiguration(object):
         if kube_context:
             self.KUBE_CONTEXT = kube_context
 
-        if not wireguard_mtu:
-            self.WIREGUARD_MTU = "1340"
-        else:
-            self.WIREGUARD_MTU = wireguard_mtu
+        self.WIREGUARD_MTU = wireguard_mtu
         if not gefyra_config_root:
             self.GEFYRA_LOCATION = Path.home().joinpath(".gefyra")
         else:
@@ -206,8 +195,8 @@ class ClientConfiguration(object):
     @property
     def KUBE_CONTEXT(self):
         if not self._kube_context:
-            from kubernetes.config.kube_config import list_kube_config_contexts
             from kubernetes.config.config_exception import ConfigException
+            from kubernetes.config.kube_config import list_kube_config_contexts
 
             try:
                 _, active_context = list_kube_config_contexts(
@@ -255,12 +244,12 @@ class ClientConfiguration(object):
 
     def _init_kubeapi(self):
         from kubernetes.client import (
-            CoreV1Api,
-            RbacAuthorizationV1Api,
-            AppsV1Api,
-            CustomObjectsApi,
-            ApiextensionsV1Api,
             AdmissionregistrationV1Api,
+            ApiextensionsV1Api,
+            AppsV1Api,
+            CoreV1Api,
+            CustomObjectsApi,
+            RbacAuthorizationV1Api,
         )
         from kubernetes.config import load_kube_config
 

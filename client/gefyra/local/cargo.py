@@ -1,4 +1,5 @@
 import logging
+
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import GefyraConnectionError
 from gefyra.types import StowawayConfig
@@ -30,12 +31,13 @@ def probe_wireguard_connection(config: ClientConfiguration):
 
 
 def create_wireguard_config(
-    params: StowawayConfig, cargo_endpoint: str, mtu: str = "1340"
+    params: StowawayConfig, cargo_endpoint: str, mtu: str = None
 ) -> str:
+    mtu_line = f"MTU = {mtu}\n" if mtu else ""
     return (
         "[Interface]\n"
         f"Address = {params.iaddress}\n"
-        f"MTU = {mtu}\n"
+        f"{mtu_line}"
         f"PrivateKey = {params.iprivatekey}\n"
         f"DNS = {params.idns}\n"
         "PreUp = sysctl -w net.ipv4.ip_forward=1\n"

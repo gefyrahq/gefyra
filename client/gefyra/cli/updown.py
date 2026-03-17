@@ -69,10 +69,10 @@ def _check_and_install(
 )
 @click.option(
     "--mtu",
-    help="Set the MTU for the Gefyra network",
+    help="Set the MTU for the Gefyra network (default: auto-detected by WireGuard)",
     type=int,
     required=False,
-    default=1340,
+    default=None,
 )
 @pass_context
 @standard_error_handler
@@ -81,12 +81,14 @@ def cluster_up(
     minikube: Optional[str] = None,
     preset: Optional[str] = None,
     registry: Optional[str] = None,
-    mtu: Optional[int] = 1340,
+    mtu: Optional[int] = None,
 ):
-    from alive_progress import alive_bar
-    from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
-    from time import sleep
     import os
+    from time import sleep
+
+    from alive_progress import alive_bar
+
+    from gefyra.exceptions import ClientConfigurationError, GefyraClientAlreadyExists
 
     if minikube and preset:
         raise click.BadOptionUsage(
@@ -212,6 +214,7 @@ def cluster_up(
 @standard_error_handler
 def cluster_down(ctx):
     from alive_progress import alive_bar
+
     from gefyra import api
 
     if ctx.obj["kubeconfig"] is None:
