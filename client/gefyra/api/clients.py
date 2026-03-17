@@ -106,7 +106,7 @@ def write_client_file(
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
     registry: Optional[str] = None,
-    wireguard_mtu: Optional[int] = 1340,
+    wireguard_mtu: Optional[int] = None,
     local: bool = False,
 ) -> str:
     """

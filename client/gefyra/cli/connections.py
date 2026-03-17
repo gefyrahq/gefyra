@@ -96,9 +96,9 @@ def connections(ctx):
 )
 @click.option(
     "--mtu",
-    help="The MTU (Maximum Transmission Unit) for the Wireguard interface",
+    help="The MTU (Maximum Transmission Unit) for the Wireguard interface (default: auto-detected by WireGuard)",
     type=int,
-    default=1340,
+    default=None,
 )
 @click.option(
     "--cargo-image",
@@ -124,7 +124,7 @@ def connect_client(
     client_config,
     connection_name: str,
     minikube: Optional[str] = None,
-    mtu: int = 1340,
+    mtu: int = None,
     cargo_image: Optional[str] = None,
     force: bool = False,
     timeout: int = 60,

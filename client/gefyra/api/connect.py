@@ -45,7 +45,7 @@ def connect(  # noqa: C901
     kubeconfig: Optional[Path] = None,
     kubecontext: Optional[str] = None,
     minikube_profile: Optional[str] = None,
-    mtu: Optional[int] = 1340,
+    mtu: Optional[int] = None,
     probe_timeout: int = 60,
     update_callback: Optional[callable] = None,
     cargo_image: Optional[str] = None,

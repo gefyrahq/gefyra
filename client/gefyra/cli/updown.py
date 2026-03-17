@@ -69,10 +69,10 @@ def _check_and_install(
 )
 @click.option(
     "--mtu",
-    help="Set the MTU for the Gefyra network",
+    help="Set the MTU for the Gefyra network (default: auto-detected by WireGuard)",
     type=int,
     required=False,
-    default=1340,
+    default=None,
 )
 @pass_context
 @standard_error_handler
@@ -81,7 +81,7 @@ def cluster_up(
     minikube: Optional[str] = None,
     preset: Optional[str] = None,
     registry: Optional[str] = None,
-    mtu: Optional[int] = 1340,
+    mtu: Optional[int] = None,
 ):
     from alive_progress import alive_bar
     from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError

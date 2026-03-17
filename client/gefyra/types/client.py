@@ -40,7 +40,7 @@ class GefyraClientConfig:
     token: str | None = None
     ca_crt: str | None = None
     registry: Optional[str] = None
-    wireguard_mtu: Optional[str] = "1340"
+    wireguard_mtu: Optional[str] = None
 
     def __getattribute__(self, name):
         if name == "gefyra_server":
@@ -208,7 +208,7 @@ class GefyraClient(WatchEventsMixin):
         gefyra_server: str,
         k8s_server: str = "",
         registry: Optional[str] = None,
-        wireguard_mtu: Optional[int] = 1340,
+        wireguard_mtu: Optional[int] = None,
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
