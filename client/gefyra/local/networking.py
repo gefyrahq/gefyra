@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, List
 
-
 from gefyra.configuration import ClientConfiguration
 from gefyra.local import CREATED_BY_LABEL
 
@@ -138,7 +137,7 @@ def handle_remove_network(config: ClientConfiguration) -> None:
     """Removes all docker networks with the given name."""
     # we would need the id to identify the network unambiguously, so we just remove all networks that can be found with
     # the given name, under the assumption that no other docker network inadvertently uses the same name
-    from docker.errors import NotFound, APIError
+    from docker.errors import APIError, NotFound
 
     kill_remainder_container_in_network(config=config)
     try:

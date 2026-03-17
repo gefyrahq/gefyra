@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta, timezone
 import os
-from pathlib import Path
 import subprocess
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from time import sleep
-from alive_progress import config_handler
+
 import pytest
+from alive_progress import config_handler
 from pytest_kubernetes.providers import AClusterManager
 
 CARRIER_IN_CACHE = os.environ.get("CARRIER_IN_CACHE", "false").lower() == "true"

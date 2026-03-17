@@ -1,5 +1,6 @@
 import json
 from unittest.mock import patch
+
 from gefyra.api.clients import write_client_file
 from gefyra.local.cargo import create_wireguard_config
 from gefyra.types import GefyraClient, GefyraClientConfig

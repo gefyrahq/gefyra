@@ -83,10 +83,12 @@ def cluster_up(
     registry: Optional[str] = None,
     mtu: Optional[int] = None,
 ):
-    from alive_progress import alive_bar
-    from gefyra.exceptions import GefyraClientAlreadyExists, ClientConfigurationError
-    from time import sleep
     import os
+    from time import sleep
+
+    from alive_progress import alive_bar
+
+    from gefyra.exceptions import ClientConfigurationError, GefyraClientAlreadyExists
 
     if minikube and preset:
         raise click.BadOptionUsage(
@@ -212,6 +214,7 @@ def cluster_up(
 @standard_error_handler
 def cluster_down(ctx):
     from alive_progress import alive_bar
+
     from gefyra import api
 
     if ctx.obj["kubeconfig"] is None:
