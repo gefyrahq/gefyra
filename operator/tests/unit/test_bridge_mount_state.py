@@ -10,7 +10,9 @@ from gefyra.configuration import OperatorConfiguration
 logger = logging.getLogger(__name__)
 
 
-def _make_bridge_mount(state="REQUESTED", missing_grace_period=None, state_transitions=None):
+def _make_bridge_mount(
+    state="REQUESTED", missing_grace_period=None, state_transitions=None
+):
     from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
 
     data = {
@@ -42,7 +44,6 @@ def _make_bridge_mount(state="REQUESTED", missing_grace_period=None, state_trans
 
 
 class TestBridgeMountMissingState(IsolatedAsyncioTestCase):
-
     async def test_mark_missing_from_active(self):
         bm = _make_bridge_mount(state="ACTIVE")
         bm.bridge_mount_provider.uninstall = AsyncMock()
@@ -108,7 +109,6 @@ class TestBridgeMountMissingState(IsolatedAsyncioTestCase):
 
 
 class TestBridgeMountGracePeriod(TestCase):
-
     def test_missing_grace_period_uses_per_resource(self):
         bm = _make_bridge_mount(missing_grace_period=3600)
         assert bm.missing_grace_period == 3600
@@ -119,16 +119,12 @@ class TestBridgeMountGracePeriod(TestCase):
 
     def test_missing_grace_period_expired_true(self):
         two_days_ago = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
-        bm = _make_bridge_mount(
-            state_transitions={"MISSING": two_days_ago}
-        )
+        bm = _make_bridge_mount(state_transitions={"MISSING": two_days_ago})
         assert bm.missing_grace_period_expired is True
 
     def test_missing_grace_period_not_expired(self):
         just_now = datetime.now(timezone.utc).isoformat()
-        bm = _make_bridge_mount(
-            state_transitions={"MISSING": just_now}
-        )
+        bm = _make_bridge_mount(state_transitions={"MISSING": just_now})
         assert bm.missing_grace_period_expired is False
 
     def test_missing_grace_period_expired_no_transition(self):
@@ -155,7 +151,6 @@ class TestBridgeMountGracePeriod(TestCase):
 
 
 class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
-
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
     async def test_target_exists_returns_true(self, mock_app, mock_core_v1_api):
@@ -224,9 +219,10 @@ class TestBridgeMountTargetExists(IsolatedAsyncioTestCase):
 
 
 class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
-
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
-    async def test_state_machine_target_exists_returns_false_on_namespace_403(self, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_namespace_403(
+        self, mock_core_v1_api
+    ):
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=403)
@@ -234,7 +230,9 @@ class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
         assert await bm.target_exists is False
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
-    async def test_state_machine_target_exists_returns_false_on_namespace_500(self, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_namespace_500(
+        self, mock_core_v1_api
+    ):
         from kubernetes.client import ApiException
 
         mock_core_v1_api.read_namespace.side_effect = ApiException(status=500)
@@ -243,7 +241,9 @@ class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    async def test_state_machine_target_exists_returns_false_on_workload_403(self, mock_app, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_workload_403(
+        self, mock_app, mock_core_v1_api
+    ):
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=403)
@@ -252,7 +252,9 @@ class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
 
     @patch("gefyra.bridge_mount.carrier2mount.core_v1_api")
     @patch("gefyra.bridge_mount.carrier2mount.app")
-    async def test_state_machine_target_exists_returns_false_on_workload_500(self, mock_app, mock_core_v1_api):
+    async def test_state_machine_target_exists_returns_false_on_workload_500(
+        self, mock_app, mock_core_v1_api
+    ):
         from kubernetes.client import ApiException
 
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=500)

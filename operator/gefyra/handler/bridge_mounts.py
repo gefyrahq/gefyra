@@ -1,5 +1,3 @@
-import asyncio
-
 import kubernetes as k8s
 import kopf
 from statemachine.exceptions import TransitionNotAllowed

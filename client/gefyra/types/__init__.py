@@ -27,6 +27,7 @@ __all__ = [
     "GefyraClientConfig",
     "GefyraClientState",
     "LOCAL_SERVER",
+    "GefyraLocalContainer",
 ]
 
 
