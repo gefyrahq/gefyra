@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 import pytest
 
 from gefyra.api.run import _restore_bridges_for_container
@@ -18,9 +18,7 @@ def mock_container():
     container = MagicMock()
     container.name = "myapp"
     container.attrs = {
-        "NetworkSettings": {
-            "Networks": {"gefyra": {"IPAddress": "192.168.99.20"}}
-        }
+        "NetworkSettings": {"Networks": {"gefyra": {"IPAddress": "192.168.99.20"}}}
     }
     return container
 
