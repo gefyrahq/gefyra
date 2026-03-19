@@ -822,7 +822,7 @@ class GefyraTestCase:
         return False
 
     def assert_get_contains(
-        self, url: str, expected_content: str, retries: int = 10, headers: dict = None
+        self, url: str, expected_content: str, retries: int = 30, headers: dict = None
     ):
         """
         Helper function to assert that a GET request to a URL contains expected content.
