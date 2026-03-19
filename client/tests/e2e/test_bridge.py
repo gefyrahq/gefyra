@@ -164,7 +164,10 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         self.assert_get_contains(
-            "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+            "http://localhost:8080",
+            "Hello from Gefyra.",
+            retries=30,
+            headers={"x-gefyra": "peer"},
         )
         print("Test successful, cleaning up...")
         self.cmd(

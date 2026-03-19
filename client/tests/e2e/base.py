@@ -832,6 +832,8 @@ class GefyraTestCase:
             try:
                 response = requests.get(url, headers=headers, timeout=5)
             except Exception:
+                retries -= 1
+                sleep(1)
                 continue
             if expected_content in response.text:
                 return
