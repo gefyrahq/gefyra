@@ -821,6 +821,24 @@ class GefyraTestCase:
             return True
         return False
 
+    def _print_operator_logs(self):
+        print("--- Operator Logs ---")
+        try:
+            pods = self.K8S_CORE_API.list_namespaced_pod(namespace="gefyra")
+            for pod in pods.items:
+                if (
+                    "gefyra-operator" in pod.metadata.name
+                    and "webhook" not in pod.metadata.name
+                ):
+                    print(f"Logs for {pod.metadata.name}:")
+                    logs = self.K8S_CORE_API.read_namespaced_pod_log(
+                        name=pod.metadata.name, namespace="gefyra"
+                    )
+                    print(logs)
+        except Exception as e:
+            print(f"Could not retrieve operator logs: {e}")
+        print("---------------------")
+
     def assert_get_contains(
         self, url: str, expected_content: str, retries: int = 30, headers: dict = None
     ):
@@ -842,6 +860,7 @@ class GefyraTestCase:
             )
             retries -= 1
             sleep(1)
+        self._print_operator_logs()
         raise AssertionError(
             f"Expected content '{expected_content}' not found in response from {url}."
         )
