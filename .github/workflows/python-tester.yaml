@@ -71,9 +71,6 @@ jobs:
         registry: quay.io
         username: ${{ secrets.QUAY_ROBOT }}
         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
-    #
-    # Gefyra Operator
-    #
     - name: Carrier Image meta
       id: carrier_meta
       uses: docker/metadata-action@v5
@@ -81,7 +78,7 @@ jobs:
         flavor: |
           latest=false
         images: |
-          quay.io/gefyra/carrier
+          quay.io/gefyra/carrier2
         tags: |
           type=raw,value=test-run-${{ github.run_id }},enable=${{ !github.event.pull_request }}
           type=ref,event=pr,enable=${{ !!github.event.pull_request }}
@@ -352,6 +349,54 @@ jobs:
         with:
           name: coverage_data
           path: ./client/.coverage*
+
+  test_carrier2:
+    name: Pytest Gefyra carrier2
+    needs:
+      - build_carrier
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set fake kubeconfig
+        shell: bash
+        run: |
+          mkdir -p ~/.kube/
+          cd ~/.kube
+          touch config
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: '2.1.1'
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Install dependencies
+        working-directory: ./carrier2
+        run: poetry install --with dev --no-interaction --no-root
+      - name: Install k3d
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+      - name: Download carrier artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: carrier
+          path: /tmp/carrier
+      - name: Load pre-built images
+        run: |
+          docker load --input /tmp/carrier/carrier.tar
+          docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
+          docker image ls -a
+      - name: Run PyTest for carrier2
+        working-directory: ./carrier2
+        run: poetry run pytest -x -s tests/
+        env:
+          CARRIER_IN_CACHE: true
+
+
 
   test_minikube:
     timeout-minutes: 90
