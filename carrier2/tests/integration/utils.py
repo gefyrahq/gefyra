@@ -22,7 +22,7 @@ def send_carrier2_config(core_api, name: str, namespace: str, config_content: st
     commands = [
         f"cat <<'EOF' > /tmp/config.yaml\n{config_content}",
         "EOF",
-        "cat /tmp/carrier.log"
+        "cat /tmp/carrier.log",
     ]
     temp_commands = commands[:]
     while resp.is_open():

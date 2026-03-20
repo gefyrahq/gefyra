@@ -31,13 +31,12 @@ def carrier2(carrier_binary):
     tmp_client_key = Path("/tmp/client-key.pem")
     shutil.copy2(client_cert, tmp_client_cert)
     shutil.copy2(client_key, tmp_client_key)
-    
+
     def call_with_args(
         args: str, timeout: int = 1, queue: Optional[multiprocessing.Queue] = None
     ) -> str:
-        
+
         try:
-            
             p = subprocess.Popen(
                 f"{carrier_binary} {args}",
                 shell=True,
