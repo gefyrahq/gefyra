@@ -1,0 +1,54 @@
+export default defineNuxtConfig({
+  modules: ['@nuxtjs/i18n', '@nuxt/eslint', '@nuxt/scripts', '@barzhsieh/nuxt-content-mermaid'],
+
+  css: ['~/assets/scss/main.scss'],
+
+  eslint: {
+    config: {
+      standalone: false,
+    },
+  },
+
+  i18n: {
+    defaultLocale: 'en',
+    locales: [{
+      code: 'en',
+      name: 'English',
+    }, {
+      code: 'fr',
+      name: 'Français',
+    }],
+  },
+
+  fonts: {
+    provider: 'google',
+  },
+
+  icon: {
+    provider: 'iconify',
+    customCollections: [{
+      prefix: 'gefyra',
+      dir: './app/assets/icons',
+    }],
+  },
+
+  llms: {
+    domain: 'https://gefyra.dev/',
+    title: 'Gefyra Documentation',
+    description: 'Gefyra - Kubernetes Development Environment',
+    full: {
+      title: 'Gefyra Documentation',
+      description: 'Gefyra - Kubernetes Development Environment',
+    },
+  },
+
+  content: {
+    build: {
+      markdown: {
+        highlight: {
+          langs: ['js', 'jsx', 'json', 'ts', 'tsx', 'vue', 'css', 'html', 'vue', 'bash', 'md', 'mdc', 'yaml', 'dockerfile', 'py', 'mermaid', 'diff'],
+        },
+      },
+    },
+  },
+})
