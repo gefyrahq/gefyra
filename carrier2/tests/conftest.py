@@ -1,5 +1,7 @@
 import multiprocessing
 import os
+from pathlib import Path
+import shutil
 import signal
 import subprocess
 from http.server import HTTPServer, BaseHTTPRequestHandler
@@ -20,10 +22,22 @@ def carrier_binary(request):
 
 @pytest.fixture
 def carrier2(carrier_binary):
+
+    basedir = Path(__file__).resolve().parent
+
+    client_cert = basedir / ".." / "client-cert.pem"
+    client_key = basedir / ".." / "client-key.pem"
+    tmp_client_cert = Path("/tmp/client-cert.pem")
+    tmp_client_key = Path("/tmp/client-key.pem")
+    shutil.copy2(client_cert, tmp_client_cert)
+    shutil.copy2(client_key, tmp_client_key)
+    
     def call_with_args(
         args: str, timeout: int = 1, queue: Optional[multiprocessing.Queue] = None
     ) -> str:
+        
         try:
+            
             p = subprocess.Popen(
                 f"{carrier_binary} {args}",
                 shell=True,
@@ -46,6 +60,10 @@ def carrier2(carrier_binary):
                 return stdout
 
     yield call_with_args
+    if tmp_client_cert.exists():
+        tmp_client_cert.unlink()
+    if tmp_client_key.exists():
+        tmp_client_key.unlink()
 
 
 # this is the test upstream, modify for more sophisticated test cases

@@ -129,7 +129,7 @@ def test_c_configure_cluster_upstream(k3d: AClusterManager):
     version: 1
     threads: 4
     pid_file: /tmp/carrier2.pid
-    error_log: /tmp/carrier.error.log
+    error_log: /tmp/carrier.log
     upgrade_sock: /tmp/carrier2.sock
     upstream_keepalive_pool_size: 100
     proxy:
@@ -150,6 +150,7 @@ def test_c_configure_cluster_upstream(k3d: AClusterManager):
 
     utils.send_carrier2_config(core_v1, "backend", "demo", content_str)
     utils.reload_carrier2_config(core_v1, "backend", "demo")
+    sleep(2)
 
     retries = Retry(total=5, backoff_factor=0.2)
     session = requests.Session()
