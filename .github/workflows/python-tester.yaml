@@ -350,7 +350,7 @@ jobs:
           name: coverage_data
           path: ./client/.coverage*
 
-test_carrier2:
+  test_carrier2:
     name: Pytest Gefyra carrier2
     needs:
       - build_carrier
@@ -397,7 +397,7 @@ test_carrier2:
           CARRIER_IN_CACHE: true
 
 
-          
+
   test_minikube:
     timeout-minutes: 90
     strategy:
