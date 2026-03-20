@@ -399,6 +399,13 @@ class TestGefyraBridge(GefyraTestCase):
         # on_restore() immediately calls self.send("prepare").
         operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+            "jsonpath=.state=PREPARING",
+            namespace="gefyra",
+            timeout=120,
+        )
+
+        operator.wait(
+            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=120,
