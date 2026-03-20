@@ -61,7 +61,7 @@ def test_restore_bridges_patches_destination_ip(
         version="v1",
         namespace="gefyra",
         plural="gefyrabridges",
-        label_selector="gefyra.dev/client-container=myapp",
+        label_selector="gefyra.dev/client=default,gefyra.dev/client-container=myapp",
     )
     assert (
         mock_config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.call_count == 2
