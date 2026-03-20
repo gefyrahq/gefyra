@@ -1,7 +1,6 @@
 import json
 import os
-from typing import List, Optional
-from typing_extensions import Literal
+from typing import List, Optional, Literal
 from alive_progress import alive_bar
 import click
 from gefyra.exceptions import CommandTimeoutError
