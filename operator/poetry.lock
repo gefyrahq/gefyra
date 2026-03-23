@@ -804,14 +804,14 @@ files = [
 
 [[package]]
 name = "kopf"
-version = "1.44.2"
+version = "1.44.3"
 description = "Kubernetes Operator Pythonic Framework (Kopf)"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "kopf-1.44.2-py3-none-any.whl", hash = "sha256:03c181fbc875fff67e165357b6284ea0b8baf708d9a8358a43074dbdef3394a6"},
-    {file = "kopf-1.44.2.tar.gz", hash = "sha256:4134c17f6a133a04427f52ded0b024ef5fb81de832d22dfc16d8f1eaef1b96f0"},
+    {file = "kopf-1.44.3-py3-none-any.whl", hash = "sha256:e4776011ba1523ab688d43930382f7fc96e01153e36c1c97c71d86ef25670e1e"},
+    {file = "kopf-1.44.3.tar.gz", hash = "sha256:37b93ec88deaf08331f0d2a1824a38ef2b508b4d72c022b13bd6302dd3419738"},
 ]
 
 [package.dependencies]
@@ -824,7 +824,7 @@ pyyaml = "*"
 
 [package.extras]
 dev = ["certbuilder", "certvalidator", "oscrypto", "pyngrok"]
-full-auth = ["kubernetes", "pykube-ng"]
+full-auth = ["kubernetes (>=12.0.0)", "pykube-ng"]
 uvloop = ["uvloop", "uvloop (>=0.18.0) ; python_version >= \"3.12\""]
 
 [[package]]
@@ -2171,4 +2171,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.7,<3.14"
-content-hash = "1b81ff9ed18ced8b18a3bc24ec23998115a77bfc73ba2d31886b89ec2d12479f"
+content-hash = "fbfc46f2fbfdbceb6a156a700be34f0f2ecea5cf8355b1eb47860b00b521b132"
