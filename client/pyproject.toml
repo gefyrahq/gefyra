@@ -26,7 +26,7 @@ kubernetes = ">=24.2,<36.0"
 docker = ">=6,<8"
 
 [tool.poetry.group.cli.dependencies]
-tabulate = ">=0.8.10,<0.10.0"
+tabulate = ">=0.8.10,<0.11.0"
 alive-progress = "^3.1.4"
 click = "^8.1.3"
 
