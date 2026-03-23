@@ -218,7 +218,6 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
         await self.handle_proxyroute_teardown(destination)
 
     async def handle_proxyroute_teardown(self, destination):
-
         for port_mapping in self.data.get("portMappings"):
             source_port, target_port = port_mapping.split(":")
             if await self.connection_provider.destination_exists(

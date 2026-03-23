@@ -1,4 +1,7 @@
 # https://github.com/kubernetes-client/python/issues/476
+import time
+
+
 def send_carrier2_config(core_api, name: str, namespace: str, config_content: str):
     # Calling exec interactively.
     from kubernetes.stream import stream
@@ -16,11 +19,12 @@ def send_carrier2_config(core_api, name: str, namespace: str, config_content: st
         _preload_content=False,
     )
 
-    commands = []
-    commands.append("cat <<'EOF' >" + "/tmp/config.yaml" + "\n")
-    commands.append(config_content)
-    commands.append("\n")
-
+    commands = [
+        f"cat <<'EOF' > /tmp/config.yaml\n{config_content}",
+        "EOF",
+        "cat /tmp/carrier.log",
+    ]
+    temp_commands = commands[:]
     while resp.is_open():
         resp.update(timeout=1)
         if resp.peek_stdout():
@@ -28,9 +32,10 @@ def send_carrier2_config(core_api, name: str, namespace: str, config_content: st
         if resp.peek_stderr():
             print("STDERR: %s" % resp.read_stderr())
 
-        if commands:
-            c = commands.pop(0)
-            resp.write_stdin(c)
+        if temp_commands:
+            c = temp_commands.pop(0)
+            resp.write_stdin(c + "\n")
+            time.sleep(0.5)
         else:
             break
 
@@ -41,7 +46,7 @@ def reload_carrier2_config(core_api, name: str, namespace: str):
     from kubernetes.stream import stream
 
     commands = [
-        "RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ]; then RUST_LOG=debug carrier2 -c /tmp/config.yaml -u -d; else RUST_LOG=debug carrier2 -c /tmp/config.yaml -d; fi"
+        "RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ]; then RUST_LOG=debug carrier2 -c /tmp/config.yaml -u -d &> /tmp/carrier.log; else RUST_LOG=debug carrier2 -c /tmp/config.yaml -d &> /tmp/carrier.log; fi"
     ]
     exec_command = ["busybox", "sh"]
 

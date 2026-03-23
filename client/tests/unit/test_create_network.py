@@ -17,7 +17,6 @@ def test_cycle_gefyra_network(_get_client_networks):
 
 
 def test_gefyra_network_create_failed(monkeypatch):
-
     from gefyra.local.networking import get_or_create_gefyra_network
 
     def _raise_apierror_for_docker_network_create(*args, **kwargs):

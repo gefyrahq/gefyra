@@ -164,7 +164,10 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         self.assert_get_contains(
-            "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+            "http://localhost:8080",
+            "Hello from Gefyra.",
+            retries=30,
+            headers={"x-gefyra": "peer"},
         )
         print("Test successful, cleaning up...")
         self.cmd(
@@ -396,6 +399,13 @@ class TestGefyraBridge(GefyraTestCase):
         # on_restore() immediately calls self.send("prepare").
         operator.wait(
             "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
+            "jsonpath=.state=PREPARING",
+            namespace="gefyra",
+            timeout=120,
+        )
+
+        operator.wait(
+            "gefyrabridgemounts.gefyra.dev/nginx-deployment-gefyra",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
             timeout=120,
@@ -504,6 +514,12 @@ class TestGefyraBridge(GefyraTestCase):
                 break
         else:
             raise AssertionError("Bridge was not deleted within timeout")
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "mount",
+            ["delete", "--connection-name", "pytest-gefyra", "nginx-deployment-gefyra"],
+        )
 
         res = self.cmd(
             operator.kubeconfig,

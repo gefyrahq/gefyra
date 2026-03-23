@@ -35,6 +35,7 @@
 
 **Important** - Gefyra release 2.4 contains major breaking changes, big parts of the operator have been refactored.
 The carrier has been completely re-written to support [user specific bridges](https://github.com/gefyrahq/gefyra/issues/733).
+The deprecated version can be found in the branch [deprecation-main-march-2026](https://github.com/gefyrahq/gefyra/tree/deprecation-main-march-2026).
 
 <!-- TABLE OF CONTENTS -->
 <details>

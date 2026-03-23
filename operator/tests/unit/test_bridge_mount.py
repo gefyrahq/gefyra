@@ -1,6 +1,6 @@
 import json
 from unittest import IsolatedAsyncioTestCase, TestCase
-from unittest.mock import AsyncMock, DEFAULT, MagicMock, patch
+from unittest.mock import AsyncMock, DEFAULT, patch
 
 from kubernetes.client import V1Deployment, V1Probe
 
@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 class TestBridgeMountSync(TestCase):
-
     def test_bridge_mount_label_duplication(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
@@ -87,7 +86,9 @@ class TestBridgeMountSync(TestCase):
         new_workload = mount._clone_workload_structure(deployment)
         self.assertEqual(new_workload.metadata.name, "nginx-gefyra")
         self.assertIn(("app", "nginx-gefyra"), new_workload.metadata.labels.items())
-        self.assertIn(("app", "nginx-gefyra"), new_workload.spec.selector.match_labels.items())
+        self.assertIn(
+            ("app", "nginx-gefyra"), new_workload.spec.selector.match_labels.items()
+        )
         self.assertIn(
             ("app", "nginx-gefyra"),
             new_workload.spec.template.metadata.labels.items(),

@@ -10,6 +10,8 @@ from pytest_kubernetes.options import ClusterOptions
 @pytest.fixture(scope="session")
 def carrier2_image(request):
     name = "carrier2:pytest"
+    if os.environ.get("CARRIER_IN_CACHE"):
+        return name
     subprocess.run(
         (
             f"docker build -t {name} -f"

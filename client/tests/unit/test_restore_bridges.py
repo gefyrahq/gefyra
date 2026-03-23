@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 import pytest
 
 from gefyra.api.run import _restore_bridges_for_container
@@ -18,9 +18,7 @@ def mock_container():
     container = MagicMock()
     container.name = "myapp"
     container.attrs = {
-        "NetworkSettings": {
-            "Networks": {"gefyra": {"IPAddress": "192.168.99.20"}}
-        }
+        "NetworkSettings": {"Networks": {"gefyra": {"IPAddress": "192.168.99.20"}}}
     }
     return container
 
@@ -63,7 +61,7 @@ def test_restore_bridges_patches_destination_ip(
         version="v1",
         namespace="gefyra",
         plural="gefyrabridges",
-        label_selector="gefyra.dev/client-container=myapp",
+        label_selector="gefyra.dev/client=default,gefyra.dev/client-container=myapp",
     )
     assert (
         mock_config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.call_count == 2
