@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-2022
+    runs-on: windows-2025
     steps:
     - uses: actions/checkout@v6
     - name: Set up Python
