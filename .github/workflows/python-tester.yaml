@@ -54,7 +54,7 @@ jobs:
   build_carrier:
     runs-on: ubuntu-latest
     outputs:
-      tags: ${{ steps.carrier_meta.outputs.tags }}
+      tags: ${{ steps.carrier2_meta.outputs.tags }}
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -71,8 +71,8 @@ jobs:
         registry: quay.io
         username: ${{ secrets.QUAY_ROBOT }}
         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
-    - name: Carrier Image meta
-      id: carrier_meta
+    - name: Carrier2 Image meta
+      id: carrier2_meta
       uses: docker/metadata-action@v5
       with:
         flavor: |
@@ -93,8 +93,8 @@ jobs:
         platforms: linux/amd64
         push: true
         load: false
-        tags: ${{ steps.carrier_meta.outputs.tags }}
-        labels: ${{ steps.carrier_meta.outputs.labels }}
+        tags: ${{ steps.carrier2_meta.outputs.tags }}
+        labels: ${{ steps.carrier2_meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/carrier.tar
