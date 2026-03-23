@@ -52,6 +52,7 @@ def stream_exec(
         f"Executing commands on pod {name} in namespace {namespace} with container {container}"
     )
     exec_command = ["busybox", "sh"]
+    resp = None
     try:
         resp = stream(
             core_v1_api.connect_get_namespaced_pod_exec,
@@ -115,7 +116,9 @@ def read_carrier2_config(
     logger.info(f"Reading carrier2 config from pod {name} in namespace {namespace}")
 
     exec_command = ["busybox", "sh"]
+    res = []
     while retries > 0:
+        resp = None
         try:
             resp = stream(
                 core_v1_api.connect_get_namespaced_pod_exec,

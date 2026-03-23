@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, List
 
-
 from gefyra.configuration import ClientConfiguration
 from gefyra.local import CREATED_BY_LABEL
 
@@ -72,13 +71,15 @@ def handle_create_network(config: ClientConfiguration) -> "Network":
             or network.attrs["Labels"][CREATED_BY_LABEL[0]] != "true"
         ):
             logger.debug(f"Docker network '{network.name}' is not managed by Gefyra")
-        if (
-            "Options" in network.attrs
-            and DOCKER_MTU_OPTION in network.attrs["Options"]
-            and network.attrs["Options"][DOCKER_MTU_OPTION] != config.WIREGUARD_MTU
-        ) or (
-            "Options" in network.attrs
-            and DOCKER_MTU_OPTION not in network.attrs["Options"]
+        if config.WIREGUARD_MTU and (
+            (
+                "Options" in network.attrs
+                and DOCKER_MTU_OPTION in network.attrs["Options"]
+                and network.attrs["Options"][DOCKER_MTU_OPTION] != config.WIREGUARD_MTU
+            ) or (
+                "Options" in network.attrs
+                and DOCKER_MTU_OPTION not in network.attrs["Options"]
+            )
         ):
             _mtu = (
                 network.attrs["Options"].get(DOCKER_MTU_OPTION)
@@ -109,6 +110,9 @@ def handle_create_network(config: ClientConfiguration) -> "Network":
 
             ipam_pool = IPAMPool(subnet=f"{subnet}", aux_addresses={})
             ipam_config = IPAMConfig(pool_configs=[ipam_pool])
+            options = {}
+            if config.WIREGUARD_MTU:
+                options[DOCKER_MTU_OPTION] = config.WIREGUARD_MTU
             network = config.DOCKER.networks.create(
                 network_name,
                 driver="bridge",
@@ -116,7 +120,7 @@ def handle_create_network(config: ClientConfiguration) -> "Network":
                 labels={
                     CREATED_BY_LABEL[0]: CREATED_BY_LABEL[1],
                 },
-                options={DOCKER_MTU_OPTION: config.WIREGUARD_MTU},
+                options=options,
             )
             break
         except Exception as e:
@@ -133,7 +137,7 @@ def handle_remove_network(config: ClientConfiguration) -> None:
     """Removes all docker networks with the given name."""
     # we would need the id to identify the network unambiguously, so we just remove all networks that can be found with
     # the given name, under the assumption that no other docker network inadvertently uses the same name
-    from docker.errors import NotFound, APIError
+    from docker.errors import APIError, NotFound
 
     kill_remainder_container_in_network(config=config)
     try:

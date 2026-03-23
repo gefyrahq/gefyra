@@ -59,10 +59,10 @@ class GefyraInstallOptions:
             help="The registry URL for the images (default: quay.io/gefyra)",
         ),
     )
-    mtu: int = field(
-        default_factory=lambda: 1340,
+    mtu: int | None = field(
+        default_factory=lambda: None,
         metadata=dict(
-            help="The MTU for the Wireguard interface (default: 1340)",
+            help="The MTU for the Wireguard interface (default: auto-detected by WireGuard)",
         ),
     )
     stowaway_storage: int = field(

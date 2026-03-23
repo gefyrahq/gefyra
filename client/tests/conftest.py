@@ -1,10 +1,11 @@
-from datetime import datetime, timezone
 import os
-from pathlib import Path
 import subprocess
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from time import sleep
-from alive_progress import config_handler
+
 import pytest
+from alive_progress import config_handler
 from pytest_kubernetes.providers import AClusterManager
 
 CARRIER_IN_CACHE = os.environ.get("CARRIER_IN_CACHE", "false").lower() == "true"
@@ -122,7 +123,8 @@ def operator(request):
 def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
-    now = datetime.now(timezone.utc)
+    # capture timestamp before apply so we don't miss the Gefyra-Ready event
+    now = datetime.now(timezone.utc) - timedelta(seconds=5)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator.yaml"))
     check_operator_running(k3d, after=now)
     print("Operator is running, proceeding with tests...")
@@ -133,7 +135,8 @@ def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
 def operator_no_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
-    now = datetime.now(timezone.utc)
+    # capture timestamp before apply so we don't miss the Gefyra-Ready event
+    now = datetime.now(timezone.utc) - timedelta(seconds=5)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator_no_sa.yaml"))
     check_operator_running(k3d, after=now)
     print("Operator is running, proceeding with tests...")
