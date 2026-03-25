@@ -153,13 +153,17 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                     await bridge_mount.arrange()
                 elif bridge_mount.preparing.is_active:
                     if not await bridge_mount.bridge_mount_provider.prepared():
-                        logger.warning("Not prepared — restoring to re-sync replica count.")
+                        logger.warning(
+                            "Not prepared — restoring to re-sync replica count."
+                        )
                         await bridge_mount.send("restore")
                     else:
                         await bridge_mount.install()
                 elif bridge_mount.installing.is_active:
                     if not await bridge_mount.bridge_mount_provider.prepared():
-                        logger.warning("Not prepared — restoring to re-sync replica count.")
+                        logger.warning(
+                            "Not prepared — restoring to re-sync replica count."
+                        )
                         await bridge_mount.send("restore")
                     else:
                         await bridge_mount.install()

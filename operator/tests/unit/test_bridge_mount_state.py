@@ -299,14 +299,18 @@ class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
         from tests.factories import NginxPodFactory, V1PodListFactory
 
         # Original workload: HPA scaled down to 1 pod
-        original_pods = V1PodListFactory(items=[
-            NginxPodFactory(metadata__name="nginx-original-1"),
-        ])
+        original_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-original-1"),
+            ]
+        )
         # Shadow workload: still has 2 pods from before HPA
-        gefyra_pods = V1PodListFactory(items=[
-            NginxPodFactory(metadata__name="nginx-gefyra-1"),
-            NginxPodFactory(metadata__name="nginx-gefyra-2"),
-        ])
+        gefyra_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-gefyra-1"),
+                NginxPodFactory(metadata__name="nginx-gefyra-2"),
+            ]
+        )
 
         bm = _make_bridge_mount(state="INSTALLING")
         provider = bm.bridge_mount_provider
@@ -335,13 +339,17 @@ class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
         """Same scenario but starting from PREPARING state."""
         from tests.factories import NginxPodFactory, V1PodListFactory
 
-        original_pods = V1PodListFactory(items=[
-            NginxPodFactory(metadata__name="nginx-original-1"),
-        ])
-        gefyra_pods = V1PodListFactory(items=[
-            NginxPodFactory(metadata__name="nginx-gefyra-1"),
-            NginxPodFactory(metadata__name="nginx-gefyra-2"),
-        ])
+        original_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-original-1"),
+            ]
+        )
+        gefyra_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-gefyra-1"),
+                NginxPodFactory(metadata__name="nginx-gefyra-2"),
+            ]
+        )
 
         bm = _make_bridge_mount(state="PREPARING")
         provider = bm.bridge_mount_provider
