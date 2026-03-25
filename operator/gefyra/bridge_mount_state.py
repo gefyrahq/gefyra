@@ -57,7 +57,13 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     )
     activate = installing.to(active) | active.to.itself()
 
-    restore = active.to(restoring) | error.to(restoring) | restoring.to.itself()
+    restore = (
+        active.to(restoring)
+        | error.to(restoring)
+        | installing.to(restoring)
+        | preparing.to(restoring)
+        | restoring.to.itself()
+    )
     impair = error.from_(preparing, requested, installing, active, active, error)
 
     #: Transition to MISSING when the target workload or namespace disappears.

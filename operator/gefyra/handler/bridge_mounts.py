@@ -21,9 +21,17 @@ async def bridge_mount_created(body, logger, **kwargs):
             logger.info("Staring up a new GefyraBridgeMount")
             await bridge_mount.arrange()
         if bridge_mount.preparing.is_active:
-            await bridge_mount.install()
+            if not await bridge_mount.bridge_mount_provider.prepared():
+                logger.warning("Not prepared — restoring to re-sync replica count.")
+                await bridge_mount.send("restore")
+            else:
+                await bridge_mount.install()
         if bridge_mount.installing.is_active:
-            await bridge_mount.install()
+            if not await bridge_mount.bridge_mount_provider.prepared():
+                logger.warning("Not prepared — restoring to re-sync replica count.")
+                await bridge_mount.send("restore")
+            else:
+                await bridge_mount.install()
         if bridge_mount.error.is_active:
             await bridge_mount.send("restore")  # Await
         if bridge_mount.restoring.is_active:
@@ -144,9 +152,17 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                 if bridge_mount.requested.is_active:
                     await bridge_mount.arrange()
                 elif bridge_mount.preparing.is_active:
-                    await bridge_mount.install()
+                    if not await bridge_mount.bridge_mount_provider.prepared():
+                        logger.warning("Not prepared — restoring to re-sync replica count.")
+                        await bridge_mount.send("restore")
+                    else:
+                        await bridge_mount.install()
                 elif bridge_mount.installing.is_active:
-                    await bridge_mount.install()
+                    if not await bridge_mount.bridge_mount_provider.prepared():
+                        logger.warning("Not prepared — restoring to re-sync replica count.")
+                        await bridge_mount.send("restore")
+                    else:
+                        await bridge_mount.install()
                 elif bridge_mount.error.is_active:
                     await bridge_mount.send("restore")
                 elif bridge_mount.restoring.is_active:

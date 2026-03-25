@@ -656,6 +656,16 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         return new_workload
 
     async def prepared(self):
+        # If replica count diverged (e.g. HPA scaled), shadow needs re-cloning
+        gefyra_pods = await self._gefyra_pods
+        original_pods = await self._original_pods
+        if len(gefyra_pods.items) != len(original_pods.items):
+            self.logger.info(
+                f"Replica count mismatch: original={len(original_pods.items)}, "
+                f"gefyra={len(gefyra_pods.items)}"
+            )
+            return False
+
         pods_ready = await self._duplicated_pods_ready
         if not pods_ready:
             self.logger.info(
