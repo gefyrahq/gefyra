@@ -471,6 +471,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 delay=10,
             )
         for idx, pod in enumerate(pods.items):
+            already_carrier = False
             if pod.status.phase == "Terminating":
                 continue
             for container in pod.spec.containers:
@@ -496,7 +497,10 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             " running Carrier2"
                         )
                     await self._store_pod_original_config(container, pod.metadata.name)
-                    container.image = self._carrier_image
+                    if container.image != self._carrier_image:
+                        container.image = self._carrier_image
+                    else:
+                        already_carrier = True
                     break
             else:
                 raise BridgeInstallException(
@@ -507,6 +511,22 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 f"Now patching Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s)); container {self.container} with Carrier2",
                 "Normal",
             )
+
+            if not already_carrier:
+                pod_status = await asyncio.to_thread(
+                    core_v1_api.read_namespaced_pod_status,
+                    pod.metadata.name,
+                    self.namespace,
+                )
+                container_restart_count = next(
+                    filter(
+                        lambda c: c.name == self.container,
+                        pod_status.status.container_statuses,
+                    )
+                ).restart_count
+            else:
+                container_restart_count = 0
+
             try:
                 await asyncio.to_thread(
                     core_v1_api.patch_namespaced_pod,
@@ -529,6 +549,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 pod.metadata.name,
                 self.namespace,
             )
+            self.logger.info(
+                f"waiting for the target container to restart with more than {container_restart_count} restarts"
+            )
             await asyncio.to_thread(
                 wait_until_condition,
                 read_func,
@@ -539,7 +562,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             s.status.container_statuses,
                         )
                     ).restart_count
-                    > 0
+                    > container_restart_count
                 ),
                 timeout=120,
                 backoff=0.2,
