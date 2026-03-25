@@ -507,6 +507,19 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 f"Now patching Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s)); container {self.container} with Carrier2",
                 "Normal",
             )
+
+            pod_status = await asyncio.to_thread(
+                core_v1_api.read_namespaced_pod_status,
+                pod.metadata.name,
+                self.namespace,
+            )
+            container_restart_count = next(
+                filter(
+                    lambda c: c.name == self.container,
+                    pod_status.status.container_statuses,
+                )
+            ).restart_count
+
             try:
                 await asyncio.to_thread(
                     core_v1_api.patch_namespaced_pod,
@@ -539,7 +552,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             s.status.container_statuses,
                         )
                     ).restart_count
-                    > 0
+                    > container_restart_count
                 ),
                 timeout=120,
                 backoff=0.2,
