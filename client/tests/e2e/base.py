@@ -849,7 +849,8 @@ class GefyraTestCase:
         while retries > 0:
             try:
                 response = requests.get(url, headers=headers, timeout=5)
-            except Exception:
+            except Exception as e:
+                print(f"Request to {url} failed: {e}")
                 retries -= 1
                 sleep(1)
                 continue
@@ -862,5 +863,5 @@ class GefyraTestCase:
             sleep(1)
         self._print_operator_logs()
         raise AssertionError(
-            f"Expected content '{expected_content}' not found in response from {url}."
+            f"Expected content '{expected_content}' not found in response from {url}. Got: {response.text if 'response' in locals() else 'No response'}"
         )
