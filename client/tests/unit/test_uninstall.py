@@ -4,6 +4,7 @@ import kubernetes.client.exceptions
 
 from gefyra.misc.uninstall import (
     remove_all_clients,
+    remove_remainder_bridge_mounts,
     remove_remainder_bridges,
     remove_gefyra_namespace,
     remove_gefyra_crds,
@@ -224,6 +225,148 @@ class TestRemoveRemainderBridges(unittest.TestCase):
         )
 
 
+class TestRemoveRemainderBridgeMounts(unittest.TestCase):
+    """Tests for remove_remainder_bridge_mounts function"""
+
+    def setUp(self):
+        self.config = Mock(spec=ClientConfiguration)
+        self.config.NAMESPACE = "gefyra"
+        self.config.K8S_CUSTOM_OBJECT_API = Mock()
+
+    def test_remove_remainder_bridge_mounts_success(self):
+        """Test removing bridge mounts successfully"""
+        mounts_response = {
+            "items": [
+                {"metadata": {"name": "mount-1"}},
+                {"metadata": {"name": "mount-2"}},
+            ]
+        }
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
+            mounts_response
+        )
+
+        result = remove_remainder_bridge_mounts(self.config)
+
+        self.assertIsNone(result)
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.assert_called_once_with(
+            group="gefyra.dev",
+            version="v1",
+            namespace="gefyra",
+            plural="gefyrabridgemounts",
+        )
+        assert (
+            self.config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.call_count
+            == 2
+        )
+        assert (
+            self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.call_count
+            == 2
+        )
+
+    def test_remove_remainder_bridge_mounts_no_mounts(self):
+        """Test when there are no bridge mounts to remove"""
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = {
+            "items": []
+        }
+
+        result = remove_remainder_bridge_mounts(self.config)
+
+        self.assertIsNone(result)
+        self.config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.assert_not_called()
+        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.assert_not_called()
+
+    def test_remove_remainder_bridge_mounts_list_fails(self):
+        """Test when listing bridge mounts fails"""
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.side_effect = (
+            Exception("List failed")
+        )
+
+        result = remove_remainder_bridge_mounts(self.config)
+
+        self.assertIsNone(result)
+
+    def test_remove_remainder_bridge_mounts_patch_fails_continues(self):
+        """Test that patch failure is caught and continues to next mount"""
+        mounts_response = {
+            "items": [
+                {"metadata": {"name": "mount-1"}},
+                {"metadata": {"name": "mount-2"}},
+            ]
+        }
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
+            mounts_response
+        )
+        self.config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.side_effect = (
+            Exception("Patch failed")
+        )
+
+        result = remove_remainder_bridge_mounts(self.config)
+
+        self.assertIsNone(result)
+        assert (
+            self.config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.call_count
+            == 2
+        )
+
+    def test_remove_remainder_bridge_mounts_delete_fails_continues(self):
+        """Test that delete failure is caught and continues to next mount"""
+        mounts_response = {
+            "items": [
+                {"metadata": {"name": "mount-1"}},
+                {"metadata": {"name": "mount-2"}},
+            ]
+        }
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
+            mounts_response
+        )
+        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = Exception(
+            "Delete failed"
+        )
+
+        result = remove_remainder_bridge_mounts(self.config)
+
+        self.assertIsNone(result)
+        assert (
+            self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.call_count
+            == 2
+        )
+
+    def test_remove_remainder_bridge_mounts_patch_params(self):
+        """Test correct parameters are passed to patch"""
+        mounts_response = {"items": [{"metadata": {"name": "test-mount"}}]}
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
+            mounts_response
+        )
+
+        remove_remainder_bridge_mounts(self.config)
+
+        self.config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.assert_called_once_with(
+            group="gefyra.dev",
+            version="v1",
+            plural="gefyrabridgemounts",
+            namespace="gefyra",
+            name="test-mount",
+            body={"metadata": {"finalizers": None}},
+        )
+
+    def test_remove_remainder_bridge_mounts_delete_params(self):
+        """Test correct parameters are passed to delete"""
+        mounts_response = {"items": [{"metadata": {"name": "test-mount"}}]}
+        self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
+            mounts_response
+        )
+
+        remove_remainder_bridge_mounts(self.config)
+
+        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.assert_called_once_with(
+            group="gefyra.dev",
+            version="v1",
+            plural="gefyrabridgemounts",
+            namespace="gefyra",
+            name="test-mount",
+        )
+
+
 class TestRemoveGefyraNamespace(unittest.TestCase):
     """Tests for remove_gefyra_namespace function"""
 
@@ -276,10 +419,14 @@ class TestRemoveGefyraCRDs(unittest.TestCase):
         """Test removing CRDs successfully"""
         remove_gefyra_crds(self.config)
 
-        expected_crds = ["gefyrabridges.gefyra.dev", "gefyraclients.gefyra.dev"]
+        expected_crds = [
+            "gefyrabridges.gefyra.dev",
+            "gefyraclients.gefyra.dev",
+            "gefyrabridgemounts.gefyra.dev",
+        ]
         assert (
             self.config.K8S_EXTENSION_API.delete_custom_resource_definition.call_count
-            == 2
+            == 3
         )
         for crd in expected_crds:
             self.config.K8S_EXTENSION_API.delete_custom_resource_definition.assert_any_call(
@@ -298,7 +445,7 @@ class TestRemoveGefyraCRDs(unittest.TestCase):
 
         assert (
             self.config.K8S_EXTENSION_API.delete_custom_resource_definition.call_count
-            == 2
+            == 3
         )
 
     def test_remove_gefyra_crds_partial_failure(self):
@@ -307,13 +454,14 @@ class TestRemoveGefyraCRDs(unittest.TestCase):
         self.config.K8S_EXTENSION_API.delete_custom_resource_definition.side_effect = [
             error,
             None,
+            None,
         ]
 
         remove_gefyra_crds(self.config)
 
         assert (
             self.config.K8S_EXTENSION_API.delete_custom_resource_definition.call_count
-            == 2
+            == 3
         )
 
 
