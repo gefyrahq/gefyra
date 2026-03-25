@@ -537,6 +537,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 pod.metadata.name,
                 self.namespace,
             )
+            self.logger.info(
+                f"waiting for the target container to restart with {container_restart_count} restarts"
+            )
             await asyncio.to_thread(
                 wait_until_condition,
                 read_func,
