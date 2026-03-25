@@ -105,8 +105,7 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
     )  # Pass initial state
     if not bridge_mount.completed_transition(GefyraBridgeMount.active.value):
         logger.info(
-            f"Skipping reconciliation for GefyraBridgeMount '{bridge_mount.object_name}' "
-            f"in state '{bridge_mount.state}' (transition to ACTIVE not completed)"
+            f"Skipping reconciliation for GefyraBridgeMount '{bridge_mount.object_name}' (transition to ACTIVE not completed)"
         )
         return
     logger.info(f"Reconciliation for GefyraBridgeMount: {obj}")
