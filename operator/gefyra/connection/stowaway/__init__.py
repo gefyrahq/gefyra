@@ -38,6 +38,11 @@ from .components import (
 )
 
 
+# Module-level lock to serialize proxyroutes ConfigMap read-modify-write operations.
+# Without this, concurrent bridge activations race on the ConfigMap and overwrite
+# each other's entries, resulting in a partial nginx.conf in Stowaway.
+_proxyroutes_configmap_lock = asyncio.Lock()
+
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_api = k8s.client.CustomObjectsApi()
@@ -464,46 +469,47 @@ class Stowaway(AbstractGefyraConnectionProvider):
         add: Optional[str] = None,
         remove: Optional[str] = None,
     ) -> int:
-        _config = create_stowaway_proxyroute_configmap()
-        configmap = await asyncio.to_thread(
-            core_v1_api.read_namespaced_config_map,
-            _config.metadata.name,
-            _config.metadata.namespace,
-        )
-        routes = configmap.data
-        if routes is None:
-            routes = {}
-        if add:
-            stowaway_port = await self._get_free_proxyroute_port()
-            routes[
-                f"{peer_id}-{''.join(random.choices(string.ascii_lowercase, k=10))}"
-            ] = f"{add},{stowaway_port}"
-            await asyncio.to_thread(
-                core_v1_api.patch_namespaced_config_map,
-                name=configmap.metadata.name,
-                namespace=configmap.metadata.namespace,
-                body={"data": routes},
+        async with _proxyroutes_configmap_lock:
+            _config = create_stowaway_proxyroute_configmap()
+            configmap = await asyncio.to_thread(
+                core_v1_api.read_namespaced_config_map,
+                _config.metadata.name,
+                _config.metadata.namespace,
             )
-            return int(stowaway_port)
-        elif remove:
-            to_be_deleted = None
-            stowaway_port = 0
-            for k, v in routes.items():
-                if v.split(",")[0] == remove:
-                    to_be_deleted = k
-                    stowaway_port = v.split(",")[1]
-            if to_be_deleted:
-                del routes[to_be_deleted]
-                configmap.data = routes
+            routes = configmap.data
+            if routes is None:
+                routes = {}
+            if add:
+                stowaway_port = await self._get_free_proxyroute_port()
+                routes[
+                    f"{peer_id}-{''.join(random.choices(string.ascii_lowercase, k=10))}"
+                ] = f"{add},{stowaway_port}"
                 await asyncio.to_thread(
-                    core_v1_api.replace_namespaced_config_map,
+                    core_v1_api.patch_namespaced_config_map,
                     name=configmap.metadata.name,
                     namespace=configmap.metadata.namespace,
-                    body=configmap,
+                    body={"data": routes},
                 )
-            return int(stowaway_port)
-        else:
-            raise ValueError("Either the add or remove parameter must be set")
+                return int(stowaway_port)
+            elif remove:
+                to_be_deleted = None
+                stowaway_port = 0
+                for k, v in routes.items():
+                    if v.split(",")[0] == remove:
+                        to_be_deleted = k
+                        stowaway_port = v.split(",")[1]
+                if to_be_deleted:
+                    del routes[to_be_deleted]
+                    configmap.data = routes
+                    await asyncio.to_thread(
+                        core_v1_api.replace_namespaced_config_map,
+                        name=configmap.metadata.name,
+                        namespace=configmap.metadata.namespace,
+                        body=configmap,
+                    )
+                return int(stowaway_port)
+            else:
+                raise ValueError("Either the add or remove parameter must be set")
 
     async def _get_wireguard_connection_details(self, peer_id: str) -> dict[str, str]:
         pod = await self._get_stowaway_pod()
