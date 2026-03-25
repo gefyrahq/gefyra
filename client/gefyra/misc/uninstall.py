@@ -13,6 +13,38 @@ def remove_all_clients():
         api.delete_client(client.client_id, force=True, wait=True)
 
 
+def remove_remainder_bridge_mounts(config: ClientConfiguration):
+    try:
+        mounts = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
+            group="gefyra.dev",
+            version="v1",
+            namespace=config.NAMESPACE,
+            plural="gefyrabridgemounts",
+        )
+    except Exception:
+        return None
+    for mount in mounts.get("items"):
+        try:
+            config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                plural="gefyrabridgemounts",
+                namespace=config.NAMESPACE,
+                name=mount["metadata"]["name"],
+                body={"metadata": {"finalizers": None}},
+            )
+            config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object(
+                group="gefyra.dev",
+                version="v1",
+                plural="gefyrabridgemounts",
+                namespace=config.NAMESPACE,
+                name=mount["metadata"]["name"],
+            )
+        except Exception:
+            continue
+    return None
+
+
 def remove_remainder_bridges(config: ClientConfiguration):
     try:
         gbridges = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
@@ -60,7 +92,11 @@ def remove_gefyra_namespace(config: ClientConfiguration):
 def remove_gefyra_crds(config: ClientConfiguration):
     import kubernetes
 
-    crds = ["gefyrabridges.gefyra.dev", "gefyraclients.gefyra.dev"]
+    crds = [
+        "gefyrabridges.gefyra.dev",
+        "gefyraclients.gefyra.dev",
+        "gefyrabridgemounts.gefyra.dev",
+    ]
     for crd in crds:
         try:
             config.K8S_EXTENSION_API.delete_custom_resource_definition(name=crd)
