@@ -128,3 +128,49 @@ def test_c_bridge_mount_terminate(operator: AClusterManager):
         namespace="gefyra",
         timeout=20,
     )
+
+
+def test_d_create_bridge_mount_delay(operator: AClusterManager):
+    k3d = operator
+    k3d.apply("tests/fixtures/nginx_delay.yaml")
+    k3d.wait(
+        "deployment/nginx-deployment",
+        "jsonpath='{.status.readyReplicas}'=1",
+        namespace="default",
+        timeout=240,
+    )
+
+    k3d.apply("tests/fixtures/bridge_mount.yaml")
+
+    # 240s accounts for: 60s reconciliation interval + multiple 15s Kopf retries
+    # on TransitionNotAllowed + pod startup time in CI
+    k3d.wait(
+        "gefyrabridgemounts.gefyra.dev/bridgemount-a",
+        "jsonpath=.state=ACTIVE",
+        namespace="gefyra",
+        timeout=240,
+    )
+    bridge_mount_obj = k3d.kubectl(
+        [
+            "-n",
+            "gefyra",
+            "get",
+            "gefyrabridgemounts.gefyra.dev",
+            "bridgemount-a",
+            "-o",
+            "json",
+        ]
+    )
+    assert bridge_mount_obj["state"] == "ACTIVE"
+
+    k3d.wait(
+        "deployment/nginx-deployment-gefyra",
+        "jsonpath='{.status.readyReplicas}'=1",
+        namespace="default",
+        timeout=120,
+    )
+    pod = k3d.kubectl(["-n", "default", "get", "pod", "-l", "app=nginx", "-o", "json"])
+    assert (
+        pod["items"][0]["spec"]["containers"][0]["image"]
+        == "quay.io/gefyra/carrier2:latest"
+    )
