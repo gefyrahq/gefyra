@@ -190,6 +190,7 @@ def deploy_app_container(
     user: Optional[str] = None,
     security_opts: Optional[List[str]] = None,
     privileged: Optional[bool] = None,
+    extra_container_args: Optional[Dict] = None,
 ) -> Container:
     import docker
 
@@ -228,6 +229,18 @@ def deploy_app_container(
         "privileged": privileged,
     }
     not_none_kwargs = {k: v for k, v in all_kwargs.items() if v is not None}
+
+    # Merge extra container engine args (e.g. --cpu-shares, --mem-reservation).
+    # Extra args override built-in defaults if there is a key conflict.
+    if extra_container_args:
+        _gefyra_managed_keys = {"network", "dns", "dns_search", "pid_mode", "detach"}
+        for key in extra_container_args:
+            if key in _gefyra_managed_keys:
+                logger.warning(
+                    f"Extra arg '--{key.replace('_', '-')}' overrides a Gefyra-managed"
+                    " setting. This may break container networking."
+                )
+        not_none_kwargs.update(extra_container_args)
 
     container = handle_docker_run_container(config, image, **not_none_kwargs)
 

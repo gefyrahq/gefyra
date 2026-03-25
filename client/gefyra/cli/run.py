@@ -1,15 +1,23 @@
 import ast
+import warnings
+
 import click
 from gefyra.cli.utils import (
     OptionEatAll,
     check_connection_name,
     parse_env,
+    parse_extra_container_args,
     parse_ip_port_map,
     parse_workload,
 )
 
 
-@click.command()
+@click.command(
+    context_settings=dict(
+        ignore_unknown_options=True,
+        allow_extra_args=True,
+    ),
+)
 @click.option(
     "-d",
     "--detach",
@@ -54,13 +62,13 @@ from gefyra.cli.utils import (
 )
 @click.option(
     "--cpu",
-    help="CPU limit for the container (e.g. '500m' or '2')",
+    help="[Deprecated: use -- --cpu-quota <value> instead] CPU limit for the container (e.g. '500m' or '2')",
     type=str,
     required=False,
 )
 @click.option(
     "--memory",
-    help="Memory limit for the container (e.g. '512Mi', '1Gi', or '1g')",
+    help="[Deprecated: use -- --mem-limit <value> instead] Memory limit for the container (e.g. '512Mi', '1Gi', or '1g')",
     type=str,
     required=False,
 )
@@ -143,7 +151,9 @@ from gefyra.cli.utils import (
     is_flag=True,
     default=False,
 )
+@click.pass_context
 def run(
+    ctx,
     detach,
     auto_remove,
     expose,
@@ -165,7 +175,37 @@ def run(
     security_opt,
     privileged,
 ):
+    """Run a container in Gefyra.
+
+    \b
+    Any additional container engine arguments can be passed after the known
+    options.  They are forwarded directly to the Docker/Podman API.
+    Use the docker-py parameter names with '--' prefix and '-' separators:
+
+    \b
+      gefyra run -i myimage -N myname -- --cpu-shares 512 --mem-reservation 256m
+      gefyra run -i myimage -N myname -- --cpu-period 100000 --cpu-quota 50000
+
+    \b
+    See https://docker-py.readthedocs.io/en/stable/containers.html for the
+    full list of supported parameters.
+    """
     from gefyra import api
+
+    if cpu:
+        warnings.warn(
+            "--cpu is deprecated; pass the equivalent docker-py argument instead, "
+            "e.g.: -- --cpu-quota <value>",
+            FutureWarning,
+            stacklevel=1,
+        )
+    if memory:
+        warnings.warn(
+            "--memory is deprecated; pass the equivalent docker-py argument instead, "
+            "e.g.: -- --mem-limit <value>",
+            FutureWarning,
+            stacklevel=1,
+        )
 
     if command:
         command = ast.literal_eval(command)[0]
@@ -178,6 +218,9 @@ def run(
         raise click.UsageError(
             "Option conflict: --cpu and --cpu-from cannot be used together. Please specify only one."
         )
+
+    # Parse extra container engine args from ctx.args
+    extra_container_args = parse_extra_container_args(ctx.args) if ctx.args else None
 
     security_opt = list(security_opt)
     result = api.run(
@@ -201,6 +244,7 @@ def run(
         security_opts=security_opt,
         privileged=privileged,
         connection_name=connection_name,
+        extra_container_args=extra_container_args,
     )
     if not result:
         exit(1)
