@@ -1,3 +1,5 @@
+import os
+
 import click
 import urllib3
 
@@ -24,6 +26,9 @@ def cli(ctx: click.Context, kubeconfig, context, debug):
 
         k8s_client_config = Configuration.get_default_copy()
         k8s_client_config.debug = True
+        k8s_client_config.no_proxy = os.environ.get("no_proxy") or os.environ.get(
+            "NO_PROXY"
+        )
         Configuration.set_default(k8s_client_config)
 
         logger = logging.getLogger()
