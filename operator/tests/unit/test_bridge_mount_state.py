@@ -260,3 +260,135 @@ class TestBridgeMountTargetExistsStateMachine(IsolatedAsyncioTestCase):
         mock_app.read_namespaced_deployment.side_effect = ApiException(status=500)
         bm = _make_bridge_mount()
         assert await bm.target_exists is False
+
+
+class TestBridgeMountRestoreFromInstalling(IsolatedAsyncioTestCase):
+    """Tests for the new installing → restoring and preparing → restoring transitions."""
+
+    async def test_restore_from_installing(self):
+        bm = _make_bridge_mount(state="INSTALLING")
+        # Mock prepare() so on_restore → on_arrange doesn't hit K8s API
+        bm.bridge_mount_provider.prepare = AsyncMock()
+        await bm.send("restore")
+        # restore → on_restore → arrange → on_arrange → prepare (mocked)
+        # Ends up in PREPARING
+        assert bm.preparing.is_active
+
+    async def test_restore_from_preparing(self):
+        bm = _make_bridge_mount(state="PREPARING")
+        bm.bridge_mount_provider.prepare = AsyncMock()
+        await bm.send("restore")
+        assert bm.preparing.is_active
+
+    async def test_restore_from_terminated_raises(self):
+        bm = _make_bridge_mount(state="TERMINATED")
+        with self.assertRaises(TransitionNotAllowed):
+            await bm.send("restore")
+
+
+class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
+    """Test that HPA scaling during install triggers restore instead of looping."""
+
+    async def test_replica_mismatch_triggers_restore_from_installing(self):
+        """Simulate HPA downscale: original has 1 pod, shadow still has 2.
+
+        The handler checks prepared() before calling install(). When it
+        detects a mismatch, it sends "restore" instead, transitioning
+        INSTALLING → RESTORING → PREPARING (via on_restore → arrange).
+        """
+        from tests.factories import NginxPodFactory, V1PodListFactory
+
+        # Original workload: HPA scaled down to 1 pod
+        original_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-original-1"),
+            ]
+        )
+        # Shadow workload: still has 2 pods from before HPA
+        gefyra_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-gefyra-1"),
+                NginxPodFactory(metadata__name="nginx-gefyra-2"),
+            ]
+        )
+
+        bm = _make_bridge_mount(state="INSTALLING")
+        provider = bm.bridge_mount_provider
+
+        original_target = "deploy/nginx"
+
+        async def mock_get_pods(name, namespace):
+            if name == original_target:
+                return original_pods
+            return gefyra_pods
+
+        provider.get_pods_workload = mock_get_pods
+        provider.prepare = AsyncMock()
+
+        # Simulate what the handler does: check prepared() first
+        is_prepared = await provider.prepared()
+        assert is_prepared is False
+
+        # Handler sends restore instead of install
+        await bm.send("restore")
+
+        # After restore → arrange chain, state should be PREPARING
+        assert bm.preparing.is_active
+
+    async def test_replica_mismatch_triggers_restore_from_preparing(self):
+        """Same scenario but starting from PREPARING state."""
+        from tests.factories import NginxPodFactory, V1PodListFactory
+
+        original_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-original-1"),
+            ]
+        )
+        gefyra_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-gefyra-1"),
+                NginxPodFactory(metadata__name="nginx-gefyra-2"),
+            ]
+        )
+
+        bm = _make_bridge_mount(state="PREPARING")
+        provider = bm.bridge_mount_provider
+
+        original_target = "deploy/nginx"
+
+        async def mock_get_pods(name, namespace):
+            if name == original_target:
+                return original_pods
+            return gefyra_pods
+
+        provider.get_pods_workload = mock_get_pods
+        provider.prepare = AsyncMock()
+
+        is_prepared = await provider.prepared()
+        assert is_prepared is False
+
+        await bm.send("restore")
+        assert bm.preparing.is_active
+
+    async def test_matching_replicas_prepared_returns_true(self):
+        """When pod counts match and pods are ready, prepared() returns True."""
+        from tests.factories import NginxPodFactory, V1PodListFactory
+
+        pod = NginxPodFactory(metadata__name="nginx-1")
+        pod_list = V1PodListFactory(items=[pod])
+
+        bm = _make_bridge_mount(state="INSTALLING")
+        provider = bm.bridge_mount_provider
+
+        async def mock_get_pods(name, namespace):
+            return pod_list
+
+        provider.get_pods_workload = mock_get_pods
+
+        async def mock_healthy(pod, container_name):
+            return True
+
+        provider.pod_ready_and_healthy = mock_healthy
+
+        result = await provider.prepared()
+        assert result is True
