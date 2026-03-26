@@ -223,28 +223,31 @@ def run(
     extra_container_args = parse_extra_container_args(ctx.args) if ctx.args else None
 
     security_opt = list(security_opt)
-    result = api.run(
-        image=image,
-        name=name,
-        command=command,
-        namespace=namespace,
-        env_from=env_from,
-        cpu_from=cpu_from,
-        memory_from=memory_from,
-        cpu=cpu,
-        memory=memory,
-        user=user,
-        env=env,
-        ports=expose,
-        auto_remove=auto_remove,
-        volumes=volume,
-        detach=detach,
-        pull=pull,
-        platform=platform,
-        security_opts=security_opt,
-        privileged=privileged,
-        connection_name=connection_name,
-        extra_container_args=extra_container_args,
-    )
+    try:
+        result = api.run(
+            image=image,
+            name=name,
+            command=command,
+            namespace=namespace,
+            env_from=env_from,
+            cpu_from=cpu_from,
+            memory_from=memory_from,
+            cpu=cpu,
+            memory=memory,
+            user=user,
+            env=env,
+            ports=expose,
+            auto_remove=auto_remove,
+            volumes=volume,
+            detach=detach,
+            pull=pull,
+            platform=platform,
+            security_opts=security_opt,
+            privileged=privileged,
+            connection_name=connection_name,
+            extra_container_args=extra_container_args,
+        )
+    except ValueError as e:
+        raise click.UsageError(str(e)) from e
     if not result:
         exit(1)

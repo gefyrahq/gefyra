@@ -234,12 +234,16 @@ def deploy_app_container(
     # Extra args override built-in defaults if there is a key conflict.
     if extra_container_args:
         _gefyra_managed_keys = {"network", "dns", "dns_search", "pid_mode", "detach"}
-        for key in extra_container_args:
-            if key in _gefyra_managed_keys:
-                logger.warning(
-                    f"Extra arg '--{key.replace('_', '-')}' overrides a Gefyra-managed"
-                    " setting. This may break container networking."
-                )
+        _conflicts = [
+            key for key in extra_container_args if key in _gefyra_managed_keys
+        ]
+        if _conflicts:
+            pretty = ", ".join(f"--{k.replace('_', '-')}" for k in _conflicts)
+            raise ValueError(
+                f"Extra arg(s) {pretty} override Gefyra-managed settings and"
+                " may break container networking. Remove them from the extra"
+                " arguments."
+            )
         not_none_kwargs.update(extra_container_args)
 
     container = handle_docker_run_container(config, image, **not_none_kwargs)

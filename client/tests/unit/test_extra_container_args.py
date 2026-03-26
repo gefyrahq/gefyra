@@ -1,6 +1,5 @@
 import pytest
 import click
-from unittest import TestCase
 from click.testing import CliRunner
 
 from gefyra.cli.utils import parse_extra_container_args
