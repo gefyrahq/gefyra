@@ -108,6 +108,11 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
     bridge_mount = GefyraBridgeMount(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    if not bridge_mount.completed_transition(GefyraBridgeMount.active.value):
+        logger.info(
+            f"Skipping reconciliation for GefyraBridgeMount '{bridge_mount.object_name}' (transition to ACTIVE not completed)"
+        )
+        return
     logger.info(f"Reconciliation for GefyraBridgeMount: {obj}")
 
     # TERMINATED objects: retry CR deletion, then skip all other logic.

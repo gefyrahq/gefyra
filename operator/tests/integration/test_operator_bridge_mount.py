@@ -49,6 +49,15 @@ def test_a_create_bridge_mount(operator: AClusterManager):
 
 def test_b_change_deployment_replicas(operator: AClusterManager):
     k3d = operator
+
+    k3d.apply("tests/fixtures/nginx.yaml")
+    k3d.wait(
+        "deployment/nginx-deployment",
+        "jsonpath='{.status.readyReplicas}'=1",
+        namespace="default",
+        timeout=120,
+    )
+
     k3d.kubectl(
         [
             "-n",
