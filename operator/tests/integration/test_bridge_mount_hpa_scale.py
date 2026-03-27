@@ -95,8 +95,7 @@ class TestBridgeMountHPAScale:
                     # Scale original deployment after shadow was created
                     if not scaled:
                         logger.info(
-                            "Scaling original deployment to 3 replicas "
-                            "to simulate HPA"
+                            "Scaling original deployment to 3 replicas to simulate HPA"
                         )
                         gefyra_crd.kubectl(
                             [
