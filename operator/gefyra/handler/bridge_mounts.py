@@ -152,12 +152,13 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             else:
                 if bridge_mount.requested.is_active:
                     await bridge_mount.arrange()
-                elif bridge_mount.preparing.is_active:
-                    await bridge_mount.install()
-                elif bridge_mount.installing.is_active:
+                elif (
+                    bridge_mount.preparing.is_active
+                    or bridge_mount.installing.is_active
+                ):
                     if not await bridge_mount.bridge_mount_provider.prepared():
                         logger.warning(
-                            "Not prepared — restoring to re-sync replica count."
+                            "GefyraBridgeMount not prepared: restoring to re-sync shadow workload."
                         )
                         await bridge_mount.send("restore")
                     else:
