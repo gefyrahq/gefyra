@@ -287,14 +287,13 @@ class TestBridgeMountRestoreFromInstalling(IsolatedAsyncioTestCase):
 
 
 class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
-    """Test that HPA scaling during install triggers restore instead of looping."""
+    """Test that HPA scaling triggers shadow scaling instead of restore loops."""
 
-    async def test_replica_mismatch_triggers_restore_from_installing(self):
+    async def test_replica_mismatch_scales_shadow_from_installing(self):
         """Simulate HPA downscale: original has 1 pod, shadow still has 2.
 
-        The handler checks prepared() before calling install(). When it
-        detects a mismatch, it sends "restore" instead, transitioning
-        INSTALLING → RESTORING → PREPARING (via on_restore → arrange).
+        prepared() should scale the shadow to match and return False so the
+        handler retries after pods have converged.
         """
         from tests.factories import NginxPodFactory, V1PodListFactory
 
@@ -323,19 +322,13 @@ class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
             return gefyra_pods
 
         provider.get_pods_workload = mock_get_pods
-        provider.prepare = AsyncMock()
+        provider._scale_shadow_to_match = AsyncMock()
 
-        # Simulate what the handler does: check prepared() first
         is_prepared = await provider.prepared()
         assert is_prepared is False
+        provider._scale_shadow_to_match.assert_awaited_once_with(1)
 
-        # Handler sends restore instead of install
-        await bm.send("restore")
-
-        # After restore → arrange chain, state should be PREPARING
-        assert bm.preparing.is_active
-
-    async def test_replica_mismatch_triggers_restore_from_preparing(self):
+    async def test_replica_mismatch_scales_shadow_from_preparing(self):
         """Same scenario but starting from PREPARING state."""
         from tests.factories import NginxPodFactory, V1PodListFactory
 
@@ -362,13 +355,11 @@ class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
             return gefyra_pods
 
         provider.get_pods_workload = mock_get_pods
-        provider.prepare = AsyncMock()
+        provider._scale_shadow_to_match = AsyncMock()
 
         is_prepared = await provider.prepared()
         assert is_prepared is False
-
-        await bm.send("restore")
-        assert bm.preparing.is_active
+        provider._scale_shadow_to_match.assert_awaited_once_with(1)
 
     async def test_matching_replicas_prepared_returns_true(self):
         """When pod counts match and pods are ready, prepared() returns True."""
