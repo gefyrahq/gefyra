@@ -245,7 +245,12 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     @install.cond
     async def _bridge_mount_prepared(self):
         bmp = self.bridge_mount_provider
-        if not await bmp.prepared():
+        if self.preparing.is_active:
+            # In PREPARING only wait for shadow pods to be ready;
+            # replica count will be synced in INSTALLING via prepared().
+            if not await bmp._duplicated_pods_ready:
+                raise kopf.TemporaryError("GefyraBridgeMount not yet prepared", delay=5)
+        elif not await bmp.prepared():
             raise kopf.TemporaryError("GefyraBridgeMount not yet prepared", delay=5)
         return True
 

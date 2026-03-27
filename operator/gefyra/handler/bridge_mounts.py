@@ -24,8 +24,9 @@ async def bridge_mount_created(body, logger, **kwargs):
             await bridge_mount.install()
         if bridge_mount.installing.is_active:
             if not await bridge_mount.bridge_mount_provider.prepared():
-                logger.warning("Not prepared — restoring to re-sync replica count.")
-                await bridge_mount.send("restore")
+                raise kopf.TemporaryError(
+                    "Shadow replica count syncing with original", delay=10
+                )
             else:
                 await bridge_mount.install()
         if bridge_mount.error.is_active:
@@ -152,15 +153,14 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             else:
                 if bridge_mount.requested.is_active:
                     await bridge_mount.arrange()
-                elif (
-                    bridge_mount.preparing.is_active
-                    or bridge_mount.installing.is_active
-                ):
+                elif bridge_mount.preparing.is_active:
+                    await bridge_mount.install()
+                elif bridge_mount.installing.is_active:
                     if not await bridge_mount.bridge_mount_provider.prepared():
-                        logger.warning(
-                            "GefyraBridgeMount not prepared: restoring to re-sync shadow workload."
+                        logger.info(
+                            "Shadow replica count syncing with original. "
+                            "Will retry on next reconciliation."
                         )
-                        await bridge_mount.send("restore")
                     else:
                         await bridge_mount.install()
                 elif bridge_mount.error.is_active:
