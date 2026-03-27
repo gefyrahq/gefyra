@@ -116,6 +116,7 @@ def run(
     security_opts: Optional[List[str]] = None,
     user: Optional[str] = None,
     privileged: Optional[bool] = None,
+    extra_container_args: Optional[Dict] = None,
 ) -> bool:
     from kubernetes.client import ApiException
     from docker.errors import APIError
@@ -216,6 +217,7 @@ def run(
             security_opts=security_opts,
             user=user,
             privileged=privileged,
+            extra_container_args=extra_container_args,
         )
     except APIError as e:
         if e.status_code == 409:
