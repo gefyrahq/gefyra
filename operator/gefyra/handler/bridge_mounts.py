@@ -85,25 +85,6 @@ def _try_delete_cr(bridge_mount: GefyraBridgeMount, logger) -> bool:
     interval=RECONCILIATION_INTERVAL,
 )
 async def bridge_mount_reconcile(body, logger, **kwargs):
-    """
-    Periodic reconciliation for GefyraBridgeMount resources.
-
-    Runs every ``RECONCILIATION_INTERVAL`` seconds for all mounts.
-
-    For each reconciliation tick the handler:
-
-    1. For TERMINATED mounts: retries CR deletion if the object was not
-       cleaned up previously (e.g. due to a transient API error). Skips
-       all other logic once terminated.
-    2. Checks ``should_terminate`` (sunset expiry) — terminates + deletes if true.
-    3. For MISSING mounts: checks if the target has reappeared (auto-recover)
-       or if the grace period has expired (terminate + delete).
-    4. For all other operational states: checks ``target_exists`` before
-       proceeding with the normal state progression. If the target is gone,
-       transitions to MISSING immediately.
-    5. For ACTIVE mounts: additionally checks ``is_intact`` and transitions
-       to RESTORING if the Carrier2 installation has drifted.
-    """
     obj = GefyraBridgeMountObject(body)
     bridge_mount = GefyraBridgeMount(
         obj, configuration, logger, initial=obj.state

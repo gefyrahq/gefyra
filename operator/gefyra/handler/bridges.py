@@ -6,7 +6,7 @@ from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 from gefyra.configuration import configuration
 
 
-RECONCILIATION_INTERVAL = 10
+RECONCILIATION_INTERVAL = 60
 
 # A simple registry for locks based on resource UID or name
 locks = {}
@@ -47,20 +47,13 @@ async def update_bridge_destination(body, logger, namespace, name, old, new, **k
 
     key = bridge.data["target"]
     lock = await get_lock(key)
-
-    async with lock:
-        if not old:
-            return
-        if bridge.active.is_active:
+    if bridge.active.is_active and old:
+        async with lock:
             logger.warn(f"Updating destinationIP for this GefyraBridge: {bridge}")
-            await bridge.handle_proxyroute_teardown(old)  # Await
-            await bridge.send("restore")  # Await
-            await bridge.send("activate")  # Await
-        else:
-            # TODO handle these cases
-            logger.warn(
-                f"GefyraBridge {bridge} is not ACTIVE, but destinationIP has been changed."
-            )
+            await bridge.handle_proxyroute_teardown(old)
+            await bridge.restore()
+            if bridge.installed.is_active:
+                await bridge.activate()
 
 
 @kopf.on.delete("gefyrabridges.gefyra.dev")

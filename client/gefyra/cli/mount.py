@@ -132,9 +132,7 @@ def create(
     is_flag=True,
     help="Do not wait for the GefyraBridgeMount to be deleted.",
 )
-@click.option(
-    "--connection-name", type=str, default="default", callback=check_connection_name
-)
+@click.option("--connection-name", "-c", type=str, default="default")
 @click.argument("mount_name", nargs=-1, required=True)
 @click.option("--timeout", type=int, default=60, required=False)
 @click.pass_context
