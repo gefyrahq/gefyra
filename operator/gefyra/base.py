@@ -39,9 +39,7 @@ class GefyraStateObject:
         self._state = value
         # persiting the state, ignoring terminating states and state updates to prevent deletion handler
         # from running multiple times
-        if value.lower() == self.data["state"].lower():
-            pass
-        elif value.lower() in ["terminating", "terminated"]:
+        if value.lower() in ["terminating", "terminated"]:
             pass
         else:
             self._write_state(value)
