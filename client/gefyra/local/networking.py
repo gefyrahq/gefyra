@@ -76,7 +76,8 @@ def handle_create_network(config: ClientConfiguration) -> "Network":
                 "Options" in network.attrs
                 and DOCKER_MTU_OPTION in network.attrs["Options"]
                 and network.attrs["Options"][DOCKER_MTU_OPTION] != config.WIREGUARD_MTU
-            ) or (
+            )
+            or (
                 "Options" in network.attrs
                 and DOCKER_MTU_OPTION not in network.attrs["Options"]
             )

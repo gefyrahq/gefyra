@@ -184,6 +184,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     async def is_intact(self) -> bool:
         try:
             bmp = self.bridge_mount_provider
+            # TODO check for bridges in carrier2 config that do not correspond to a bridge -> debris
             return await bmp.prepared() and await bmp.ready()
         except BridgeMountTargetException:
             return False

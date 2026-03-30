@@ -168,6 +168,34 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
         except Exception as e:
             await self.send("impair", exception=e)
 
+    @property
+    async def is_intact(self) -> bool:
+        # TODO check if bridge is in Carrier2 config
+
+        destination = self.data["destinationIP"]
+        for port_mapping in self.data.get("portMappings"):
+            local_port, target_port = port_mapping.split(":")
+            if not await self.connection_provider.destination_exists(
+                self.data["client"], destination, int(local_port)
+            ):
+                self.logger.warning(
+                    f"Destination of {self.data['client']} for {destination} port {int(local_port)} does not exist"
+                )
+                return False
+
+            proxy_host = await self.connection_provider.get_destination(
+                self.data["client"], destination, int(local_port)
+            )
+            proxy_host, proxy_port = proxy_host.split(":", 1)
+            if not await (await self.bridge_provider).proxy_route_exists(
+                target_port, proxy_host, proxy_port, self.object_name
+            ):
+                self.logger.warning(
+                    f"Proxy route of {self.data['client']}/{self.object_name} for {target_port}, {proxy_host}, {proxy_port} {self.object_name} does not exist"
+                )
+                return False
+        return True
+
     async def handle_proxyroute_setup(self, destination):
         for port_mapping in self.data.get("portMappings"):
             local_port, target_port = port_mapping.split(":")
@@ -234,9 +262,12 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
                     self.logger.error(
                         f"Error getting destination '{destination}' from connection provider: {e}"
                     )
-                    await self.connection_provider.remove_destination(
-                        self.data["client"], destination, int(source_port)
-                    )
+                    try:
+                        await self.connection_provider.remove_destination(
+                            self.data["client"], destination, int(source_port)
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Could not remove destination: {e}")
                     continue
                 else:
                     proxy_host, proxy_port = proxy_host.split(":", 1)
@@ -254,9 +285,13 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
                     # if not await (await self.bridge_provider).proxy_route_exists(
                     #     target_port, proxy_host, proxy_port
                     # ):
-                    await self.connection_provider.remove_destination(
-                        self.data["client"], destination, int(source_port)
-                    )
+                    try:
+                        await self.connection_provider.remove_destination(
+                            self.data["client"], destination, int(source_port)
+                        )
+                    except Exception as e:
+                        self.logger.error(f"Could not remove destination: {e}")
+                    continue
             else:
                 self.logger.warning(
                     f"Destination does not exist for GefyraBridge {self.object_name}: {destination}"

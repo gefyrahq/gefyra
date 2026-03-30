@@ -182,6 +182,10 @@ async def reconcile_proxyroutes(logger):
                         bridge["client"] == peer
                         and bridge["destinationIP"] == destination_ip
                         and bridge["clusterEndpoint"].get(destination_port, False)
+                        and bridge["clusterEndpoint"]
+                        .get(destination_port)
+                        .split(":")[1]
+                        == stowaway_port
                     ):
                         # this bridge corresponds to the route
                         final_routes[key] = value

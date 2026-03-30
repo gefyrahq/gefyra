@@ -302,7 +302,11 @@ class GefyraClient(WatchEventsMixin):
     ):
         import kubernetes
 
-        from gefyra.local.cargo import create_wireguard_config, get_cargo_ip_from_netaddress, probe_wireguard_connection
+        from gefyra.local.cargo import (
+            create_wireguard_config,
+            get_cargo_ip_from_netaddress,
+            probe_wireguard_connection,
+        )
 
         _retry = 0
 

@@ -7,7 +7,11 @@ from typing import IO, TYPE_CHECKING, Callable, List, Optional
 import docker
 
 from gefyra.api.clients import get_client
-from gefyra.exceptions import ClientConfigurationError, GefyraClientNotFound, GefyraConnectionError
+from gefyra.exceptions import (
+    ClientConfigurationError,
+    GefyraClientNotFound,
+    GefyraConnectionError,
+)
 from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.local.minikube import detect_minikube_config
 
@@ -21,7 +25,12 @@ from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.local.cargo import probe_wireguard_connection
 from gefyra.local.networking import handle_remove_network
 from gefyra.local.utils import compose_kubeconfig_for_serviceaccount
-from gefyra.types import GefyraClient, GefyraClientConfig, GefyraClientState, GefyraConnectionItem
+from gefyra.types import (
+    GefyraClient,
+    GefyraClientConfig,
+    GefyraClientState,
+    GefyraConnectionItem,
+)
 
 logger = logging.getLogger(__name__)
 
