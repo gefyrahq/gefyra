@@ -144,7 +144,8 @@ async def reconcile_proxyroutes(logger):
         logger.info("Checking proxy route status on Stowaway")
 
         if len(raw_gefyra_bridges["items"]) == 0:
-            if len(routes) != 0:
+            # if we find proxy routes, but there are no bridges -> remove debris
+            if routes and len(routes) != 0:
                 for _, value in routes.items():
                     stowaway_port = value.split(",")[1]
                     try:
@@ -166,6 +167,11 @@ async def reconcile_proxyroutes(logger):
         else:
             final_routes = {}
             to_be_removed_svcs = []
+            if not routes:
+                logger.error(
+                    "There are GefyraBridge objects present, but not proxy routes"
+                )
+                return
             for key, value in routes.items():
                 stowaway_port = value.split(",")[1]
                 peer = key.split("-")[0]
@@ -177,7 +183,7 @@ async def reconcile_proxyroutes(logger):
                         and bridge["destinationIP"] == destination_ip
                         and bridge["clusterEndpoint"].get(destination_port, False)
                     ):
-                        # this bridge coresponds to the route
+                        # this bridge corresponds to the route
                         final_routes[key] = value
                         break
                     else:
