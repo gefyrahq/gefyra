@@ -650,15 +650,34 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             )
         return new_workload
 
+    async def _scale_shadow_to_match(self, target_replicas: int) -> None:
+        """Scale the shadow deployment to match the original's replica count."""
+        _, type_ = self._split_target_type_name(self.target)
+        if type_ not in (V1Deployment, V1StatefulSet):
+            return
+        patch_fn = self._patch_namespaced_(type_)
+        body = {"spec": {"replicas": target_replicas}}
+        await asyncio.to_thread(
+            patch_fn,
+            name=self._gefyra_workload_name,
+            namespace=self.namespace,
+            body=body,
+        )
+        self.logger.info(
+            f"Scaled shadow workload '{self._gefyra_workload_name}' "
+            f"to {target_replicas} replicas to match original."
+        )
+
     async def prepared(self):
-        # If replica count diverged (e.g. HPA scaled), shadow needs re-cloning
         gefyra_pods = await self._gefyra_pods
         original_pods = await self._original_pods
         if len(gefyra_pods.items) != len(original_pods.items):
             self.logger.info(
                 f"Replica count mismatch: original={len(original_pods.items)}, "
-                f"gefyra={len(gefyra_pods.items)}"
+                f"gefyra={len(gefyra_pods.items)}. "
+                f"Scaling shadow to match."
             )
+            await self._scale_shadow_to_match(len(original_pods.items))
             return False
 
         pods_ready = await self._duplicated_pods_ready
