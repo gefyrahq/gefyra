@@ -56,30 +56,30 @@ async def update_bridge_destination(body, logger, namespace, name, old, new, **k
                 await bridge.activate()
 
 
-@kopf.timer(
-    "gefyrabridges.gefyra.dev",
-    interval=RECONCILIATION_INTERVAL,
-)
-async def bridge_reconcile(body, logger, **kwargs):
-    obj = GefyraBridgeObject(body)
-    bridge = GefyraBridge(
-        obj, configuration, logger, initial=obj.state
-    )  # Pass initial state
+# @kopf.timer(
+#     "gefyrabridges.gefyra.dev",
+#     interval=RECONCILIATION_INTERVAL,
+# )
+# async def bridge_reconcile(body, logger, **kwargs):
+#     obj = GefyraBridgeObject(body)
+#     bridge = GefyraBridge(
+#         obj, configuration, logger, initial=obj.state
+#     )  # Pass initial state
 
-    if not bridge.completed_transition(GefyraBridge.active.value):
-        logger.info(
-            f"Skipping reconciliation for GefyraBridge '{bridge.object_name}' (transition to ACTIVE not completed)"
-        )
-        return
-    logger.info(f"Reconciliation for GefyraBridge: {obj}")
+#     if not bridge.completed_transition(GefyraBridge.active.value):
+#         logger.info(
+#             f"Skipping reconciliation for GefyraBridge '{bridge.object_name}' (transition to ACTIVE not completed)"
+#         )
+#         return
+#     logger.info(f"Reconciliation for GefyraBridge: {obj}")
 
-    key = bridge.data["target"]
-    lock = await get_lock(key)
-    async with lock:
-        try:
-            await bridge.send("terminate")
-        except Exception as e:
-            logger.error(f"Unexpected error removing this GefyraBridge: {e}")
+#     key = bridge.data["target"]
+#     lock = await get_lock(key)
+#     async with lock:
+#         try:
+#             await bridge.send("terminate")
+#         except Exception as e:
+#             logger.error(f"Unexpected error removing this GefyraBridge: {e}")
 
 
 @kopf.on.delete("gefyrabridges.gefyra.dev")
