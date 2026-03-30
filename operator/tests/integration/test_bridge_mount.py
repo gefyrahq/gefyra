@@ -5,6 +5,7 @@ from pytest_kubernetes.providers import AClusterManager
 from tests.utils import post_event_noop
 
 logger = logging.getLogger()
+logger.addHandler(logging.NullHandler())
 
 
 class TestBridgeMountObject:

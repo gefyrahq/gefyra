@@ -4,6 +4,7 @@ from time import sleep
 from pytest_kubernetes.providers import AClusterManager
 
 logger = logging.getLogger()
+logger.addHandler(logging.NullHandler())
 
 
 class TestClientStates:

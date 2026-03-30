@@ -6,6 +6,7 @@ from pytest_kubernetes.providers import AClusterManager
 from tests.utils import GefyraDockerClient
 
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 
 def test_client_max_connection_age(
