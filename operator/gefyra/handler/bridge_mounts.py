@@ -133,7 +133,11 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             else:
                 if bridge_mount.requested.is_active:
                     await bridge_mount.arrange()
-                elif (
+                if bridge_mount.error.is_active:
+                    await bridge_mount.send("restore")
+                if bridge_mount.restoring.is_active:
+                    await bridge_mount.send("restore")
+                if (
                     bridge_mount.preparing.is_active
                     or bridge_mount.installing.is_active
                 ):
@@ -144,11 +148,8 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                         await bridge_mount.send("restore")
                     else:
                         await bridge_mount.install()
-                elif bridge_mount.error.is_active:
-                    await bridge_mount.send("restore")
-                elif bridge_mount.restoring.is_active:
-                    await bridge_mount.send("restore")
-                elif bridge_mount.active.is_active:
+
+                if bridge_mount.active.is_active:
                     if not await bridge_mount.is_intact:
                         logger.warning(
                             "GefyraBridgeMount is impaired. Transitioning to restoring state."
