@@ -55,7 +55,6 @@ class GefyraStateObject:
             plural=self.plural,
             group="gefyra.dev",
             version="v1",
-            async_req=True,
         )
 
 

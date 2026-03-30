@@ -311,19 +311,17 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         self, target: str, namespace: str
     ) -> V1Deployment | V1StatefulSet | V1Pod:
         name, type_ = self._split_target_type_name(target)
-        if not hasattr(self, f"_get_workload_cache-{name}-{type_}"):
-            try:
-                result = await asyncio.to_thread(
-                    self._read_namespaced_(type_), name, namespace
+        try:
+            result = await asyncio.to_thread(
+                self._read_namespaced_(type_), name, namespace
+            )
+        except ApiException as e:
+            if e.status == 404:
+                raise BridgeMountTargetException(
+                    f"Workload target {target} (type '{type_.__name__}') in namespace '{namespace}' not found."
                 )
-                setattr(self, f"_get_workload_cache-{name}-{type_}", result)
-            except ApiException as e:
-                if e.status == 404:
-                    raise BridgeMountTargetException(
-                        f"Workload target {target} (type '{type_.__name__}') in namespace '{namespace}' not found."
-                    )
-                raise RuntimeError(f"Exception when calling Kubernetes API: {e}") from e
-        return getattr(self, f"_get_workload_cache-{name}-{type_}")
+            raise RuntimeError(f"Exception when calling Kubernetes API: {e}") from e
+        return result
 
     async def prepare(self):
         try:
@@ -349,35 +347,32 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     async def get_pods_workload(self, name: str, namespace: str) -> V1PodList:
         API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
         NOT_FOUND_MSG = f"Target {name} not found in namespace '{namespace}'."
-        # a simple caching
-        if not hasattr(self, f"get_pods_workload_cache-{name}-{namespace}"):
-            try:
-                workload = await self._get_workload(name, namespace)
-            except ApiException as e:
-                if e.status == 404:
-                    raise BridgeMountTargetException(NOT_FOUND_MSG)
-                raise RuntimeError(API_EXCEPTION_MSG.format(e)) from e
+        try:
+            workload = await self._get_workload(name, namespace)
+        except ApiException as e:
+            if e.status == 404:
+                raise BridgeMountTargetException(NOT_FOUND_MSG)
+            raise RuntimeError(API_EXCEPTION_MSG.format(e)) from e
 
-            # use workloads metadata uuid for owner references with field selector to get pods
-            if isinstance(workload, (V1Deployment, V1StatefulSet)):
-                v1_label_selector = workload.spec.selector.match_labels
-            else:
-                v1_label_selector = workload.metadata.labels
+        # use workloads metadata uuid for owner references with field selector to get pods
+        if isinstance(workload, (V1Deployment, V1StatefulSet)):
+            v1_label_selector = workload.spec.selector.match_labels
+        else:
+            v1_label_selector = workload.metadata.labels
 
-            label_selector = ",".join(
-                [f"{key}={value}" for key, value in v1_label_selector.items()]
-            )
+        label_selector = ",".join(
+            [f"{key}={value}" for key, value in v1_label_selector.items()]
+        )
 
-            if not label_selector:
-                # TODO better exception typing here
-                raise Exception(f"No label selector set for {self.target}.")
-            pods = await asyncio.to_thread(
-                core_v1_api.list_namespaced_pod,
-                namespace=namespace,
-                label_selector=label_selector,
-            )
-            setattr(self, f"get_pods_workload_cache-{name}-{namespace}", pods)
-        return getattr(self, f"get_pods_workload_cache-{name}-{namespace}")
+        if not label_selector:
+            # TODO better exception typing here
+            raise Exception(f"No label selector set for {self.target}.")
+        pods = await asyncio.to_thread(
+            core_v1_api.list_namespaced_pod,
+            namespace=namespace,
+            label_selector=label_selector,
+        )
+        return pods
 
     async def _default_upstream(self, rport: int) -> List[str]:
         if hasattr(self, "_default_upstream_cache") and self._default_upstream_cache:
