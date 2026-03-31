@@ -269,15 +269,22 @@ def list_connections(output: str):
     alias=["rm"],
     help="Remove a Gefyra connection",
 )
+@click.option(
+    "--yes",
+    help="Non-interactive mode, do not ask for confirmation",
+    type=bool,
+    is_flag=True,
+    default=False,
+)
 @click.argument(
     "connection_name", type=str, default="default", callback=check_connection_name
 )
 @standard_error_handler
-def remove_connection(connection_name: str):
+def remove_connection(yes: bool, connection_name: str):
     from gefyra import api
 
     try:
-        _manage_container_and_bridges(connection_name=connection_name)
+        _manage_container_and_bridges(connection_name=connection_name, force=yes)
     except RuntimeError:
         pass
     api.remove_connection(connection_name=connection_name)
