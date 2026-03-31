@@ -116,10 +116,16 @@ def operator(k3d, stowaway_image, carrier2_image):
                     not_found = False
     except Exception:
         operator.timeout = 10
-        operator.__exit__(None, None, None)
+        try:
+            operator.__exit__(None, None, None)
+        except:  # noqa: E722
+            pass
     if not_found:
         operator.timeout = 10
-        operator.__exit__(None, None, None)
+        try:
+            operator.__exit__(None, None, None)
+        except:  # noqa: E722
+            pass
         raise Exception("Gefyra-Ready event not found")
 
     yield k3d
@@ -128,7 +134,10 @@ def operator(k3d, stowaway_image, carrier2_image):
         if key.startswith("kopf"):
             del sys.modules[key]
     operator.timeout = 10
-    operator.__exit__(None, None, None)
+    try:
+        operator.__exit__(None, None, None)
+    except:  # noqa: E722
+        pass
 
 
 @pytest.fixture(scope="session")
