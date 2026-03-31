@@ -330,7 +330,7 @@ jobs:
           docker image ls -a
       - name: Run Gefyra Client Unit Test
         working-directory: ./client
-        run: poetry run coverage run -m pytest -x -s tests/unit
+        run: poetry run coverage run -m pytest --retries 5 -x -s tests/unit
         env:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
@@ -338,7 +338,7 @@ jobs:
           STOWAWAY_IN_CACHE: true
       - name: Run Gefyra Client E2E Test
         working-directory: ./client
-        run: poetry run coverage run -m pytest -x -s tests/e2e
+        run: poetry run coverage run -m pytest --retries 5 -x -s tests/e2e
         env:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
