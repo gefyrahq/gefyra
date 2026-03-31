@@ -526,6 +526,9 @@ jobs:
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+      - name: Setup k3d
+        working-directory: ./operator
+        run: k3d cluster create --config tests/k3d_cluster.yaml && k3d kubeconfig get gefyra > mycluster.yaml
       - name: Download cargo artifact
         uses: actions/download-artifact@v7
         with:
@@ -560,7 +563,7 @@ jobs:
           docker image ls -a
       - name: Run Gefyra Operator Unit Tests
         working-directory: ./operator
-        run: poetry run coverage run -m pytest -s -x --retries 5 tests/unit
+        run: poetry run coverage run -m pytest --k8s-kubeconfig-override mycluster.yaml --k8s-cluster-name gefyra --k8s-provider k3d -s -x --retries 5 tests/unit
         env:
           GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
           CARRIER_IN_CACHE: true
@@ -569,7 +572,7 @@ jobs:
           STOWAWAY_IN_CACHE: true
       - name: Run Gefyra Operator Integration Tests
         working-directory: ./operator
-        run: poetry run coverage run -m pytest -s -x --retries 5 tests/integration
+        run: poetry run coverage run -m pytest --k8s-kubeconfig-override mycluster.yaml --k8s-cluster-name gefyra --k8s-provider k3d -s -x --retries 5 tests/integration
         env:
           GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
           CARRIER_IN_CACHE: true
@@ -578,7 +581,7 @@ jobs:
           STOWAWAY_IN_CACHE: true
       - name: Run Gefyra Operator E2E Tests
         working-directory: ./operator
-        run: poetry run coverage run -m pytest -s -x --retries 5 tests/e2e
+        run: poetry run coverage run -m pytest --k8s-kubeconfig-override mycluster.yaml --k8s-cluster-name gefyra --k8s-provider k3d -s -x --retries 5 tests/e2e
         env:
           GEFYRA_CARGO_IMAGE_PREBUILT: cargo:pytest
           CARRIER_IN_CACHE: true
