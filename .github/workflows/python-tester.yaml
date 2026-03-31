@@ -328,9 +328,17 @@ jobs:
           docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
           docker tag ${{ needs.build_stowaway.outputs.tags }} stowaway:pytest
           docker image ls -a
-      - name: Run PyTest
+      - name: Run Gefyra Client Unit Test
         working-directory: ./client
-        run: poetry run coverage run -m pytest -x -s tests/
+        run: poetry run coverage run -m pytest -x -s tests/unit
+        env:
+          CARRIER_IN_CACHE: true
+          OPERATOR_IN_CACHE: true
+          CARGO_IN_CACHE: true
+          STOWAWAY_IN_CACHE: true
+      - name: Run Gefyra Client E2E Test
+        working-directory: ./client
+        run: poetry run coverage run -m pytest -x -s tests/e2e
         env:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
