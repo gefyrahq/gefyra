@@ -305,6 +305,22 @@ class Stowaway(AbstractGefyraConnectionProvider):
     ) -> bool:
         _config = create_stowaway_proxyroute_configmap()
         try:
+            # check if endpoint service exists
+            svcs = await asyncio.to_thread(
+                core_v1_api.list_namespaced_service,
+                namespace=self.configuration.NAMESPACE,
+                label_selector=get_label_selector(
+                    {
+                        "gefyra.dev/app": "stowaway",
+                        "gefyra.dev/role": "proxy",
+                        "gefyra.dev/client-id": peer_id,
+                        "gefyra.dev/destination": f"{destination_ip}_{destination_port}",
+                    }
+                ),
+            )
+            if len(svcs.items) == 0:
+                return False
+
             configmap = await asyncio.to_thread(
                 core_v1_api.read_namespaced_config_map,
                 _config.metadata.name,

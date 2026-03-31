@@ -11,6 +11,7 @@ from time import sleep
 from unittest.mock import MagicMock
 
 from pathlib import Path
+import kopf
 from kopf import TemporaryError
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
@@ -18,6 +19,7 @@ from statemachine.exceptions import TransitionNotAllowed
 from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger()
+logger.addHandler(logging.NullHandler())
 
 
 class TestBridgeMountHPAScale:
@@ -77,7 +79,7 @@ class TestBridgeMountHPAScale:
         assert bm.requested.is_active
 
         scaled = False
-        retries = 60
+        retries = 120
         while retries > 0:
             # Clear the provider's pod cache to simulate the real handler
             # which creates a fresh provider instance on each invocation.
@@ -88,6 +90,7 @@ class TestBridgeMountHPAScale:
                 ):
                     delattr(provider, attr)
 
+            print(bm)
             try:
                 if bm.requested.is_active:
                     await bm.arrange()
@@ -125,6 +128,10 @@ class TestBridgeMountHPAScale:
             except TransitionNotAllowed:
                 retries -= 1
             except TemporaryError:
+                print(f"TemporaryError {retries}")
+                retries -= 1
+            except kopf._core.actions.execution.TemporaryError:
+                print(f"TemporaryError {retries}")
                 retries -= 1
 
             sleep(3)

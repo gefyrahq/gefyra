@@ -6,7 +6,7 @@ from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 from gefyra.configuration import configuration
 
 
-RECONCILIATION_INTERVAL = 10
+RECONCILIATION_INTERVAL = 60
 
 # A simple registry for locks based on resource UID or name
 locks = {}
@@ -47,20 +47,56 @@ async def update_bridge_destination(body, logger, namespace, name, old, new, **k
 
     key = bridge.data["target"]
     lock = await get_lock(key)
-
-    async with lock:
-        if not old:
-            return
-        if bridge.active.is_active:
+    if bridge.active.is_active and old:
+        async with lock:
             logger.warn(f"Updating destinationIP for this GefyraBridge: {bridge}")
-            await bridge.handle_proxyroute_teardown(old)  # Await
-            await bridge.send("restore")  # Await
-            await bridge.send("activate")  # Await
-        else:
-            # TODO handle these cases
-            logger.warn(
-                f"GefyraBridge {bridge} is not ACTIVE, but destinationIP has been changed."
-            )
+            await bridge.handle_proxyroute_teardown(old)
+            await bridge.restore()
+            if bridge.installed.is_active:
+                await bridge.activate()
+
+
+@kopf.timer(
+    "gefyrabridges.gefyra.dev",
+    interval=RECONCILIATION_INTERVAL,
+)
+async def bridge_reconcile(body, logger, **kwargs):
+    obj = GefyraBridgeObject(body)
+    bridge = GefyraBridge(
+        obj, configuration, logger, initial=obj.state
+    )  # Pass initial state
+
+    if not bridge.completed_transition(GefyraBridge.active.value):
+        logger.info(
+            f"Skipping reconciliation for GefyraBridge '{bridge.object_name}' (transition to ACTIVE not completed)"
+        )
+        return
+    logger.info(f"Reconciliation for GefyraBridge: {obj}")
+
+    key = bridge.data["target"]
+    lock = await get_lock(key)
+    async with lock:
+        try:
+            if bridge.error.is_active:
+                await bridge.restore()
+            if bridge.active.is_active:
+                is_intact = True
+                try:
+                    is_intact = await bridge.is_intact
+                except Exception as e:
+                    logger.error(f"Error probing this GefyraBridge: {e}")
+                    # GefryaBridge not intact -> restoring
+                    await bridge.send("restore")
+                if not is_intact:
+                    logger.error("GefyraBridge not intact")
+                    await bridge.send("restore")
+
+            if bridge.installing.is_active:
+                await bridge.install()
+            if bridge.installed.is_active:
+                await bridge.activate()
+        except Exception as e:
+            logger.error(f"Unexpected error reconciling this GefyraBridge: {e}")
 
 
 @kopf.on.delete("gefyrabridges.gefyra.dev")

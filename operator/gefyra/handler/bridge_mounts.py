@@ -85,25 +85,6 @@ def _try_delete_cr(bridge_mount: GefyraBridgeMount, logger) -> bool:
     interval=RECONCILIATION_INTERVAL,
 )
 async def bridge_mount_reconcile(body, logger, **kwargs):
-    """
-    Periodic reconciliation for GefyraBridgeMount resources.
-
-    Runs every ``RECONCILIATION_INTERVAL`` seconds for all mounts.
-
-    For each reconciliation tick the handler:
-
-    1. For TERMINATED mounts: retries CR deletion if the object was not
-       cleaned up previously (e.g. due to a transient API error). Skips
-       all other logic once terminated.
-    2. Checks ``should_terminate`` (sunset expiry) — terminates + deletes if true.
-    3. For MISSING mounts: checks if the target has reappeared (auto-recover)
-       or if the grace period has expired (terminate + delete).
-    4. For all other operational states: checks ``target_exists`` before
-       proceeding with the normal state progression. If the target is gone,
-       transitions to MISSING immediately.
-    5. For ACTIVE mounts: additionally checks ``is_intact`` and transitions
-       to RESTORING if the Carrier2 installation has drifted.
-    """
     obj = GefyraBridgeMountObject(body)
     bridge_mount = GefyraBridgeMount(
         obj, configuration, logger, initial=obj.state
@@ -153,9 +134,14 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
             else:
                 if bridge_mount.requested.is_active:
                     await bridge_mount.arrange()
-                elif bridge_mount.preparing.is_active:
-                    await bridge_mount.install()
-                elif bridge_mount.installing.is_active:
+                if bridge_mount.error.is_active:
+                    await bridge_mount.send("restore")
+                if bridge_mount.restoring.is_active:
+                    await bridge_mount.send("restore")
+                if (
+                    bridge_mount.preparing.is_active
+                    or bridge_mount.installing.is_active
+                ):
                     if not await bridge_mount.bridge_mount_provider.prepared():
                         logger.info(
                             "Shadow replica count syncing with original. "
@@ -163,11 +149,8 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                         )
                     else:
                         await bridge_mount.install()
-                elif bridge_mount.error.is_active:
-                    await bridge_mount.send("restore")
-                elif bridge_mount.restoring.is_active:
-                    await bridge_mount.send("restore")
-                elif bridge_mount.active.is_active:
+
+                if bridge_mount.active.is_active:
                     if not await bridge_mount.is_intact:
                         logger.warning(
                             "GefyraBridgeMount is impaired. Transitioning to restoring state."

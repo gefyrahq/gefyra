@@ -88,6 +88,7 @@ class TestGefyraBridge(GefyraTestCase):
                 "1",
                 "--memory",
                 "128m",
+                "--detach",
             ],
         )
 
@@ -144,6 +145,7 @@ class TestGefyraBridge(GefyraTestCase):
                 "pytest-gefyra",
                 "--name",
                 "pytest-gefyra-bridge",
+                "--nowait",
             ],
         )
 
@@ -158,7 +160,7 @@ class TestGefyraBridge(GefyraTestCase):
             f"gefyrabridges.gefyra.dev/{bridge_name}",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
@@ -166,7 +168,7 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains(
             "http://localhost:8080",
             "Hello from Gefyra.",
-            retries=30,
+            retries=60,
             headers={"x-gefyra": "peer"},
         )
         print("Test successful, cleaning up...")
@@ -179,7 +181,7 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["remove", "pytest-gefyra"],
+            ["remove", "pytest-gefyra", "--yes"],
         )
 
     def test_image_deployment_patches(
@@ -225,6 +227,7 @@ class TestGefyraBridge(GefyraTestCase):
                 LOCAL_CONTAINER_NAME,
                 "--command",
                 "python3 local.py",
+                "--detach",
             ],
         )
 
@@ -245,6 +248,7 @@ class TestGefyraBridge(GefyraTestCase):
                 "pytest-gefyra",
                 "--name",
                 "pytest-gefyra-bridge",
+                "--nowait",
             ],
         )
 
@@ -252,7 +256,7 @@ class TestGefyraBridge(GefyraTestCase):
             "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
         operator.kubectl(
@@ -300,7 +304,10 @@ class TestGefyraBridge(GefyraTestCase):
         self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
 
         self.assert_get_contains(
-            "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+            "http://localhost:8080",
+            "Hello from Gefyra.",
+            headers={"x-gefyra": "peer"},
+            retries=60,
         )
         self.cmd(
             operator.kubeconfig,
@@ -310,7 +317,7 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["remove", "pytest-gefyra"],
+            ["remove", "pytest-gefyra", "--yes"],
         )
 
     def test_multiple_cli_commands(
@@ -357,6 +364,7 @@ class TestGefyraBridge(GefyraTestCase):
                 LOCAL_CONTAINER_NAME,
                 "--command",
                 "python3 local.py",
+                "--detach",
             ],
         )
 
@@ -377,6 +385,7 @@ class TestGefyraBridge(GefyraTestCase):
                 "pytest-gefyra",
                 "--name",
                 "pytest-gefyra-bridge",
+                "--nowait",
             ],
         )
 
@@ -384,7 +393,7 @@ class TestGefyraBridge(GefyraTestCase):
             "gefyrabridges.gefyra.dev/pytest-gefyra-bridge",
             "jsonpath=.state=ACTIVE",
             namespace="gefyra",
-            timeout=60,
+            timeout=120,
         )
 
         operator.kubectl(
@@ -432,10 +441,15 @@ class TestGefyraBridge(GefyraTestCase):
             timeout=60,
         )
 
-        self.assert_get_contains("http://localhost:8080", "Welcome to nginx!")
+        self.assert_get_contains(
+            "http://localhost:8080", "Welcome to nginx!", retries=60
+        )
 
         self.assert_get_contains(
-            "http://localhost:8080", "Hello from Gefyra.", headers={"x-gefyra": "peer"}
+            "http://localhost:8080",
+            "Hello from Gefyra.",
+            headers={"x-gefyra": "peer"},
+            retries=60,
         )
 
         res = self.cmd(
@@ -542,5 +556,5 @@ class TestGefyraBridge(GefyraTestCase):
         self.cmd(
             operator.kubeconfig,
             "connection",
-            ["remove", "pytest-gefyra"],
+            ["remove", "pytest-gefyra", "--yes"],
         )

@@ -22,7 +22,6 @@ def carrier_binary(request):
 
 @pytest.fixture
 def carrier2(carrier_binary):
-
     basedir = Path(__file__).resolve().parent
 
     client_cert = basedir / ".." / "client-cert.pem"
@@ -35,7 +34,6 @@ def carrier2(carrier_binary):
     def call_with_args(
         args: str, timeout: int = 1, queue: Optional[multiprocessing.Queue] = None
     ) -> str:
-
         try:
             p = subprocess.Popen(
                 f"{carrier_binary} {args}",

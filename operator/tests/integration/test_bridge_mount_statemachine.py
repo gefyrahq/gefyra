@@ -10,6 +10,7 @@ from statemachine.exceptions import TransitionNotAllowed
 from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger()
+logger.addHandler(logging.NullHandler())
 
 
 class TestBridgeMountStateMachine:
