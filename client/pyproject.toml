@@ -41,6 +41,7 @@ types-pyyaml = "^6.0.12.10"
 types-requests = "^2.31.0.1"
 types-click = "^7.1.8"
 pytest-timeout = "^2.1.0"
+pytest-retry = "^1.7.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
