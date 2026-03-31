@@ -230,7 +230,7 @@ if os.getenv("OP_MODE", default="Operator").lower() == "operator":
             periodic(WIREGUARD_RECONCILIATION, read_wireguard_status, logger)
         )
         proxyroutes_task = asyncio.create_task(
-            periodic(WIREGUARD_RECONCILIATION, reconcile_proxyroutes, logger)
+            periodic(WIREGUARD_RECONCILIATION * 5, reconcile_proxyroutes, logger)
         )
 
         def shutdown(*args, **kwargs):
