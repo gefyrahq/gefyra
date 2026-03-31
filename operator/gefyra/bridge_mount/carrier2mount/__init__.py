@@ -881,4 +881,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     async def uninstall(self):
         await self.uninstall_duplicated_workload()
         await self.uninstall_service()
-        await self.restore_original_workload()
+        try:
+            await self.restore_original_workload()
+        except Exception as e:
+            self.logger.error(
+                f"Could not restore original workload for {self.name} due to: {e}"
+            )
