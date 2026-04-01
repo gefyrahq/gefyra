@@ -21,7 +21,7 @@ mypy = "^1.19.1"
 pytest-kubernetes = "^0.7.2"
 docker = "^7.0.0"
 coveralls = "^4.0.1"
-types-requests = "^2.32.4.20250809"
+types-requests = "^2.33.0.20260327"
 pytest-retry = "^1.7.0"
 factory-boy = "^3.3.3"
 
