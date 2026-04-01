@@ -11,8 +11,6 @@ from time import sleep
 from unittest.mock import MagicMock
 
 from pathlib import Path
-import kopf
-from kopf import TemporaryError
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
 
@@ -127,10 +125,7 @@ class TestBridgeMountHPAScale:
                     break
             except TransitionNotAllowed:
                 retries -= 1
-            except TemporaryError:
-                print(f"TemporaryError {retries}")
-                retries -= 1
-            except kopf._core.actions.execution.TemporaryError:
+            except Exception:
                 print(f"TemporaryError {retries}")
                 retries -= 1
 
