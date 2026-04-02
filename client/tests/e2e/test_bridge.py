@@ -509,7 +509,13 @@ class TestGefyraBridge(GefyraTestCase):
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
-            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+            [
+                "delete",
+                "--connection-name",
+                "pytest-gefyra",
+                "--mount",
+                "nginx-deployment-gefyra",
+            ],
         )
         # Assert deletion was successful
         assert "pytest-gefyra-bridge' deleted" in res.output
@@ -551,12 +557,6 @@ class TestGefyraBridge(GefyraTestCase):
             operator.kubeconfig,
             "connection",
             ["connect", "--force", "--connection-name", "pytest-gefyra"],
-        )
-
-        self.cmd(
-            operator.kubeconfig,
-            "bridge",
-            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
 
         self.cmd(
