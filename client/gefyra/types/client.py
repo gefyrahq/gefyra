@@ -3,7 +3,7 @@ import logging
 import os
 import socket
 import time
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
@@ -156,26 +156,6 @@ class GefyraClient(WatchEventsMixin):
                 ppublickey=providerconfig.get("Peer.PublicKey"),
                 presharedkey=providerconfig.get("Peer.PresharedKey"),
             )
-
-    def as_dict(self) -> dict[str, Any]:
-        data = {}
-        for _field in fields(self):
-            if _v := getattr(self, _field.name):
-                if type(_v) is StowawayParameter:
-                    data["providerParameter"] = {"subnet": _v.subnet}
-                elif type(_v) is StowawayConfig:
-                    data["providerConfig"] = {
-                        "iaddress": _v.iaddress,
-                        "idns": _v.idns,
-                        "iport": str(_v.iport),
-                        "iprivatekey": _v.iprivatekey,
-                        "pallowedips": _v.pallowedips,
-                        "pendpoint": _v.pendpoint,
-                        "ppublickey": _v.ppublickey,
-                    }
-                else:
-                    data[_field.name] = _v
-        return data
 
     def wait_for_state(self, desired_state: GefyraClientState, timeout: int = 60):
         start_time = time.time()
