@@ -27,12 +27,21 @@ async def bridge_mount_created(body, logger, **kwargs):
                 raise kopf.TemporaryError(
                     "Shadow replica count syncing with original", delay=10
                 )
+            elif await bridge_mount.bridge_mount_provider.ready():
+                await bridge_mount.activate()
             else:
                 await bridge_mount.install()
         if bridge_mount.error.is_active:
-            await bridge_mount.send("restore")  # Await
+            await bridge_mount.send("restore")
         if bridge_mount.restoring.is_active:
-            await bridge_mount.send("restore")  # Await
+            await bridge_mount.send("restore")
+        # if not ACTIVE, don't leave this handler
+        if not bridge_mount.active.is_active:
+            # possible already installed and configured but not active due to pods not declared ready (probe not refreshed)
+            raise kopf.TemporaryError(
+                "GefyraBridgeMount still not ACTIVE, retrying", delay=10
+            )
+
     # this happens when either the transition from x to y is not allowed
     # or when the condition for the transition is not fulfilled.
     except TransitionNotAllowed as e:
