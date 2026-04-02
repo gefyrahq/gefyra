@@ -518,7 +518,9 @@ class TestGefyraBridge(GefyraTestCase):
             ],
         )
         # Assert deletion was successful
-        assert "pytest-gefyra-bridge' deleted" in res.output
+        assert (
+            "All GefyraBridges for mount 'pytest-gefyra-bridge' deleted" in res.output
+        )
 
         # Verify the bridge is actually deleted
         import time
