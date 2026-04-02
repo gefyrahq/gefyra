@@ -54,13 +54,35 @@ class TestGefyraClients(GefyraTestCase):
             assert config.namespace is not None
             assert config.token is not None
 
-    def test_c_create_clients(self, operator: AClusterManager):
+    def test_c_create_list_clients(self, operator: AClusterManager):
         k3d = operator
         k3d.version()
         from gefyra.api.clients import add_clients
 
         for client in ["client-b", "client-c", "client-d", "client-e", "client-f"]:
             add_clients(client, kubeconfig=operator.kubeconfig)
+
+        res = self.cmd(operator.kubeconfig, "client", ["list"])
+        assert "client-b" in res.output
+        assert "client-c" in res.output
+        assert "client-d" in res.output
+        assert "client-e" in res.output
+        assert "client-f" in res.output
+
+        res = self.cmd(operator.kubeconfig, "client", ["list", "--output", "json"])
+        assert "client-b" in res.output
+        assert "client-c" in res.output
+        assert "client-d" in res.output
+        assert "client-e" in res.output
+        assert "client-f" in res.output
+
+        res = self.cmd(operator.kubeconfig, "client", ["inspect", "client-e"])
+        assert "client-e" in res.output
+
+        res = self.cmd(
+            operator.kubeconfig, "client", ["inspect", "--output", "json", "client-e"]
+        )
+        assert "client-e" in res.output
 
     def test_d_delete_client(self, operator: AClusterManager):
         k3d = operator

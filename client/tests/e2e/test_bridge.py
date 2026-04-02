@@ -91,6 +91,10 @@ class TestGefyraBridge(GefyraTestCase):
                 "--detach",
                 "--env-from",
                 "deploy/nginx-deployment/nginx",
+                "--cpu-from",
+                "deploy/nginx-deployment/nginx",
+                "--memory-from",
+                "deploy/nginx-deployment/nginx",
             ],
         )
 

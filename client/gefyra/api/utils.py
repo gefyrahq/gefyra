@@ -1,7 +1,6 @@
 from __future__ import annotations
 import logging
 import random
-import socket
 import string
 import time
 from typing import Iterable, TYPE_CHECKING, Tuple, Optional
@@ -14,18 +13,6 @@ if TYPE_CHECKING:
     from client.gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
-
-
-def is_port_free(port):
-    """
-    Check if a port is free on the current system.
-    """
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        try:
-            s.bind(("127.0.0.1", port))
-            return True
-        except OSError:
-            return False
 
 
 def get_workload_type(workload_type_str: str):
