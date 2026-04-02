@@ -244,7 +244,10 @@ def delete_bridge(
                 connection_name=connection_name, name=name, wait=not nowait
             )
         if deleted and not nowait:
-            console.success(f"GefyraBridge '{name}' deleted")
+            if name:
+                console.success(f"GefyraBridge '{name}' deleted")
+            elif mount:
+                console.success(f"All GefyraBridges for mount '{mount}' deleted")
         if deleted and nowait:
             console.success(f"GefyraBridge '{name}' marked for deletion")
     except TimeoutError:

@@ -89,6 +89,8 @@ class TestGefyraBridge(GefyraTestCase):
                 "--memory",
                 "128m",
                 "--detach",
+                "--env-from",
+                "deploy/nginx-deployment/nginx",
             ],
         )
 
@@ -228,6 +230,10 @@ class TestGefyraBridge(GefyraTestCase):
                 "--command",
                 "python3 local.py",
                 "--detach",
+                "--cpu-from",
+                "deploy/nginx-deployment/nginx",
+                "--memory-from",
+                "deploy/nginx-deployment/nginx",
             ],
         )
 
@@ -503,10 +509,19 @@ class TestGefyraBridge(GefyraTestCase):
         res = self.cmd(
             operator.kubeconfig,
             "bridge",
-            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
+            [
+                "delete",
+                "--connection-name",
+                "pytest-gefyra",
+                "--mount",
+                "nginx-deployment-gefyra",
+            ],
         )
         # Assert deletion was successful
-        assert "pytest-gefyra-bridge' deleted" in res.output
+        assert (
+            "All GefyraBridges for mount 'nginx-deployment-gefyra' deleted"
+            in res.output
+        )
 
         # Verify the bridge is actually deleted
         import time
@@ -545,12 +560,6 @@ class TestGefyraBridge(GefyraTestCase):
             operator.kubeconfig,
             "connection",
             ["connect", "--force", "--connection-name", "pytest-gefyra"],
-        )
-
-        self.cmd(
-            operator.kubeconfig,
-            "bridge",
-            ["delete", "--connection-name", "pytest-gefyra", "pytest-gefyra-bridge"],
         )
 
         self.cmd(
