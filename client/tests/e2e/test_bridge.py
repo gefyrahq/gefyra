@@ -91,10 +91,6 @@ class TestGefyraBridge(GefyraTestCase):
                 "--detach",
                 "--env-from",
                 "deploy/nginx-deployment/nginx",
-                "--cpu-from",
-                "deploy/nginx-deployment/nginx",
-                "--memory-from",
-                "deploy/nginx-deployment/nginx",
             ],
         )
 
@@ -234,6 +230,10 @@ class TestGefyraBridge(GefyraTestCase):
                 "--command",
                 "python3 local.py",
                 "--detach",
+                "--cpu-from",
+                "deploy/nginx-deployment/nginx",
+                "--memory-from",
+                "deploy/nginx-deployment/nginx",
             ],
         )
 
