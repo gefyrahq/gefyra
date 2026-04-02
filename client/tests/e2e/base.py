@@ -12,6 +12,7 @@ from kubernetes.client import (
     RbacAuthorizationV1Api,
     AppsV1Api,
     CustomObjectsApi,
+    V1Pod,
 )
 from pytest_kubernetes.providers import AClusterManager
 import pytest
@@ -29,12 +30,6 @@ from gefyra.api.clients import list_client, write_client_file
 from gefyra.api.install import LB_PRESETS
 
 from gefyra.cli.main import cli
-from gefyra.cluster.utils import (
-    get_container_command,
-    get_container_image,
-    get_container_ports,
-    get_v1pod,
-)
 from gefyra.local.bridge import handle_delete_gefyrabridge
 from gefyra.types import GefyraClientState
 
@@ -56,6 +51,25 @@ from tests.e2e.const import CONNECTION_NAME
 from tests.e2e.mixin import GefyraTestMixin
 
 default_configuration = ClientConfiguration()
+
+
+def get_v1pod(
+    config: ClientConfiguration,
+    pod_name: str,
+    namespace: str,
+) -> "V1Pod":
+    from kubernetes.client import ApiException
+
+    try:
+        pod = config.K8S_CORE_API.read_namespaced_pod(pod_name, namespace)
+    except ApiException as e:
+        if e.status == 404:
+            raise RuntimeError(
+                f"Pod {pod_name} in namespace {namespace} does not exist."
+            )
+        else:
+            raise e
+    return pod
 
 
 class GefyraBaseTest(GefyraTestMixin):
@@ -105,42 +119,6 @@ class GefyraBaseTest(GefyraTestMixin):
             }
         )
         return params
-
-    def test_get_container_command_error(self):
-        config = ClientConfiguration()
-        namespace = "default"
-        pod_container_dict = get_pods_and_containers_for_workload(
-            config, "hello-nginxdemo", namespace, "deployment"
-        )
-        pod_name = list(pod_container_dict.keys())[0]
-        pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
-        with self.assertRaises(RuntimeError) as rte:
-            get_container_command(pod=pod, container_name="UnknownContainer")
-        self.assertIn("Container UnknownContainer not found", str(rte.exception))
-
-    def test_get_container_image_error(self):
-        config = ClientConfiguration()
-        namespace = "default"
-        pod_container_dict = get_pods_and_containers_for_workload(
-            config, "hello-nginxdemo", namespace, "deployment"
-        )
-        pod_name = list(pod_container_dict.keys())[0]
-        pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
-        with self.assertRaises(RuntimeError) as rte:
-            get_container_image(pod=pod, container_name="UnknownContainer")
-        self.assertIn("Container UnknownContainer not found", str(rte.exception))
-
-    def test_get_container_ports_error(self):
-        config = ClientConfiguration()
-        namespace = "default"
-        pod_container_dict = get_pods_and_containers_for_workload(
-            config, "hello-nginxdemo", namespace, "deployment"
-        )
-        pod_name = list(pod_container_dict.keys())[0]
-        pod = get_v1pod(config=config, namespace=namespace, pod_name=pod_name)
-        with self.assertRaises(RuntimeError) as rte:
-            get_container_ports(pod=pod, container_name="UnknownContainer")
-        self.assertIn("Container UnknownContainer not found", str(rte.exception))
 
     def test_a_run_gefyra_down_status(self):
         self.assert_gefyra_not_connected()
