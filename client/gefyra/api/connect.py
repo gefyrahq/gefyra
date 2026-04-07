@@ -127,7 +127,7 @@ def connect(  # noqa: C901
 
     if client._state == GefyraClientState.ACTIVE.value and force:
         update_callback(
-            f"Connection {connection_name} is already active, but --force is set, diconnecting client..."
+            f"Connection {connection_name} is already active, but --force is set, disconnecting client..."
         )
         client.disconnect()
         update_callback(f"Connection {connection_name} reconnecting...")
