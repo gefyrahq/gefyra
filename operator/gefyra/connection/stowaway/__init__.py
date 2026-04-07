@@ -151,7 +151,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
             await self._restart_stowaway()
             await asyncio.sleep(1)
         except k8s.client.exceptions.ApiException as e:
-            self.logger.error(f"Error adding peer {peer_id} to stowaway: {e}")
+            self.logger.error(
+                f"Error adding peer {peer_id} to stowaway: Status {e.status} Reason {e.reason} Body {e.body}"
+            )
 
     async def remove_peer(self, peer_id: str):
         self.logger.info(f"Removing peer {peer_id} from stowaway")
@@ -172,7 +174,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
             await asyncio.sleep(1)
             return True
         except k8s.client.exceptions.ApiException as e:
-            self.logger.error(f"Error removing peer {peer_id} from stowaway: {e}")
+            self.logger.error(
+                f"Error removing peer {peer_id} from stowaway: Status {e.status} Reason {e.reason} Body {e.body}"
+            )
             return False
 
     async def peer_exists(self, peer_id: str) -> bool:
@@ -188,7 +192,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
             else:
                 return False
         except k8s.client.exceptions.ApiException as e:
-            self.logger.error(f"Error looking up peer {peer_id}: {e}")
+            self.logger.error(
+                f"Error looking up peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
+            )
             return False
 
     async def get_peer_config(self, peer_id: str) -> dict[str, str]:
@@ -275,7 +281,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         except k8s.client.exceptions.ApiException as e:
             if e.status != 404:
                 self.logger.error(
-                    f"Error removing proxy service {proxy_svc.metadata.name}: {e}"
+                    f"Error removing proxy service {proxy_svc.metadata.name}: Status {e.status} Reason {e.reason} Body {e.body}"
                 )
                 raise e
         stowaway_pod = await self._get_stowaway_pod()
@@ -335,7 +341,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
                 f"Error looking up destination {destination_ip}:{destination_port} for"
-                f" peer {peer_id}: {e}"
+                f" peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
             )
             return False
 
