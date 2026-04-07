@@ -18,7 +18,7 @@ from gefyra.bridge_mount.utils import (
     get_all_probes,
     get_upstreams_for_svc,
 )
-from gefyra.bridge.carrier2.utils import get_ttl_hash, read_carrier2_config
+from gefyra.bridge.carrier2.utils import read_carrier2_config
 
 
 app_api = k8s.client.AppsV1Api()
@@ -425,7 +425,6 @@ class Carrier2(AbstractGefyraBridgeProvider):
             self.logger,
             pod.metadata.name,
             pod.metadata.namespace,
-            get_ttl_hash(5),
         )
         config_str = "\n".join(config_str_list)
         pod_config = Carrier2Config.from_string(config_str)
