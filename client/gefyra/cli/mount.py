@@ -4,7 +4,7 @@ from typing import Optional, Literal
 from alive_progress import alive_bar
 import click
 from gefyra.cli import console
-from gefyra.cli.utils import AliasedGroup, check_connection_name, standard_error_handler
+from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from gefyra.exceptions import CommandTimeoutError
 from gefyra.types import GefyraBridgeMount
 from tabulate import tabulate
@@ -212,9 +212,7 @@ def list_mounts(
 )
 @click.argument("mount_name")
 @click.option("-o", "--output", type=click.Choice(["json", "text"]), default="text")
-@click.option(
-    "--connection-name", type=str, default="default", callback=check_connection_name
-)
+@click.option("--connection-name", type=str, default="default")
 @click.pass_context
 @standard_error_handler
 def inspect_mount(
