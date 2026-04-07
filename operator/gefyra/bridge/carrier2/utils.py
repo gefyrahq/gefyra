@@ -1,4 +1,3 @@
-from functools import lru_cache
 from typing import List, Optional
 import time
 from ssl import SSLEOFError
@@ -98,16 +97,9 @@ def stream_exec(
     return last_ouput
 
 
-def get_ttl_hash(seconds=10):
-    """Return the same value withing `seconds` time period"""
-    return round(time.time() / seconds)
-
-
-@lru_cache()
 def read_carrier2_config(
-    logger, name: str, namespace: str, retries: int = 30, ttl_hash=None
+    logger, name: str, namespace: str, retries: int = 30
 ) -> List[str]:
-    del ttl_hash
     from kubernetes.stream import stream
     from kubernetes.client.rest import ApiException
 
