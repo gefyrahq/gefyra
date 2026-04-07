@@ -87,9 +87,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 ["wg"],
             )
         except Exception as e:
-            self.logger.error(
-                f"Unable to read Wireguard status: Status {e.status} Reason {e.reason} Body {e.body}"
-            )
+            self.logger.error(f"Unable to read Wireguard status: {e}")
             return None
         else:
             return output
