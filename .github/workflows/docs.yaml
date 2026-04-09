@@ -18,6 +18,7 @@ jobs:
         run: |
           npm i
           npm run generate
+          cp .output/public/en/index.html .output/public
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
