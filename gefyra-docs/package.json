@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "nuxt dev --extends docus",
     "build": "nuxt build --extends docus",
+    "generate": "nuxt generate --extends docus",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },

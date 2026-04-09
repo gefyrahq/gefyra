@@ -25,7 +25,7 @@ export default defineNuxtConfig({
   },
 
   icon: {
-    provider: 'iconify',
+    provider: 'server',
     customCollections: [{
       prefix: 'gefyra',
       dir: './app/assets/icons',
