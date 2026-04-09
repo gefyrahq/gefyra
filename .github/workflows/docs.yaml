@@ -10,6 +10,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Generate CLI documentation
+        working-directory: ./client
+        run: |
+          pip install poetry
+          poetry install --with cli
+          poetry run gefyra-docs --output ../gefyra-docs/content/en/1.quick-start/5.cli.md
       - uses: actions/setup-node@v6
         with:
             node-version: '22'
