@@ -3,6 +3,18 @@ export default defineNuxtConfig({
 
   css: ['~/assets/scss/main.scss'],
 
+  app: {
+    head: {
+      script: [
+        {
+          'data-collect-dnt': true,
+          'async': true,
+          'src': 'https://scripts.simpleanalyticscdn.com/latest.js',
+        },
+      ],
+    },
+  },
+
   eslint: {
     config: {
       standalone: false,
