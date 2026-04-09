@@ -6,6 +6,7 @@
     "dev": "nuxt dev --extends docus",
     "build": "nuxt build --extends docus",
     "generate": "nuxi generate --preset github_pages --extends docus",
+    "docs:cli": "cd ../client && poetry run gefyra-docs --output ../gefyra-docs/content/en/1.quick-start/5.cli.md",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
