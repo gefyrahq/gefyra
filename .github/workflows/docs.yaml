@@ -17,12 +17,12 @@ jobs:
         working-directory: ./gefyra-docs
         run: |
           npm i
-          npm run build
+          npm run generate
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
-          path: gefyra-docs/dist
+          path: gefyra-docs/.output/public
 
   deploy:
     environment:
