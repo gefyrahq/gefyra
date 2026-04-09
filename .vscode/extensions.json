@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "nuxt.mdc",
+    "nuxtr.nuxtr-vscode",
+    "vue.volar",
+    "bradlc.vscode-tailwindcss",
+    "antfu.goto-alias",
+    "dbaeumer.vscode-eslint"
+  ]
+}
