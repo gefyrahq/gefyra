@@ -16,6 +16,7 @@ export default defineNuxtConfig({
       crawlLinks: true,
       // Explicitly add routes
       routes: ['/sitemap.xml', '/robots.txt'],
+      autoSubfolderIndex: true,
     },
     preset: 'github_pages',
   },
