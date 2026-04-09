@@ -27,7 +27,7 @@ jobs:
         run: |
           npm i
           npm run generate
-          cp .output/public/en/index.html .output/public
+          cp .output/public/en.html .output/public/index.html
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3
