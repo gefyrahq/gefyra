@@ -5,6 +5,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  pages: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
