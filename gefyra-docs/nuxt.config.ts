@@ -8,9 +8,22 @@ export default defineNuxtConfig({
       standalone: false,
     },
   },
+  ssr: true, // Enable server-side rendering for pre-rendering
+
+  nitro: {
+    prerender: {
+      // Crawl all linked pages
+      crawlLinks: true,
+      // Explicitly add routes
+      routes: ['/sitemap.xml', '/robots.txt'],
+    },
+    preset: 'github_pages',
+  },
 
   i18n: {
     defaultLocale: 'en',
+    baseUrl: 'https://gefyra.dev',
+    strategy: 'prefix_except_default',
     locales: [{
       code: 'en',
       name: 'English',

@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nuxt dev --extends docus",
     "build": "nuxt build --extends docus",
-    "generate": "nuxt generate --preset github_pages --extends docus",
+    "generate": "nuxi generate --preset github_pages --extends docus",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
   },
