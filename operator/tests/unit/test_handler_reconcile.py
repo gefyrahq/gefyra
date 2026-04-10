@@ -15,9 +15,6 @@ logger = logging.getLogger(__name__)
 
 
 def _make_bridge_mount(state="PREPARING", state_transitions=None):
-    from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
-    from gefyra.configuration import OperatorConfiguration
-
     data = {
         "apiVersion": "gefyra.dev/v1",
         "metadata": {

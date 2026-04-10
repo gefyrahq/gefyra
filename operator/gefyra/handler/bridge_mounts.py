@@ -98,11 +98,6 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
     bridge_mount = GefyraBridgeMount(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
-    # Note: the timer drives forward progress for ALL states, including
-    # PREPARING/INSTALLING. Races with the create handler are caught via
-    # TransitionNotAllowed below. A previous version guarded this with a
-    # `completed_transition(ACTIVE)` check which caused mounts that never
-    # reached ACTIVE to get stuck until operator restart.
     logger.info(f"Reconciliation for GefyraBridgeMount: {obj}")
 
     # TERMINATED objects: retry CR deletion, then skip all other logic.
