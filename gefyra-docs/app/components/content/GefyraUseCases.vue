@@ -33,11 +33,11 @@ import { UIcon, UMarquee, UPageSection } from '#components'
       </div>
 
       <div class="md:max-w-1/2 overflow-hidden">
-        <UIcon
-          name="i-gefyra-run"
+        <img
+          src="~/assets/img/run.svg"
           class="run-icon"
           mode="svg"
-        />
+        >
       </div>
     </div>
 
@@ -57,11 +57,11 @@ import { UIcon, UMarquee, UPageSection } from '#components'
       </div>
 
       <div class="md:max-w-1/2 overflow-hidden md:order-1">
-        <UIcon
-          name="i-gefyra-run"
+        <img
+          src="~/assets/img/run.svg"
           class="run-icon"
           mode="svg"
-        />
+        >
       </div>
     </div>
 
