@@ -47,7 +47,7 @@ jobs:
         mv target/release/pyapp ../../gefyra && chmod +x ../../gefyra
         cp ../README.md ../../README.md
     - name: Upload Artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-linux-amd64
         path: |

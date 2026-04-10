@@ -52,7 +52,7 @@ jobs:
         copy README.md ../dist-exe/
         ls ../dist-exe
     - name: Upload Artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-windows-x86_64
         path: |

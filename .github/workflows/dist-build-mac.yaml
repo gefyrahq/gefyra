@@ -78,7 +78,7 @@ jobs:
         
         /usr/bin/codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ./gefyra -v
     - name: Upload Artifact
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: gefyra-${{ env.PYAPP_PROJECT_VERSION }}-darwin-universal
         path: |

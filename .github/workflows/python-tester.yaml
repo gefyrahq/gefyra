@@ -46,7 +46,7 @@ jobs:
         tags: pyserver
         outputs: type=docker,dest=/tmp/pyserver.tar
     - name: Upload pyserver image
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: pyserver
         path: /tmp/pyserver.tar
@@ -100,7 +100,7 @@ jobs:
         outputs: type=docker,dest=/tmp/carrier.tar
         build-args: COMMIT_SHA=${{ github.sha }}
     - name: Upload carrier image
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: carrier
         path: /tmp/carrier.tar
@@ -157,7 +157,7 @@ jobs:
         outputs: type=docker,dest=/tmp/operator.tar
         build-args: COMMIT_SHA=${{ github.sha }}
     - name: Upload operator image
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: operator
         path: /tmp/operator.tar
@@ -209,7 +209,7 @@ jobs:
         cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/cargo.tar
     - name: Upload cargo image
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: cargo
         path: /tmp/cargo.tar
@@ -258,7 +258,7 @@ jobs:
         cache-to: type=gha,mode=max
         outputs: type=docker,dest=/tmp/stowaway.tar
     - name: Upload stowaway image
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@v7
       with:
         name: stowaway
         path: /tmp/stowaway.tar
@@ -353,7 +353,7 @@ jobs:
           COVERALLS_FLAG_NAME: client
           COVERALLS_PARALLEL: true
         run: poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage_data
           path: ./client/.coverage*
@@ -502,7 +502,7 @@ jobs:
           COVERALLS_PARALLEL: true
         run: |
           poetry run coveralls --service=github-actions
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         with:
           name: coverage_data-${{ matrix.os }}
           path: ./client/.coverage*
