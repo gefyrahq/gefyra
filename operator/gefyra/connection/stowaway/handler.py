@@ -174,7 +174,7 @@ async def reconcile_proxyroutes(logger):
                 return
             for key, value in routes.items():
                 stowaway_port = value.split(",")[1]
-                peer = key.split("-")[0]
+                peer = key.rsplit("-", 1)[0]  # client names may contain dashes
                 destination_ip = value.split(",")[0].split(":")[0]
                 destination_port = value.split(",")[0].split(":")[1]
                 for bridge in raw_gefyra_bridges["items"]:

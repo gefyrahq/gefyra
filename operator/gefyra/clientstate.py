@@ -132,13 +132,13 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
         active_transition_time = self.completed_transition(GefyraClient.active.value)
         if active_transition_time is None:
             return False
-        self.logger.info(f"Active transition time: {active_transition_time}")
+        self.logger.debug(f"Active transition time: {active_transition_time}")
         # Calculate time since the active transition
         active_timestamp = datetime.fromisoformat(active_transition_time)
         time_since_active = (
             datetime.now(timezone.utc) - active_timestamp
         ).total_seconds()
-        self.logger.info(f"Time since active: {time_since_active} seconds")
+        self.logger.debug(f"Time since active: {time_since_active} seconds")
         # Return True if the connection has exceeded max_connection_age
         return time_since_active > max_age_seconds
 
