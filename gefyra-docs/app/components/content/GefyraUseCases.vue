@@ -34,7 +34,7 @@ import { UIcon, UMarquee, UPageSection } from '#components'
 
       <div class="md:max-w-1/2 overflow-hidden">
         <img
-          src="~/assets/img/run.svg"
+          src="/img/run.svg"
           class="run-icon"
           mode="svg"
         >
@@ -58,7 +58,7 @@ import { UIcon, UMarquee, UPageSection } from '#components'
 
       <div class="md:max-w-1/2 overflow-hidden md:order-1">
         <img
-          src="~/assets/img/run.svg"
+          src="/img/bridge.svg"
           class="run-icon"
           mode="svg"
         >
