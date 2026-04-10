@@ -30,7 +30,7 @@ jobs:
   post_discord_announcement:
     runs-on: ubuntu-latest
     steps:
-    - uses: Ilshidur/action-discord@0.3.2
+    - uses: Ilshidur/action-discord@0.4.0
       name: Send Discord Release Announcement
       # add random emoji to the message
       env:
