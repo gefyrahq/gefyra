@@ -11,15 +11,21 @@ updates:
       - "SteinRobert"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "pip"
     directory: "/operator"
     assignees:
       - "SteinRobert"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
   - package-ecosystem: "github-actions"
     directory: "/"
     assignees:
       - "SteinRobert"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
