@@ -62,13 +62,23 @@ from gefyra.cli.utils import (
 )
 @click.option(
     "--cpu",
-    help="[Deprecated: use -- --cpu-quota <value> instead] CPU limit for the container (e.g. '500m' or '2')",
+    help=(
+        "[Deprecated: pass docker/podman args after '--' instead, e.g."
+        " `-- --cpu-period 100000 --cpu-quota 50000` for 0.5 CPU. Note: raw"
+        " microseconds, k8s-style notation is not supported by the engine]"
+        " CPU limit for the container (e.g. '500m' or '2')"
+    ),
     type=str,
     required=False,
 )
 @click.option(
     "--memory",
-    help="[Deprecated: use -- --mem-limit <value> instead] Memory limit for the container (e.g. '512Mi', '1Gi', or '1g')",
+    help=(
+        "[Deprecated: pass docker/podman args after '--' instead, e.g."
+        " `-- --memory 512m`. Note: the engine accepts suffixes 'b/k/m/g',"
+        " not k8s-style 'Mi'/'Gi'] Memory limit for the container (e.g."
+        " '512Mi', '1Gi', or '1g')"
+    ),
     type=str,
     required=False,
 )
@@ -194,15 +204,18 @@ def run(
 
     if cpu:
         warnings.warn(
-            "--cpu is deprecated; pass the equivalent docker-py argument instead, "
-            "e.g.: -- --cpu-quota <value>",
+            "--cpu is deprecated; pass docker/podman args after '--' instead, "
+            "e.g. `-- --cpu-period 100000 --cpu-quota 50000` for 0.5 CPU "
+            "(values in microseconds, k8s-style notation is not supported "
+            "by the engine).",
             FutureWarning,
             stacklevel=1,
         )
     if memory:
         warnings.warn(
-            "--memory is deprecated; pass the equivalent docker-py argument instead, "
-            "e.g.: -- --mem-limit <value>",
+            "--memory is deprecated; pass docker/podman args after '--' instead, "
+            "e.g. `-- --memory 512m` (engine accepts suffixes 'b/k/m/g', not "
+            "k8s-style 'Mi'/'Gi').",
             FutureWarning,
             stacklevel=1,
         )
