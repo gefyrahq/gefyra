@@ -157,6 +157,56 @@ class TestBridgeMountHPADuplication:
             )
         assert bm.terminated.is_active
 
+    async def test_reconcile_is_noop_when_source_unchanged(
+        self, gefyra_crd: AClusterManager
+    ):
+        """Re-running the duplication flow without changes to the source must
+        not roll the shadow pods — this protects long-starting workloads
+        (JVM apps etc.) from repeated downtime on every reconciliation."""
+        name = "nginx-deployment"
+        namespace = "default"
+        shadow = name + "-gefyra"
+
+        gefyra_crd.apply(NGINX_FIXTURE)
+        gefyra_crd.wait(
+            "deployment/" + name,
+            "jsonpath='{.status.readyReplicas}'=1",
+            namespace=namespace,
+            timeout=120,
+        )
+
+        bm = _make_bridge_mount(name, namespace)
+        try:
+            await _drive_to_active(bm)
+            assert bm.active.is_active
+
+            shadow_before = gefyra_crd.kubectl(
+                ["-n", namespace, "get", "deploy", shadow, "-o", "json"]
+            )
+            rv_before = shadow_before["metadata"]["resourceVersion"]
+            uid_before = shadow_before["metadata"]["uid"]
+
+            # Trigger another duplication pass; this mimics what every
+            # reconcile tick does when the state machine re-enters PREPARING.
+            await bm.bridge_mount_provider._duplicate_workload()
+
+            shadow_after = gefyra_crd.kubectl(
+                ["-n", namespace, "get", "deploy", shadow, "-o", "json"]
+            )
+            assert shadow_after["metadata"]["uid"] == uid_before
+            assert shadow_after["metadata"]["resourceVersion"] == rv_before, (
+                "resourceVersion changed — the operator re-applied the shadow "
+                "deployment even though the source was unchanged."
+            )
+        finally:
+            await bm.terminate()
+            gefyra_crd.wait(
+                "deployment/" + shadow,
+                "delete",
+                namespace=namespace,
+                timeout=60,
+            )
+
     async def test_mount_without_hpa_succeeds(self, gefyra_crd: AClusterManager):
         """No HPA on the original → mount still reaches ACTIVE, no shadow HPA
         is created, no errors raised."""

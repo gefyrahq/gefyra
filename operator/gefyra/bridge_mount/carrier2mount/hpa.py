@@ -105,6 +105,21 @@ def clone_hpa_for_shadow(
     return new_hpa
 
 
+def read_duplicated_hpa(
+    namespace: str, name: str
+) -> Optional[V2HorizontalPodAutoscaler]:
+    """Return the duplicated HPA if present, None on 404. Other errors bubble
+    up so the caller can decide how to handle them."""
+    try:
+        return _autoscaling_api().read_namespaced_horizontal_pod_autoscaler(
+            name=name, namespace=namespace
+        )
+    except ApiException as e:
+        if e.status == 404:
+            return None
+        raise
+
+
 def apply_cloned_hpa(namespace: str, cloned_hpa: V2HorizontalPodAutoscaler) -> None:
     api = _autoscaling_api()
     try:

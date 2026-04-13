@@ -27,12 +27,20 @@ from gefyra.bridge_mount.carrier2mount.hpa import (
     clone_hpa_for_shadow,
     delete_duplicated_hpa,
     find_hpa_for_target,
+    read_duplicated_hpa,
+)
+from gefyra.bridge_mount.carrier2mount.source_hash import (
+    SOURCE_HPA_HASH_ANNOTATION,
+    SOURCE_WORKLOAD_HASH_ANNOTATION,
+    hash_hpa_source,
+    hash_workload_source,
 )
 from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
+    generate_duplicate_hpa_name,
     generate_duplicate_workload_name,
     generate_duplicate_svc_name,
     generate_k8s_conform_name,
@@ -195,7 +203,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         return name, type_
 
     def _clone_workload_structure(
-        self, workload: V1Deployment | V1StatefulSet | V1Pod
+        self,
+        workload: V1Deployment | V1StatefulSet | V1Pod,
+        duplication_id: str | None = None,
     ) -> V1Deployment | V1StatefulSet | V1Pod:
         new_workload = deepcopy(workload)
 
@@ -209,7 +219,10 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             workload.metadata.name
         )
 
-        duplication_id = str(uuid.uuid4())
+        # Reuse an existing duplication-id when re-reconciling an existing
+        # shadow, so the service selector (pinned to that id) keeps matching
+        # pods across re-applies.
+        duplication_id = duplication_id or str(uuid.uuid4())
         self._duplication_id = duplication_id
         if isinstance(workload, (V1Deployment, V1StatefulSet)):
             pod_labels = self._get_duplication_labels(
@@ -232,6 +245,18 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             new_workload.metadata.annotations or {}
         )
         return new_workload
+
+    @staticmethod
+    def _extract_duplication_id(
+        shadow: V1Deployment | V1StatefulSet | V1Pod,
+    ) -> str | None:
+        if isinstance(shadow, (V1Deployment, V1StatefulSet)):
+            template = shadow.spec.template if shadow.spec else None
+            meta = template.metadata if template else None
+            labels = (meta.labels if meta else None) or {}
+        else:
+            labels = (shadow.metadata.labels if shadow.metadata else None) or {}
+        return labels.get(DUPLICATION_ID_LABEL)
 
     def _get_svc_for_workload(
         self, workload: V1Deployment | V1StatefulSet | V1Pod
@@ -262,37 +287,99 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             ),
         )
 
+    async def _read_existing_shadow(
+        self,
+    ) -> V1Deployment | V1StatefulSet | V1Pod | None:
+        """Return the currently deployed shadow workload, or None if it does
+        not exist yet. Any other API error bubbles up."""
+        _, type_ = self._split_target_type_name(self.target)
+        try:
+            return await asyncio.to_thread(
+                self._read_namespaced_(type_),
+                self._gefyra_workload_name,
+                self.namespace,
+            )
+        except ApiException as e:
+            if e.status == 404:
+                return None
+            raise
+
     async def _duplicate_workload(self) -> None:
         workload = await self._get_workload(self.target, self.namespace)
+        source_hash = hash_workload_source(workload)
 
-        # Create a copy of the workload
+        existing_shadow = await self._read_existing_shadow()
+        if existing_shadow is not None:
+            # Remember the existing duplication-id up front, so downstream
+            # cleanup paths (HPA, service) can always resolve it even if we
+            # take the skip branch below.
+            existing_duplication_id = self._extract_duplication_id(existing_shadow)
+            if existing_duplication_id:
+                self._duplication_id = existing_duplication_id
 
-        new_workload = self._clone_workload_structure(workload)
+            existing_annotations = existing_shadow.metadata.annotations or {}
+            if existing_annotations.get(SOURCE_WORKLOAD_HASH_ANNOTATION) == source_hash:
+                self.logger.info(
+                    f"Source workload '{workload.metadata.name}' unchanged "
+                    f"(hash {source_hash[:12]}); keeping shadow "
+                    f"'{self._gefyra_workload_name}' in place."
+                )
+                # HPA may still need syncing (its own hash check is idempotent).
+                await self._duplicate_hpa_if_present()
+                return
+
+        # Build the shadow spec. Reuse the existing duplication-id (if any)
+        # so the service selector continues to match running pods.
+        new_workload = self._clone_workload_structure(
+            workload, duplication_id=self._duplication_id
+        )
+        new_workload.metadata.annotations = {
+            **(new_workload.metadata.annotations or {}),
+            SOURCE_WORKLOAD_HASH_ANNOTATION: source_hash,
+        }
         new_svc = self._get_svc_for_workload(new_workload)
 
-        # Create the new workload
-        try:
+        if existing_shadow is None:
+            try:
+                await asyncio.to_thread(
+                    self._create_namespaced_(workload.__class__),
+                    self.namespace,
+                    new_workload,
+                )
+                await self.post_event(
+                    "Cluster upstream",
+                    f"Created cluster upstream '{new_workload.metadata.name}' "
+                    f"for target workload '{workload.metadata.name}' in namespace '{self.namespace}'.",
+                    "Normal",
+                )
+            except ApiException as e:
+                if e.status == 409:
+                    # Lost a race: another reconciliation created the shadow.
+                    # Fall through to the patch path on the next tick.
+                    self.logger.info(
+                        f"Shadow workload '{new_workload.metadata.name}' was "
+                        f"created concurrently; will reconcile next tick."
+                    )
+                    return
+                raise BridgeInstallException(f"Exception when creating workload: {e}")
+        else:
+            # Patch path: the shadow's replica count is owned by the
+            # duplicated HPA (see GO-1030); do not reset it here.
+            if hasattr(new_workload.spec, "replicas"):
+                new_workload.spec.replicas = None
             await asyncio.to_thread(
-                self._create_namespaced_(workload.__class__),
-                self.namespace,
-                new_workload,
+                self._patch_namespaced_(workload.__class__),
+                name=new_workload.metadata.name,
+                namespace=self.namespace,
+                body=new_workload,
             )
             await self.post_event(
                 "Cluster upstream",
-                f"Created cluster upstream '{new_workload.metadata.name}' "
-                f"for target workload '{workload.metadata.name}' in namespace '{self.namespace}'.",
+                f"Re-applied cluster upstream '{new_workload.metadata.name}' "
+                f"after source workload change (hash {source_hash[:12]}).",
                 "Normal",
             )
-        except ApiException as e:
-            if e.status == 409:
-                await asyncio.to_thread(
-                    self._patch_namespaced_(workload.__class__),
-                    name=new_workload.metadata.name,
-                    namespace=self.namespace,
-                    body=new_workload,
-                )
-            else:
-                raise BridgeInstallException(f"Exception when creating workload: {e}")
+
         try:
             await asyncio.to_thread(
                 core_v1_api.create_namespaced_service,
@@ -326,11 +413,20 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             return "StatefulSet"
         return None
 
+    async def _read_existing_shadow_hpa(self, name: str):
+        return await asyncio.to_thread(
+            read_duplicated_hpa, self.namespace, name
+        )
+
     async def _duplicate_hpa_if_present(self) -> None:
         """Discover an HPA on the original workload and duplicate it onto the
         shadow workload. Optional feature: failures are logged but never raise,
         so HPA-less workloads and clusters without RBAC for autoscaling/v2
-        keep working as before."""
+        keep working as before.
+
+        Idempotent: if the duplicated HPA already exists and its source-hash
+        annotation matches the original, the call is a no-op — no write to the
+        apiserver, no perturbation of shadow scaling decisions."""
         target_kind = self._hpa_target_kind()
         if target_kind is None:
             # Pods aren't HPA targets.
@@ -352,6 +448,23 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 return
 
             self._original_hpa_name = original_hpa.metadata.name
+            source_hash = hash_hpa_source(original_hpa)
+
+            duplicated_name = generate_duplicate_hpa_name(
+                original_hpa.metadata.name
+            )
+            existing = await self._read_existing_shadow_hpa(duplicated_name)
+            if existing is not None:
+                existing_hash = (existing.metadata.annotations or {}).get(
+                    SOURCE_HPA_HASH_ANNOTATION
+                )
+                if existing_hash == source_hash:
+                    self.logger.info(
+                        f"HPA '{original_hpa.metadata.name}' unchanged "
+                        f"(hash {source_hash[:12]}); keeping duplicated "
+                        f"HPA '{duplicated_name}' in place."
+                    )
+                    return
 
             duplication_labels = self._get_duplication_labels(
                 original_hpa.metadata.labels or {}
@@ -364,10 +477,15 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 shadow_workload_name=self._gefyra_workload_name,
                 duplication_labels=duplication_labels,
             )
+            cloned.metadata.annotations = {
+                **(cloned.metadata.annotations or {}),
+                SOURCE_HPA_HASH_ANNOTATION: source_hash,
+            }
             await asyncio.to_thread(apply_cloned_hpa, self.namespace, cloned)
+            verb = "Updated" if existing is not None else "Duplicated"
             await self.post_event(
                 "Cluster upstream HPA",
-                f"Duplicated HPA '{original_hpa.metadata.name}' as "
+                f"{verb} HPA '{original_hpa.metadata.name}' as "
                 f"'{cloned.metadata.name}' targeting shadow workload "
                 f"'{self._gefyra_workload_name}' in namespace "
                 f"'{self.namespace}'.",
@@ -389,22 +507,12 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         if self._duplication_id:
             return self._duplication_id
         try:
-            shadow = await asyncio.to_thread(
-                self._read_namespaced_(self._split_target_type_name(self.target)[1]),
-                self._gefyra_workload_name,
-                self.namespace,
-            )
+            shadow = await self._read_existing_shadow()
         except ApiException:
             return None
-        if isinstance(shadow, (V1Deployment, V1StatefulSet)):
-            labels = (
-                shadow.spec.template.metadata.labels
-                if shadow.spec.template and shadow.spec.template.metadata
-                else None
-            ) or {}
-        else:
-            labels = (shadow.metadata.labels if shadow.metadata else None) or {}
-        duplication_id = labels.get(DUPLICATION_ID_LABEL)
+        if shadow is None:
+            return None
+        duplication_id = self._extract_duplication_id(shadow)
         if duplication_id:
             self._duplication_id = duplication_id
         return duplication_id

@@ -2,6 +2,7 @@ import json
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import AsyncMock, DEFAULT, patch
 
+import kubernetes as k8s
 from kubernetes.client import V1Deployment, V1Probe
 
 import logging
@@ -118,6 +119,7 @@ class TestBridgeMountSync(TestCase):
 
 
 class TestBridgeMountObject(IsolatedAsyncioTestCase):
+    @patch("gefyra.bridge_mount.carrier2mount.hpa._autoscaling_api")
     @patch.multiple(
         "gefyra.bridge_mount.carrier2mount",
         app=DEFAULT,
@@ -125,17 +127,29 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         custom_object_api=DEFAULT,
     )
     async def test_carrier_patch(
-        self, app, core_v1_api, custom_object_api
-    ):  # Made async
+        self, autoscaling_api, app, core_v1_api, custom_object_api
+    ):
+        from kubernetes.client import ApiException as _ApiExc
+
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
+        def _read_deployment(name, namespace):
+            if name == "nginx":
+                return NginxDeploymentFactory()
+            # Shadow does not exist yet on first prepare().
+            raise _ApiExc(status=404)
+
+        app.read_namespaced_deployment.side_effect = _read_deployment
         pod = NginxPodFactory()
         core_v1_api.read_namespaced_pod_status.return_value = pod
         core_v1_api.list_namespaced_pod.return_value = V1PodListFactory(items=[pod])
         custom_object_api.get_namespaced_custom_object.return_value = {
             "target": "nginx-deployment",
         }
+        # No HPA on the source.
+        autoscaling_api.return_value.list_namespaced_horizontal_pod_autoscaler.return_value.items = (
+            []
+        )
 
         mount = Carrier2BridgeMount(
             name="test",
@@ -146,9 +160,19 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
             post_event_function=post_event_noop,
             logger=logger,
         )
-        await mount.prepare()  # Await
-        app.read_namespaced_deployment.assert_called_once()
+        await mount.prepare()
+        # One read for the source, one for the (missing) shadow.
+        self.assertEqual(app.read_namespaced_deployment.call_count, 2)
         app.create_namespaced_deployment.assert_called_once()
+        # Hash annotation is persisted on the created shadow.
+        create_body = app.create_namespaced_deployment.call_args[0][1]
+        from gefyra.bridge_mount.carrier2mount.source_hash import (
+            SOURCE_WORKLOAD_HASH_ANNOTATION,
+        )
+
+        self.assertIn(
+            SOURCE_WORKLOAD_HASH_ANNOTATION, create_body.metadata.annotations
+        )
 
         app.reset_mock()
 
@@ -189,34 +213,44 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
             "kubectl.kubernetes.io/restartedAt"
         ]
 
+    @patch("gefyra.bridge_mount.carrier2mount.hpa._autoscaling_api")
     @patch.multiple(
         "gefyra.bridge_mount.carrier2mount",
         app=DEFAULT,
         core_v1_api=DEFAULT,
         custom_object_api=DEFAULT,
     )
-    async def test_duplicate_already_exists_patches(  # Made async
-        self, app, core_v1_api, custom_object_api
+    async def test_existing_shadow_without_hash_patches(
+        self, autoscaling_api, app, core_v1_api, custom_object_api
     ):
+        """When an existing shadow is found but carries no source-hash
+        annotation (legacy/foreign), the provider must patch it to catch up."""
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
+        source = NginxDeploymentFactory()
+        legacy_shadow = NginxDeploymentFactory()
+        legacy_shadow.metadata.name = "nginx-gefyra"
+        # Simulate a pre-existing shadow without the new hash annotation.
+        legacy_shadow.metadata.annotations = None
+
+        def _read_deployment(name, namespace):
+            return source if name == "nginx" else legacy_shadow
+
+        app.read_namespaced_deployment.side_effect = _read_deployment
         pod = NginxPodFactory()
         core_v1_api.read_namespaced_pod_status.return_value = pod
         core_v1_api.list_namespaced_pod.return_value = V1PodListFactory(items=[pod])
         custom_object_api.get_namespaced_custom_object.return_value = {
             "target": "nginx-deployment",
         }
-        from gefyra.bridge_mount import carrier2mount as duplicate_mod
+        from kubernetes.client import ApiException as _ApiExc
 
-        app.create_namespaced_deployment.side_effect = duplicate_mod.ApiException(
-            status=409
-        )
         app.patch_namespaced_deployment.return_value = True
-        core_v1_api.create_namespaced_service.side_effect = duplicate_mod.ApiException(
-            status=409
-        )
+        core_v1_api.create_namespaced_service.side_effect = _ApiExc(status=409)
         core_v1_api.patch_namespaced_service.return_value = True
+        autoscaling_api.return_value.list_namespaced_horizontal_pod_autoscaler.return_value.items = (
+            []
+        )
 
         mount = Carrier2BridgeMount(
             name="test",
@@ -227,9 +261,66 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
             post_event_function=post_event_noop,
             logger=logger,
         )
-        await mount.prepare()  # Await
+        await mount.prepare()
         app.patch_namespaced_deployment.assert_called_once()
+        # Replicas must not be overwritten on the patch — the shadow HPA owns it.
+        patch_body = app.patch_namespaced_deployment.call_args[1]["body"]
+        self.assertIsNone(patch_body.spec.replicas)
         core_v1_api.patch_namespaced_service.assert_called_once()
+        app.create_namespaced_deployment.assert_not_called()
+
+    @patch("gefyra.bridge_mount.carrier2mount.hpa._autoscaling_api")
+    @patch.multiple(
+        "gefyra.bridge_mount.carrier2mount",
+        app=DEFAULT,
+        core_v1_api=DEFAULT,
+        custom_object_api=DEFAULT,
+    )
+    async def test_matching_source_hash_is_noop(
+        self, autoscaling_api, app, core_v1_api, custom_object_api
+    ):
+        """If the shadow already has the same source-hash annotation as the
+        current source, no apiserver write for the workload must happen."""
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+        from gefyra.bridge_mount.carrier2mount.source_hash import (
+            SOURCE_WORKLOAD_HASH_ANNOTATION,
+            hash_workload_source,
+        )
+
+        source = NginxDeploymentFactory()
+        current_hash = hash_workload_source(source)
+
+        cached_shadow = NginxDeploymentFactory()
+        cached_shadow.metadata.name = "nginx-gefyra"
+        cached_shadow.metadata.annotations = {
+            SOURCE_WORKLOAD_HASH_ANNOTATION: current_hash,
+        }
+
+        def _read_deployment(name, namespace):
+            return source if name == "nginx" else cached_shadow
+
+        app.read_namespaced_deployment.side_effect = _read_deployment
+        custom_object_api.get_namespaced_custom_object.return_value = {
+            "target": "nginx-deployment",
+        }
+        autoscaling_api.return_value.list_namespaced_horizontal_pod_autoscaler.return_value.items = (
+            []
+        )
+
+        mount = Carrier2BridgeMount(
+            name="test",
+            configuration=OperatorConfiguration(),
+            target_namespace="default",
+            target="deploy/nginx",
+            target_container="nginx",
+            post_event_function=post_event_noop,
+            logger=logger,
+        )
+        await mount.prepare()
+        app.create_namespaced_deployment.assert_not_called()
+        app.patch_namespaced_deployment.assert_not_called()
+        core_v1_api.create_namespaced_service.assert_not_called()
+        core_v1_api.patch_namespaced_service.assert_not_called()
 
     @patch.multiple(
         "gefyra.bridge_mount.carrier2mount",
