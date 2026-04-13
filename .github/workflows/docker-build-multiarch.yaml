@@ -37,7 +37,7 @@ jobs:
       #
       - name: Operator Image meta
         id: operator_meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           flavor: |
             latest=false
@@ -62,7 +62,7 @@ jobs:
       # Gefyra Cargo
       #
       - name: Cargo Image meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         id: cargo_meta
         with:
           flavor: |
@@ -84,7 +84,7 @@ jobs:
           tags: ${{ steps.cargo_meta.outputs.tags }}
       
       - name: Cargo Windows Image meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         id: cargo_win_meta
         with:
           flavor: |
@@ -108,7 +108,7 @@ jobs:
       # Gefyra Carrier2
       #
       - name: Carrier2 Image meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         id: carrier2_meta
         with:
           flavor: |
@@ -133,7 +133,7 @@ jobs:
       # Gefyra Stowaway
       #
       - name: Stowaway Image meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         id: stowaway_meta
         with:
           flavor: |

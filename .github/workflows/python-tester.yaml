@@ -22,7 +22,7 @@ jobs:
 
     - name: PyServer Test Image meta
       id: test_image_meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         flavor: |
           latest=false
@@ -73,7 +73,7 @@ jobs:
         password: ${{ secrets.QUAY_ROBOT_TOKEN }}
     - name: Carrier2 Image meta
       id: carrier2_meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         flavor: |
           latest=false
@@ -130,7 +130,7 @@ jobs:
     #
     - name: Operator Image meta
       id: operator_meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         flavor: |
           latest=false
@@ -183,7 +183,7 @@ jobs:
     #
     - name: Cargo Image meta
       id: cargo_meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         flavor: |
           latest=false
@@ -233,7 +233,7 @@ jobs:
     #
     - name: Stowaway Image meta
       id: stowaway_meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@v6
       with:
         flavor: |
           latest=false
