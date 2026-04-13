@@ -2,7 +2,6 @@ import json
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import AsyncMock, DEFAULT, patch
 
-import kubernetes as k8s
 from kubernetes.client import V1Deployment, V1Probe
 
 import logging
