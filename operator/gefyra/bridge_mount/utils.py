@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 import kubernetes as k8s
 from kubernetes.client import (
     V1Deployment,
@@ -10,7 +10,8 @@ from kubernetes.client import (
     V1Probe,
 )
 
-from gefyra.bridge.carrier2.config import CarrierTLS
+if TYPE_CHECKING:
+    from gefyra.bridge.carrier2.config import CarrierTLS
 
 core_v1_api = k8s.client.CoreV1Api()
 
@@ -46,6 +47,11 @@ def generate_duplicate_workload_name(workload_name: str):
     return generate_k8s_conform_name(workload_name, suffix)
 
 
+def generate_duplicate_hpa_name(hpa_name: str) -> str:
+    suffix = "-gefyra"
+    return generate_k8s_conform_name(hpa_name, suffix)
+
+
 def get_duplicate_svc_fqdn(
     workload_name: str, container_name: str, namespace: str
 ) -> str:
@@ -75,7 +81,9 @@ def get_ports_for_workload(
 
 def _get_tls_from_provider_parameters(
     params: dict, rport: int | None = None
-) -> CarrierTLS | None:
+) -> "CarrierTLS | None":
+    from gefyra.bridge.carrier2.config import CarrierTLS
+
     if rport and str(rport) in params and "tls" in params[str(rport)]:
         return CarrierTLS(
             certificate=params[str(rport)]["tls"]["certificate"],

@@ -21,6 +21,13 @@ from kubernetes.client import (
 import asyncio  # Added asyncio import
 
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
+from gefyra.bridge_mount.carrier2mount.hpa import (
+    DUPLICATION_ID_LABEL,
+    apply_cloned_hpa,
+    clone_hpa_for_shadow,
+    delete_duplicated_hpa,
+    find_hpa_for_target,
+)
 from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
@@ -71,6 +78,8 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         self.post_event = post_event_function
         self.logger = logger
         self.params = kwargs.get("parameter", {})
+        self._duplication_id: str | None = None
+        self._original_hpa_name: str | None = None
 
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
         duplication_labels = {}
@@ -200,12 +209,14 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             workload.metadata.name
         )
 
+        duplication_id = str(uuid.uuid4())
+        self._duplication_id = duplication_id
         if isinstance(workload, (V1Deployment, V1StatefulSet)):
             pod_labels = self._get_duplication_labels(
                 new_workload.spec.template.metadata.labels or {}
             )
             # we use this for svc selector
-            pod_labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
+            pod_labels[DUPLICATION_ID_LABEL] = duplication_id
             new_workload.spec.template.metadata.labels = pod_labels
 
             match_labels = self._get_duplication_labels(
@@ -214,7 +225,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             new_workload.spec.selector.match_labels = match_labels
         else:
             # we use this for svc selector
-            labels["bridge.gefyra.dev/duplication-id"] = str(uuid.uuid4())
+            labels[DUPLICATION_ID_LABEL] = duplication_id
             new_workload.metadata.labels = labels
 
         new_workload.metadata.annotations = self._clean_annotations(
@@ -228,15 +239,13 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         name, _ = self._split_target_type_name(self.target)
         if isinstance(workload, (V1Deployment, V1StatefulSet)):
             selector_ = {
-                "bridge.gefyra.dev/duplication-id": workload.spec.template.metadata.labels[
-                    "bridge.gefyra.dev/duplication-id"
+                DUPLICATION_ID_LABEL: workload.spec.template.metadata.labels[
+                    DUPLICATION_ID_LABEL
                 ]
             }
         else:
             selector_ = {
-                "bridge.gefyra.dev/duplication-id": workload.metadata.labels[
-                    "bridge.gefyra.dev/duplication-id"
-                ]
+                DUPLICATION_ID_LABEL: workload.metadata.labels[DUPLICATION_ID_LABEL]
             }
         return V1Service(
             metadata=V1ObjectMeta(
@@ -306,6 +315,118 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 )
             else:
                 raise BridgeInstallException(f"Exception when creating service: {e}")
+
+        await self._duplicate_hpa_if_present()
+
+    def _hpa_target_kind(self) -> str | None:
+        _, type_ = self._split_target_type_name(self.target)
+        if type_ is V1Deployment:
+            return "Deployment"
+        if type_ is V1StatefulSet:
+            return "StatefulSet"
+        return None
+
+    async def _duplicate_hpa_if_present(self) -> None:
+        """Discover an HPA on the original workload and duplicate it onto the
+        shadow workload. Optional feature: failures are logged but never raise,
+        so HPA-less workloads and clusters without RBAC for autoscaling/v2
+        keep working as before."""
+        target_kind = self._hpa_target_kind()
+        if target_kind is None:
+            # Pods aren't HPA targets.
+            return
+        target_name, _ = self._split_target_type_name(self.target)
+        try:
+            original_hpa = await asyncio.to_thread(
+                find_hpa_for_target,
+                self.namespace,
+                target_kind,
+                target_name,
+                self.logger,
+            )
+            if original_hpa is None:
+                self.logger.info(
+                    f"No HPA found for {target_kind}/{target_name} in "
+                    f"namespace '{self.namespace}'. Skipping HPA duplication."
+                )
+                return
+
+            self._original_hpa_name = original_hpa.metadata.name
+
+            duplication_labels = self._get_duplication_labels(
+                original_hpa.metadata.labels or {}
+            )
+            if self._duplication_id:
+                duplication_labels[DUPLICATION_ID_LABEL] = self._duplication_id
+
+            cloned = clone_hpa_for_shadow(
+                original_hpa=original_hpa,
+                shadow_workload_name=self._gefyra_workload_name,
+                duplication_labels=duplication_labels,
+            )
+            await asyncio.to_thread(apply_cloned_hpa, self.namespace, cloned)
+            await self.post_event(
+                "Cluster upstream HPA",
+                f"Duplicated HPA '{original_hpa.metadata.name}' as "
+                f"'{cloned.metadata.name}' targeting shadow workload "
+                f"'{self._gefyra_workload_name}' in namespace "
+                f"'{self.namespace}'.",
+                "Normal",
+            )
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to duplicate HPA for {target_kind}/{target_name} "
+                f"in namespace '{self.namespace}': {e}. The shadow workload "
+                f"will not auto-scale."
+            )
+            await self.post_event(
+                "Cluster upstream HPA",
+                f"Failed to duplicate HPA for {target_kind}/{target_name}: {e}",
+                "Warning",
+            )
+
+    async def _resolve_duplication_id(self) -> str | None:
+        if self._duplication_id:
+            return self._duplication_id
+        try:
+            shadow = await asyncio.to_thread(
+                self._read_namespaced_(self._split_target_type_name(self.target)[1]),
+                self._gefyra_workload_name,
+                self.namespace,
+            )
+        except ApiException:
+            return None
+        if isinstance(shadow, (V1Deployment, V1StatefulSet)):
+            labels = (
+                shadow.spec.template.metadata.labels
+                if shadow.spec.template and shadow.spec.template.metadata
+                else None
+            ) or {}
+        else:
+            labels = (shadow.metadata.labels if shadow.metadata else None) or {}
+        duplication_id = labels.get(DUPLICATION_ID_LABEL)
+        if duplication_id:
+            self._duplication_id = duplication_id
+        return duplication_id
+
+    async def _uninstall_duplicated_hpa(self) -> None:
+        if self._hpa_target_kind() is None:
+            return
+        try:
+            duplication_id = await self._resolve_duplication_id()
+            await asyncio.to_thread(
+                delete_duplicated_hpa,
+                self.namespace,
+                self._original_hpa_name,
+                duplication_id,
+                self.logger,
+            )
+        except Exception as e:
+            # A dangling HPA can be cleaned up manually; never block restore.
+            self.logger.error(
+                f"Failed to clean up duplicated HPA for {self.name} "
+                f"in namespace '{self.namespace}': {e}"
+            )
 
     async def _get_workload(
         self, target: str, namespace: str
@@ -649,36 +770,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             )
         return new_workload
 
-    async def _scale_shadow_to_match(self, target_replicas: int) -> None:
-        """Scale the shadow deployment to match the original's replica count."""
-        _, type_ = self._split_target_type_name(self.target)
-        if type_ not in (V1Deployment, V1StatefulSet):
-            return
-        patch_fn = self._patch_namespaced_(type_)
-        body = {"spec": {"replicas": target_replicas}}
-        await asyncio.to_thread(
-            patch_fn,
-            name=self._gefyra_workload_name,
-            namespace=self.namespace,
-            body=body,
-        )
-        self.logger.info(
-            f"Scaled shadow workload '{self._gefyra_workload_name}' "
-            f"to {target_replicas} replicas to match original."
-        )
-
     async def prepared(self):
-        gefyra_pods = await self._gefyra_pods
-        original_pods = await self._original_pods
-        if len(gefyra_pods.items) != len(original_pods.items):
-            self.logger.info(
-                f"Replica count mismatch: original={len(original_pods.items)}, "
-                f"gefyra={len(gefyra_pods.items)}. "
-                f"Scaling shadow to match."
-            )
-            await self._scale_shadow_to_match(len(original_pods.items))
-            return False
-
         pods_ready = await self._duplicated_pods_ready
         if not pods_ready:
             self.logger.info(
@@ -693,21 +785,15 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             and await self._original_pods_ready
             and await self._upstream_set
         )
-        gefyra_pod_len = len((await self._gefyra_pods).items)
-        original_pod_len = len((await self._original_pods).items)
-        same_amount = gefyra_pod_len == original_pod_len
         if not ready:
             self.logger.info(
                 "GefyraBridgeMount is not ready yet: "
                 f"duplicated pods ready: {await self._duplicated_pods_ready}, "
                 f"carrier installed: {await self._carrier_installed}, "
                 f"original pods ready: {await self._original_pods_ready}, "
-                f"upstream set: {await self._upstream_set},"
-                f"original pod count: {original_pod_len}, "
-                f"Gefyra pod count: {gefyra_pod_len}"
+                f"upstream set: {await self._upstream_set}"
             )
-        # consider down scaling & up scaling
-        return ready and same_amount
+        return ready
 
     async def validate(self, bridge_request, hints):
         required_fields = ["target", "targetNamespace", "targetContainer"]
@@ -880,6 +966,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     async def uninstall(self):
         await self.uninstall_duplicated_workload()
         await self.uninstall_service()
+        await self._uninstall_duplicated_hpa()
         try:
             await self.restore_original_workload()
         except Exception as e:

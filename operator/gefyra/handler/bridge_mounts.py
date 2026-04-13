@@ -25,7 +25,7 @@ async def bridge_mount_created(body, logger, **kwargs):
         if bridge_mount.installing.is_active:
             if not await bridge_mount.bridge_mount_provider.prepared():
                 raise kopf.TemporaryError(
-                    "Shadow replica count syncing with original", delay=10
+                    "Shadow pods not ready yet", delay=10
                 )
             elif await bridge_mount.bridge_mount_provider.ready():
                 await bridge_mount.activate()
@@ -153,7 +153,7 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                 ):
                     if not await bridge_mount.bridge_mount_provider.prepared():
                         logger.info(
-                            "Shadow replica count syncing with original. "
+                            "Shadow pods not ready yet. "
                             "Will retry on next reconciliation."
                         )
                     else:

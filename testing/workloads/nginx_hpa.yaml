@@ -1,0 +1,100 @@
+# Manual test bundle for GO-1030 (HPA duplication for shadow deployments).
+#
+# Apply this manifest to a cluster that already has the Gefyra operator
+# running (e.g. via `gefyra up`). The operator will then duplicate the HPA
+# onto the shadow workload.
+#
+#   kubectl apply -f testing/workloads/nginx_hpa.yaml
+#
+# Verify (after a few seconds):
+#   kubectl get hpa
+#     NAME                          REFERENCE                          MINPODS   MAXPODS
+#     nginx-deployment-hpa          Deployment/nginx-deployment        1         5
+#     nginx-deployment-hpa-gefyra   Deployment/nginx-deployment-gefyra 1         5
+#   kubectl get deploy
+#     nginx-deployment           1/1   running carrier2 (lightweight)
+#     nginx-deployment-gefyra    1/1   running real workload (HPA-managed)
+#
+# Generate CPU load against the shadow service to see independent scaling:
+#   SHADOW_SVC=$(kubectl get svc -l bridge.gefyra.dev/duplication-id -o jsonpath='{.items[0].metadata.name}')
+#   kubectl run loadgen --rm -it --image=busybox --restart=Never -- \
+#     /bin/sh -c "while true; do wget -q -O- http://$SHADOW_SVC; done"
+#
+# Cleanup:
+#   kubectl delete -f testing/workloads/nginx_hpa.yaml
+#   # The duplicated HPA must disappear, the original HPA stays gone too
+#   # (deleted by this manifest). The shadow deployment is removed by the
+#   # operator when the GefyraBridgeMount is deleted.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: default
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: default
+spec:
+  selector:
+    app: nginx
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: nginx-deployment-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nginx-deployment
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+---
+apiVersion: gefyra.dev/v1
+kind: gefyrabridgemount
+metadata:
+  name: nginx-hpa-mount
+  namespace: gefyra
+provider: carrier2mount
+targetNamespace: default
+target: deploy/nginx-deployment
+targetContainer: nginx

@@ -286,24 +286,24 @@ class TestBridgeMountRestoreFromInstalling(IsolatedAsyncioTestCase):
             await bm.send("restore")
 
 
-class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
-    """Test that HPA scaling triggers shadow scaling instead of restore loops."""
+class TestBridgeMountReplicaSyncRemoved(IsolatedAsyncioTestCase):
+    """After GO-1030, the operator no longer follows the original deployment's
+    replica count. The duplicated HPA owns the shadow's scaling decisions, so
+    prepared()/ready() must not react to replica mismatches."""
 
-    async def test_replica_mismatch_scales_shadow_from_installing(self):
-        """Simulate HPA downscale: original has 1 pod, shadow still has 2.
+    def test_scale_shadow_to_match_helper_is_gone(self):
+        from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
-        prepared() should scale the shadow to match and return False so the
-        handler retries after pods have converged.
-        """
+        assert not hasattr(Carrier2BridgeMount, "_scale_shadow_to_match")
+
+    async def test_prepared_ignores_replica_mismatch(self):
+        """Original has 1 pod, shadow has 2 ready pods. prepared() returns True
+        and no scaling helper is invoked."""
         from tests.factories import NginxPodFactory, V1PodListFactory
 
-        # Original workload: HPA scaled down to 1 pod
         original_pods = V1PodListFactory(
-            items=[
-                NginxPodFactory(metadata__name="nginx-original-1"),
-            ]
+            items=[NginxPodFactory(metadata__name="nginx-original-1")]
         )
-        # Shadow workload: still has 2 pods from before HPA
         gefyra_pods = V1PodListFactory(
             items=[
                 NginxPodFactory(metadata__name="nginx-gefyra-1"),
@@ -313,73 +313,88 @@ class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
 
         bm = _make_bridge_mount(state="INSTALLING")
         provider = bm.bridge_mount_provider
-
         original_target = "deploy/nginx"
 
         async def mock_get_pods(name, namespace):
             if name == original_target:
                 return original_pods
             return gefyra_pods
-
-        provider.get_pods_workload = mock_get_pods
-        provider._scale_shadow_to_match = AsyncMock()
-
-        is_prepared = await provider.prepared()
-        assert is_prepared is False
-        provider._scale_shadow_to_match.assert_awaited_once_with(1)
-
-    async def test_replica_mismatch_scales_shadow_from_preparing(self):
-        """Same scenario but starting from PREPARING state."""
-        from tests.factories import NginxPodFactory, V1PodListFactory
-
-        original_pods = V1PodListFactory(
-            items=[
-                NginxPodFactory(metadata__name="nginx-original-1"),
-            ]
-        )
-        gefyra_pods = V1PodListFactory(
-            items=[
-                NginxPodFactory(metadata__name="nginx-gefyra-1"),
-                NginxPodFactory(metadata__name="nginx-gefyra-2"),
-            ]
-        )
-
-        bm = _make_bridge_mount(state="PREPARING")
-        provider = bm.bridge_mount_provider
-
-        original_target = "deploy/nginx"
-
-        async def mock_get_pods(name, namespace):
-            if name == original_target:
-                return original_pods
-            return gefyra_pods
-
-        provider.get_pods_workload = mock_get_pods
-        provider._scale_shadow_to_match = AsyncMock()
-
-        is_prepared = await provider.prepared()
-        assert is_prepared is False
-        provider._scale_shadow_to_match.assert_awaited_once_with(1)
-
-    async def test_matching_replicas_prepared_returns_true(self):
-        """When pod counts match and pods are ready, prepared() returns True."""
-        from tests.factories import NginxPodFactory, V1PodListFactory
-
-        pod = NginxPodFactory(metadata__name="nginx-1")
-        pod_list = V1PodListFactory(items=[pod])
-
-        bm = _make_bridge_mount(state="INSTALLING")
-        provider = bm.bridge_mount_provider
-
-        async def mock_get_pods(name, namespace):
-            return pod_list
-
-        provider.get_pods_workload = mock_get_pods
 
         async def mock_healthy(pod, container_name):
             return True
 
+        provider.get_pods_workload = mock_get_pods
         provider.pod_ready_and_healthy = mock_healthy
 
         result = await provider.prepared()
         assert result is True
+
+    async def test_prepared_returns_false_when_shadow_pods_not_ready(self):
+        from tests.factories import NginxPodFactory, V1PodListFactory
+
+        gefyra_pods = V1PodListFactory(
+            items=[NginxPodFactory(metadata__name="nginx-gefyra-1")]
+        )
+
+        bm = _make_bridge_mount(state="INSTALLING")
+        provider = bm.bridge_mount_provider
+
+        async def mock_get_pods(name, namespace):
+            return gefyra_pods
+
+        async def mock_healthy(pod, container_name):
+            return False
+
+        provider.get_pods_workload = mock_get_pods
+        provider.pod_ready_and_healthy = mock_healthy
+
+        result = await provider.prepared()
+        assert result is False
+
+    async def test_ready_ignores_replica_mismatch(self):
+        from tests.factories import NginxPodFactory, V1PodListFactory
+
+        original_pods = V1PodListFactory(
+            items=[NginxPodFactory(metadata__name="nginx-original-1")]
+        )
+        gefyra_pods = V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__name="nginx-gefyra-1"),
+                NginxPodFactory(metadata__name="nginx-gefyra-2"),
+            ]
+        )
+
+        bm = _make_bridge_mount(state="ACTIVE")
+        provider = bm.bridge_mount_provider
+        original_target = "deploy/nginx"
+
+        async def mock_get_pods(name, namespace):
+            if name == original_target:
+                return original_pods
+            return gefyra_pods
+
+        async def mock_healthy(pod, container_name):
+            return True
+
+        provider.get_pods_workload = mock_get_pods
+        provider.pod_ready_and_healthy = mock_healthy
+
+        with patch.object(
+            type(provider),
+            "_carrier_installed",
+            new=_async_property(True),
+        ), patch.object(
+            type(provider),
+            "_upstream_set",
+            new=_async_property(True),
+        ):
+            assert await provider.ready() is True
+
+
+def _async_property(value):
+    """Build an awaitable property descriptor returning ``value``."""
+
+    async def _coro(_self):
+        return value
+
+    return property(_coro)
