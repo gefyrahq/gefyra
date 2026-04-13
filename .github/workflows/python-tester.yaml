@@ -298,22 +298,22 @@ jobs:
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
       - name: Download cargo artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: cargo
           path: /tmp/cargo
       - name: Download operator artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: operator
           path: /tmp/operator
       - name: Download carrier artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: carrier
           path: /tmp/carrier
       - name: Download stowaway artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: stowaway
           path: /tmp/stowaway
@@ -389,7 +389,7 @@ jobs:
       - name: Install k3d
         run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
       - name: Download carrier artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: carrier
           path: /tmp/carrier
@@ -443,7 +443,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Download artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: /tmp
       - name: start minikube
@@ -538,22 +538,22 @@ jobs:
         working-directory: ./operator
         run: k3d cluster create --config tests/k3d_cluster.yaml && k3d kubeconfig get gefyra > mycluster.yaml
       - name: Download cargo artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: cargo
           path: /tmp/cargo
       - name: Download carrier artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: carrier
           path: /tmp/carrier
       - name: Download stowaway artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: stowaway
           path: /tmp/stowaway
       - name: Download operator artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: operator
           path: /tmp/operator
