@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv bash
+
+exec /bin/bash /usr/bin/wg-quick up /config/wg0.conf
