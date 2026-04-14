@@ -23,7 +23,7 @@ RUN git clone https://github.com/WireGuard/wireguard-tools.git && \
     make && \
     make install
 
-FROM ghcr.io/linuxserver/baseimage-alpine:3.20 as cargo
+FROM alpine:3.20 as cargo
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/
 
@@ -64,14 +64,12 @@ RUN \
   rm -rf \
     /tmp/*
     
-# add local files (s6-overlay service tree under /etc/s6-overlay/)
+# add local files
 COPY /root /
-RUN chmod +x /etc/s6-overlay/s6-rc.d/svc-wireguard/run \
-             /etc/s6-overlay/s6-rc.d/svc-wireguard/finish \
-             /etc/s6-overlay/s6-rc.d/svc-wireguard/up \
-             /etc/s6-overlay/s6-rc.d/svc-wireguard/down
+RUN chmod u+x,g+x /usr/local/bin/entrypoint.sh\
+  && ln -s /usr/local/bin/entrypoint.sh / # backwards compat
 RUN echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
-# ENTRYPOINT inherited from linuxserver baseimage (/init → s6-overlay)
+ENTRYPOINT ["entrypoint.sh"]
 
 FROM cargo as cargo-win
 RUN patch /usr/bin/wg-quick /wgquick.patch

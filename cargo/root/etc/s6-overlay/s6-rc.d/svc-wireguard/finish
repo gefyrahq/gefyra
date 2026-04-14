@@ -1,3 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-exec /bin/bash /usr/bin/wg-quick down /config/wg0.conf
