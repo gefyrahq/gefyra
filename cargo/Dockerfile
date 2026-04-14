@@ -25,7 +25,8 @@ RUN git clone https://github.com/WireGuard/wireguard-tools.git && \
 
 FROM alpine:3.20 as cargo
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
-COPY --from=builder /usr/bin/wg-quick /usr/bin/
+# prevent apparmor from picking up security profile for wg-quick by using an alias name
+COPY --from=builder /usr/bin/wg-quick /usr/bin/wg-gefyra 
 
 # set version label
 ARG BUILD_DATE
@@ -72,4 +73,4 @@ RUN echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
 ENTRYPOINT ["entrypoint.sh"]
 
 FROM cargo as cargo-win
-RUN patch /usr/bin/wg-quick /wgquick.patch
+RUN patch /usr/bin/wg-gefyra /wgquick.patch
