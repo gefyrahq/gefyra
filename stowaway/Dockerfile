@@ -25,7 +25,7 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
 
 FROM ghcr.io/linuxserver/baseimage-alpine:3.20
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
-COPY --from=builder /usr/bin/wg-quick /usr/bin/
+COPY --from=builder /usr/bin/wg-quick /usr/bin/wg-gefyra
 
 # set version label
 ARG BUILD_DATE
