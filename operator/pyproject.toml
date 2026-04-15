@@ -41,12 +41,8 @@ addopts = """
 """
 testpaths = "tests"
 pythonpath = "operator"
+asyncio_mode = "auto"G
 
-[tool.pytest.ini_options]
-pythonpath = [
-  "."
-]
-asyncio_mode = "auto"
 
 [tool.coverage.run]
 branch = true
