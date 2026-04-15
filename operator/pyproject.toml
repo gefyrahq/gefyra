@@ -41,7 +41,7 @@ addopts = """
 """
 testpaths = "tests"
 pythonpath = "operator"
-asyncio_mode = "auto"G
+asyncio_mode = "auto"
 
 
 [tool.coverage.run]
