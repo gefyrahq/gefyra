@@ -8,7 +8,6 @@ from tests.e2e.base import GefyraTestCase
 LOCAL_CONTAINER_NAME = "gefyra-new-backend"
 
 
-@pytest.mark.parametrize("operator", ["operator_no_sa", "operator_with_sa"])
 @pytest.fixture(scope="class", autouse=True)
 def workloads_for_bridgetests(operator):
     operator.apply("tests/fixtures/nginx_exposed.yaml")
