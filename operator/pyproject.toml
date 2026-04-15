@@ -32,15 +32,17 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest]
 log_cli = true
 log_cli_level = "INFO"
-norecursedirs = "*.egg .eggs dist build docs .tox .git __pycache__"
+norecursedirs = [
+	"*.egg", ".eggs", "dist", "build", "docs", ".tox", ".git", "__pycache__"
+]
 addopts = [
 	"-x",
 	"--strict-markers",
 	"--doctest-modules",
 	"--tb=short"
 ]
-testpaths = "tests"
-pythonpath = "operator"
+testpaths = ["tests"]
+pythonpath = ["operator",]
 asyncio_mode = "auto"
 
 
