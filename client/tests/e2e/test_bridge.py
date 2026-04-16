@@ -172,37 +172,38 @@ class TestGefyraBridge(GefyraTestCase):
             retries=60,
             headers={"x-gefyra": "peer"},
         )
+        with pytest.raises(AssertionError) as excinfo:
+            self.cmd(
+                operator.kubeconfig,
+                "bridge",
+                [
+                    "create",
+                    "--local",
+                    LOCAL_CONTAINER_NAME,
+                    "--ports",
+                    "80:8000",
+                    "--match-header-exact",
+                    "x-gefyra:peer",
+                    "--mount",
+                    "nginx-deployment-gefyra",
+                    "--connection-name",
+                    "pytest-gefyra",
+                    "--name",
+                    "pytest-gefyra-bridge",
+                    "--nowait",
+                ],
+            )
 
-        res = self.cmd(
-            operator.kubeconfig,
-            "bridge",
-            [
-                "create",
-                "--local",
-                LOCAL_CONTAINER_NAME,
-                "--ports",
-                "80:8000",
-                "--match-header-exact",
-                "x-gefyra:peer",
-                "--mount",
-                "nginx-deployment-gefyra",
-                "--connection-name",
-                "pytest-gefyra",
-                "--name",
-                "pytest-gefyra-bridge",
-                "--nowait",
-            ],
-        )
+        assert "already bridged" in str(excinfo.value)
 
-        assert "already bridged" in res.output
+        with pytest.raises(AssertionError) as excinfo:
+            self.cmd(
+                operator.kubeconfig,
+                "bridge",
+                ["delete", "--connection-name", "pytest-gefyra", "non-existent-bridge"],
+            )
 
-        res = self.cmd(
-            operator.kubeconfig,
-            "bridge",
-            ["delete", "--connection-name", "pytest-gefyra", "non-existent-bridge"],
-        )
-
-        assert "not found" in res.output
+        assert "not found" in str(excinfo.value)
 
         print("Test successful, cleaning up...")
         self.cmd(
