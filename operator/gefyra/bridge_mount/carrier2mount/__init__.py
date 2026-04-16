@@ -36,7 +36,7 @@ from gefyra.bridge_mount.utils import (
     get_ports_for_workload,
     get_upstreams_for_svc,
 )
-from gefyra.utils import async_all, wait_until_condition
+from gefyra.utils import async_all, async_any, wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
 from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.bridge_mount.exceptions import (
@@ -650,7 +650,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     @property
     async def _duplicated_pods_ready(self):
         pods = await self._gefyra_pods
-        return await async_all(
+        return await async_any(
             await self.pod_ready_and_healthy(pod, self.container) for pod in pods.items
         )
 
@@ -703,12 +703,12 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 f"gefyra={len(gefyra_pods.items)}. This might be caused by a HPA."
             )
 
-        pods_ready = await self._duplicated_pods_ready
-        if not pods_ready:
+        any_pods_ready = await self._duplicated_pods_ready
+        if not any_pods_ready:
             self.logger.info(
                 "Not all duplicated pods are ready yet for the GefyraBridgeMount."
             )
-        return pods_ready
+        return any_pods_ready
 
     async def ready(self):
         ready = (
