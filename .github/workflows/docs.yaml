@@ -30,7 +30,7 @@ jobs:
           cp .output/public/en.html .output/public/index.html
       - name: Upload static files as artifact
         id: deployment
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: gefyra-docs/.output/public
 
