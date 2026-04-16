@@ -2,15 +2,16 @@ import logging
 
 
 from gefyra.configuration import ClientConfiguration
-from gefyra import api
 
 logger = logging.getLogger(__name__)
 
 
 def remove_all_clients():
-    clients = api.list_client()
+    from gefyra.api.clients import list_client, delete_client
+
+    clients = list_client()
     for client in clients:
-        api.delete_client(client.client_id, force=True, wait=True)
+        delete_client(client.client_id, force=True, wait=True)
 
 
 def remove_remainder_bridges(config: ClientConfiguration):
