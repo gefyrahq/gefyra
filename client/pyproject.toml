@@ -59,6 +59,9 @@ issues = "https://github.com/gefyrahq/gefyra/issues"
 [tool.coverage.run]
 branch = true
 source = ["gefyra"]
+omit = [
+    "gefyra/cli/docgen.py",
+]
 
 [tool.coverage.report]
 exclude_also = [
