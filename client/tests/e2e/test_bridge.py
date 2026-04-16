@@ -172,6 +172,38 @@ class TestGefyraBridge(GefyraTestCase):
             retries=60,
             headers={"x-gefyra": "peer"},
         )
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            [
+                "create",
+                "--local",
+                LOCAL_CONTAINER_NAME,
+                "--ports",
+                "80:8000",
+                "--match-header-exact",
+                "x-gefyra:peer",
+                "--mount",
+                "nginx-deployment-gefyra",
+                "--connection-name",
+                "pytest-gefyra",
+                "--name",
+                "pytest-gefyra-bridge",
+                "--nowait",
+            ],
+        )
+
+        assert "already bridged" in res.output
+
+        res = self.cmd(
+            operator.kubeconfig,
+            "bridge",
+            ["delete", "--connection-name", "pytest-gefyra", "non-existent-bridge"],
+        )
+
+        assert "not found" in res.output
+
         print("Test successful, cleaning up...")
         self.cmd(
             operator.kubeconfig,
