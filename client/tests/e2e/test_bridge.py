@@ -172,6 +172,30 @@ class TestGefyraBridge(GefyraTestCase):
             retries=60,
             headers={"x-gefyra": "peer"},
         )
+        with pytest.raises(AssertionError) as excinfo:
+            self.cmd(
+                operator.kubeconfig,
+                "bridge",
+                [
+                    "create",
+                    "--local",
+                    LOCAL_CONTAINER_NAME,
+                    "--ports",
+                    "80:8000",
+                    "--match-header-exact",
+                    "x-gefyra:peer",
+                    "--mount",
+                    "nginx-deployment-gefyra",
+                    "--connection-name",
+                    "pytest-gefyra",
+                    "--name",
+                    "pytest-gefyra-bridge",
+                    "--nowait",
+                ],
+            )
+
+        assert "already bridged" in str(excinfo.value)
+
         print("Test successful, cleaning up...")
         self.cmd(
             operator.kubeconfig,
