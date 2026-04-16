@@ -719,7 +719,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         )
         gefyra_pod_len = len((await self._gefyra_pods).items)
         original_pod_len = len((await self._original_pods).items)
-        same_amount = gefyra_pod_len == original_pod_len
         if not ready:
             self.logger.info(
                 "GefyraBridgeMount is not ready yet: "
@@ -731,7 +730,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 f"Gefyra pod count: {gefyra_pod_len}"
             )
         # consider down scaling & up scaling
-        return ready and same_amount
+        return ready
 
     async def validate(self, bridge_request, hints):
         required_fields = ["target", "targetNamespace", "targetContainer"]
