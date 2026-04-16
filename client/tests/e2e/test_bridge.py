@@ -196,12 +196,17 @@ class TestGefyraBridge(GefyraTestCase):
 
         assert "already bridged" in str(excinfo.value)
 
-        with pytest.raises(AssertionError) as excinfo:
-            self.cmd(
-                operator.kubeconfig,
+        self.cmd(
+            operator.kubeconfig,
+            "--debug",
+            [
                 "bridge",
-                ["delete", "--connection-name", "pytest-gefyra", "non-existent-bridge"],
-            )
+                "delete",
+                "--connection-name",
+                "pytest-gefyra",
+                "non-existent-bridge",
+            ],
+        )
 
         assert "not found" in str(excinfo.value)
 
