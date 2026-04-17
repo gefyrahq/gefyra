@@ -147,6 +147,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             "V1Deployment": app.patch_namespaced_deployment,
             "V1StatefulSet": app.patch_namespaced_stateful_set,
             "V1Pod": core_v1_api.patch_namespaced_pod,
+            "V1HorizontalPodAutoscaler": autoscaling_api.patch_namespaced_horizontal_pod_autoscaler,
         }.get(type_name)
         if not func:
             raise BridgeMountInstallException(
