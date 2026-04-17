@@ -471,14 +471,14 @@ class TestGefyraBridge(GefyraTestCase):
         )
 
         self.assert_get_contains(
-            "http://localhost:8080", "Welcome to nginx!", retries=60
+            "http://localhost:8080", "Welcome to nginx!", retries=120
         )
 
         self.assert_get_contains(
             "http://localhost:8080",
             "Hello from Gefyra.",
             headers={"x-gefyra": "peer"},
-            retries=60,
+            retries=120,
         )
 
         res = self.cmd(

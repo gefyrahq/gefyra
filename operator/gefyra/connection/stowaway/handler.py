@@ -131,7 +131,8 @@ async def reconcile_proxyroutes(logger):
     )
     routes = configmap.data
     try:
-        raw_gefyra_bridges = custom_object_api.list_namespaced_custom_object(
+        raw_gefyra_bridges = await asyncio.to_thread(
+            custom_object_api.list_namespaced_custom_object,
             group="gefyra.dev",
             version="v1",
             plural="gefyrabridges",
