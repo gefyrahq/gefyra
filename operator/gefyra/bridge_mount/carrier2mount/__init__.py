@@ -285,7 +285,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             deployment.metadata.name, self.namespace
         )
         if hpa:
-            self.logger(
+            self.logger.info(
                 f"Found HPA '{hpa.metadata.name}' for Deployment '{deployment.metadata.name}', duplicating it for the shadow deployment."
             )
             new_hpa = deepcopy(hpa)
