@@ -11,6 +11,7 @@ from time import sleep
 from unittest.mock import MagicMock
 
 from pathlib import Path
+import pytest
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
 
@@ -140,8 +141,16 @@ class TestBridgeMountHPAScale:
             ["-n", namespace, "get", "hpa/" + name + "-gefyra"],
             as_dict=True,
         )
-        assert len(res["items"]) == 1, (
+
+        assert res["kind"] == "HorizontalPodAutoscaler", (
             "HPA resource for shadow deployment should exist but got error"
+        )
+
+        gefyra_crd.wait(
+            "deployment/" + name + "-gefyra",
+            "jsonpath='{.status.readyReplicas}'=3",
+            namespace=namespace,
+            timeout=120,
         )
 
         # Cleanup
@@ -153,14 +162,16 @@ class TestBridgeMountHPAScale:
             timeout=60,
         )
         assert bm.terminated.is_active
+        with pytest.raises(RuntimeError) as exc_info:
+            gefyra_crd.kubectl(
+                ["-n", namespace, "get", "hpa/" + name + "-gefyra"],
+                as_dict=True,
+            )
 
-        res = gefyra_crd.kubectl(
-            ["-n", namespace, "get", "hpa/" + name + "-gefyra"],
-            as_dict=True,
-        )
-        assert len(res["items"]) == 0, (
-            "HPA resource for shadow deployment should not exist after termination"
-        )
+        assert (
+            'horizontalpodautoscalers.autoscaling "nginx-deployment-gefyra" not found'
+            in str(exc_info.value)
+        ), "HPA resource for shadow deployment should not exist after termination"
 
         # Scale back to 1 for other tests
         gefyra_crd.kubectl(

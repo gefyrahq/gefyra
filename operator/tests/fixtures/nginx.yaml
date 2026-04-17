@@ -58,7 +58,7 @@ metadata:
   name: nginx-deployment
   namespace: default
 spec:
-  maxReplicas: 2
+  maxReplicas: 3
   metrics:
   - resource:
       name: cpu
@@ -66,7 +66,7 @@ spec:
         averageUtilization: 80
         type: Utilization
     type: Resource
-  minReplicas: 1
+  minReplicas: 3
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
