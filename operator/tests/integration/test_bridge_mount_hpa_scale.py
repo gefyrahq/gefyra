@@ -140,7 +140,7 @@ class TestBridgeMountHPAScale:
             ["-n", namespace, "get", "hpa/" + name + "-gefyra"],
             as_dict=False,
         )
-        assert "error" not in res, (
+        assert len(res["items"]) == 1, (
             "HPA resource for shadow deployment should exist but got error"
         )
 
@@ -153,6 +153,14 @@ class TestBridgeMountHPAScale:
             timeout=60,
         )
         assert bm.terminated.is_active
+
+        res = gefyra_crd.kubectl(
+            ["-n", namespace, "get", "hpa/" + name + "-gefyra"],
+            as_dict=True,
+        )
+        assert len(res["items"]) == 0, (
+            "HPA resource for shadow deployment should not exist after termination"
+        )
 
         # Scale back to 1 for other tests
         gefyra_crd.kubectl(
