@@ -138,7 +138,7 @@ class TestBridgeMountHPAScale:
 
         res = gefyra_crd.kubectl(
             ["-n", namespace, "get", "hpa/" + name + "-gefyra"],
-            as_dict=False,
+            as_dict=True,
         )
         assert len(res["items"]) == 1, (
             "HPA resource for shadow deployment should exist but got error"
