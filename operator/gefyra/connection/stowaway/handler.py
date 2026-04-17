@@ -131,7 +131,8 @@ async def reconcile_proxyroutes(logger):
     )
     routes = configmap.data
     try:
-        raw_gefyra_bridges = custom_object_api.list_namespaced_custom_object(
+        raw_gefyra_bridges = await asyncio.to_thread(
+            custom_object_api.list_namespaced_custom_object,
             group="gefyra.dev",
             version="v1",
             plural="gefyrabridges",
@@ -181,11 +182,11 @@ async def reconcile_proxyroutes(logger):
                     if (
                         bridge["client"] == peer
                         and bridge["destinationIP"] == destination_ip
-                        and bridge["clusterEndpoint"].get(destination_port, False)
-                        and bridge["clusterEndpoint"]
-                        .get(destination_port)
-                        .split(":")[1]
-                        == stowaway_port
+                        and str(stowaway_port)
+                        in map(
+                            lambda x: x.split(":")[1],
+                            bridge["clusterEndpoint"].values(),
+                        )
                     ):
                         # this bridge corresponds to the route
                         final_routes[key] = value
@@ -195,6 +196,10 @@ async def reconcile_proxyroutes(logger):
                 else:
                     # there was no bridge matched -> route is debris
                     to_be_removed_svcs.append(f"gefyra-stowaway-proxy-{stowaway_port}")
+                    logger.warning(
+                        f"Could not find a corresponding GefyraBridge ({len(raw_gefyra_bridges['items'])}) for "
+                        f"proxy route Peer:{peer}, {destination_ip}, {destination_port} to Stowaway:{stowaway_port}"
+                    )
 
             if len(final_routes) != len(routes):
                 logger.warning("Old proxy routes detected, removing them")
@@ -207,6 +212,7 @@ async def reconcile_proxyroutes(logger):
                 )
                 for svc in to_be_removed_svcs:
                     try:
+                        logger.info(f"Removing: {svc}")
                         await asyncio.to_thread(
                             core_v1_api.delete_namespaced_service,
                             name=svc,
