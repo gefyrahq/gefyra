@@ -179,7 +179,6 @@ async def reconcile_proxyroutes(logger):
                 destination_ip = value.split(",")[0].split(":")[0]
                 destination_port = value.split(",")[0].split(":")[1]
                 for bridge in raw_gefyra_bridges["items"]:
-                    logger.warning(f"Delete Me: {bridge}")
                     if (
                         bridge["client"] == peer
                         and bridge["destinationIP"] == destination_ip
