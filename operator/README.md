@@ -36,7 +36,7 @@ During the startup, Operator runs the following:
 2) create and attach Stowaway's proxy routes configmap
 3) install the `NodePort` Kubernetes service, reads the requested node port from its own environment (set by Gefyra 
    client)
-4) create a headless service for Carriers to connect   
+4) create a service for Carriers to connect   
 6) wait for Stowaway to become ready
 7) extract ad-hoc generated connection details (secrets, IP range, etc.) from Stowaway and create a well-known secret 
    (for Gefyra to process)

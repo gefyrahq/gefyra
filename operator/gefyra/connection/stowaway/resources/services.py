@@ -45,7 +45,6 @@ def create_stowaway_proxy_service(
     spec = k8s.client.V1ServiceSpec(
         type="ClusterIP",
         selector=stowaway_deployment.spec.template.metadata.labels,
-        cluster_ip="None",  # this is a headless service
         ports=[
             k8s.client.V1ServicePort(
                 name=str(port),
