@@ -173,7 +173,4 @@ class TestBridgeMountHPAScale:
             in str(exc_info.value)
         ), "HPA resource for shadow deployment should not exist after termination"
 
-        gefyra_crd.kubectl(
-            ["-n", namespace, "delete", "deployment/" + name],
-            as_dict=False,
-        )
+        gefyra_crd.kubectl(["-n", namespace, "delete", "-f", file_path])
