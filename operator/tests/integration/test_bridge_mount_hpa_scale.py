@@ -35,7 +35,7 @@ class TestBridgeMountHPAScale:
         from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
 
         file_path = str(
-            Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()
+            Path(Path(__file__).parent.parent, "fixtures/nginx_hpa.yaml").absolute()
         )
         gefyra_crd.apply(file_path)
 
