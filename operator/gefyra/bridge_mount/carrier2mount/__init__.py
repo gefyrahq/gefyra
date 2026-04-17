@@ -295,7 +295,21 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             new_hpa.metadata.resource_version = None
             new_hpa.metadata.uid = None
             new_hpa.spec.scale_target_ref.name = new_deployment.metadata.name
-            self._create_namespaced_(V1HorizontalPodAutoscaler)(self.namespace, new_hpa)
+            try:
+                self._create_namespaced_(V1HorizontalPodAutoscaler)(
+                    self.namespace, new_hpa
+                )
+            except ApiException as e:
+                if e.status == 409:
+                    self._patch_namespaced_(V1HorizontalPodAutoscaler)(
+                        name=new_hpa.metadata.name,
+                        namespace=self.namespace,
+                        body=new_hpa,
+                    )
+                else:
+                    raise BridgeMountInstallException(
+                        f"Exception when creating HPA for shadow deployment: {e}"
+                    ) from e
 
     async def _duplicate_workload(self) -> None:
         workload = await self._get_workload(self.target, self.namespace)
