@@ -12,6 +12,7 @@ from ..factories import (
     NginxDeploymentFactory,
     NginxPodFactory,
     V1ConfigMapFactory,
+    V1HPAFactoryList,
     V1PodListFactory,
     V1ProbeFactory,
     V1ServiceFactory,
@@ -123,9 +124,10 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         app=DEFAULT,
         core_v1_api=DEFAULT,
         custom_object_api=DEFAULT,
+        autoscaling_api=DEFAULT,
     )
     async def test_carrier_patch(
-        self, app, core_v1_api, custom_object_api
+        self, app, core_v1_api, custom_object_api, autoscaling_api
     ):  # Made async
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
@@ -136,6 +138,9 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         custom_object_api.get_namespaced_custom_object.return_value = {
             "target": "nginx-deployment",
         }
+        autoscaling_api.list_namespaced_horizontal_pod_autoscaler.return_value = (
+            V1HPAFactoryList()
+        )
 
         mount = Carrier2BridgeMount(
             name="test",
