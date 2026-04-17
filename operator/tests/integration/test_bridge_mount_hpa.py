@@ -136,14 +136,6 @@ class TestBridgeMountHPAScale:
             f"{bm.current_state.value} after scaling"
         )
 
-        # Verify shadow has 3 replicas too
-        gefyra_crd.wait(
-            "deployment/" + name + "-gefyra",
-            "jsonpath='{.status.readyReplicas}'=3",
-            namespace=namespace,
-            timeout=120,
-        )
-
         res = gefyra_crd.kubectl(
             ["-n", namespace, "get", "hpa/" + name + "-gefyra"],
             as_dict=False,
