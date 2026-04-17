@@ -196,6 +196,10 @@ async def reconcile_proxyroutes(logger):
                 else:
                     # there was no bridge matched -> route is debris
                     to_be_removed_svcs.append(f"gefyra-stowaway-proxy-{stowaway_port}")
+                    logger.warning(
+                        f"Could not find a corresponding GefyraBridge ({len(raw_gefyra_bridges['items'])}) for "
+                        f"proxy route Peer:{peer}, {destination_ip}, {destination_port} to Stowaway:{stowaway_port}"
+                    )
 
             if len(final_routes) != len(routes):
                 logger.warning("Old proxy routes detected, removing them")
@@ -208,6 +212,7 @@ async def reconcile_proxyroutes(logger):
                 )
                 for svc in to_be_removed_svcs:
                     try:
+                        logger.info(f"Removing: {svc}")
                         await asyncio.to_thread(
                             core_v1_api.delete_namespaced_service,
                             name=svc,
