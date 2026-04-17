@@ -798,7 +798,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             await asyncio.to_thread(
                 self._delete_namespaced_(type_), gefyra_deployment_name, self.namespace
             )
-            hpa = self._find_hpa_for_deployment(gefyra_deployment_name, self.namespace)
+            hpa = await self._find_hpa_for_deployment(
+                gefyra_deployment_name, self.namespace
+            )
             if hpa:
                 await asyncio.to_thread(
                     autoscaling_api.delete_namespaced_horizontal_pod_autoscaler,
