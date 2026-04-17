@@ -295,6 +295,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             new_hpa.metadata.resource_version = None
             new_hpa.metadata.uid = None
             new_hpa.spec.scale_target_ref.name = new_deployment.metadata.name
+            self._create_namespaced_(V1HorizontalPodAutoscaler)(self.namespace, new_hpa)
 
     async def _duplicate_workload(self) -> None:
         workload = await self._get_workload(self.target, self.namespace)
