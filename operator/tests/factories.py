@@ -3,6 +3,7 @@ import factory
 from kubernetes.client import (
     V1Deployment,
     V1DeploymentSpec,
+    V1HorizontalPodAutoscalerList,
     V1ObjectMeta,
     V1LabelSelector,
     V1PodTemplateSpec,
@@ -191,6 +192,13 @@ class V1PodFactory(factory.Factory):
 class V1PodListFactory(factory.Factory):
     class Meta:
         model = V1PodList
+
+    items = factory.List([])
+
+
+class V1HPAFactoryList(factory.Factory):
+    class Meta:
+        model = V1HorizontalPodAutoscalerList
 
     items = factory.List([])
 

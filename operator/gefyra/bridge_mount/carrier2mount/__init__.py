@@ -9,6 +9,8 @@ import kopf
 import kubernetes as k8s
 from kubernetes.client import (
     V1Deployment,
+    V1HorizontalPodAutoscaler,
+    V1HorizontalPodAutoscalerList,
     V1StatefulSet,
     V1PodList,
     V1Pod,
@@ -17,6 +19,7 @@ from kubernetes.client import (
     V1ObjectMeta,
     V1ServiceSpec,
     V1Probe,
+    AutoscalingV2Api,
 )
 import asyncio  # Added asyncio import
 
@@ -33,7 +36,7 @@ from gefyra.bridge_mount.utils import (
     get_ports_for_workload,
     get_upstreams_for_svc,
 )
-from gefyra.utils import async_all, wait_until_condition
+from gefyra.utils import async_all, async_any, wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
 from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.bridge_mount.exceptions import (
@@ -45,6 +48,7 @@ from gefyra.bridge_mount.exceptions import (
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_object_api = k8s.client.CustomObjectsApi()
+autoscaling_api = AutoscalingV2Api()
 
 CARRIER2_ORIGINAL_CONFIGMAP = "gefyra-carrier2-restore-configmap"
 
@@ -129,6 +133,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             "V1Deployment": app.create_namespaced_deployment,
             "V1StatefulSet": app.create_namespaced_stateful_set,
             "V1Pod": core_v1_api.create_namespaced_pod,
+            "V1HorizontalPodAutoscaler": autoscaling_api.create_namespaced_horizontal_pod_autoscaler,
         }.get(type_name)
         if not func:
             raise BridgeMountInstallException(
@@ -142,6 +147,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             "V1Deployment": app.patch_namespaced_deployment,
             "V1StatefulSet": app.patch_namespaced_stateful_set,
             "V1Pod": core_v1_api.patch_namespaced_pod,
+            "V1HorizontalPodAutoscaler": autoscaling_api.patch_namespaced_horizontal_pod_autoscaler,
         }.get(type_name)
         if not func:
             raise BridgeMountInstallException(
@@ -253,6 +259,59 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             ),
         )
 
+    async def _find_hpa_for_deployment(
+        self, deployment_name, namespace="default"
+    ) -> V1HorizontalPodAutoscaler | None:
+        try:
+            hpas: V1HorizontalPodAutoscalerList = await asyncio.to_thread(
+                autoscaling_api.list_namespaced_horizontal_pod_autoscaler, namespace
+            )
+            hpa: V1HorizontalPodAutoscaler
+            for hpa in hpas.items:
+                target = hpa.spec.scale_target_ref
+                if target.kind == "Deployment" and target.name == deployment_name:
+                    return hpa
+            return None
+
+        except ApiException as e:
+            print(
+                f"Exception when calling AutoscalingV2Api->list_namespaced_horizontal_pod_autoscaler: {e}"
+            )
+            return None
+
+    async def _handle_hpa_for_deployment(
+        self, deployment: V1Deployment, new_deployment: V1Deployment
+    ) -> None:
+        hpa = await self._find_hpa_for_deployment(
+            deployment.metadata.name, self.namespace
+        )
+        if hpa:
+            self.logger.info(
+                f"Found HPA '{hpa.metadata.name}' for Deployment '{deployment.metadata.name}', duplicating it for the shadow deployment."
+            )
+            new_hpa = deepcopy(hpa)
+            new_hpa.metadata.name = generate_k8s_conform_name(
+                deployment.metadata.name, "-gefyra"
+            )
+            new_hpa.metadata.resource_version = None
+            new_hpa.metadata.uid = None
+            new_hpa.spec.scale_target_ref.name = new_deployment.metadata.name
+            try:
+                self._create_namespaced_(V1HorizontalPodAutoscaler)(
+                    self.namespace, new_hpa
+                )
+            except ApiException as e:
+                if e.status == 409:
+                    self._patch_namespaced_(V1HorizontalPodAutoscaler)(
+                        name=new_hpa.metadata.name,
+                        namespace=self.namespace,
+                        body=new_hpa,
+                    )
+                else:
+                    raise BridgeMountInstallException(
+                        f"Exception when creating HPA for shadow deployment: {e}"
+                    ) from e
+
     async def _duplicate_workload(self) -> None:
         workload = await self._get_workload(self.target, self.namespace)
 
@@ -260,6 +319,8 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
         new_workload = self._clone_workload_structure(workload)
         new_svc = self._get_svc_for_workload(new_workload)
+        if isinstance(workload, V1Deployment):
+            await self._handle_hpa_for_deployment(workload, new_workload)
 
         # Create the new workload
         try:
@@ -605,7 +666,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     @property
     async def _duplicated_pods_ready(self):
         pods = await self._gefyra_pods
-        return await async_all(
+        return await async_any(
             await self.pod_ready_and_healthy(pod, self.container) for pod in pods.items
         )
 
@@ -649,42 +710,21 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             )
         return new_workload
 
-    async def _scale_shadow_to_match(self, target_replicas: int) -> None:
-        """Scale the shadow deployment to match the original's replica count."""
-        _, type_ = self._split_target_type_name(self.target)
-        if type_ not in (V1Deployment, V1StatefulSet):
-            return
-        patch_fn = self._patch_namespaced_(type_)
-        body = {"spec": {"replicas": target_replicas}}
-        await asyncio.to_thread(
-            patch_fn,
-            name=self._gefyra_workload_name,
-            namespace=self.namespace,
-            body=body,
-        )
-        self.logger.info(
-            f"Scaled shadow workload '{self._gefyra_workload_name}' "
-            f"to {target_replicas} replicas to match original."
-        )
-
     async def prepared(self):
         gefyra_pods = await self._gefyra_pods
         original_pods = await self._original_pods
         if len(gefyra_pods.items) != len(original_pods.items):
             self.logger.info(
                 f"Replica count mismatch: original={len(original_pods.items)}, "
-                f"gefyra={len(gefyra_pods.items)}. "
-                f"Scaling shadow to match."
+                f"gefyra={len(gefyra_pods.items)}. This might be caused by a HPA."
             )
-            await self._scale_shadow_to_match(len(original_pods.items))
-            return False
 
-        pods_ready = await self._duplicated_pods_ready
-        if not pods_ready:
+        any_pods_ready = await self._duplicated_pods_ready
+        if not any_pods_ready:
             self.logger.info(
                 "Not all duplicated pods are ready yet for the GefyraBridgeMount."
             )
-        return pods_ready
+        return any_pods_ready
 
     async def ready(self):
         ready = (
@@ -695,7 +735,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         )
         gefyra_pod_len = len((await self._gefyra_pods).items)
         original_pod_len = len((await self._original_pods).items)
-        same_amount = gefyra_pod_len == original_pod_len
         if not ready:
             self.logger.info(
                 "GefyraBridgeMount is not ready yet: "
@@ -707,7 +746,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 f"Gefyra pod count: {gefyra_pod_len}"
             )
         # consider down scaling & up scaling
-        return ready and same_amount
+        return ready
 
     async def validate(self, bridge_request, hints):
         required_fields = ["target", "targetNamespace", "targetContainer"]
@@ -775,6 +814,15 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             await asyncio.to_thread(
                 self._delete_namespaced_(type_), gefyra_deployment_name, self.namespace
             )
+            hpa = await self._find_hpa_for_deployment(
+                gefyra_deployment_name, self.namespace
+            )
+            if hpa:
+                await asyncio.to_thread(
+                    autoscaling_api.delete_namespaced_horizontal_pod_autoscaler,
+                    name=hpa.metadata.name,
+                    namespace=self.namespace,
+                )
         except ApiException as e:
             if e.status == 404:
                 self.logger.warning(
