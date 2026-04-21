@@ -12,6 +12,6 @@ jobs:
     timeout-minutes: 5
     steps:
     - uses: actions/checkout@v6
-    - uses: astral-sh/ruff-action@v3.6.1
+    - uses: astral-sh/ruff-action@v4.0.0
 
           
