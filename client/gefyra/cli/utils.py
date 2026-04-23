@@ -283,6 +283,65 @@ def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
         return connection_name
 
 
+def _coerce_value(value: str) -> Any:
+    """Try to coerce a string value to int, float, or bool."""
+    if value.lower() == "true":
+        return True
+    if value.lower() == "false":
+        return False
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    try:
+        return float(value)
+    except ValueError:
+        pass
+    return value
+
+
+def parse_extra_container_args(extra_args: List[str]) -> Dict[str, Any]:
+    """
+    Parse Click's extra args (unknown options) into a dict of docker-py kwargs.
+
+    Converts CLI-style args like ['--cpu-shares', '512', '--oom-kill-disable']
+    into docker-py kwargs like {'cpu_shares': 512, 'oom_kill_disable': True}.
+
+    Args that use '=' syntax are also supported: ['--cpu-shares=512'].
+    Boolean flags (no value) are set to True.
+    """
+    result: Dict[str, Any] = {}
+    i = 0
+    while i < len(extra_args):
+        arg = extra_args[i]
+        if not arg.startswith("--"):
+            raise click.UsageError(
+                f"Unknown extra argument '{arg}'. Extra container engine arguments"
+                " must start with '--'."
+            )
+
+        # Handle --key=value syntax
+        if "=" in arg:
+            key, value = arg.split("=", 1)
+            key = key.lstrip("-").replace("-", "_")
+            result[key] = _coerce_value(value)
+            i += 1
+            continue
+
+        key = arg.lstrip("-").replace("-", "_")
+
+        # Check if next arg is a value (not another flag)
+        if i + 1 < len(extra_args) and not extra_args[i + 1].startswith("--"):
+            result[key] = _coerce_value(extra_args[i + 1])
+            i += 2
+        else:
+            # Boolean flag
+            result[key] = True
+            i += 1
+
+    return result
+
+
 def parse_match_header(
     ctx, param, match_header_raw: Tuple[str]
 ) -> List[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]:

@@ -1,15 +1,23 @@
 import ast
+import warnings
+
 import click
 from gefyra.cli.utils import (
     OptionEatAll,
     check_connection_name,
     parse_env,
+    parse_extra_container_args,
     parse_ip_port_map,
     parse_workload,
 )
 
 
-@click.command()
+@click.command(
+    context_settings=dict(
+        ignore_unknown_options=True,
+        allow_extra_args=True,
+    ),
+)
 @click.option(
     "-d",
     "--detach",
@@ -54,13 +62,23 @@ from gefyra.cli.utils import (
 )
 @click.option(
     "--cpu",
-    help="CPU limit for the container (e.g. '500m' or '2')",
+    help=(
+        "[Deprecated: pass docker/podman args after '--' instead, e.g."
+        " `-- --cpu-period 100000 --cpu-quota 50000` for 0.5 CPU. Note: raw"
+        " microseconds, k8s-style notation is not supported by the engine]"
+        " CPU limit for the container (e.g. '500m' or '2')"
+    ),
     type=str,
     required=False,
 )
 @click.option(
     "--memory",
-    help="Memory limit for the container (e.g. '512Mi', '1Gi', or '1g')",
+    help=(
+        "[Deprecated: pass docker/podman args after '--' instead, e.g."
+        " `-- --memory 512m`. Note: the engine accepts suffixes 'b/k/m/g',"
+        " not k8s-style 'Mi'/'Gi'] Memory limit for the container (e.g."
+        " '512Mi', '1Gi', or '1g')"
+    ),
     type=str,
     required=False,
 )
@@ -143,7 +161,9 @@ from gefyra.cli.utils import (
     is_flag=True,
     default=False,
 )
+@click.pass_context
 def run(
+    ctx,
     detach,
     auto_remove,
     expose,
@@ -165,7 +185,40 @@ def run(
     security_opt,
     privileged,
 ):
+    """Run a container in Gefyra.
+
+    \b
+    Any additional container engine arguments can be passed after the known
+    options.  They are forwarded directly to the Docker/Podman API.
+    Use the docker-py parameter names with '--' prefix and '-' separators:
+
+    \b
+      gefyra run -i myimage -N myname -- --cpu-shares 512 --mem-reservation 256m
+      gefyra run -i myimage -N myname -- --cpu-period 100000 --cpu-quota 50000
+
+    \b
+    See https://docker-py.readthedocs.io/en/stable/containers.html for the
+    full list of supported parameters.
+    """
     from gefyra import api
+
+    if cpu:
+        warnings.warn(
+            "--cpu is deprecated; pass docker/podman args after '--' instead, "
+            "e.g. `-- --cpu-period 100000 --cpu-quota 50000` for 0.5 CPU "
+            "(values in microseconds, k8s-style notation is not supported "
+            "by the engine).",
+            FutureWarning,
+            stacklevel=1,
+        )
+    if memory:
+        warnings.warn(
+            "--memory is deprecated; pass docker/podman args after '--' instead, "
+            "e.g. `-- --memory 512m` (engine accepts suffixes 'b/k/m/g', not "
+            "k8s-style 'Mi'/'Gi').",
+            FutureWarning,
+            stacklevel=1,
+        )
 
     if command:
         command = ast.literal_eval(command)[0]
@@ -179,28 +232,35 @@ def run(
             "Option conflict: --cpu and --cpu-from cannot be used together. Please specify only one."
         )
 
+    # Parse extra container engine args from ctx.args
+    extra_container_args = parse_extra_container_args(ctx.args) if ctx.args else None
+
     security_opt = list(security_opt)
-    result = api.run(
-        image=image,
-        name=name,
-        command=command,
-        namespace=namespace,
-        env_from=env_from,
-        cpu_from=cpu_from,
-        memory_from=memory_from,
-        cpu=cpu,
-        memory=memory,
-        user=user,
-        env=env,
-        ports=expose,
-        auto_remove=auto_remove,
-        volumes=volume,
-        detach=detach,
-        pull=pull,
-        platform=platform,
-        security_opts=security_opt,
-        privileged=privileged,
-        connection_name=connection_name,
-    )
+    try:
+        result = api.run(
+            image=image,
+            name=name,
+            command=command,
+            namespace=namespace,
+            env_from=env_from,
+            cpu_from=cpu_from,
+            memory_from=memory_from,
+            cpu=cpu,
+            memory=memory,
+            user=user,
+            env=env,
+            ports=expose,
+            auto_remove=auto_remove,
+            volumes=volume,
+            detach=detach,
+            pull=pull,
+            platform=platform,
+            security_opts=security_opt,
+            privileged=privileged,
+            connection_name=connection_name,
+            extra_container_args=extra_container_args,
+        )
+    except ValueError as e:
+        raise click.UsageError(str(e)) from e
     if not result:
         exit(1)
