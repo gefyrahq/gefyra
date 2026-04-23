@@ -42,6 +42,7 @@ class GefyraConnectionItem:
     status: str
     client_status: str
     wireguard_probe: bool = False
+    mtu: int | None = None
 
     @property
     def json(self):
@@ -49,7 +50,7 @@ class GefyraConnectionItem:
 
     @property
     def list_values(self):
-        return [self.name, self.version, self.created, self.status]
+        return [self.name, self.version, self.created, self.status, self.mtu]
 
     @property
     def list_dict(self):

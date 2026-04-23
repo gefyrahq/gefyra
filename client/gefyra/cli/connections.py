@@ -249,7 +249,7 @@ def list_connections(output: str):
             click.echo(
                 tabulate(
                     data,
-                    headers=["NAME", "VERSION", "CREATED", "STATUS"],
+                    headers=["NAME", "VERSION", "CREATED", "STATUS", "MTU"],
                     tablefmt="plain",
                 )
             )
@@ -314,4 +314,5 @@ def inspect_connection(connection_name: str, output: str):
         console.info(f"Version: {conn.version}")
         console.info(f"Created: {conn.created}")
         console.info(f"Cargo Status: {conn.status}")
+        console.info(f"Cargo MTU: {conn.mtu}")
         console.info(f"Gefyra Client (Cluster) Status: {conn.client_status}")

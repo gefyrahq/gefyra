@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
-from gefyra.local.cargo import probe_wireguard_connection
+from gefyra.local.cargo import determine_wireguard_mtu, probe_wireguard_connection
 from gefyra.local.networking import handle_remove_network
 from gefyra.local.utils import compose_kubeconfig_for_serviceaccount
 from gefyra.types import (
@@ -171,12 +171,14 @@ def list_connections() -> List[GefyraConnectionItem]:
         all=True, filters={"label": f"{CARGO_LABEL[0]}={CARGO_LABEL[1]}"}
     )
     for cargo_container in containers:
+        mtu = None
         if cargo_container.status == "running":
             try:
                 config = ClientConfiguration(cargo_container_name=cargo_container.name)
                 config.CARGO_PROBE_TIMEOUT = 1  # don't wait too long for the probe
                 probe_wireguard_connection(config)
                 state = "running"
+                mtu = determine_wireguard_mtu(config)
             except GefyraConnectionError:
                 state = "error"
         else:
@@ -192,6 +194,7 @@ def list_connections() -> List[GefyraConnectionItem]:
                     "status": state,
                     "client_status": None,
                     "wireguard_probe": False,
+                    "mtu": mtu,
                 }
             )
         )
@@ -221,6 +224,7 @@ def inspect_connection(connection_name: str) -> GefyraConnectionItem:
         client_state = "not found"
 
     wireguard_probe_successful = False
+    mtu = None
     if client_state == "active" and cargo_status == "running":
         config.CARGO_PROBE_TIMEOUT = 1
         try:
@@ -228,6 +232,11 @@ def inspect_connection(connection_name: str) -> GefyraConnectionItem:
             wireguard_probe_successful = True
         except GefyraConnectionError:
             wireguard_probe_successful = False
+        try:
+            mtu = determine_wireguard_mtu(config)
+        except GefyraConnectionError:
+            pass
+
     return GefyraConnectionItem(
         name=connection_name,
         client_status=client_state,
@@ -235,6 +244,7 @@ def inspect_connection(connection_name: str) -> GefyraConnectionItem:
         created=result.created if result else None,
         version=result.version if result else None,
         wireguard_probe=wireguard_probe_successful,
+        mtu=mtu,
     )
 
 

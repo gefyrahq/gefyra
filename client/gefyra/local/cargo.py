@@ -30,6 +30,27 @@ def probe_wireguard_connection(config: ClientConfiguration):
         )
 
 
+def determine_wireguard_mtu(config: ClientConfiguration) -> int | None:
+    from docker.models.containers import Container
+
+    cargo: Container = config.DOCKER.containers.get(f"{config.CARGO_CONTAINER_NAME}")
+    _r = cargo.exec_run("cat /sys/class/net/wg0/mtu")
+    if _r.exit_code == 0:
+        try:
+            mtu = int(_r.output.decode().strip())
+            logger.debug(f"Determined MTU of {mtu} for cargo container")
+            return mtu
+        except ValueError:
+            logger.warning(
+                f"Could not determine MTU from cargo container output: {_r.output.decode().strip()}"
+            )
+    else:
+        logger.warning(
+            f"Could not determine MTU from cargo container, command exited with code {_r.exit_code}"
+        )
+    return None
+
+
 def create_wireguard_config(
     params: StowawayConfig, cargo_endpoint: str, mtu: str = None
 ) -> str:
