@@ -152,7 +152,7 @@ class TestInspectConnection(unittest.TestCase):
 
         # Verify console output
         mock_console.heading.assert_called_once_with("test-connection")
-        assert mock_console.info.call_count == 4
+        assert mock_console.info.call_count == 5
         mock_console.info.assert_any_call("Version: 1.0.0")
         mock_console.info.assert_any_call("Created: 2026-04-01")
         mock_console.info.assert_any_call("Cargo Status: ready")
@@ -199,7 +199,7 @@ class TestInspectConnection(unittest.TestCase):
 
         self.assertEqual(result.exit_code, 0)
         mock_console.heading.assert_called_once_with("default")
-        assert mock_console.info.call_count == 4
+        assert mock_console.info.call_count == 5
 
     @patch("gefyra.cli.connections.console")
     @patch("gefyra.api.inspect_connection")
@@ -310,4 +310,4 @@ class TestInspectConnection(unittest.TestCase):
 
         # Verify info method is called for each detail
         info_calls = [c for c in mock_console.method_calls if c[0] == "info"]
-        assert len(info_calls) == 4
+        assert len(info_calls) == 5
