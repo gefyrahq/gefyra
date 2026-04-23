@@ -66,11 +66,6 @@ async def bridge_reconcile(body, logger, **kwargs):
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
 
-    if not bridge.completed_transition(GefyraBridge.active.value):
-        logger.info(
-            f"Skipping reconciliation for GefyraBridge '{bridge.object_name}' (transition to ACTIVE not completed)"
-        )
-        return
     logger.info(f"Reconciliation for GefyraBridge: {obj}")
 
     key = bridge.data["target"]
