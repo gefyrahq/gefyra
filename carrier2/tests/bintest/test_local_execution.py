@@ -303,4 +303,4 @@ def test_l_log_custom_header(carrier2, http_upstream):
     p.join()
 
     res = queue.get(timeout=1)
-    assert "(gefyra-test-id)" in res
+    assert "(opc-request-id:gefyra-test-id)" in res

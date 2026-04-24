@@ -65,7 +65,8 @@ impl ProxyHttp for Carrier2 {
             let external_header_req_id = session.get_header(logging_header);
             match external_header_req_id {
                 Some(value) => {
-                    external_req_id = Some(value.to_str().unwrap().to_string());
+                    external_req_id =
+                        Some(format!("{}:{}", logging_header, value.to_str().unwrap()));
                     break;
                 }
                 None => continue,
