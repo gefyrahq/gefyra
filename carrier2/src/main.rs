@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use http::{Response, StatusCode};
+use http::{HeaderValue, Response, StatusCode};
 use lib::GefyraClient;
 use log::{debug, error, info, warn};
 use pingora::{
@@ -17,10 +17,21 @@ pub struct Carrier2 {
     cluster_tls: bool,
     cluster_sni: String,
     gefyra_clients: Arc<Vec<GefyraClient>>,
+    logging_headers: Vec<String>,
 }
 
 pub struct Carrier2Ctx {
-    request_id: Uuid,
+    request_id: String,
+    external_request_id: Option<String>,
+}
+
+impl Carrier2Ctx {
+    fn get_request_id(&self) -> &String {
+        match self.external_request_id {
+            Some(ref header) => header,
+            None => &self.request_id,
+        }
+    }
 }
 
 #[async_trait]
@@ -28,7 +39,8 @@ impl ProxyHttp for Carrier2 {
     type CTX = Carrier2Ctx;
     fn new_ctx(&self) -> Self::CTX {
         Carrier2Ctx {
-            request_id: Uuid::new_v4(),
+            request_id: Uuid::new_v4().to_string(),
+            external_request_id: None,
         }
     }
 
@@ -41,14 +53,33 @@ impl ProxyHttp for Carrier2 {
     ) -> Box<Error> {
         error!(
             "({}) Error connecting upstream request: {}",
-            _ctx.request_id, e
+            _ctx.get_request_id(),
+            e
         );
         e
     }
 
     async fn request_filter(&self, session: &mut Session, ctx: &mut Self::CTX) -> Result<bool> {
+        let mut external_req_id: Option<String> = None;
+        for logging_header in self.logging_headers.iter() {
+            let external_header_req_id = session.get_header(logging_header);
+            match external_header_req_id {
+                Some(value) => {
+                    external_req_id = Some(value.to_str().unwrap().to_string());
+                    break;
+                }
+                None => continue,
+            }
+        }
+
+        ctx.external_request_id = external_req_id;
+
         if let Some(client) = session.client_addr() {
-            info!("({}) Received request from {}", ctx.request_id, client);
+            info!(
+                "({}) Received request from {}",
+                ctx.get_request_id(),
+                client
+            );
         }
         Ok(false)
     }
@@ -65,7 +96,7 @@ impl ProxyHttp for Carrier2 {
         // access log
         info!(
             "({}) {} response code: {response_code}",
-            ctx.request_id,
+            ctx.get_request_id(),
             self.request_summary(session, ctx)
         );
     }
@@ -83,7 +114,8 @@ impl ProxyHttp for Carrier2 {
             let client = &self.gefyra_clients[client_idx];
             info!(
                 "({}) Selected GefyraClient {:?}",
-                _ctx.request_id, client.key
+                _ctx.get_request_id(),
+                client.key
             );
             return Ok(Box::new(client.peer.clone()));
         }
@@ -98,12 +130,12 @@ impl ProxyHttp for Carrier2 {
             if self.gefyra_clients.len() == 0 {
                 info!(
                     "({}) Selected cluster upstream (no GefyraClient loaded)",
-                    _ctx.request_id
+                    _ctx.get_request_id()
                 );
             } else {
                 info!(
                     "({}) Selected cluster upstream (no matching rule hit)",
-                    _ctx.request_id
+                    _ctx.get_request_id()
                 );
             }
 
@@ -133,12 +165,23 @@ impl ServeHttp for HttpGetProbeHandler {
 }
 
 fn main() {
-    env_logger::init();
+    let _ = env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .format_timestamp_nanos()
+        .try_init();
 
     // parse arguments from CLI
     let args = Opt::parse_args();
     // TODO lots of unwraps here
     let conf_file = args.conf.clone();
+    // GO-1033: support external request header to instrument log output
+    let supported_logging_headers = vec![
+        "opc-request-id".to_string(),
+        "x-amzn-trace-id".to_string(),
+        "x-cloud-trace-context".to_string(),
+        "request-id".to_string(),
+        "x-ms-request-id".to_string(),
+    ];
     let my_server = if let Some(conf_file) = conf_file {
         let conf_str = fs::read_to_string(conf_file.clone()).unwrap();
         let carrier_config: serde_yaml::Value = serde_yaml::from_str(conf_str.as_str()).unwrap();
@@ -214,6 +257,7 @@ fn main() {
                         gefyra_clients: Arc::new(clients),
                         cluster_tls: cert_path.is_some(),
                         cluster_sni: local_sni.unwrap_or_else(|| "".to_string()),
+                        logging_headers: supported_logging_headers.clone(),
                     };
 
                     let mut http_dispatcher =

@@ -279,3 +279,28 @@ def test_h_probes_three_peer_mixed_https(
     p.join()
     res = queue.get(timeout=1)
     assert "Server starting" in res
+
+
+def test_l_log_custom_header(carrier2, http_upstream):
+    queue = Queue()
+    # running carrier2 in a background process
+    p = Process(
+        target=carrier2,
+        args=("-c ./tests/fixtures/default_upstream.yaml", CARRIER_TIMEOUT, queue),
+    )
+    p.start()
+
+    retries = Retry(total=5, backoff_factor=0.2)
+    session = requests.Session()
+    # probe ports 8019, 8020, 8021
+    session.mount("http://localhost:8080", HTTPAdapter(max_retries=retries))
+    # probe ports 8001,8002
+    res = session.get(
+        "http://localhost:8080/",
+        headers={"opc-request-id": "gefyra-test-id"},
+    )
+
+    p.join()
+
+    res = queue.get(timeout=1)
+    assert "(gefyra-test-id)" in res
