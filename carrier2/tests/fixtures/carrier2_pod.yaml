@@ -72,7 +72,7 @@ spec:
   containers:
     - name: carrier
       image: carrier2:pytest
-      command: ["bin/bash", "-c"]
+      command: ["/bin/bash", "-c"]
       args: ["echo 0"]
       imagePullPolicy: Never
 
