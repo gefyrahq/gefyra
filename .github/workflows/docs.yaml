@@ -19,7 +19,7 @@ jobs:
           pip install poetry
           poetry install --with cli
           poetry run gefyra-docs --output ../gefyra-docs/content/en/1.quick-start/5.cli.md
-      - uses: actions/setup-node@v6.3.0
+      - uses: actions/setup-node@v6.4.0
         with:
             node-version: '22'
       - name: Test Build
