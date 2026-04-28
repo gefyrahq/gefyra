@@ -219,6 +219,44 @@ class GefyraBaseTest(GefyraTestMixin):
     #     self._stop_container(self.default_run_params["name"])
     #     self.kubectl("config", "set-context", "--current", "--namespace=default")
 
+    def test_c_run_gefyra_run_two_containers_isolated_pid_namespace(self):
+        # GO-1031: two gefyra-run containers must not share a PID namespace,
+        # otherwise `docker rm -f` on one cascades SIGTERM to the other.
+        self.assert_cargo_running()
+        self.assert_gefyra_connected()
+
+        names = ("gefyra-iso-one", "gefyra-iso-two")
+        for name in names:
+            self._stop_container(name)
+
+        common = {
+            "image": "alpine",
+            "command": 'sh -c "sleep 120"',
+            "namespace": "default",
+            "ports": {},
+            "detach": True,
+            "auto_remove": False,
+            "connection_name": CONNECTION_NAME,
+        }
+        try:
+            self.assertTrue(run(name=names[0], **common))
+            self.assertTrue(run(name=names[1], **common))
+
+            for name in names:
+                container = self.DOCKER_API.containers.get(name)
+                pid_mode = container.attrs["HostConfig"].get("PidMode", "")
+                self.assertFalse(
+                    pid_mode.startswith("container:"),
+                    f"{name} shares PID namespace via {pid_mode!r}",
+                )
+
+            self.DOCKER_API.containers.get(names[0]).remove(force=True)
+            sleep(3)
+            self.assert_container_running(names[1], timeout=5)
+        finally:
+            for name in names:
+                self._stop_container(name)
+
     def test_c_run_gefyra_bridge_with_invalid_deployment(self):
         self.assert_cargo_running()
         self.assert_gefyra_connected()

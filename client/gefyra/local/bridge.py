@@ -221,7 +221,6 @@ def deploy_app_container(
         "dns_search": dns_search,
         "auto_remove": auto_remove,
         "environment": env,
-        "pid_mode": f"container:{config.CARGO_CONTAINER_NAME}",  # noqa: E231
         "cpu_quota": cpu_quota,
         "mem_limit": mem_limit,
         "user": user,
@@ -233,7 +232,7 @@ def deploy_app_container(
     # Merge extra container engine args (e.g. --cpu-shares, --mem-reservation).
     # Extra args override built-in defaults if there is a key conflict.
     if extra_container_args:
-        _gefyra_managed_keys = {"network", "dns", "dns_search", "pid_mode", "detach"}
+        _gefyra_managed_keys = {"network", "dns", "dns_search", "detach"}
         _conflicts = [
             key for key in extra_container_args if key in _gefyra_managed_keys
         ]
