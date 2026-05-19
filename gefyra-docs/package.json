@@ -16,7 +16,7 @@
     "@nuxt/scripts": "^0.13.2",
     "better-sqlite3": "^12.6.2",
     "docus": "latest",
-    "nuxt": "^4.3.1"
+    "nuxt": "^4.4.6"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.5.0",
