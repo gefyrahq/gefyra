@@ -12,6 +12,7 @@ from gefyra.misc.uninstall import (
     remove_gefyra_crds,
     remove_gefyra_namespace,
     remove_gefyra_rbac,
+    remove_remainder_bridge_mounts,
     remove_remainder_bridges,
 )
 from gefyra.types import GefyraInstallOptions
@@ -151,6 +152,11 @@ def uninstall(
     from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
+    logger.info("Removing all Gefyra bridge mounts")
+    try:
+        remove_remainder_bridge_mounts(config)
+    except Exception as e:
+        logger.debug(e)
     logger.info("Removing all Gefyra bridges")
     try:
         remove_remainder_bridges(config)
