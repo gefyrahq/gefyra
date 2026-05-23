@@ -1753,18 +1753,18 @@ dev = ["black", "build", "freezegun", "mdx_truly_sane_lists", "mike", "mkdocs", 
 
 [[package]]
 name = "python-statemachine"
-version = "3.0.0"
+version = "3.1.0"
 description = "Python Finite State Machines made easy."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "python_statemachine-3.0.0-py3-none-any.whl", hash = "sha256:f967ee864cfd26375c91f49560e790357613482811efcec8b2020c1f874a5eaf"},
-    {file = "python_statemachine-3.0.0.tar.gz", hash = "sha256:91523f9ead73c1d6fecc975d5c6e0bfe363fbf537c5f0bf309bcd0f94f9441b2"},
+    {file = "python_statemachine-3.1.0-py3-none-any.whl", hash = "sha256:78e6d80facc1441345bf1bd3600ec2fe10b5bd7e91406984a5df0698efc2e7f6"},
+    {file = "python_statemachine-3.1.0.tar.gz", hash = "sha256:d00f637172c7f000d1baed1fc4b217aad3daa8d71dc3848fa4e45b20f3bde38d"},
 ]
 
 [package.extras]
-diagrams = ["pydot (>=2.0.0)"]
+diagrams = ["pydot (>=4.0.1)"]
 
 [[package]]
 name = "pywin32"
