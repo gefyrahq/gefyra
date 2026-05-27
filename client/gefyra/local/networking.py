@@ -38,14 +38,23 @@ def get_or_create_gefyra_network(config: ClientConfiguration) -> "Network":
 def _get_subnet(
     config: ClientConfiguration, network_name: str, occupied_networks: List[str]
 ) -> str:
+    from docker.errors import APIError
+
     tries = 255
     networks: List[Network] = []
     subnet = ""
     # this is a workaround to select a free subnet (instead of finding it with python code)
     for i in range(tries):
-        temp_network = config.DOCKER.networks.create(
-            f"{network_name}-{i}", driver="bridge"
-        )
+        try:
+            temp_network = config.DOCKER.networks.create(
+                f"{network_name}-{i}", driver="bridge"
+            )
+        except APIError as e:
+            if e.status_code == 409:
+                logger.debug(
+                    f"network {network_name}-{i} already exists, trying next one"
+                )
+                continue
         networks.append(temp_network)
         subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
         if subnet not in occupied_networks:
