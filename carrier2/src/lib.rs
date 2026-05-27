@@ -142,9 +142,11 @@ impl GefyraClient {
             // todo this must be error checked
             let tls = value["tls"].as_bool().unwrap_or_else(|| default_tls_on);
             let sni = value["sni"].as_str().unwrap_or_else(|| &sni).to_string();
+            let mut peer = HttpPeer::new(value["endpoint"].as_str().unwrap(), tls, sni);
+            peer.options.verify_cert = false;
             let client = GefyraClient {
                 key: key.as_str().unwrap().to_string(),
-                peer: HttpPeer::new(value["endpoint"].as_str().unwrap(), tls, sni),
+                peer: peer,
                 matching_rules: serde_yaml::from_value(value.clone()).unwrap(),
             };
             debug!("Adding GefyraClient {:?}", client);
