@@ -131,8 +131,6 @@ def handle_create_network(
             break
         except Exception as e:
             logger.warning(f"Could not create Gefyra network due to: {e}")
-            logger.debug(f"Adding {subnet} to occupied networks and retrying...")
-            occupied_networks.append(subnet)
             i = i + 1
             continue
     else:
