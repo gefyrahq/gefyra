@@ -289,9 +289,11 @@ class GefyraClient(WatchEventsMixin):
         )
 
         _retry = 0
-
+        rejected_subnets: list[str] = []
         while _retry < 10:
-            gefyra_network = get_or_create_gefyra_network(self._config)
+            gefyra_network = get_or_create_gefyra_network(
+                self._config, banned_subnets=rejected_subnets
+            )
             try:
                 if update_callback:
                     update_callback(
@@ -306,13 +308,17 @@ class GefyraClient(WatchEventsMixin):
                 _retry += 1
                 if e.status == 500:
                     logger.debug(
-                        f"Could not activate connection, retrying {_retry}/10..."
+                        f"Could not activate connection with subnet {gefyra_network.attrs['IPAM']['Config'][0]['Subnet']}, retrying {_retry}/10..."
                     )
                     # if the given subnet is taken in the cluster (by another client), recreate the network and try again
-                    # hopefully the IPAM config will give a new subnet
+                    rejected_subnets.append(
+                        gefyra_network.attrs["IPAM"]["Config"][0]["Subnet"]
+                    )
                     gefyra_network.remove()
         else:
-            raise GefyraConnectionError("Could not activate connection") from None
+            raise GefyraConnectionError(
+                "Could not activate connection: local subnet negotiation failed."
+            ) from None
 
         # busy wait for the client to enter the ACTIVE state
         _i = 0

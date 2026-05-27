@@ -29,8 +29,10 @@ def _get_client_networks(config: ClientConfiguration) -> List[str]:
     return [client["providerParameter"]["subnet"] for client in active_clients]
 
 
-def get_or_create_gefyra_network(config: ClientConfiguration) -> "Network":
-    gefyra_network = handle_create_network(config)
+def get_or_create_gefyra_network(
+    config: ClientConfiguration, banned_subnets: list[str] = []
+) -> "Network":
+    gefyra_network = handle_create_network(config, banned_subnets)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
@@ -57,7 +59,9 @@ def _get_subnet(
     return subnet
 
 
-def handle_create_network(config: ClientConfiguration) -> "Network":
+def handle_create_network(
+    config: ClientConfiguration, banned_subnets: list[str] = []
+) -> "Network":
     from docker.errors import NotFound
     from docker.types import IPAMConfig, IPAMPool
 
@@ -102,6 +106,7 @@ def handle_create_network(config: ClientConfiguration) -> "Network":
     while i < 10:
         try:
             occupied_networks = _get_client_networks(config) or []
+            occupied_networks.extend(banned_subnets)
             subnet = _get_subnet(
                 config=config,
                 network_name=network_name,
