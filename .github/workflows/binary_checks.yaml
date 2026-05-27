@@ -27,7 +27,7 @@ jobs:
       - name: Install QEMU 9.0.2
         uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@1a71fe70a728c239666a13d9944e5bf8cfe1ac9d
       - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v5
+        uses: crazy-max/ghaction-setup-docker@v5.1.0
       - name: Sanity run Gefyra
         run: |
           ls -la
