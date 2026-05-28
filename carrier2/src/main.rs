@@ -123,11 +123,12 @@ impl ProxyHttp for Carrier2 {
 
         if let Some(cluster_lb) = &self.cluster_upstream {
             let cluster_peer = cluster_lb.select(b"", 256).unwrap();
-            let peer = Box::new(HttpPeer::new(
+            let mut peer = Box::new(HttpPeer::new(
                 cluster_peer,
                 self.cluster_tls,
                 self.cluster_sni.clone(),
             ));
+            peer.options.verify_cert = false;
             if self.gefyra_clients.len() == 0 {
                 info!(
                     "({}) Selected cluster upstream (no GefyraClient loaded)",
