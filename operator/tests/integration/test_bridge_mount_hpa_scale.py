@@ -73,7 +73,7 @@ class TestBridgeMountHPAScale:
             model=bridge_mount_object,
             configuration=configuration,
             logger=logger,
-            initial="REQUESTED",
+            initial=GefyraBridgeMount.requested,
         )
         assert bm.requested.is_active
 

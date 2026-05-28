@@ -57,7 +57,7 @@ class TestBridgeMountStateMachine:
             model=bridge_mount_object,
             configuration=configuration,
             logger=logger,
-            initial="REQUESTED",
+            initial=GefyraBridgeMount.requested,
         )
         assert bridge_mount_machine.requested.is_active
         retries = 40
