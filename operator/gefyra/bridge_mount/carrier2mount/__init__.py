@@ -436,8 +436,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         return pods
 
     async def _default_upstream(self, rport: int) -> List[str]:
-        if hasattr(self, "_default_upstream_cache") and self._default_upstream_cache:
-            return self._default_upstream_cache
         name, _ = self._split_target_type_name(self.target)
         svc_name = generate_duplicate_svc_name(
             workload_name=name, container_name=self.container
@@ -445,8 +443,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         svc = await asyncio.to_thread(
             core_v1_api.read_namespaced_service, svc_name, self.namespace
         )
-        self._default_upstream_cache = get_upstreams_for_svc(svc=svc, rport=rport)
-        return self._default_upstream_cache
+        return get_upstreams_for_svc(svc=svc, rport=rport)
 
     async def _set_carrier_upstream(
         self, upstream_ports: list[int], probes: List[V1Probe]
