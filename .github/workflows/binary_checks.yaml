@@ -24,8 +24,8 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           name: gefyra-${{ env.APP_VERSION }}-darwin-universal
-      - name: Install QEMU 9.0.2
-        uses: docker/actions-toolkit/.github/actions/macos-setup-qemu@1a71fe70a728c239666a13d9944e5bf8cfe1ac9d
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker
         uses: crazy-max/ghaction-setup-docker@v5.1.0
       - name: Sanity run Gefyra
