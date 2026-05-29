@@ -48,21 +48,21 @@ def mount(ctx):
 )
 @click.option(
     "--tls-key",
-    help="Path to key file for tls traffic (within the target container).",
+    help="Path to key file for tls traffic (within the target container). To address specific ports, use the format <key>@port",
     type=str,
     required=False,
     multiple=True,
 )
 @click.option(
     "--tls-certificate",
-    help="Path to certificate file for tls traffic (within the target container).",
+    help="Path to certificate file for tls traffic (within the target container). To address specific ports, use the format <cert>@port",
     type=str,
     required=False,
     multiple=True,
 )
 @click.option(
     "--tls-sni",
-    help="SNI for tls traffic (within the target container).",
+    help="SNI for tls traffic (within the target container). To address specific ports, use the format <sni>@port",
     type=str,
     required=False,
     multiple=True,
