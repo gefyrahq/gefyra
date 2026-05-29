@@ -187,14 +187,20 @@ def get_tls_config(
             raise RuntimeError(
                 "TLS configuration requires both certificate and key to be set."
             )
+        if len(tls_certificate) != 1 or len(tls_key) != 1:
+            raise RuntimeError(
+                "There can be only one global TLS configuration. If you want to specify multiple TLS configurations for different ports, please use the @port suffix in the arguments."
+            )
         res: TlsConfigGlobal = {
             "tls": {
-                "certificate": tls_certificate,
-                "key": tls_key,
+                "certificate": tls_certificate[0],
+                "key": tls_key[0],
             }
         }
-        if tls_sni is not None:
-            res["tls"]["sni"] = tls_sni
+        if tls_sni and len(tls_sni) == 1:
+            res["tls"]["sni"] = tls_sni[0]
+        elif tls_sni and len(tls_sni) > 1:
+            raise RuntimeError("There can only be one global TLS sni.")
         return res
     else:
         return ports
