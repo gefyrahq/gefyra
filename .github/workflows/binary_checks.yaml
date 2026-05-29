@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'client/poetry.lock'
+      - '.github/workflows/*'
 
 jobs:
   mac_build:
