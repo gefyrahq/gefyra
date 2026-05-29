@@ -161,7 +161,7 @@ def get_ports_from_tls_args(
 
     for port, config in ports.items():
         if "certificate" not in config["tls"] or "key" not in config["tls"]:
-            raise ValueError(
+            raise RuntimeError(
                 f"TLS configuration for port {port} requires both certificate and key."
             )
 
