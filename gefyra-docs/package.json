@@ -20,6 +20,9 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^7.5.0",
+    "@iconify-json/devicon-plain": "^1.2.57",
+    "@iconify-json/material-icon-theme": "^1.2.66",
+    "@iconify-json/mdi": "^1.2.3",
     "@types/youtube": "^0.1.2",
     "eslint": "^10.0.2",
     "eslint-plugin-format": "^2.0.0",

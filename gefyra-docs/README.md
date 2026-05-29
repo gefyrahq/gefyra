@@ -1,113 +1,91 @@
-# Docus i18n Starter
+# Gefyra Documentation
 
-> A beautiful, internationalized starter for creating multi-language documentation with Docus
+Source for [gefyra.dev](https://gefyra.dev) — the official documentation for [Gefyra](https://github.com/gefyrahq/gefyra), the tool for blazingly-fast, rock-solid local application development with Kubernetes.
 
-This is the i18n Docus starter template that provides everything you need to build beautiful, multi-language documentation sites with Markdown and Vue components.
+Run local code in any cluster without the build-and-push cycle. Overlay containers, debug against real dependencies, and ship with confidence.
 
-## ✨ Features
+## Live site
 
-- 🌍 **Internationalization** - Native i18n support for multi-language docs
-- 🎨 **Beautiful Design** - Clean, modern documentation theme
-- 📱 **Responsive** - Mobile-first responsive design
-- 🌙 **Dark Mode** - Built-in dark/light mode support
-- 🔍 **Search** - Full-text search functionality per language
-- 📝 **Markdown Enhanced** - Extended markdown with custom components
-- 🎨 **Customizable** - Easy theming and brand customization
-- ⚡ **Fast** - Optimized for performance with Nuxt 4
-- 🔧 **TypeScript** - Full TypeScript support
+**https://gefyra.dev**
 
-## 🚀 Quick Start
+Changes on `main` are built and published to GitHub Pages via [`.github/workflows/docs.yaml`](../.github/workflows/docs.yaml).
+
+## Local development
 
 ```bash
-# Install dependencies
+cd gefyra-docs
 npm install
-
-# Start development server
 npm run dev
 ```
 
-Your multilingual documentation site will be running at `http://localhost:3000`
+Open [http://localhost:3000](http://localhost:3000). English is the default locale; routes use the `/en/...` prefix (with `/` redirecting to the English home page in production).
 
-## 🌍 Languages
+### Other scripts
 
-This starter comes pre-configured with:
-- 🇺🇸 **English** (`en`) - Default language
-- 🇫🇷 **Français** (`fr`) - French translation
+| Command | Description |
+| --- | --- |
+| `npm run build` | Production build (SSR) |
+| `npm run generate` | Static export for GitHub Pages |
+| `npm run docs:cli` | Regenerate CLI reference from the Python client |
+| `npm run lint` | ESLint |
+| `npm run lint:fix` | ESLint with auto-fix |
 
-## 📁 Project Structure
+## Content
 
-```text
-my-docs/
-├── content/              # Your markdown content
-│   ├── en/              # English content
-│   │   ├── index.md     # English homepage
-│   │   └── docs/        # English documentation
-│   └── fr/              # French content
-│       ├── index.md     # French homepage
-│       └── docs/        # French documentation
-├── public/              # Static assets
-├── nuxt.config.ts       # Nuxt configuration with i18n setup
-└── package.json         # Dependencies and scripts
-```
+Markdown lives under `content/en/`, grouped by topic:
 
-### Content Structure
+| Section | Topics |
+| --- | --- |
+| `1.quick-start/` | Introduction, installation, first steps, Docker Desktop extension, CLI reference |
+| `2.local-environments/` | Colima, Docker Desktop, k3d, kind, minikube |
+| `3.shared-environments/` | Multi-user setups, clients, connecting |
+| `4.remote-k8s/` | GCP, EKS, SYS11 |
+| `5.usecases-and-demos/` | Tutorials and walkthroughs |
+| `6.technical-details/` | Architecture, concepts |
+| `7.information/` | Run vs bridge, v1 vs v2, media, about |
 
-The content is organized by language, making it easy to manage translations:
+Navigation order and sidebar labels come from `.navigation.yml` files in each folder. Pages support [Docus MDC](https://docus.dev) (Vue components in Markdown, e.g. `::card`, `::tabs`).
 
-```text
-content/
-├── en/                   # English content
-│   ├── index.md
-│   ├── 1.getting-started/
-│   │   ├── installation.md
-│   │   └── configuration.md
-│   └── 2.essentials/
-│       ├── markdown.md
-│       └── components.md
-└── fr/                   # French content
-    ├── index.md
-    ├── 1.getting-started/
-    │   ├── installation.md
-    │   └── configuration.md
-    └── 2.essentials/
-        ├── markdown.md
-        └── components.md
-```
+### CLI reference (generated)
 
-## 🔗 URL Structure
-
-The i18n starter generates URLs with language prefixes:
-
-- English: `/en/getting-started/installation`
-- French: `/fr/getting-started/installation`
-- Default locale fallback: `/getting-started/installation` (redirects to English)
-
-## ⚡ Built with
-
-This starter comes pre-configured with:
-
-- [Nuxt 4](https://nuxt.com) - The web framework
-- [Nuxt Content](https://content.nuxt.com/) - File-based CMS
-- [Nuxt i18n](https://i18n.nuxt.com/) - Internationalization
-- [Nuxt UI Pro](https://ui.nuxt.com/pro) - Premium UI components
-- [Nuxt Image](https://image.nuxt.com/) - Optimized images
-- [Tailwind CSS 4](https://tailwindcss.com/) - Utility-first CSS
-- [Docus Layer](https://www.npmjs.com/package/docus) - Documentation theme
-
-## 📖 Documentation
-
-For detailed documentation on customizing your Docus project, visit the [Docus Documentation](https://docus.dev)
-
-## 🚀 Deployment
-
-Build for production:
+`content/en/1.quick-start/5.cli.md` is **not** hand-edited. It is produced from the Gefyra CLI:
 
 ```bash
-npm run build
+npm run docs:cli
 ```
 
-The built files will be in the `.output` directory, ready for deployment to any hosting provider that supports Node.js.
+That runs `gefyra-docs` in the `client` package (Poetry). CI does the same before each docs deploy.
 
-## 📄 License
+## Customization
 
-[MIT License](https://opensource.org/licenses/MIT)
+| Path | Purpose |
+| --- | --- |
+| `app/` | App config, SCSS, Vue components, custom icons (`app/assets/icons`) |
+| `public/` | Static assets (favicon, images) |
+| `nuxt.config.ts` | i18n, prerender, Mermaid, content highlighters, LLM hints |
+
+Site metadata (colors, social links) is in `app/app.config.ts`.
+
+## Stack
+
+Built on [Docus](https://docus.dev) (Nuxt documentation layer):
+
+- [Nuxt 4](https://nuxt.com) + [Nuxt Content](https://content.nuxt.com/)
+- [@nuxtjs/i18n](https://i18n.nuxt.com/) (English only today)
+- [Nuxt UI](https://ui.nuxt.com/) via Docus
+- [Mermaid](https://mermaid.js.org/) via `@barzhsieh/nuxt-content-mermaid`
+- Tailwind CSS 4
+
+For Docus-specific authoring patterns, see the [Docus documentation](https://docus.dev).
+
+## Contributing
+
+1. Edit or add Markdown under `content/en/`.
+2. Run `npm run dev` and check the page in the browser.
+3. Open a PR against the main [gefyra](https://github.com/gefyrahq/gefyra) repository.
+
+Questions and feedback: [GitHub Issues](https://github.com/gefyrahq/gefyra/issues) · [Discord](https://discord.gg/8NTPMVPaKy)
+
+## License
+
+Same license as the [Gefyra](https://github.com/gefyrahq/gefyra) project (MIT).

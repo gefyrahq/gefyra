@@ -15,6 +15,17 @@ export default defineNuxtConfig({
     },
   },
 
+  $development: {
+    vite: {
+      optimizeDeps: {
+        include: [
+          '@vue/devtools-core',
+          '@vue/devtools-kit',
+        ],
+      },
+    },
+  },
+
   eslint: {
     config: {
       standalone: false,
