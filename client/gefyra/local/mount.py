@@ -183,7 +183,7 @@ def get_tls_config(
     if len(ports) == 0:
         if not tls_certificate and not tls_key:
             return {}
-        if tls_certificate is None or tls_key is None:
+        if not tls_certificate or not tls_key:
             raise RuntimeError(
                 "TLS configuration requires both certificate and key to be set."
             )
