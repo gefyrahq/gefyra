@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Optional
+from typing import Optional, Union
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import GefyraBridgeMountNotFound
@@ -94,26 +94,116 @@ def handle_delete_gefyramount(
             raise e
 
 
-def get_tls_config(
-    tls_certificate: Optional[str] = None,
-    tls_key: Optional[str] = None,
-    tls_sni: Optional[str] = None,
-) -> dict[str, dict[str, str]]:
-    if not tls_certificate and not tls_key:
-        return {}
-    if tls_certificate is None or tls_key is None:
-        raise RuntimeError(
-            "TLS configuration requires both certificate and key to be set."
-        )
-    res = {
-        "tls": {
-            "certificate": tls_certificate,
-            "key": tls_key,
+def get_ports_from_tls_args(
+    tls_certificate: Optional[list[str]] = None,
+    tls_key: Optional[list[str]] = None,
+    tls_sni: Optional[list[str]] = None,
+) -> dict[int, dict[str, dict[str, str]]]:
+    """Receives a list of TLS arguments and returns a list of ports that should be used for the mount.
+    strings may contain @port to specify the port for which the TLS configuration should be applied.
+    If no port is specified, the TLS configuration will be applied to all ports.
+
+    Returns a dict with port as key and TLS configuration as value:
+    {
+        443: {
+            "tls": {
+                "certificate": tls_certificate
+                "key": tls_key,
+                "sni": tls_sni,
+            }
         }
     }
-    if res and tls_sni is not None:
-        res["tls"]["sni"] = tls_sni
-    return res
+
+    Or a dict with a global tls config:
+    "tls": {
+        "certificate": tls_certificate,
+        "key": tls_key,
+    }
+    """
+    ports: dict[int, dict[str, dict[str, str]]] = {}
+
+    def parse_arg(arg: str) -> tuple[str, Optional[int]]:
+        """Parse an argument that may contain @port suffix."""
+        if "@" in arg:
+            value, port_str = arg.rsplit("@", 1)
+            try:
+                return value, int(port_str)
+            except ValueError:
+                raise ValueError(f"Invalid port specification: {port_str}")
+        return arg, None
+
+    # Process certificates
+    if tls_certificate:
+        for cert in tls_certificate:
+            value, port = parse_arg(cert)
+            if port is not None:
+                if port not in ports:
+                    ports[port] = {"tls": {}}
+                ports[port]["tls"]["certificate"] = value
+
+    # Process keys
+    if tls_key:
+        for key in tls_key:
+            value, port = parse_arg(key)
+            if port is not None:
+                if port not in ports:
+                    ports[port] = {"tls": {}}
+                ports[port]["tls"]["key"] = value
+
+    # Process SNI
+    if tls_sni:
+        for sni in tls_sni:
+            value, port = parse_arg(sni)
+            if port is not None:
+                if port not in ports:
+                    ports[port] = {"tls": {}}
+                ports[port]["tls"]["sni"] = value
+
+    for port, config in ports.items():
+        if "certificate" not in config["tls"] or "key" not in config["tls"]:
+            raise RuntimeError(
+                f"TLS configuration for port {port} requires both certificate and key."
+            )
+
+    return ports
+
+
+# Type alias for TLS configuration
+TlsConfigGlobal = dict[str, dict[str, Union[list[str], str]]]
+TlsConfigPerPort = dict[int, dict[str, dict[str, str]]]
+
+
+def get_tls_config(
+    tls_certificate: Optional[list[str]] = None,
+    tls_key: Optional[list[str]] = None,
+    tls_sni: Optional[list[str]] = None,
+) -> TlsConfigGlobal | TlsConfigPerPort:
+    ports = get_ports_from_tls_args(tls_certificate, tls_key, tls_sni)
+
+    if len(ports) == 0:
+        if not tls_certificate and not tls_key:
+            return {}
+        if not tls_certificate or not tls_key:
+            raise RuntimeError(
+                "TLS configuration requires both certificate and key to be set."
+            )
+        if len(tls_certificate) != 1 or len(tls_key) != 1:
+            raise RuntimeError(
+                "There can be only one global TLS configuration. If you want to specify multiple TLS configurations for different ports, please use the @port suffix in the arguments."
+            )
+        res: TlsConfigGlobal = {
+            "tls": {
+                "certificate": tls_certificate[0],
+                "key": tls_key[0],
+            }
+        }
+        if tls_sni and len(tls_sni) == 1:
+            res["tls"]["sni"] = tls_sni[0]
+        elif tls_sni and len(tls_sni) > 1:
+            raise RuntimeError("There can only be one global TLS sni.")
+        return res
+    else:
+        return ports
 
 
 def get_gbridgemount_body(
@@ -123,10 +213,10 @@ def get_gbridgemount_body(
     provider: str,
     target_namespace: str,
     target_container: str,
-    tls_certificate: Optional[str] = None,
-    tls_key: Optional[str] = None,
-    tls_sni: Optional[str] = None,
-) -> dict[str, str | dict[str, dict[str, str]] | dict[str, str]]:
+    tls_certificate: Optional[list[str]] = None,
+    tls_key: Optional[list[str]] = None,
+    tls_sni: Optional[list[str]] = None,
+) -> dict[str, str | dict[str, str] | TlsConfigGlobal | TlsConfigPerPort]:
     return {
         "apiVersion": "gefyra.dev/v1",
         "kind": "gefyrabridgemount",

@@ -455,7 +455,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 Carrier2Proxy(
                     port=upstream_port,
                     clusterUpstream=await self._default_upstream(upstream_port),
-                    tls=_get_tls_from_provider_parameters(self.params),
+                    tls=_get_tls_from_provider_parameters(self.params, upstream_port),
                 )
             )
 

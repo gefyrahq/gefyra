@@ -11,9 +11,9 @@ def test_bridge_mount_body_generation():
         target="test-target",
         target_namespace="test-namespace",
         target_container="test-container",
-        tls_certificate="test-cert",
-        tls_key="test-key",
-        tls_sni="test-sni",
+        tls_certificate=["test-cert"],
+        tls_key=["test-key"],
+        tls_sni=["test-sni"],
         provider="carrier2mount",
     )
     # check body structure
@@ -61,7 +61,7 @@ def test_bridge_mount_body_generation_invalid_tls():
             target="test-target",
             target_namespace="test-namespace",
             target_container="test-container",
-            tls_key="test-key",
+            tls_key=["test-key"],
             provider="carrier2mount",
         )
     assert (
@@ -75,7 +75,7 @@ def test_bridge_mount_body_generation_invalid_tls():
             target="test-target",
             target_namespace="test-namespace",
             target_container="test-container",
-            tls_certificate="test-cert",
+            tls_certificate=["test-cert"],
             provider="carrier2mount",
         )
     assert (

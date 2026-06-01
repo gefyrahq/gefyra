@@ -48,21 +48,24 @@ def mount(ctx):
 )
 @click.option(
     "--tls-key",
-    help="Path to key file for tls traffic (within the target container).",
+    help="Path to key file for tls traffic (within the target container). To address specific ports, use the format <key>@port",
     type=str,
     required=False,
+    multiple=True,
 )
 @click.option(
     "--tls-certificate",
-    help="Path to certificate file for tls traffic (within the target container).",
+    help="Path to certificate file for tls traffic (within the target container). To address specific ports, use the format <cert>@port",
     type=str,
     required=False,
+    multiple=True,
 )
 @click.option(
     "--tls-sni",
-    help="SNI for tls traffic (within the target container).",
+    help="SNI for tls traffic (within the target container). To address specific ports, use the format <sni>@port",
     type=str,
     required=False,
+    multiple=True,
 )
 @click.option("--connection-name", "-c", type=str, default="default")
 @click.option(
@@ -79,9 +82,9 @@ def create(
     nowait: bool = False,
     timeout: int = 0,
     name: Optional[str] = None,
-    tls_certificate: Optional[str] = None,
-    tls_key: Optional[str] = None,
-    tls_sni: Optional[str] = None,
+    tls_certificate: Optional[list[str]] = None,
+    tls_key: Optional[list[str]] = None,
+    tls_sni: Optional[list[str]] = None,
 ):
     from gefyra import api
 

@@ -27,9 +27,9 @@ def create_mount(
     timeout: int = 0,
     mount_name: str | None = None,
     provider: str = "carrier2mount",
-    tls_certificate: Optional[str] = None,
-    tls_key: Optional[str] = None,
-    tls_sni: Optional[str] = None,
+    tls_certificate: Optional[list[str]] = None,
+    tls_key: Optional[list[str]] = None,
+    tls_sni: Optional[list[str]] = None,
 ) -> GefyraBridgeMount:
     from gefyra.configuration import ClientConfiguration
 
