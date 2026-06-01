@@ -157,4 +157,9 @@ def read_carrier2_config(
             if resp and resp.is_open():
                 resp.close()
             continue
+    if not res:
+        raise TemporaryError(
+            f"No lines when reading carrier 2 config on pod {name} in namespace {namespace} with {retries} retries",
+            delay=10,
+        )
     return res
