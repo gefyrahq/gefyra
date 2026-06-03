@@ -286,7 +286,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@v1.4.1
         with:
           version: '2.1.1'
           virtualenvs-create: true
@@ -377,7 +377,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@v1.4.1
         with:
           version: '2.1.1'
           virtualenvs-create: true
@@ -430,7 +430,7 @@ jobs:
           python-version: '3.11'
       # https://github.com/opensafely-core/job-server/issues/3429
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@v1.4.1
         with:
           version: '2.1.1'
           virtualenvs-create: true
@@ -523,7 +523,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+        uses: snok/install-poetry@v1.4.1
         with:
           version: '2.1.1'
           virtualenvs-create: true
