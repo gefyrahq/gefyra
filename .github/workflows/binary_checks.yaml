@@ -26,7 +26,7 @@ jobs:
         with:
           name: gefyra-${{ env.APP_VERSION }}-darwin-universal
       - name: Set up Docker
-        uses: crazy-max/ghaction-setup-docker@v5.1.0
+        uses: crazy-max/ghaction-setup-docker@v5.2.0
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
       - name: Sanity run Gefyra
