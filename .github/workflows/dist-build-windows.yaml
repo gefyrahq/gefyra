@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: '3.11'
     - name: Install Poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@v1.4.1
       with:
         version: '2.1.1'
     - name: Determine App Version
