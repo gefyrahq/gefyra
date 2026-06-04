@@ -527,6 +527,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             if pod.status.phase == "Terminating":
                 continue
             for container in pod.spec.containers:
+                patch_required = True
                 if container.name == self.container:
                     upstream_ports = [port.container_port for port in container.ports]
                     probes = get_all_probes(container)
@@ -544,6 +545,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                         raise BridgeInstallException("Probes not compatible")
                     if container.image == self._carrier_image:
                         # this pod/container is already running Carrier
+                        patch_required = False
                         self.logger.info(
                             f"The container {self.container} in Pod {pod.metadata.name} is already"
                             " running Carrier2"
@@ -555,26 +557,28 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 raise BridgeInstallException(
                     f"Container {self.container} not found in Pod {pod}"
                 )
-            await self.post_event(
-                "Patching target pod",
-                f"Now patching Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s)); container {self.container} with Carrier2",
-                "Normal",
-            )
-            try:
-                await asyncio.to_thread(
-                    core_v1_api.patch_namespaced_pod,
-                    name=pod.metadata.name,
-                    namespace=self.namespace,
-                    body=pod,
+
+            if patch_required:
+                await self.post_event(
+                    "Patching target pod",
+                    f"Now patching Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s)); container {self.container} with Carrier2",
+                    "Normal",
                 )
-            except ApiException as e:
-                self.logger.warning(
-                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})"
-                )
-                raise TemporaryError(
-                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})",
-                    delay=10,
-                )
+                try:
+                    await asyncio.to_thread(
+                        core_v1_api.patch_namespaced_pod,
+                        name=pod.metadata.name,
+                        namespace=self.namespace,
+                        body=pod,
+                    )
+                except ApiException as e:
+                    self.logger.warning(
+                        f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})"
+                    )
+                    raise TemporaryError(
+                        f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})",
+                        delay=10,
+                    )
 
             # wait for the container restart to become effective
             read_func = partial(
@@ -582,31 +586,36 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 pod.metadata.name,
                 self.namespace,
             )
-            await asyncio.to_thread(
-                wait_until_condition,
-                read_func,
-                lambda s: (
-                    next(
-                        filter(
-                            lambda c: c.name == self.container,
-                            s.status.container_statuses,
-                        )
-                    ).restart_count
-                    > 0
-                ),
-                timeout=120,
-                backoff=0.2,
-            )
+            try:
+                await asyncio.to_thread(
+                    wait_until_condition,
+                    read_func,
+                    lambda s: (
+                        next(
+                            filter(
+                                lambda c: c.name == self.container,
+                                s.status.container_statuses,
+                            )
+                        ).restart_count
+                        > 0
+                    ),
+                    timeout=120,
+                    backoff=0.2,
+                )
+            except RuntimeError:
+                raise BridgeInstallException(
+                    f"Timeout waiting for condition: container '{self.container}' in  Pod '{pod}' took too long to restart after patch."
+                )
 
             carrier_config = await self._set_carrier_upstream(upstream_ports, probes)
             await carrier_config.add_bridge_rules_for_mount(
                 self.name, self.configuration.NAMESPACE, None, None
             )
-            # await self.post_event(
-            #     "Update Carrier2",
-            #     f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s))",
-            #     "Normal",
-            # )
+            await self.post_event(
+                "Update Carrier2",
+                f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s))",
+                "Normal",
+            )
             self.logger.debug(f"Carrier2 config: {carrier_config}")
             try:
                 await carrier_config.commit(
@@ -618,7 +627,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 )
             except RuntimeError:
                 raise BridgeInstallException(
-                    f"Could not install GefyraBridgeMount successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
+                    f"Timeout waiting for condition: could not commit GefyraBridgeMount config successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
                     f" and container '{self.container}' in namespace '{self.namespace}' for more information."
                 )
 
