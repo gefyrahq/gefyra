@@ -39,3 +39,13 @@ spec:
           periodSeconds: 30
           successThreshold: 1
           timeoutSeconds: 60
+        startupProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthcheck 
+            port: 9000
+            scheme: HTTPS
+          initialDelaySeconds: 30 
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 60
