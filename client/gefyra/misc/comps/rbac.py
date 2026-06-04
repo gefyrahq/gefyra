@@ -44,6 +44,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                         "events.k8s.io",
                         "rbac.authorization.k8s.io",
                         "rbac.authorization.k8s.io/v1",
+                        "autoscaling",
                     ],
                     "resources": [
                         "namespaces",
