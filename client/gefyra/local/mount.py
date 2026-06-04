@@ -94,11 +94,46 @@ def handle_delete_gefyramount(
             raise e
 
 
+def parse_secret_notation(value: str) -> Union[str, dict[str, dict[str, str]]]:
+    if not value.lower().startswith("secret:"):
+        return value
+
+    # secret:{namespace}/{name}:{key}
+    content = value[len("secret:") :]
+    if ":" not in content:
+        raise ValueError(
+            f"Invalid secret notation: '{value}'. Expected format: 'secret:{{namespace}}/{{name}}:{{key}}' or 'secret:{{name}}:{{key}}'"
+        )
+
+    name_ns, key = content.rsplit(":", 1)
+
+    if "/" in name_ns:
+        namespace, name = name_ns.split("/", 1)
+        if not namespace:
+            namespace = "default"
+    else:
+        namespace = "default"
+        name = name_ns
+
+    if not name:
+        raise ValueError(f"Invalid secret notation: '{value}'. Missing secret name.")
+    if not key:
+        raise ValueError(f"Invalid secret notation: '{value}'. Missing key.")
+
+    return {
+        "secret": {
+            "namespace": namespace,
+            "name": name,
+            "key": key,
+        }
+    }
+
+
 def get_ports_from_tls_args(
     tls_certificate: Optional[list[str]] = None,
     tls_key: Optional[list[str]] = None,
     tls_sni: Optional[list[str]] = None,
-) -> dict[int, dict[str, dict[str, str]]]:
+) -> dict[int, dict[str, dict[str, Union[str, dict[str, dict[str, str]]]]]]:
     """Receives a list of TLS arguments and returns a list of ports that should be used for the mount.
     strings may contain @port to specify the port for which the TLS configuration should be applied.
     If no port is specified, the TLS configuration will be applied to all ports.
@@ -120,17 +155,20 @@ def get_ports_from_tls_args(
         "key": tls_key,
     }
     """
-    ports: dict[int, dict[str, dict[str, str]]] = {}
+    ports: dict[int, dict[str, dict[str, Union[str, dict[str, dict[str, str]]]]]] = {}
 
-    def parse_arg(arg: str) -> tuple[str, Optional[int]]:
+    def parse_arg(
+        arg: str,
+    ) -> tuple[Union[str, dict[str, dict[str, str]]], Optional[int]]:
         """Parse an argument that may contain @port suffix."""
         if "@" in arg:
             value, port_str = arg.rsplit("@", 1)
             try:
-                return value, int(port_str)
+                port = int(port_str)
             except ValueError:
                 raise ValueError(f"Invalid port specification: {port_str}")
-        return arg, None
+            return parse_secret_notation(value), port
+        return parse_secret_notation(arg), None
 
     # Process certificates
     if tls_certificate:
@@ -169,8 +207,10 @@ def get_ports_from_tls_args(
 
 
 # Type alias for TLS configuration
-TlsConfigGlobal = dict[str, dict[str, Union[list[str], str]]]
-TlsConfigPerPort = dict[int, dict[str, dict[str, str]]]
+TlsConfigGlobal = dict[str, dict[str, Union[list[str], str, dict[str, dict[str, str]]]]]
+TlsConfigPerPort = dict[
+    int, dict[str, dict[str, Union[str, dict[str, dict[str, str]]]]]
+]
 
 
 def get_tls_config(
@@ -193,12 +233,12 @@ def get_tls_config(
             )
         res: TlsConfigGlobal = {
             "tls": {
-                "certificate": tls_certificate[0],
-                "key": tls_key[0],
+                "certificate": parse_secret_notation(tls_certificate[0]),
+                "key": parse_secret_notation(tls_key[0]),
             }
         }
         if tls_sni and len(tls_sni) == 1:
-            res["tls"]["sni"] = tls_sni[0]
+            res["tls"]["sni"] = parse_secret_notation(tls_sni[0])
         elif tls_sni and len(tls_sni) > 1:
             raise RuntimeError("There can only be one global TLS sni.")
         return res
