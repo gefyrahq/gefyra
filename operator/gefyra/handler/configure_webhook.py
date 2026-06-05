@@ -161,8 +161,13 @@ async def check_validate_bridge_parameters(
         try:
             provider_parameter = body["provider"]
             target = body["target"]
+            destination_ip = body.get("destinationIP")
         except KeyError as e:
             raise kopf.AdmissionError(f"Missing field {e}")
+        if not destination_ip:
+            raise kopf.AdmissionError(
+                "Missing field 'destinationIP' or it is empty. Cannot create GefyraBridge without a destination IP."
+            )
         try:
             provider = await bridge_provider_factory.get(
                 BridgeProviderType(provider_parameter),

@@ -87,6 +87,11 @@ def create_bridge(
             f"Could not find GefyraBridgeMount '{bridge_mount_name}'"
         )
 
+    if not local_container_ip:
+        raise GefyraBridgeError(
+            f"Could not resolve IP address for container '{local}' in network '{config.NETWORK_NAME}'"
+        )
+
     if not name:
         bridge_name = f"{config.CLIENT_ID[:25]}-{bridge_mount.target[:20].replace('/', '-')}-{bridge_mount.target_container[:20]}-{random_string(5)}"
     else:
