@@ -623,7 +623,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
             # injected TLS files if requested
             for upstream_port in upstream_ports:
-                if _tls_cert_from_k8s_secret(self.params, upstream_port):
+                if self.params and _tls_cert_from_k8s_secret(
+                    self.params, upstream_port
+                ):
                     # inject certificate from k8s secret
                     await inject_tls_file(
                         self.logger,
@@ -634,7 +636,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                         self.params,
                         upstream_port,
                     )
-                if _tls_key_from_k8s_secret(self.params, upstream_port):
+                if self.params and _tls_key_from_k8s_secret(self.params, upstream_port):
                     # inject key from k8s secret
                     await inject_tls_file(
                         self.logger,
@@ -733,7 +735,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     upstream_ports = [port.container_port for port in container.ports]
                     updated = False
                     for upstream_port in upstream_ports:
-                        if _tls_cert_from_k8s_secret(self.params, upstream_port):
+                        if self.params and _tls_cert_from_k8s_secret(
+                            self.params, upstream_port
+                        ):
                             updated = await update_tls_file(
                                 self.logger,
                                 pod.metadata.name,
@@ -743,7 +747,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                                 self.params,
                                 upstream_port,
                             )
-                        if _tls_key_from_k8s_secret(self.params, upstream_port):
+                        if self.params and _tls_key_from_k8s_secret(
+                            self.params, upstream_port
+                        ):
                             updated = updated or await update_tls_file(
                                 self.logger,
                                 pod.metadata.name,

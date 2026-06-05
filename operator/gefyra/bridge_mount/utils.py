@@ -16,7 +16,10 @@ from kubernetes.client import (
 
 from gefyra.utils import wait_until_condition
 
-core_v1_api = k8s.client.CoreV1Api()
+
+def _get_core_v1_api():
+    return k8s.client.CoreV1Api()
+
 
 INJECTED_TLS_KEY = "/tmp/from_k8s_secret_key_{port}.pem"
 INJECTED_TLS_CERT = "/tmp/from_k8s_secret_cert_{port}.pem"
@@ -103,7 +106,7 @@ def _read_k8s_secret_tls_value(name: str, key: str, namespace: str = "default") 
                     )
 
     try:
-        secret = core_v1_api.read_namespaced_secret(name, namespace)
+        secret = _get_core_v1_api().read_namespaced_secret(name, namespace)
         if not secret.data:
             raise Exception(f"Secret '{name}' in namespace '{namespace}' has no data")
 
@@ -131,10 +134,15 @@ def _read_k8s_secret_tls_value(name: str, key: str, namespace: str = "default") 
 def _tls_param_from_key_secret(
     which: str, params: dict, rport: int | None = None
 ) -> bool:
-    if rport and str(rport) in params and "tls" in params[str(rport)]:
+    if (
+        rport
+        and str(rport) in params
+        and "tls" in params[str(rport)]
+        and which in params[str(rport)]["tls"]
+    ):
         _port = str(rport)
         _tls_param = params[_port]["tls"][which]
-    elif "tls" in params:
+    elif "tls" in params and which in params["tls"]:
         _tls_param = params["tls"][which]
     else:
         return False
@@ -164,15 +172,22 @@ async def update_tls_file(
     from gefyra.bridge.carrier2.utils import read_carrier2_file
 
     try:
-        if rport and str(rport) in params and "tls" in params[str(rport)]:
+        if (
+            rport
+            and str(rport) in params
+            and "tls" in params[str(rport)]
+            and which in params[str(rport)]["tls"]
+        ):
             _port = str(rport)
             _tls_param = params[_port]["tls"][which]
-        elif "tls" in params:
+        elif "tls" in params and which in params["tls"]:
             _port = "all"
             _tls_param = params["tls"][which]
+        else:
+            raise KeyError(which)
     except KeyError:
         raise ValueError(
-            "Only 'certificate' or 'key' are supported values for the 'which' parameter."
+            f"Only 'certificate' or 'key' are supported values for the 'which' parameter. {which} was requested."
         )
 
     if which == "certificate":
@@ -193,7 +208,7 @@ async def update_tls_file(
         await inject_tls_file(
             logger,
             pod_name,
-            container.name,
+            container,
             namespace,
             which,
             params,
@@ -215,15 +230,22 @@ async def inject_tls_file(
     from gefyra.bridge.carrier2.utils import stream_exec_retries
 
     try:
-        if rport and str(rport) in params and "tls" in params[str(rport)]:
+        if (
+            rport
+            and str(rport) in params
+            and "tls" in params[str(rport)]
+            and which in params[str(rport)]["tls"]
+        ):
             _port = str(rport)
             _tls_param = params[_port]["tls"][which]
-        elif "tls" in params:
+        elif "tls" in params and which in params["tls"]:
             _port = "all"
             _tls_param = params["tls"][which]
+        else:
+            raise KeyError(which)
     except KeyError:
         raise ValueError(
-            "Only 'certificate' or 'key' are supported values for the 'which' parameter."
+            f"Only 'certificate' or 'key' are supported values for the 'which' parameter. {which} was requested."
         )
 
     if which == "certificate":
@@ -238,7 +260,7 @@ async def inject_tls_file(
         _tls_param["secret"]["namespace"],
     )
 
-    core_v1 = k8s.client.CoreV1Api()
+    core_v1 = _get_core_v1_api()
     read_func = partial(core_v1.read_namespaced_pod_status, pod_name, namespace)
 
     # busy wait for pod to get ready, raises RuntimeError on timeout
@@ -269,7 +291,13 @@ async def inject_tls_file(
 def _get_tls_from_provider_parameters(params: dict, rport: int | None = None):
     from gefyra.bridge.carrier2.config import CarrierTLS
 
-    if rport and str(rport) in params and "tls" in params[str(rport)]:
+    if (
+        rport
+        and str(rport) in params
+        and "tls" in params[str(rport)]
+        and "certificate" in params[str(rport)]["tls"]
+        and "key" in params[str(rport)]["tls"]
+    ):
         _port = str(rport)
         _cert_param = params[_port]["tls"]["certificate"]
         _key_param = params[_port]["tls"]["key"]
@@ -278,7 +306,7 @@ def _get_tls_from_provider_parameters(params: dict, rport: int | None = None):
             _sni_param = params[_port]["tls"]["sni"]
         else:
             _sni_param = None
-    elif "tls" in params:
+    elif "tls" in params and "certificate" in params["tls"] and "key" in params["tls"]:
         _port = "all"
         _cert_param = params["tls"]["certificate"]
         _key_param = params["tls"]["key"]
@@ -302,7 +330,9 @@ def _get_tls_from_provider_parameters(params: dict, rport: int | None = None):
         key = _key_param
     if isinstance(_sni_param, dict) and "secret" in _sni_param:
         sni = _read_k8s_secret_tls_value(
-            _sni_param["name"], _sni_param["key"], _sni_param["namespace"]
+            _sni_param["secret"]["name"],
+            _sni_param["secret"]["key"],
+            _sni_param["secret"]["namespace"],
         )
     else:
         sni = _sni_param
