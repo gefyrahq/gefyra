@@ -29,6 +29,9 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
+    _inject_tls_file,
+    _tls_cert_from_k8s_secret,
+    _tls_key_from_k8s_secret,
     generate_duplicate_workload_name,
     generate_duplicate_svc_name,
     generate_k8s_conform_name,
@@ -597,7 +600,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 timeout=120,
                 backoff=0.2,
             )
-
             carrier_config = await self._set_carrier_upstream(upstream_ports, probes)
             await carrier_config.add_bridge_rules_for_mount(
                 self.name, self.configuration.NAMESPACE, None, None
@@ -607,6 +609,30 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             #     f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s))",
             #     "Normal",
             # )
+
+            #
+            for upstream_port in upstream_ports:
+                if _tls_cert_from_k8s_secret(self.params, upstream_port):
+                    # inject certificate from k8s secret
+                    await _inject_tls_file(
+                        pod.metadata.name,
+                        container.name,
+                        self.namespace,
+                        "certificate",
+                        self.params,
+                        upstream_port,
+                    )
+                if _tls_key_from_k8s_secret(self.params, upstream_port):
+                    # inject key from k8s secret
+                    await _inject_tls_file(
+                        pod.metadata.name,
+                        container.name,
+                        self.namespace,
+                        "key",
+                        self.params,
+                        upstream_port,
+                    )
+
             self.logger.debug(f"Carrier2 config: {carrier_config}")
             try:
                 await carrier_config.commit(
@@ -674,16 +700,42 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             self.logger.error("Cannot determine original pods")
             return False
         for pod in pods.items:
-            config_str_list = await asyncio.to_thread(
-                read_carrier2_config,
-                self.logger,
-                pod.metadata.name,
-                self.namespace,
-            )
-            config_str = "\n".join(config_str_list)
-            pod_config = Carrier2Config.from_string(config_str)
-            if not any(p.clusterUpstream for p in pod_config.proxy):
-                return False
+            for container in pod.spec.containers:
+                if container.name == self.container:
+                    upstream_ports = [port.container_port for port in container.ports]
+
+                    config_str_list = await asyncio.to_thread(
+                        read_carrier2_config,
+                        self.logger,
+                        pod.metadata.name,
+                        self.namespace,
+                        container.name,
+                    )
+                    config_str = "\n".join(config_str_list)
+                    pod_config = Carrier2Config.from_string(config_str)
+                    if not any(p.clusterUpstream for p in pod_config.proxy):
+                        return False
+
+                    upstream_ports = [port.container_port for port in container.ports]
+                    for upstream_port in upstream_ports:
+                        if _tls_cert_from_k8s_secret(self.params, upstream_port):
+                            await _inject_tls_file(
+                                pod.metadata.name,
+                                container.name,
+                                self.namespace,
+                                "certificate",
+                                self.params,
+                                upstream_port,
+                            )
+                        if _tls_key_from_k8s_secret(self.params, upstream_port):
+                            await _inject_tls_file(
+                                pod.metadata.name,
+                                container.name,
+                                self.namespace,
+                                "key",
+                                self.params,
+                                upstream_port,
+                            )
         return True
 
     async def restore_original_workload(
@@ -742,7 +794,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 f"original pod count: {original_pod_len}, "
                 f"Gefyra pod count: {gefyra_pod_len}"
             )
-        # consider down scaling & up scaling
         return ready
 
     async def validate(self, bridge_request, hints):

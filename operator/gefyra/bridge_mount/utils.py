@@ -1,3 +1,8 @@
+import asyncio
+import base64
+from functools import partial
+import logging
+import time
 from typing import List
 import kubernetes as k8s
 from kubernetes.client import (
@@ -11,8 +16,18 @@ from kubernetes.client import (
 )
 
 from gefyra.bridge.carrier2.config import CarrierTLS
+from gefyra.utils import wait_until_condition
+
+from gefyra.bridge.carrier2.utils import stream_exec_retries
 
 core_v1_api = k8s.client.CoreV1Api()
+
+INJECTED_TLS_KEY = "/tmp/from_k8s_secret_key_{port}.pem"
+INJECTED_TLS_CERT = "/tmp/from_k8s_secret_cert_{port}.pem"
+
+_K8S_SECRET_CACHE = {}  # (namespace, name) -> (data, timestamp)
+
+logger = logging.getLogger(__name__)
 
 
 def get_upstreams_for_svc(svc: V1Service, rport: int | None = None) -> list[str]:
@@ -73,23 +88,182 @@ def get_ports_for_workload(
     return ports
 
 
+def _read_k8s_secret_tls_value(name: str, key: str, namespace: str = "default") -> str:
+    """
+    Reads a Kubernetes secret and caches its content for a minute.
+    Extracts the value of the specified key and returns it base64 decoded.
+    """
+    now = time.time()
+    cache_key = (namespace, name)
+
+    if cache_key in _K8S_SECRET_CACHE:
+        data, timestamp = _K8S_SECRET_CACHE[cache_key]
+        if now - timestamp < 60:
+            if key in data:
+                try:
+                    return base64.b64decode(data[key]).decode("utf-8")
+                except Exception as e:
+                    raise Exception(
+                        f"Could not base64 decode key '{key}' in secret '{name}' "
+                        f"from namespace '{namespace}': {e}"
+                    )
+
+    try:
+        secret = core_v1_api.read_namespaced_secret(name, namespace)
+        if not secret.data:
+            raise Exception(f"Secret '{name}' in namespace '{namespace}' has no data")
+
+        _K8S_SECRET_CACHE[cache_key] = (secret.data, now)
+
+        if key not in secret.data:
+            raise Exception(
+                f"Key '{key}' not found in secret '{name}' in namespace '{namespace}'"
+            )
+
+        try:
+            return base64.b64decode(secret.data[key]).decode("utf-8")
+        except Exception as e:
+            raise Exception(
+                f"Could not base64 decode key '{key}' in secret '{name}' "
+                f"from namespace '{namespace}': {e}"
+            )
+    except k8s.client.ApiException as e:
+        raise Exception(
+            f"Failed to read secret '{name}' in namespace '{namespace}' "
+            f"from Kubernetes API: {e.reason} ({e.status})"
+        )
+
+
+def _tls_param_from_key_secret(
+    which: str, params: dict, rport: int | None = None
+) -> bool:
+    if rport and str(rport) in params and "tls" in params[str(rport)]:
+        _port = str(rport)
+        _tls_param = params[_port]["tls"][which]
+    elif "tls" in params:
+        _tls_param = params["tls"][which]
+    else:
+        return False
+
+    if isinstance(_tls_param, dict) and "secret" in _tls_param:
+        return True
+    return False
+
+
+def _tls_cert_from_k8s_secret(params: dict, rport: int | None = None) -> bool:
+    return _tls_param_from_key_secret("certificate", params, rport)
+
+
+def _tls_key_from_k8s_secret(params: dict, rport: int | None = None) -> bool:
+    return _tls_param_from_key_secret("key", params, rport)
+
+
+async def _inject_tls_file(
+    pod_name: str,
+    container: str,
+    namespace: str,
+    which: str,
+    params: dict,
+    rport: int | None = None,
+):
+    try:
+        if rport and str(rport) in params and "tls" in params[str(rport)]:
+            _port = str(rport)
+            _tls_param = params[_port]["tls"][which]
+        elif "tls" in params:
+            _port = "all"
+            _tls_param = params["tls"][which]
+    except KeyError:
+        raise ValueError(
+            "Only 'certificate' or 'key' are supported values for the 'which' parameter."
+        )
+
+    if which == "certificate":
+        file_name = INJECTED_TLS_CERT.format(port=_port)
+    else:
+        file_name = INJECTED_TLS_KEY.format(port=_port)
+
+    logger.info(f"Injecting TLS file from Kubernetes secret: {file_name}")
+    content = _read_k8s_secret_tls_value(
+        _tls_param["secret"]["name"],
+        _tls_param["secret"]["key"],
+        _tls_param["secret"]["namespace"],
+    )
+
+    core_v1 = k8s.client.CoreV1Api()
+    read_func = partial(core_v1.read_namespaced_pod_status, pod_name, namespace)
+
+    # busy wait for pod to get ready, raises RuntimeError on timeout
+    await asyncio.to_thread(
+        wait_until_condition,
+        read_func,
+        lambda s: all(
+            [
+                bool(
+                    container.state
+                    and container.state.running
+                    and container.state.running.started_at
+                )
+                for container in s.status.container_statuses
+            ]
+        ),
+        timeout=120,
+        backoff=2,
+    )
+
+    write_command = [
+        f"cat <<'EOF' > {file_name}\n{content}",
+        "EOF",
+    ]
+    stream_exec_retries(logger, pod_name, namespace, container, write_command)
+
+
 def _get_tls_from_provider_parameters(
     params: dict, rport: int | None = None
 ) -> CarrierTLS | None:
     if rport and str(rport) in params and "tls" in params[str(rport)]:
-        return CarrierTLS(
-            certificate=params[str(rport)]["tls"]["certificate"],
-            key=params[str(rport)]["tls"]["key"],
-            sni=params[str(rport)]["tls"].get("sni", None),
-        )
+        _port = str(rport)
+        _cert_param = params[_port]["tls"]["certificate"]
+        _key_param = params[_port]["tls"]["key"]
+
+        if "sni" in params[_port]["tls"]:
+            _sni_param = params[_port]["tls"]["sni"]
+        else:
+            _sni_param = None
     elif "tls" in params:
-        return CarrierTLS(
-            certificate=params["tls"]["certificate"],
-            key=params["tls"]["key"],
-            sni=params["tls"].get("sni", None),
+        _port = "all"
+        _cert_param = params["tls"]["certificate"]
+        _key_param = params["tls"]["key"]
+
+        if "sni" in params["tls"]:
+            _sni_param = params["tls"]["sni"]
+        else:
+            _sni_param = None
+
+    else:
+        # if none of the above tls settings are set
+        return None
+
+    if isinstance(_cert_param, dict) and "secret" in _cert_param:
+        cert = INJECTED_TLS_CERT.format(port=_port)
+    else:
+        cert = _cert_param
+    if isinstance(_key_param, dict) and "secret" in _key_param:
+        key = INJECTED_TLS_KEY.format(port=_port)
+    else:
+        key = _key_param
+    if isinstance(_sni_param, dict) and "secret" in _sni_param:
+        sni = _read_k8s_secret_tls_value(
+            _sni_param["name"], _sni_param["key"], _sni_param["namespace"]
         )
     else:
-        return None
+        sni = _sni_param
+
+    return CarrierTLS(
+        certificate=cert,
+        key=key,
+        sni=sni,
+    )
 
 
 def get_all_probes(container: V1Container) -> List[V1Probe]:
