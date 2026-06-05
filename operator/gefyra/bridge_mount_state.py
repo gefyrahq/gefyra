@@ -264,7 +264,6 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.install()
-            # TODO RuntimeError failed to fullfil waiting condition
         except (BridgeMountInstallException, BridgeInstallException) as e:
             await self.post_event(
                 reason="Failed to install GefyraBridgeMount",
