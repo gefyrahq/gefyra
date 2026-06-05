@@ -1,7 +1,6 @@
 import asyncio
 import base64
 from functools import partial
-import logging
 import time
 from typing import List
 import kubernetes as k8s
@@ -18,7 +17,7 @@ from kubernetes.client import (
 from gefyra.bridge.carrier2.config import CarrierTLS
 from gefyra.utils import wait_until_condition
 
-from gefyra.bridge.carrier2.utils import stream_exec_retries
+from gefyra.bridge.carrier2.utils import read_carrier2_file, stream_exec_retries
 
 core_v1_api = k8s.client.CoreV1Api()
 
@@ -26,8 +25,6 @@ INJECTED_TLS_KEY = "/tmp/from_k8s_secret_key_{port}.pem"
 INJECTED_TLS_CERT = "/tmp/from_k8s_secret_cert_{port}.pem"
 
 _K8S_SECRET_CACHE = {}  # (namespace, name) -> (data, timestamp)
-
-logger = logging.getLogger(__name__)
 
 
 def get_upstreams_for_svc(svc: V1Service, rport: int | None = None) -> list[str]:
@@ -158,7 +155,57 @@ def _tls_key_from_k8s_secret(params: dict, rport: int | None = None) -> bool:
     return _tls_param_from_key_secret("key", params, rport)
 
 
-async def _inject_tls_file(
+async def update_tls_file(
+    logger,
+    pod_name: str,
+    container: str,
+    namespace: str,
+    which: str,
+    params: dict,
+    rport: int | None = None,
+) -> bool:
+    try:
+        if rport and str(rport) in params and "tls" in params[str(rport)]:
+            _port = str(rport)
+            _tls_param = params[_port]["tls"][which]
+        elif "tls" in params:
+            _port = "all"
+            _tls_param = params["tls"][which]
+    except KeyError:
+        raise ValueError(
+            "Only 'certificate' or 'key' are supported values for the 'which' parameter."
+        )
+
+    if which == "certificate":
+        file_name = INJECTED_TLS_CERT.format(port=_port)
+    else:
+        file_name = INJECTED_TLS_KEY.format(port=_port)
+
+    content_from_secret = _read_k8s_secret_tls_value(
+        _tls_param["secret"]["name"],
+        _tls_param["secret"]["key"],
+        _tls_param["secret"]["namespace"],
+    )
+    content_from_container = await asyncio.to_thread(
+        read_carrier2_file, logger, pod_name, namespace, file_name, container
+    )
+    if content_from_secret.strip() != content_from_container[0].strip():
+        logger.info(f"Update to TLS {which} from Kubernetes secret detected")
+        await inject_tls_file(
+            logger,
+            pod_name,
+            container.name,
+            namespace,
+            which,
+            params,
+            rport,
+        )
+        return True
+    return False
+
+
+async def inject_tls_file(
+    logger,
     pod_name: str,
     container: str,
     namespace: str,

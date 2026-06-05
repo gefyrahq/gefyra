@@ -118,7 +118,7 @@ def read_carrier2_file(
 
     core_v1_api = k8s.client.CoreV1Api()
 
-    logger.info(f"Reading carrier2 config from pod {name} in namespace {namespace}")
+    logger.debug(f"Reading carrier2 file from pod {name} in namespace {namespace}")
 
     exec_command = ["busybox", "sh"]
     res = []

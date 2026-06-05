@@ -264,7 +264,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.install()
-        except (BridgeMountInstallException, BridgeInstallException) as e:
+        except (BridgeMountInstallException, BridgeInstallException, Exception) as e:
             await self.post_event(
                 reason="Failed to install GefyraBridgeMount",
                 message=str(e),

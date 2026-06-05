@@ -29,7 +29,7 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
-    _inject_tls_file,
+    inject_tls_file,
     _tls_cert_from_k8s_secret,
     _tls_key_from_k8s_secret,
     generate_duplicate_workload_name,
@@ -38,6 +38,7 @@ from gefyra.bridge_mount.utils import (
     get_all_probes,
     get_ports_for_workload,
     get_upstreams_for_svc,
+    update_tls_file,
 )
 from gefyra.utils import async_all, async_any, wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
@@ -620,11 +621,12 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 "Normal",
             )
 
-            #
+            # injected TLS files if requested
             for upstream_port in upstream_ports:
                 if _tls_cert_from_k8s_secret(self.params, upstream_port):
                     # inject certificate from k8s secret
-                    await _inject_tls_file(
+                    await inject_tls_file(
+                        self.logger,
                         pod.metadata.name,
                         container.name,
                         self.namespace,
@@ -634,7 +636,8 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     )
                 if _tls_key_from_k8s_secret(self.params, upstream_port):
                     # inject key from k8s secret
-                    await _inject_tls_file(
+                    await inject_tls_file(
+                        self.logger,
                         pod.metadata.name,
                         container.name,
                         self.namespace,
@@ -726,10 +729,13 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     if not any(p.clusterUpstream for p in pod_config.proxy):
                         return False
 
+                    # check if injected TLS files need updates
                     upstream_ports = [port.container_port for port in container.ports]
+                    updated = False
                     for upstream_port in upstream_ports:
                         if _tls_cert_from_k8s_secret(self.params, upstream_port):
-                            await _inject_tls_file(
+                            updated = await update_tls_file(
+                                self.logger,
                                 pod.metadata.name,
                                 container.name,
                                 self.namespace,
@@ -738,13 +744,28 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                                 upstream_port,
                             )
                         if _tls_key_from_k8s_secret(self.params, upstream_port):
-                            await _inject_tls_file(
+                            updated = updated or await update_tls_file(
+                                self.logger,
                                 pod.metadata.name,
                                 container.name,
                                 self.namespace,
                                 "key",
                                 self.params,
                                 upstream_port,
+                            )
+                    if updated:
+                        try:
+                            await pod_config.commit(
+                                self.logger,
+                                pod.metadata.name,
+                                self.container,
+                                self.namespace,
+                                debug=self.configuration.CARRIER2_DEBUG,
+                            )
+                        except RuntimeError:
+                            raise BridgeInstallException(
+                                f"Timeout waiting for condition: could not commit GefyraBridgeMount config successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
+                                f" and container '{self.container}' in namespace '{self.namespace}' for more information."
                             )
         return True
 
@@ -774,7 +795,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         original_pods = await self._original_pods
         if len(gefyra_pods.items) != len(original_pods.items):
             self.logger.info(
-                f"Replica count mismatch: original={len(original_pods.items)}, "
+                f"Replica count differs: original={len(original_pods.items)}, "
                 f"gefyra={len(gefyra_pods.items)}. This might be caused by a HPA."
             )
 
