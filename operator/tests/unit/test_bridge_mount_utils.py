@@ -1,12 +1,12 @@
 import base64
 from unittest import TestCase
 from unittest.mock import patch, MagicMock
-from gefyra.bridge_mount.utils import _read_k8s_secret_tls_value, _SECRET_CACHE
+from gefyra.bridge_mount.utils import _read_k8s_secret_tls_value, _K8S_SECRET_CACHE
 
 
 class TestBridgeMountUtils(TestCase):
     def setUp(self):
-        _SECRET_CACHE.clear()
+        _K8S_SECRET_CACHE.clear()
         self.mock_api_patcher = patch("gefyra.bridge_mount.utils.core_v1_api")
         self.mock_api = self.mock_api_patcher.start()
 
@@ -57,7 +57,7 @@ class TestBridgeMountUtils(TestCase):
             initial_time = 1000.0
             mock_time.return_value = initial_time
             # Re-run initial call to set initial time in cache
-            _SECRET_CACHE.clear()
+            _K8S_SECRET_CACHE.clear()
             _read_k8s_secret_tls_value(secret_name, secret_key, secret_namespace)
 
             mock_time.return_value = initial_time + 61

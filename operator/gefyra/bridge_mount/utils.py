@@ -14,7 +14,6 @@ from kubernetes.client import (
     V1Probe,
 )
 
-from gefyra.bridge.carrier2.config import CarrierTLS
 from gefyra.utils import wait_until_condition
 
 core_v1_api = k8s.client.CoreV1Api()
@@ -267,9 +266,9 @@ async def inject_tls_file(
     stream_exec_retries(logger, pod_name, namespace, container, write_command)
 
 
-def _get_tls_from_provider_parameters(
-    params: dict, rport: int | None = None
-) -> CarrierTLS | None:
+def _get_tls_from_provider_parameters(params: dict, rport: int | None = None):
+    from gefyra.bridge.carrier2.config import CarrierTLS
+
     if rport and str(rport) in params and "tls" in params[str(rport)]:
         _port = str(rport)
         _cert_param = params[_port]["tls"]["certificate"]
