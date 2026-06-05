@@ -29,12 +29,16 @@ from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
+    inject_tls_file,
+    _tls_cert_from_k8s_secret,
+    _tls_key_from_k8s_secret,
     generate_duplicate_workload_name,
     generate_duplicate_svc_name,
     generate_k8s_conform_name,
     get_all_probes,
     get_ports_for_workload,
     get_upstreams_for_svc,
+    update_tls_file,
 )
 from gefyra.utils import async_all, async_any, wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
@@ -527,6 +531,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             if pod.status.phase == "Terminating":
                 continue
             for container in pod.spec.containers:
+                patch_required = True
                 if container.name == self.container:
                     upstream_ports = [port.container_port for port in container.ports]
                     probes = get_all_probes(container)
@@ -544,6 +549,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                         raise BridgeInstallException("Probes not compatible")
                     if container.image == self._carrier_image:
                         # this pod/container is already running Carrier
+                        patch_required = False
                         self.logger.info(
                             f"The container {self.container} in Pod {pod.metadata.name} is already"
                             " running Carrier2"
@@ -555,26 +561,28 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 raise BridgeInstallException(
                     f"Container {self.container} not found in Pod {pod}"
                 )
-            await self.post_event(
-                "Patching target pod",
-                f"Now patching Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s)); container {self.container} with Carrier2",
-                "Normal",
-            )
-            try:
-                await asyncio.to_thread(
-                    core_v1_api.patch_namespaced_pod,
-                    name=pod.metadata.name,
-                    namespace=self.namespace,
-                    body=pod,
+
+            if patch_required:
+                await self.post_event(
+                    "Patching target pod",
+                    f"Now patching Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s)); container {self.container} with Carrier2",
+                    "Normal",
                 )
-            except ApiException as e:
-                self.logger.warning(
-                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})"
-                )
-                raise TemporaryError(
-                    f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})",
-                    delay=10,
-                )
+                try:
+                    await asyncio.to_thread(
+                        core_v1_api.patch_namespaced_pod,
+                        name=pod.metadata.name,
+                        namespace=self.namespace,
+                        body=pod,
+                    )
+                except ApiException as e:
+                    self.logger.warning(
+                        f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})"
+                    )
+                    raise TemporaryError(
+                        f"Failed to patch Pod {pod.metadata.name} with Carrier2: {e.reason} (status {e.status})",
+                        delay=10,
+                    )
 
             # wait for the container restart to become effective
             read_func = partial(
@@ -582,31 +590,64 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 pod.metadata.name,
                 self.namespace,
             )
-            await asyncio.to_thread(
-                wait_until_condition,
-                read_func,
-                lambda s: (
-                    next(
-                        filter(
-                            lambda c: c.name == self.container,
-                            s.status.container_statuses,
-                        )
-                    ).restart_count
-                    > 0
-                ),
-                timeout=120,
-                backoff=0.2,
-            )
+            try:
+                await asyncio.to_thread(
+                    wait_until_condition,
+                    read_func,
+                    lambda s: (
+                        next(
+                            filter(
+                                lambda c: c.name == self.container,
+                                s.status.container_statuses,
+                            )
+                        ).restart_count
+                        > 0
+                    ),
+                    timeout=120,
+                    backoff=0.2,
+                )
+            except RuntimeError:
+                raise BridgeInstallException(
+                    f"Timeout waiting for condition: container '{self.container}' in  Pod '{pod.metadata.name}' took too long to restart after patch."
+                )
 
             carrier_config = await self._set_carrier_upstream(upstream_ports, probes)
             await carrier_config.add_bridge_rules_for_mount(
                 self.name, self.configuration.NAMESPACE, None, None
             )
-            # await self.post_event(
-            #     "Update Carrier2",
-            #     f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s))",
-            #     "Normal",
-            # )
+            await self.post_event(
+                "Update Carrier2",
+                f"Commiting Carrier2 config to Pod {pod.metadata.name} ({idx + 1} of {len(pods.items)} Pod(s))",
+                "Normal",
+            )
+
+            # injected TLS files if requested
+            for upstream_port in upstream_ports:
+                if self.params and _tls_cert_from_k8s_secret(
+                    self.params, upstream_port
+                ):
+                    # inject certificate from k8s secret
+                    await inject_tls_file(
+                        self.logger,
+                        pod.metadata.name,
+                        container.name,
+                        self.namespace,
+                        "certificate",
+                        self.params,
+                        upstream_port,
+                    )
+                if self.params and _tls_key_from_k8s_secret(self.params, upstream_port):
+                    # inject key from k8s secret
+                    await inject_tls_file(
+                        self.logger,
+                        pod.metadata.name,
+                        container.name,
+                        self.namespace,
+                        "key",
+                        self.params,
+                        upstream_port,
+                    )
+
             self.logger.debug(f"Carrier2 config: {carrier_config}")
             try:
                 await carrier_config.commit(
@@ -618,7 +659,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 )
             except RuntimeError:
                 raise BridgeInstallException(
-                    f"Could not install GefyraBridgeMount successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
+                    f"Timeout waiting for condition: could not commit GefyraBridgeMount config successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
                     f" and container '{self.container}' in namespace '{self.namespace}' for more information."
                 )
 
@@ -674,16 +715,64 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             self.logger.error("Cannot determine original pods")
             return False
         for pod in pods.items:
-            config_str_list = await asyncio.to_thread(
-                read_carrier2_config,
-                self.logger,
-                pod.metadata.name,
-                self.namespace,
-            )
-            config_str = "\n".join(config_str_list)
-            pod_config = Carrier2Config.from_string(config_str)
-            if not any(p.clusterUpstream for p in pod_config.proxy):
-                return False
+            for container in pod.spec.containers:
+                if container.name == self.container:
+                    upstream_ports = [port.container_port for port in container.ports]
+
+                    config_str_list = await asyncio.to_thread(
+                        read_carrier2_config,
+                        self.logger,
+                        pod.metadata.name,
+                        self.namespace,
+                        container.name,
+                    )
+                    config_str = "\n".join(config_str_list)
+                    pod_config = Carrier2Config.from_string(config_str)
+                    if not any(p.clusterUpstream for p in pod_config.proxy):
+                        return False
+
+                    # check if injected TLS files need updates
+                    upstream_ports = [port.container_port for port in container.ports]
+                    updated = False
+                    for upstream_port in upstream_ports:
+                        if self.params and _tls_cert_from_k8s_secret(
+                            self.params, upstream_port
+                        ):
+                            updated = await update_tls_file(
+                                self.logger,
+                                pod.metadata.name,
+                                container.name,
+                                self.namespace,
+                                "certificate",
+                                self.params,
+                                upstream_port,
+                            )
+                        if self.params and _tls_key_from_k8s_secret(
+                            self.params, upstream_port
+                        ):
+                            updated = updated or await update_tls_file(
+                                self.logger,
+                                pod.metadata.name,
+                                container.name,
+                                self.namespace,
+                                "key",
+                                self.params,
+                                upstream_port,
+                            )
+                    if updated:
+                        try:
+                            await pod_config.commit(
+                                self.logger,
+                                pod.metadata.name,
+                                self.container,
+                                self.namespace,
+                                debug=self.configuration.CARRIER2_DEBUG,
+                            )
+                        except RuntimeError:
+                            raise BridgeInstallException(
+                                f"Timeout waiting for condition: could not commit GefyraBridgeMount config successfully. Please check the log of the patched Pod '{pod.metadata.name}'"
+                                f" and container '{self.container}' in namespace '{self.namespace}' for more information."
+                            )
         return True
 
     async def restore_original_workload(
@@ -712,7 +801,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         original_pods = await self._original_pods
         if len(gefyra_pods.items) != len(original_pods.items):
             self.logger.info(
-                f"Replica count mismatch: original={len(original_pods.items)}, "
+                f"Replica count differs: original={len(original_pods.items)}, "
                 f"gefyra={len(gefyra_pods.items)}. This might be caused by a HPA."
             )
 
@@ -742,7 +831,6 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 f"original pod count: {original_pod_len}, "
                 f"Gefyra pod count: {gefyra_pod_len}"
             )
-        # consider down scaling & up scaling
         return ready
 
     async def validate(self, bridge_request, hints):

@@ -15,6 +15,8 @@ from gefyra.bridge.carrier2.config import (
 )
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
+    _tls_cert_from_k8s_secret,
+    _tls_key_from_k8s_secret,
     get_all_probes,
     get_upstreams_for_svc,
 )
@@ -159,10 +161,15 @@ class Carrier2(AbstractGefyraBridgeProvider):
         return proxy
 
     async def _tls(self, proxy: Carrier2Proxy, rport: int) -> Carrier2Proxy:
-        if await self._get_bridge_mount_provider_parameter():
-            proxy.tls = _get_tls_from_provider_parameters(
-                await self._get_bridge_mount_provider_parameter(), rport
-            )
+        _parameter = await self._get_bridge_mount_provider_parameter()
+        if _parameter:
+            if _tls_cert_from_k8s_secret(_parameter, rport):
+                # todo inject cert
+                pass
+            if _tls_key_from_k8s_secret(_parameter, rport):
+                # todo inject key
+                pass
+            proxy.tls = _get_tls_from_provider_parameters(_parameter, rport)
         return proxy
 
     async def _set_probes(self, config: Carrier2Config, pod: V1Pod) -> Carrier2Config:

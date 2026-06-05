@@ -98,14 +98,27 @@ def stream_exec(
 
 
 def read_carrier2_config(
-    logger, name: str, namespace: str, retries: int = 30
+    logger, name: str, namespace: str, container: str | None = None, retries: int = 30
+) -> List[str]:
+    return read_carrier2_file(
+        logger, name, namespace, "/tmp/config.yaml", container, retries
+    )
+
+
+def read_carrier2_file(
+    logger,
+    name: str,
+    namespace: str,
+    filename: str,
+    container: str | None = None,
+    retries: int = 30,
 ) -> List[str]:
     from kubernetes.stream import stream
     from kubernetes.client.rest import ApiException
 
     core_v1_api = k8s.client.CoreV1Api()
 
-    logger.info(f"Reading carrier2 config from pod {name} in namespace {namespace}")
+    logger.debug(f"Reading carrier2 file from pod {name} in namespace {namespace}")
 
     exec_command = ["busybox", "sh"]
     res = []
@@ -117,6 +130,7 @@ def read_carrier2_config(
                 name,
                 namespace,
                 command=exec_command,
+                container=container,
                 stderr=True,
                 stdin=True,
                 stdout=True,
@@ -125,7 +139,7 @@ def read_carrier2_config(
             )
 
             commands = []
-            commands.append("cat /tmp/config.yaml \n")
+            commands.append(f"cat {filename} \n")
             res = []
             while resp.is_open():
                 resp.update(timeout=0.5)

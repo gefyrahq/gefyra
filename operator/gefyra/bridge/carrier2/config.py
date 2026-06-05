@@ -122,7 +122,14 @@ class Carrier2Config(BaseModel):
             wait_until_condition,
             read_func,
             lambda s: all(
-                [container.started for container in s.status.container_statuses]
+                [
+                    bool(
+                        container.state
+                        and container.state.running
+                        and container.state.running.started_at
+                    )
+                    for container in s.status.container_statuses
+                ]
             ),
             timeout=120,
             backoff=2,
