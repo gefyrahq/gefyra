@@ -608,7 +608,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 )
             except RuntimeError:
                 raise BridgeInstallException(
-                    f"Timeout waiting for condition: container '{self.container}' in  Pod '{pod}' took too long to restart after patch."
+                    f"Timeout waiting for condition: container '{self.container}' in  Pod '{pod.metadata.name}' took too long to restart after patch."
                 )
 
             carrier_config = await self._set_carrier_upstream(upstream_ports, probes)
