@@ -62,7 +62,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                         "pods/exec",
                         "pods/status",
                         "events",
-                        "hpas",
+                        "horizontalpodautoscalers",
                     ],
                     "verbs": ["*"],
                 },
