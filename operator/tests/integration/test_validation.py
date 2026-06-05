@@ -138,7 +138,7 @@ async def test_c_gefyrabridge_validator(operator: AClusterManager):
 
     operation = "CREATE"
     diff = {}
-    body = {**base_body, "target": "bridgemount-b"}
+    body = {**base_body, "target": "bridgemount-b", "destinationIP": "127.0.0.1"}
     with pytest.raises(kopf.AdmissionError):
         # missing labels
         await check_validate_bridge_parameters(body, diff, logger, operation)
@@ -148,7 +148,7 @@ async def test_c_gefyrabridge_validator(operator: AClusterManager):
 
     operation = "CREATE"
     diff = {}
-    body = {**base_body, "target": "bridgemount-b"}
+    body = {**base_body, "target": "bridgemount-b", "destinationIP": "127.0.0.1"}
     body["metadata"]["labels"] = {
         "gefyra.dev/bridge-mount": "bridgemount-b",
         "gefyra.dev/client": "client-a",
@@ -159,7 +159,7 @@ async def test_c_gefyrabridge_validator(operator: AClusterManager):
 
     operation = "CREATE"
     diff = {}
-    body = {**base_body, "target": "bridgemount-a"}
+    body = {**base_body, "target": "bridgemount-a", "destinationIP": "127.0.0.1"}
     body["metadata"]["labels"] = {
         "gefyra.dev/bridge-mount": "bridgemount-a",
         "gefyra.dev/client": "client-a",
@@ -178,7 +178,7 @@ async def test_c_gefyrabridge_validator(operator: AClusterManager):
 
     operation = "CREATE"
     diff = {}
-    body = {**base_body, "target": "bridgemount-a"}
+    body = {**base_body, "target": "bridgemount-a", "destinationIP": "127.0.0.1"}
     body["metadata"]["labels"] = {
         "gefyra.dev/bridge-mount": "bridgemount-a",
         "gefyra.dev/client": "client-a",

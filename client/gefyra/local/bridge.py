@@ -139,40 +139,6 @@ def get_bridge_rules(
     return [{"match": get_match_rules(rules)}]
 
 
-def get_gbridge_body(
-    config: ClientConfiguration,
-    name: str,
-    destination_ip,
-    target,
-    target_namespace,
-    target_container,
-    port_mappings,
-    handle_probes,
-    match_header: List[ExactMatchHeader] = [],
-):
-    return {
-        "apiVersion": "gefyra.dev/v1",
-        "kind": "gefyrabridge",
-        "metadata": {
-            "name": name,
-            "namespace": config.NAMESPACE,
-            "labels": {
-                "gefyra.dev/bridge-mount": target,
-            },
-        },
-        "provider": "carrier2",
-        "connectionProvider": "stowaway",
-        "providerParameter": {"rules": get_bridge_rules(match_header)},
-        "client": config.CLIENT_ID,
-        "destinationIP": destination_ip,
-        "target": target,
-        "targetNamespace": target_namespace,
-        "targetContainer": target_container,
-        "portMappings": port_mappings,
-        "handleProbes": handle_probes,
-    }
-
-
 def deploy_app_container(
     config: ClientConfiguration,
     image: str,
