@@ -17,8 +17,6 @@ from kubernetes.client import (
 from gefyra.bridge.carrier2.config import CarrierTLS
 from gefyra.utils import wait_until_condition
 
-from gefyra.bridge.carrier2.utils import read_carrier2_file, stream_exec_retries
-
 core_v1_api = k8s.client.CoreV1Api()
 
 INJECTED_TLS_KEY = "/tmp/from_k8s_secret_key_{port}.pem"
@@ -164,6 +162,8 @@ async def update_tls_file(
     params: dict,
     rport: int | None = None,
 ) -> bool:
+    from gefyra.bridge.carrier2.utils import read_carrier2_file
+
     try:
         if rport and str(rport) in params and "tls" in params[str(rport)]:
             _port = str(rport)
@@ -213,6 +213,8 @@ async def inject_tls_file(
     params: dict,
     rport: int | None = None,
 ):
+    from gefyra.bridge.carrier2.utils import stream_exec_retries
+
     try:
         if rport and str(rport) in params and "tls" in params[str(rport)]:
             _port = str(rport)
