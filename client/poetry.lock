@@ -801,14 +801,14 @@ files = [
 
 [[package]]
 name = "kubernetes"
-version = "36.0.1"
+version = "36.0.2"
 description = "Kubernetes python client"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "kubernetes-36.0.1-py2.py3-none-any.whl", hash = "sha256:7631d11dd761f18658064a6ee91a36923cec3bef3cd92b99e08a53745b95f7d0"},
-    {file = "kubernetes-36.0.1.tar.gz", hash = "sha256:3eadd6ae1be3b742ae63bd382b139c9fd5171afb6e00771dcefaae2d49001992"},
+    {file = "kubernetes-36.0.2-py2.py3-none-any.whl", hash = "sha256:faf9b5241b58de0c4a5069f2a0ffc8ac06fece7215156cd3d3ba081a78a858b6"},
+    {file = "kubernetes-36.0.2.tar.gz", hash = "sha256:03551fcb49cae1f708f63624041e37403545b7aaed10cbf54e2b01a37a5438e3"},
 ]
 
 [package.dependencies]
