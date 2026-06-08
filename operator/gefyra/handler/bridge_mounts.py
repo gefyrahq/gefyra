@@ -15,6 +15,11 @@ async def bridge_mount_created(body, logger, **kwargs):
     bridge_mount = GefyraBridgeMount(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    if bridge_mount.completed_transition(GefyraBridgeMount.active.value):
+        logger.info(
+            f"Skipping create/resume for GefyraBridgeMount '{bridge_mount.object_name}' (was already activated)"
+        )
+        return
 
     try:
         if bridge_mount.requested.is_active:
