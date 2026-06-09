@@ -29,3 +29,11 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+  - package-ecosystem: "cargo"
+    directory: "/carrier2"
+    assignees:
+      - "SteinRobert"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
