@@ -71,7 +71,7 @@ The deprecated version can be found in the branch [deprecation-main-march-2026](
 <!-- QUICK START -->
 ## Quick Start
 Short manual on where and how to start. You can find detailed information
-[here (installation)](https://gefyra.dev/installation/) and [here (usage)](https://gefyra.dev/getting-started/).
+[here (installation)](https://gefyra.dev/en/quick-start/installation) and [here (usage)](https://gefyra.dev/en/quick-start/getting-started).
 
 ### Installation
 
