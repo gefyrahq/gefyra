@@ -845,14 +845,14 @@ files = [
 
 [[package]]
 name = "kopf"
-version = "1.44.5"
+version = "1.44.6"
 description = "Kubernetes Operator Pythonic Framework (Kopf)"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "kopf-1.44.5-py3-none-any.whl", hash = "sha256:9aa9e1238856f110d6abd792eb840a1aada80dff51de5a67de7d64d25bf23154"},
-    {file = "kopf-1.44.5.tar.gz", hash = "sha256:6e806d816456fa9d43dca90b01160d92e3714173745adb85fa862511d9c652e2"},
+    {file = "kopf-1.44.6-py3-none-any.whl", hash = "sha256:793b6a403be5fe389365172b117a8e1385a5d18eb80fdb1dfe0f50e9c7d7862d"},
+    {file = "kopf-1.44.6.tar.gz", hash = "sha256:39c32d172394f0a891c19bfa2382c0e4bab783a63fdd1f0d9209aa043856127a"},
 ]
 
 [package.dependencies]
@@ -2218,4 +2218,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.7,<3.14"
-content-hash = "036fade81da0045e50c2c09800ee33504ed426e6cf981b7382b63e74258f3487"
+content-hash = "195b2ae8216f5814dbed9bd9b87966a9c13cd06846848bf47ac88b47b6a752f5"
