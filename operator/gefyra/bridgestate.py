@@ -79,8 +79,9 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
         logger: Any,
         initial: Optional[State] = None,
     ):
-        super().__init__(start_value=initial or GefyraBridge.requested.value)
-        self.model = model
+        super().__init__(
+            model=model, start_value=initial or GefyraBridge.requested.value
+        )
         self.data = model.data
         self.operator_configuration = configuration
         self.logger = logger

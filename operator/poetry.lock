@@ -1753,18 +1753,21 @@ dev = ["black", "build", "freezegun", "mdx_truly_sane_lists", "mike", "mkdocs", 
 
 [[package]]
 name = "python-statemachine"
-version = "3.0.0"
+version = "3.2.0"
 description = "Python Finite State Machines made easy."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "python_statemachine-3.0.0-py3-none-any.whl", hash = "sha256:f967ee864cfd26375c91f49560e790357613482811efcec8b2020c1f874a5eaf"},
-    {file = "python_statemachine-3.0.0.tar.gz", hash = "sha256:91523f9ead73c1d6fecc975d5c6e0bfe363fbf537c5f0bf309bcd0f94f9441b2"},
+    {file = "python_statemachine-3.2.0-py3-none-any.whl", hash = "sha256:8909916fc21208680f737d33c891a5331a1a0eeeaf3fe40efa278cb056855aee"},
+    {file = "python_statemachine-3.2.0.tar.gz", hash = "sha256:44b98cb9bb1081891ef6efa907c821d05cae5314a2b99713e56d56a9c962de08"},
 ]
 
 [package.extras]
-diagrams = ["pydot (>=2.0.0)"]
+diagrams = ["pydot (>=4.0.1)"]
+io = ["jsonschema (>=4.18)", "pyyaml (>=6.0)"]
+validation = ["jsonschema (>=4.18)"]
+yaml = ["pyyaml (>=6.0)"]
 
 [[package]]
 name = "pywin32"

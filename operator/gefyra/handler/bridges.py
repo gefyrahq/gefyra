@@ -25,6 +25,7 @@ async def bridge_create(body, logger, namespace, name, **kwargs):
     bridge = GefyraBridge(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await bridge.activate_initial_state()
 
     key = bridge.data["target"]
     lock = await get_lock(key)
@@ -44,6 +45,7 @@ async def update_bridge_destination(body, logger, namespace, name, old, new, **k
     bridge = GefyraBridge(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await bridge.activate_initial_state()
 
     key = bridge.data["target"]
     lock = await get_lock(key)
@@ -65,6 +67,7 @@ async def bridge_reconcile(body, logger, **kwargs):
     bridge = GefyraBridge(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await bridge.activate_initial_state()
 
     if not bridge.completed_transition(GefyraBridge.active.value):
         logger.info(
@@ -105,6 +108,7 @@ async def bridge_delete(body, logger, namespace, name, **kwargs):
     bridge = GefyraBridge(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await bridge.activate_initial_state()
 
     key = bridge.data["target"]
     lock = await get_lock(key)
