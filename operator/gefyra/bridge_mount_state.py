@@ -96,9 +96,8 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         initial: Optional[State] = None,  # Added initial state parameter
     ):
         super().__init__(
-            start_value=initial or GefyraBridgeMount.requested.value
+            model=model, start_value=initial or GefyraBridgeMount.requested.value
         )  # Pass initial state to super
-        self.model = model
         self.data = model.data
         self.operator_configuration = configuration
         self.logger = logger

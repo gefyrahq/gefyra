@@ -26,6 +26,7 @@ async def client_created(body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await client.activate_initial_state()
 
     if client.requested.is_active or client.creating.is_active:
         await client.create()
@@ -39,6 +40,7 @@ async def client_connection_changed(new, body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await client.activate_initial_state()
     # check if parameters for this connection provider have been added or removed
     lock = await get_lock("client")
 
@@ -78,6 +80,7 @@ async def client_deleted(body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await client.activate_initial_state()
     lock = await get_lock("client")
 
     async with lock:
@@ -105,6 +108,7 @@ async def client_reconcile(body, logger, **kwargs):
     client = GefyraClient(
         obj, configuration, logger, initial=obj.state
     )  # Pass initial state
+    await client.activate_initial_state()
     if await client.should_terminate():  # Await
         # terminate this client
         await client.terminate()  # Await
