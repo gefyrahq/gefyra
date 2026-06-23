@@ -4,11 +4,11 @@ on:
   push:
     branches: [ main ]
     paths-ignore:
-      - gefyra-docs/
+      - gefyra-docs/**
   pull_request:
     branches: [ main ]
     paths-ignore:
-      - gefyra-docs/
+      - gefyra-docs/**
 
 jobs:
   test:
