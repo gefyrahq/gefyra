@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@barzhsieh/nuxt-content-mermaid": "^2.2.3",
-    "@nuxt/eslint": "^1.15.2",
+    "@nuxt/eslint": "^1.16.0",
     "@nuxt/scripts": "^0.13.2",
     "better-sqlite3": "^12.6.2",
     "docus": "latest",
