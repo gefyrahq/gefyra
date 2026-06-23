@@ -3,8 +3,12 @@ name: pytest and try it yourself example
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - gefyra-docs/**
   pull_request:
     branches: [ "**" ]
+    paths-ignore:
+      - gefyra-docs/**
 
 jobs:
   build_test_image:
