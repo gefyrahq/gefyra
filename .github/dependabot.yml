@@ -37,3 +37,12 @@ updates:
       interval: "daily"
     cooldown:
       default-days: 7
+  - package-ecosystem: "npm"
+    directory: "/gefyra-docs"
+    assignees:
+      - "SteinRobert"
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
+
