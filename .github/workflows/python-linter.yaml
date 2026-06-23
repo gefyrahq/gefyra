@@ -3,8 +3,12 @@ name: Ruff Linter
 on: 
   push:
     branches: [ main ]
+    paths-ignore:
+      - gefyra-docs/
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - gefyra-docs/
 
 jobs:
   test:
