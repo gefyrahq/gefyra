@@ -24,7 +24,7 @@
     "@iconify-json/material-icon-theme": "^1.2.67",
     "@iconify-json/mdi": "^1.2.3",
     "@types/youtube": "^0.3.0",
-    "eslint": "^10.0.2",
+    "eslint": "^10.5.0",
     "eslint-plugin-format": "^2.0.1",
     "sass-embedded": "^1.100.0"
   }
