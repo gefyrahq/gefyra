@@ -104,6 +104,13 @@ async def read_wireguard_status(logger):
                         ):
                             continue
                         else:
+                            if not peer_status.get("latest_handshake") and client.data[
+                                "status"
+                            ]["wireguard"].get("latest_handshake"):
+                                await client._patch_object(
+                                    {"status": {"wireguard": {}}}
+                                )
+
                             await client._patch_object(
                                 {"status": {"wireguard": peer_status}}
                             )
