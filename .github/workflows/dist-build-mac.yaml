@@ -16,7 +16,7 @@ jobs:
   build:
     runs-on: macos-15-intel
     steps:
-    - uses: actions/checkout@v6.0.3
+    - uses: actions/checkout@v7.0.0
     - name: Set up Python
       uses: actions/setup-python@v6.2.0
       with:
