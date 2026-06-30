@@ -286,7 +286,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: '3.11'
       - name: Install Poetry
@@ -377,7 +377,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: '3.11'
       - name: Install Poetry
@@ -429,7 +429,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7.0.0
       - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: '3.11'
       # https://github.com/opensafely-core/job-server/issues/3429
@@ -521,7 +521,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: '3.11'
       - name: Checkout
