@@ -28,7 +28,7 @@ jobs:
       - name: Set up Docker
         uses: crazy-max/ghaction-setup-docker@v5.3.0
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4.1.0
+        uses: docker/setup-qemu-action@v4.2.0
       - name: Sanity run Gefyra
         run: |
           ls -la
