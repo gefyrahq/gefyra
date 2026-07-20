@@ -19,6 +19,7 @@ jobs:
         HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.BREW_TOKEN }}
       run: |
         export APP_VERSION=`cat pyproject.toml | grep version -m 1 | awk '{ print substr($3, 2, length($3) -2)}'`
+        brew trust gefyrahq/gefyra
         brew tap gefyrahq/gefyra
         echo $APP_VERSION
         brew bump-formula-pr --version=$APP_VERSION gefyra
