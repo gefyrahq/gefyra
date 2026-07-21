@@ -5,52 +5,42 @@ seo:
 ---
 
 ::u-page-hero
-#title
+---
+links:
+  - label: Get Started
+    to: /en/quick-start/installation
+    color: primary
+    size: xl
+    trailing-icon: i-lucide-arrow-right
+  - label: Install Docker Extension
+    to: /en/quick-start/installation#docker-desktop-extension
+    color: neutral
+    size: xl
+    trailing-icon: simple-icons-docker
+---
+#headline
 :icon{name="i-gefyra-logo-vertical" mode="svg" class="home-icon"}
 
-#description
+#title
 Blazingly-fast, rock-solid, local application development with Kubernetes.
 
-#links
-  :::u-button
-  ---
-  color: primary
-  size: xl
-  to: /en/quick-start/installation
-  trailing-icon: i-lucide-arrow-right
-  ---
-  Let's try Gefyra
-  :::
+#description
+Run local code in any Kubernetes cluster without the build and push cycle. It overlays containers in the cluster making code changes immediately available. It's a new era of software development.
 
-  :::u-button
-  ---
-  color: neutral
-  icon: simple-icons-github
-  size: xl
-  to: https://github.com/gefyrahq/gefyra
-  variant: outline
-  ---
-  We're open source
-  :::
-::
-
-::u-container
----
-class: "text-center mb-6"
----
+#default
   :::card-group
     ::::card
     ---
     title: The Problem
     ---
-    Building and pushing containers to test them in Kubernetes is [repetitive and time-consuming]{.font-bold}. Writing and debugging code that depends on services in Kubernetes is daunting. [Especially if they are not reachable]{.font-bold} during development.
+    Building and pushing containers to test them in Kubernetes is repetitive and time-consuming. Every minor code change forces developers into a slow feedback loop:<br /><br /> <b>Commit -> Build -> Push -> Deploy -> Wait -> Test</b>.<br /><br /> This setup burns expensive CI/CD pipeline resources, slows down engineering velocity, and frustrates development teams.
     ::::
 
     ::::card
     ---
     title: The Solution
     ---
-    [Gefyra]{.font-bold} runs local code in any Kubernetes cluster [without the build and push cycle]{.font-bold}. It overlays containers in the cluster making code changes immediately available. It's a new era of software development.
+    Gefyra runs your local code directly in any Kubernetes cluster instantly. By creating a secure, wireguard-encrypted bridge, Gefyra overlays the existing container in Kubernetes with your local environment. <b>You save your file, and the effects are immediately live in the cluster context.</b> No cloud waste, no pipeline waiting times, just pure development speed.
     ::::
   :::
 ::
@@ -62,6 +52,9 @@ class: "border-t"
 #title
 Why Gefyra?
 
+#description
+A non-invasive, open-source approach engineered for secure enterprise environments and agile teams.
+
 #features
   :::u-page-feature
   ---
@@ -71,7 +64,7 @@ Why Gefyra?
   Supercharge Development Speed
 
   #description
-  Run your code directly in a Kubernetes cluster and overcome [CI/CD waiting times]{.font-bold}.
+  Zero-Build Live Development. Gefyra temporarily intercepts cluster pods and transparently routes the traffic to your local container runtime. This cuts down feedback loops by 90% and allows engineers to spot and fix environment bugs in seconds.
   :::
 
   :::u-page-feature
@@ -79,10 +72,10 @@ Why Gefyra?
   icon: i-gefyra-sweat
   ---
   #title
-  Fight Environment Bugs
+  Native Podman & Docker Support
 
   #description
-  Uncover bugs [before]{.font-bold} they appear on staging or production environments.
+  Daemonless Container Engine Compatibility. Gefyra runs flawlessly on Docker Desktop, Rancher Desktop, and native **Podman** environments. It seamlessly aligns with strict corporate security policies by allowing developers to work rootless under Linux.
   :::
 
   :::u-page-feature
@@ -90,10 +83,10 @@ Why Gefyra?
   icon: i-gefyra-team
   ---
   #title
-  Promote Collaboration
+  User-Specific Bridges
 
   #description
-  Share [running code instantly]{.font-bold} and let your team work in a realistic environment.
+  Isolated Multi-User Operations. The completely rewritten cluster operator architecture supports dedicated, user-specific network intercepts. **Multiple developers can safely test and debug inside the exact same shared cluster simultaneously** without network conflicts or disturbing each other.
   :::
 
   :::u-page-feature
@@ -101,10 +94,10 @@ Why Gefyra?
   icon: i-gefyra-play-button
   ---
   #title
-  One Click and Go
+  Secure Namespace & RBAC Isolation
 
   #description
-  Gefyra is [ready in seconds]{.font-bold}, not hours or days.
+  Granular Kubernetes Enclosure. Gefyra restricts all local connections tightly within the developer's pre-assigned Kubernetes namespaces. Platform teams can confidently greenlight the tool because it fully respects existing RBAC policies without requiring global cluster-admin rights.
   :::
 
   :::u-page-feature
@@ -112,10 +105,10 @@ Why Gefyra?
   icon: i-gefyra-link
   ---
   #title
-  Flexible Workflows
+  Fight Environment Bugs
 
   #description
-  Integrate Gefyra [into existing workflows]{.font-bold}. Make Gefyra part of your CI/CD pipeline.
+  Shared Kubernetes-based Resources. Your local code execution interacts natively with internal cluster databases, private APIs, and cloud microservices. This eliminates the need for fragile local mocks and guarantees testing under real production-like dependencies from day one.
   :::
 
   :::u-page-feature
@@ -123,39 +116,43 @@ Why Gefyra?
   icon: i-gefyra-budget
   ---
   #title
-  Cost Efficient
+  Flexible Workflows
 
   #description
-  Improve time-to-market and utilization of resources. Spent [less]{.font-bold} on CI/CD pipelines and container builds.
+  Direct IDE & Debugger Integration. Connect live remote cluster traffic seamlessly to local breakpoints in VS Code, IntelliJ, or PyCharm. Developers can diagnose heavy cloud bugs using the powerful, familiar desktop tools they love instead of digging through chaotic log files.
   :::
+
+#footer
+:gefyra-marquee
 ::
+
+:gefyra-use-cases
 
 ::u-page-section
 ---
 class: "border-t"
-orientation: horizontal
 ---
-
 #title
-Docker Desktop Extension
+How it works
 
 #description
-Gefyra is a Docker Desktop extension that allows you to run your code directly in a Kubernetes cluster.
+Gefyra acts as a lightweight user-space application and requires **zero permanent modifications** to your production Kubernetes manifests.
 
-#links
-  :::u-button
+  :::u-stepper
   ---
-  color: primary
-  size: xl
-  to: https://www.docker.com/blog/building-a-local-application-development-environment-for-kubernetes-with-the-gefyra-docker-extension/
-  target: _blank
-  trailing-icon: i-lucide-arrow-right
+  defaultValue: 2
+  disabled: true
+  size: lg
+  items:
+    - title: gefyra up
+      description: Prepares your local engine environment and establishes a secure, encrypted Wireguard tunnel directly to your target cluster.
+    - title: gefyra bridge
+      description: The Gefyra operator hooks into the selected pod/container and transparently intercepts the traffic, tunneling it straight onto your local machine.
+    - title: gefyra down
+      description: Clean exit. Once you stop your session, Gefyra completely unbridges the components and removes all cluster-side footprints instantly.
   ---
-  Check it out
   :::
 ::
-
-:gefyra-use-cases
 
 ::u-page-section
 ---

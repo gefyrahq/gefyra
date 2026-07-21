@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UIcon, UMarquee, UPageSection } from '#components'
+
 </script>
 
 <template>
@@ -64,82 +64,5 @@ import { UIcon, UMarquee, UPageSection } from '#components'
         >
       </div>
     </div>
-
-    <div>
-      <ProseH2>
-        All Programming Languages and Frameworks
-      </ProseH2>
-
-      <ProseP>
-        If it can run in a container, you can develop it in a container. Gefyra <strong>supports all platforms</strong> that support Docker, and <strong>all programming languages and frameworks</strong> that can be run in a container.
-      </ProseP>
-
-      <ProseP>
-        Find one of our <strong>example projects</strong> for container-based development with Gefyra and get started in no time. Be a Dev/Prod-parity hero!
-      </ProseP>
-    </div>
-
-    <UMarquee>
-      <UIcon
-        name="i-mdi-apple"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-microsoft-windows"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-simple-icons-linux"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-simple-icons-go"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-simple-icons-django"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-simple-icons-hugo"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-language-rust"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-language-python"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-language-java"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-language-typescript"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-simple-icons-express"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-angular"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-vuejs"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-simple-icons-fastapi"
-        class="size-10 shrink-0"
-      />
-      <UIcon
-        name="i-mdi-language-php"
-        class="size-10 shrink-0"
-      />
-    </UMarquee>
   </UPageSection>
 </template>
