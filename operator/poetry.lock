@@ -858,14 +858,14 @@ uvloop = ["uvloop", "uvloop (>=0.18.0) ; python_version >= \"3.12\""]
 
 [[package]]
 name = "kubernetes"
-version = "36.0.2"
+version = "36.0.3"
 description = "Kubernetes python client"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "kubernetes-36.0.2-py2.py3-none-any.whl", hash = "sha256:faf9b5241b58de0c4a5069f2a0ffc8ac06fece7215156cd3d3ba081a78a858b6"},
-    {file = "kubernetes-36.0.2.tar.gz", hash = "sha256:03551fcb49cae1f708f63624041e37403545b7aaed10cbf54e2b01a37a5438e3"},
+    {file = "kubernetes-36.0.3-py2.py3-none-any.whl", hash = "sha256:8fde9241c4b298e6374a069dcf728359b4e72c2fb29489a975ba4e1c047cf10f"},
+    {file = "kubernetes-36.0.3.tar.gz", hash = "sha256:36993ed25ce59b789c9341473a228fcf268504a2fec7c2b2b1531d73072e5ce7"},
 ]
 
 [package.dependencies]
