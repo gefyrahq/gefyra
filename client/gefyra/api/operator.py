@@ -23,7 +23,7 @@ def update(
             raise ClusterError(
                 f"Cannot update Gefyra operator: namespace {config.NAMESPACE} is in {ns.status.phase} state"
             )
-    except:  # noqa
+    except Exception:
         pass
 
     names = ["gefyra-operator", "gefyra-operator-webhook"]
