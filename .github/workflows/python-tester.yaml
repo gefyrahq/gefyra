@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4.2.0
@@ -57,7 +57,7 @@ jobs:
       tags: ${{ steps.carrier2_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4.2.0
@@ -111,7 +111,7 @@ jobs:
       tags: ${{ steps.operator_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4.2.0
@@ -170,7 +170,7 @@ jobs:
       tags: ${{ steps.cargo_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4.2.0
@@ -220,7 +220,7 @@ jobs:
       tags: ${{ steps.stowaway_meta.outputs.tags }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v4.2.0
@@ -274,7 +274,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Set fake kubeconfig
         shell: bash
         run: |
@@ -365,7 +365,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Set fake kubeconfig
         shell: bash
         run: |
@@ -423,7 +423,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Set up Python
         uses: actions/setup-python@v6.3.0
         with:
@@ -521,7 +521,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Install Poetry
         uses: snok/install-poetry@v1.4.2
         with:
