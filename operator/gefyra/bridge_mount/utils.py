@@ -1,17 +1,17 @@
 import asyncio
 import base64
-from functools import partial
 import time
-from typing import List
+from functools import partial
+
 import kubernetes as k8s
 from kubernetes.client import (
-    V1Deployment,
-    V1StatefulSet,
-    V1Pod,
-    V1ServicePort,
-    V1Service,
     V1Container,
+    V1Deployment,
+    V1Pod,
     V1Probe,
+    V1Service,
+    V1ServicePort,
+    V1StatefulSet,
 )
 
 from gefyra.utils import wait_until_condition
@@ -344,7 +344,7 @@ def _get_tls_from_provider_parameters(params: dict, rport: int | None = None):
     )
 
 
-def get_all_probes(container: V1Container) -> List[V1Probe]:
+def get_all_probes(container: V1Container) -> list[V1Probe]:
     probes = []
     if container.startup_probe:
         probes.append(container.startup_probe)

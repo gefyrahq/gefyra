@@ -18,10 +18,10 @@ mode = os.getenv("OP_MODE", default="Operator").lower()
 if mode == "operator":
     logger.info("Gefyra Operator startup")
     from gefyra.handler.configure_operator import *  # noqa
-    from gefyra.handler.startup import *  # noqa
-    from gefyra.handler.clients import *  # noqa
-    from gefyra.handler.bridges import *  # noqa
-    from gefyra.handler.bridge_mounts import *  # noqa
+    from gefyra.handler.startup import *
+    from gefyra.handler.clients import *
+    from gefyra.handler.bridges import *
+    from gefyra.handler.bridge_mounts import *
 elif mode == "webhook":
     logger.info("Gefyra Operator webhook startup")
     import gefyra.handler.configure_webhook  # noqa

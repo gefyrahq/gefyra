@@ -1,13 +1,12 @@
 import logging
+from pathlib import Path
 from time import sleep
 from unittest.mock import MagicMock
 
-from pathlib import Path
+from gefyra.configuration import OperatorConfiguration
 from kopf import TemporaryError
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
-
-from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger()
 logger.addHandler(logging.NullHandler())
@@ -15,8 +14,7 @@ logger.addHandler(logging.NullHandler())
 
 class TestBridgeMountStateMachine:
     async def test_a_duplication_by_bridge_mount(self, gefyra_crd: AClusterManager):
-        from gefyra.bridge_mount_state import GefyraBridgeMount
-        from gefyra.bridge_mount_state import GefyraBridgeMountObject
+        from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
 
         file_path = str(
             Path(Path(__file__).parent.parent, "fixtures/nginx.yaml").absolute()

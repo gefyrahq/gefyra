@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 from .utils import stopwatch
 
-__all__ = ["rm", "rm_all", "cleanup_stale_bridges"]
+__all__ = ["cleanup_stale_bridges", "rm", "rm_all"]
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +42,10 @@ def rm(
     force: bool = False,
 ) -> bool:
     from docker.errors import NotFound
+
+    from gefyra.api.bridge import wait_for_deletion
     from gefyra.configuration import ClientConfiguration
     from gefyra.local.bridge import handle_delete_gefyrabridge
-    from gefyra.api.bridge import wait_for_deletion
 
     config = ClientConfiguration(connection_name=connection_name)
 
@@ -88,12 +89,13 @@ def rm_all(
     force: bool = False,
 ) -> bool:
     from docker.errors import NotFound
+
+    from gefyra.api.bridge import wait_for_deletion
     from gefyra.configuration import ClientConfiguration
     from gefyra.local.bridge import (
         get_all_containers,
         handle_delete_gefyrabridge,
     )
-    from gefyra.api.bridge import wait_for_deletion
 
     config = ClientConfiguration(connection_name=connection_name)
     containers = get_all_containers(config)

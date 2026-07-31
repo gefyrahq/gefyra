@@ -1,16 +1,16 @@
 import asyncio
-from typing import Any, Dict, Optional
 import uuid
-from gefyra.configuration import OperatorConfiguration
-from gefyra.connection.abstract import AbstractGefyraConnectionProvider
+from typing import Any
+
 import kubernetes as k8s
 from statemachine import State
 
+from gefyra.configuration import OperatorConfiguration
+from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 from gefyra.connection.factory import (
     ConnectionProviderType,
     connection_provider_factory,
 )
-
 from gefyra.resources.events import _get_now
 
 
@@ -66,7 +66,7 @@ class StateControllerMixin:
     plural: str
     kind: str
     connection_provider_field: str
-    data: Dict[str, Any]
+    data: dict[str, Any]
     model: Any
 
     @property
@@ -99,7 +99,7 @@ class StateControllerMixin:
         )
         return provider
 
-    def completed_transition(self, target: State) -> Optional[str]:
+    def completed_transition(self, target: State) -> str | None:
         """
         Read the stateTransitions attribute, return the value of the
         stateTransitions timestamp for the given target, otherwise return None

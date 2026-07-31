@@ -1,10 +1,11 @@
+import os
 import subprocess
 from pathlib import Path
-import os
 from time import sleep
+
 import pytest
-from pytest_kubernetes.providers import AClusterManager, select_provider_manager
 from pytest_kubernetes.options import ClusterOptions
+from pytest_kubernetes.providers import AClusterManager, select_provider_manager
 
 
 @pytest.fixture(scope="session")

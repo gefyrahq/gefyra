@@ -1,9 +1,9 @@
 import unittest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
+
+import click
 import kubernetes.client.exceptions
 import urllib3.exceptions
-import click
-
 from gefyra.cli.connections import _manage_container_and_bridges
 
 

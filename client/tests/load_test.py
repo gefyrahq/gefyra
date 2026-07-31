@@ -1,11 +1,11 @@
-from multiprocessing import Pool
 import os
-import subprocess
 import pathlib
 import random
 import string
+import subprocess
 import tempfile
 import time
+from multiprocessing import Pool
 
 CLIENTS = {}
 
@@ -33,7 +33,7 @@ def setup():
 def teardown():
     subprocess.run(("k3d cluster rm gefyra-loadtesting"), shell=True)
     print(f"Deleting {len(CLIENTS.keys())} GefyraClient config files")
-    for client in CLIENTS.keys():
+    for client in CLIENTS:
         delete_client_config(client)
         subprocess.run((f"docker rm -f gefyra-cargo-{client}"), shell=True)
 
@@ -73,7 +73,7 @@ def activate_clients_test(amount: int = 50, processes: int = 10):
     )
 
     start_time = time.time()
-    for _ in range(0, amount):
+    for _ in range(amount):
         name = "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
         CLIENTS[name] = {}
 
@@ -81,7 +81,7 @@ def activate_clients_test(amount: int = 50, processes: int = 10):
     with Pool(processes=processes) as pool:
         pool.map(create_client, CLIENTS.keys())
 
-    for client in CLIENTS.keys():
+    for client in CLIENTS:
         create_client_config(client)
 
     print("[Test] Activating clients")

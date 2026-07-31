@@ -1,6 +1,7 @@
+import asyncio
+
 import kopf
 import kubernetes as k8s
-import asyncio
 
 rbac_v1_api = k8s.client.RbacAuthorizationV1Api()
 core_v1_api = k8s.client.CoreV1Api()

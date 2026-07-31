@@ -5,7 +5,6 @@ import kopf
 from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 from gefyra.configuration import configuration
 
-
 RECONCILIATION_INTERVAL = 60
 
 # A simple registry for locks based on resource UID or name
@@ -51,7 +50,7 @@ async def update_bridge_destination(body, logger, namespace, name, old, new, **k
     lock = await get_lock(key)
     if bridge.active.is_active and old:
         async with lock:
-            logger.warn(f"Updating destinationIP for this GefyraBridge: {bridge}")
+            logger.warning(f"Updating destinationIP for this GefyraBridge: {bridge}")
             await bridge.handle_proxyroute_teardown(old)
             await bridge.restore()
             if bridge.installed.is_active:
