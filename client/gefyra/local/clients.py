@@ -39,7 +39,7 @@ def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
                 counter += 1
                 time.sleep(4)
             else:
-                raise e
+                raise
     return gclient
 
 
@@ -64,7 +64,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
             )
-            raise e
+            raise
     except urllib3.exceptions.MaxRetryError as e:
         # this connection does not work (at the moment)
         raise GefyraConnectionError(
@@ -123,7 +123,7 @@ def handle_delete_gefyraclient(
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
             )
-            raise e
+            raise
 
 
 def get_gefyraclient_body(

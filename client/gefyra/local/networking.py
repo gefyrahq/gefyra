@@ -30,8 +30,10 @@ def _get_client_networks(config: ClientConfiguration) -> list[str]:
 
 
 def get_or_create_gefyra_network(
-    config: ClientConfiguration, banned_subnets: list[str] = []
+    config: ClientConfiguration, banned_subnets: list[str] | None = None
 ) -> "Network":
+    if banned_subnets is None:
+        banned_subnets = []
     gefyra_network = handle_create_network(config, banned_subnets)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
@@ -69,11 +71,13 @@ def _get_subnet(
 
 
 def handle_create_network(
-    config: ClientConfiguration, banned_subnets: list[str] = []
+    config: ClientConfiguration, banned_subnets: list[str] | None = None
 ) -> "Network":
     from docker.errors import NotFound
     from docker.types import IPAMConfig, IPAMPool
 
+    if banned_subnets is None:
+        banned_subnets = []
     DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
     network_name = f"{config.NETWORK_NAME}"
     try:

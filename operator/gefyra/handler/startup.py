@@ -36,7 +36,7 @@ async def handle_crds(logger) -> None:
                 "Please remove it manually if you encounter issues."
             )
         else:
-            raise e
+            raise
     gclients = create_gefyraclient_definition()
     try:
         await asyncio.to_thread(
@@ -50,7 +50,7 @@ async def handle_crds(logger) -> None:
                 "be outdated. Please remove it manually if you encounter issues."
             )
         else:
-            raise e
+            raise
 
     gbridgemounts = create_bridge_mount_definition()
     try:
@@ -65,7 +65,7 @@ async def handle_crds(logger) -> None:
                 "be outdated. Please remove it manually if you encounter issues."
             )
         else:
-            raise e
+            raise
 
 
 @kopf.on.startup()

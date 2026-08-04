@@ -127,14 +127,18 @@ def get_all_containers(config: ClientConfiguration) -> list[GefyraLocalContainer
 
 
 def get_match_rules(
-    rule_set: list[list] = [],
+    rule_set: list[list] | None = None,
 ) -> list[dict[str, dict[str, str]]]:
+    if rule_set is None:
+        rule_set = []
     return [rule.to_dict() for rules in rule_set for rule in rules]
 
 
 def get_bridge_rules(
-    rules: list[ExactMatchHeader] = [],
+    rules: list[ExactMatchHeader] | None = None,
 ) -> list[dict[str, list[dict[str, dict[str, str]]]]]:
+    if rules is None:
+        rules = []
     return [{"match": get_match_rules(rules)}]
 
 

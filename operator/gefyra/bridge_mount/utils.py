@@ -95,15 +95,14 @@ def _read_k8s_secret_tls_value(name: str, key: str, namespace: str = "default") 
 
     if cache_key in _K8S_SECRET_CACHE:
         data, timestamp = _K8S_SECRET_CACHE[cache_key]
-        if now - timestamp < 60:
-            if key in data:
-                try:
-                    return base64.b64decode(data[key]).decode("utf-8")
-                except Exception as e:
-                    raise Exception(
-                        f"Could not base64 decode key '{key}' in secret '{name}' "
-                        f"from namespace '{namespace}': {e}"
-                    )
+        if now - timestamp < 60 and key in data:
+            try:
+                return base64.b64decode(data[key]).decode("utf-8")
+            except Exception as e:
+                raise Exception(
+                    f"Could not base64 decode key '{key}' in secret '{name}' "
+                    f"from namespace '{namespace}': {e}"
+                )
 
     try:
         secret = _get_core_v1_api().read_namespaced_secret(name, namespace)
@@ -147,9 +146,7 @@ def _tls_param_from_key_secret(
     else:
         return False
 
-    if isinstance(_tls_param, dict) and "secret" in _tls_param:
-        return True
-    return False
+    return bool(isinstance(_tls_param, dict) and "secret" in _tls_param)
 
 
 def _tls_cert_from_k8s_secret(params: dict, rport: int | None = None) -> bool:
@@ -268,14 +265,12 @@ async def inject_tls_file(
         wait_until_condition,
         read_func,
         lambda s: all(
-            [
-                bool(
-                    container.state
-                    and container.state.running
-                    and container.state.running.started_at
-                )
-                for container in s.status.container_statuses
-            ]
+            bool(
+                container.state
+                and container.state.running
+                and container.state.running.started_at
+            )
+            for container in s.status.container_statuses
         ),
         timeout=120,
         backoff=2,

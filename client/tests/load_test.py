@@ -19,7 +19,7 @@ def kubectl(cmd):
 
 
 def setup():
-    cwd = pathlib.Path().resolve()
+    cwd = pathlib.Path.cwd()
     subprocess.run(("docker pull quay.io/gefyra/gefyra-tesocket:0.1.0"), shell=True)
     subprocess.run(
         (

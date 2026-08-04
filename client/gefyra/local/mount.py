@@ -90,7 +90,7 @@ def handle_delete_gefyramount(
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
             )
-            raise e
+            raise
 
 
 def parse_secret_notation(value: str) -> str | dict[str, dict[str, str]]:

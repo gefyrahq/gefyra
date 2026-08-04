@@ -132,10 +132,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         pod = await self._get_stowaway_pod()
         # check if stowaway pod is ready
         if pod and pod.status.container_statuses is not None:
-            if pod.status.container_statuses[0].ready:
-                return True
-            else:
-                return False
+            return bool(pod.status.container_statuses[0].ready)
         else:
             return False
 
@@ -187,10 +184,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 _config.metadata.name,
                 _config.metadata.namespace,
             )
-            if self._translate_peer_name(peer_id) in configmap.data["PEERS"].split(","):
-                return True
-            else:
-                return False
+            return self._translate_peer_name(peer_id) in configmap.data["PEERS"].split(
+                ","
+            )
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
                 f"Error looking up peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
@@ -283,7 +279,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 self.logger.error(
                     f"Error removing proxy service {proxy_svc.metadata.name}: Status {e.status} Reason {e.reason} Body {e.body}"
                 )
-                raise e
+                raise
         stowaway_pod = await self._get_stowaway_pod()
         if stowaway_pod is None:
             raise RuntimeError("No Stowaway Pod found for destination removal")
@@ -334,7 +330,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             if configmap.data is None:
                 return False
-            for k, v in configmap.data.items():
+            for v in configmap.data.values():
                 if f"{destination_ip}:{destination_port}" in v:
                     return True
             return False
@@ -345,7 +341,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             return False
 
-    async def validate(self, gclient: dict, hints: dict[Any, Any] = {}):
+    async def validate(self, gclient: dict, hints: dict[Any, Any] | None = None):
+        if hints is None:
+            hints = {}
         if wireguard_parameter := gclient.get("providerParameter"):
             if subnet := wireguard_parameter.get("subnet"):
                 if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):

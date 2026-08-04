@@ -188,7 +188,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
                 reason="GefyraClient ServiceAccount",
                 message=f"Creating ServiceAccount waiting: {e}",
             )
-            raise e
+            raise
         await self._patch_object(
             {"serviceAccountName": sa_name, "serviceAccountData": token_data}
         )
@@ -352,12 +352,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
             )
         )
         if timestamps:
-            return max(
-                map(
-                    lambda x: datetime.fromisoformat(x.strip("Z")),  # type: ignore
-                    timestamps,
-                )
-            )
+            return max(datetime.fromisoformat(x.strip("Z")) for x in timestamps)
         else:
             return None
 

@@ -75,7 +75,7 @@ class AliasedGroup(click.Group):
         rv = click.Group.get_command(self, ctx, cmd_name)
         if rv is not None:
             return rv
-        for _, cmd in self.commands.items():
+        for cmd in self.commands.values():
             if hasattr(cmd, "alias") and cmd_name in cmd.alias:
                 return cmd
         matches = [x for x in self.list_commands(ctx) if x.startswith(cmd_name)]
@@ -165,11 +165,11 @@ class OptionEatAll(click.Option):
 
 
 def multi_options(options):
-    map_to_types = dict(
-        array=list,
-        number=float,
-        string=str,
-    )
+    map_to_types = {
+        "array": list,
+        "number": float,
+        "string": str,
+    }
 
     def decorator(f):
         for opt_params in reversed(options):
@@ -180,12 +180,12 @@ def multi_options(options):
             if "short" in opt_params and opt_params["short"] is not None:
                 param_decls = ("-" + opt_params["short"], *param_decls)
 
-            attrs = dict(
-                required=opt_params["required"],
-                type=map_to_types.get(opt_params["type"], opt_params["type"]),
-                help=opt_params.get("help", ""),
-                is_flag=opt_params.get("is_flag", False),
-            )
+            attrs = {
+                "required": opt_params["required"],
+                "type": map_to_types.get(opt_params["type"], opt_params["type"]),
+                "help": opt_params.get("help", ""),
+                "is_flag": opt_params.get("is_flag", False),
+            }
             if opt_params["type"] == "array":
                 attrs["cls"] = OptionEatAll
                 attrs["nargs"] = -1
@@ -202,15 +202,15 @@ def installoptions_to_cli_options() -> list[dict[str, bool | str | Any | None]]:
 
     result = []
     for _field in fields(GefyraInstallOptions):
-        _data = dict(
-            name=_field.name,
-            long=_field.name.replace("_", "-"),
-            short=_field.metadata.get("short"),
-            required=False,
-            help=_field.metadata.get("help"),
-            type=_field.metadata.get("type") or "string",
-            is_flag=_field.metadata.get("is_flag", False),
-        )
+        _data = {
+            "name": _field.name,
+            "long": _field.name.replace("_", "-"),
+            "short": _field.metadata.get("short"),
+            "required": False,
+            "help": _field.metadata.get("help"),
+            "type": _field.metadata.get("type") or "string",
+            "is_flag": _field.metadata.get("is_flag", False),
+        }
         result.append(_data)
     return result
 

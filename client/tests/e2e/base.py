@@ -61,7 +61,7 @@ def get_v1pod(
                 f"Pod {pod_name} in namespace {namespace} does not exist."
             )
         else:
-            raise e
+            raise
     return pod
 
 
@@ -344,7 +344,7 @@ class GefyraBaseTest(GefyraTestMixin):
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
-        pod_name = list(pod_container_dict.keys())[0]
+        pod_name = next(iter(pod_container_dict.keys()))
         self.assert_carrier_uninstalled(name=pod_name, namespace="default")
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
@@ -386,7 +386,7 @@ class GefyraBaseTest(GefyraTestMixin):
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
-        pod_name = list(pod_container_dict.keys())[0]
+        pod_name = next(iter(pod_container_dict.keys()))
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         res_bridge = create_bridge(**bridge_params)
         self.assertTrue(res_bridge)
@@ -396,7 +396,7 @@ class GefyraBaseTest(GefyraTestMixin):
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
-        pod_name = list(pod_container_dict.keys())[0]
+        pod_name = next(iter(pod_container_dict.keys()))
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         with self.assertRaises(RuntimeError) as rte:
             create_bridge(**bridge_params)
@@ -826,9 +826,7 @@ class GefyraTestCase:
             ],
             as_dict=False,
         )
-        if no_sa and no_sa == "True":
-            return True
-        return False
+        return bool(no_sa and no_sa == "True")
 
     def _print_operator_logs(self):
         print("--- Operator Logs ---")
@@ -849,7 +847,11 @@ class GefyraTestCase:
         print("---------------------")
 
     def assert_get_contains(
-        self, url: str, expected_content: str, retries: int = 60, headers: dict = None
+        self,
+        url: str,
+        expected_content: str,
+        retries: int = 60,
+        headers: dict | None = None,
     ):
         """
         Helper function to assert that a GET request to a URL contains expected content.

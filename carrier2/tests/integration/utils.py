@@ -28,9 +28,9 @@ def send_carrier2_config(core_api, name: str, namespace: str, config_content: st
     while resp.is_open():
         resp.update(timeout=1)
         if resp.peek_stdout():
-            print("STDOUT: %s" % resp.read_stdout())
+            print(f"STDOUT: {resp.read_stdout()}")
         if resp.peek_stderr():
-            print("STDERR: %s" % resp.read_stderr())
+            print(f"STDERR: {resp.read_stderr()}")
 
         if temp_commands:
             c = temp_commands.pop(0)

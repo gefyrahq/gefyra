@@ -40,7 +40,7 @@ def set_operator_version(part: str):
 if __name__ == "__main__":
     if len(sys.argv) != 2 or sys.argv[1] not in ["major", "minor", "patch"]:
         print("Only major, minor, patch is allowed as argument")
-        exit(1)
+        sys.exit(1)
     else:
         wd = os.getcwd()
         set_client_version(sys.argv[1])

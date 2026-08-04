@@ -99,7 +99,7 @@ def _parse_k8s_cpu_to_cpu_quota(cpu: str | None) -> int | None:
             quota = m * 100  # (m/1000) * 100000
         else:
             cpus = float(v)
-            quota = int(round(cpus * 100_000))
+            quota = round(cpus * 100_000)
         if quota != 0 and quota < 1000:
             quota = 1000  # mind. 1 ms
         return quota

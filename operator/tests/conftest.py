@@ -21,11 +21,7 @@ STOWAWAY_IN_CACHE = os.environ.get("STOWAWAY_IN_CACHE", "false").lower() == "tru
 @pytest.fixture(autouse=True, scope="module")
 def reload_kubernetes():
     for key in list(sys.modules.keys()):
-        if (
-            key.startswith("kubernetes")
-            or key.startswith("k8s")
-            or key.startswith("gefyra")
-        ):
+        if key.startswith(("kubernetes", "k8s", "gefyra")):
             del sys.modules[key]
 
 

@@ -52,7 +52,7 @@ def determine_wireguard_mtu(config: ClientConfiguration) -> int | None:
 
 
 def create_wireguard_config(
-    params: StowawayConfig, cargo_endpoint: str, mtu: str = None
+    params: StowawayConfig, cargo_endpoint: str, mtu: str | None = None
 ) -> str:
     mtu_line = f"MTU = {mtu}\n" if mtu else ""
     return (

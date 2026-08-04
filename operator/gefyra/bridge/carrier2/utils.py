@@ -89,10 +89,10 @@ def stream_exec(
             logger.debug(f"Last output: {last_ouput}")
 
         resp.close()
-    except Exception as e:
+    except Exception:
         if resp and resp.is_open():
             resp.close()
-        raise e
+        raise
     return last_ouput
 
 

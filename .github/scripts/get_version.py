@@ -1,4 +1,5 @@
 import os
+import sys
 
 env_file = os.getenv("GITHUB_ENV")
 
@@ -13,4 +14,4 @@ with open("pyproject.toml") as f:
                 myfile.write("PYAPP_PROJECT_VERSION=" + version + "\n")
                 path = os.path.abspath(f"./dist/gefyra-{version}.tar.gz")
                 myfile.write(f"PYAPP_PROJECT_PATH={path}\n")
-            exit(0)
+            sys.exit(0)

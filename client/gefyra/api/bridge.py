@@ -29,7 +29,8 @@ def create_bridge(
     timeout: int = 0,
     wait: bool = False,
     connection_name: str = "",
-    rules: list[list[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]] = [],
+    rules: list[list[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]]
+    | None = None,
 ) -> "GefyraBridge":
     """
     Create a GefyraBridge object
@@ -51,6 +52,8 @@ def create_bridge(
         handle_create_gefyrabridge,
     )
 
+    if rules is None:
+        rules = []
     config = ClientConfiguration(connection_name=connection_name)
 
     try:

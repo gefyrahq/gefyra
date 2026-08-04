@@ -85,7 +85,7 @@ async def handle_create_gefyraclient_serviceaccount(
                 ),
             )
         else:
-            raise e
+            raise
     try:
         sa = await asyncio.to_thread(
             core_v1_api.create_namespaced_service_account,
@@ -117,7 +117,7 @@ async def handle_create_gefyraclient_serviceaccount(
         logger.info(f"Created serviceaccount and permissions for GefyraClient: {name}")
     except k8s.client.exceptions.ApiException as e:
         if e.status != 409:
-            raise e
+            raise
 
 
 async def handle_delete_gefyraclient_serviceaccount(
@@ -153,7 +153,7 @@ async def handle_delete_gefyraclient_serviceaccount(
     except k8s.client.exceptions.ApiException as e:
         logger.warning(f"Could not delete serviceaccount {name}: {e}")
         if e.status != 404:
-            raise e
+            raise
 
 
 async def get_serviceaccount_data(name: str, namespace: str) -> dict[str, str]:
