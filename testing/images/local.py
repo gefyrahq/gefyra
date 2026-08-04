@@ -1,13 +1,13 @@
 #!/bin/env python
 
 import http.server
-import ssl
 import signal
 import socket
 import socketserver
+import ssl
 import sys
-from datetime import datetime
 import threading
+from datetime import datetime
 
 if sys.argv[1:]:
     port = int(sys.argv[1])
@@ -25,7 +25,7 @@ class MyHttpRequestHandler(http.server.SimpleHTTPRequestHandler):
         now = datetime.utcnow()
         content = bytes(
             f"<html><body><h1>Hello from Gefyra. It is {now} on"
-            f" {hostname}.</h1></body></html>".encode("utf-8")
+            f" {hostname}.</h1></body></html>".encode()
         )
         self.send_response(200)
         self.send_header("Content-type", "text/html")
@@ -42,7 +42,7 @@ class MyHttpsRequestHandler(http.server.SimpleHTTPRequestHandler):
         now = datetime.utcnow()
         content = bytes(
             f"<html><body><h1>Hello from Gefyra over TLS. It is {now} on"
-            f" {hostname}.</h1></body></html>".encode("utf-8")
+            f" {hostname}.</h1></body></html>".encode()
         )
         self.send_response(200)
         self.send_header("Content-type", "text/html")

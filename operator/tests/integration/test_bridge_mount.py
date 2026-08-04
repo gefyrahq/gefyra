@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
-from pytest_kubernetes.providers import AClusterManager
 
+from pytest_kubernetes.providers import AClusterManager
 from tests.utils import post_event_noop
 
 logger = logging.getLogger()

@@ -1,12 +1,12 @@
 import multiprocessing
 import os
-from pathlib import Path
 import shutil
 import signal
-import subprocess
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import ssl
-from typing import Optional
+import subprocess
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
+
 import pytest
 
 
@@ -32,7 +32,7 @@ def carrier2(carrier_binary):
     shutil.copy2(client_key, tmp_client_key)
 
     def call_with_args(
-        args: str, timeout: int = 1, queue: Optional[multiprocessing.Queue] = None
+        args: str, timeout: int = 1, queue: multiprocessing.Queue | None = None
     ) -> str:
         try:
             p = subprocess.Popen(
@@ -68,7 +68,7 @@ class UpstreamRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write("Gefyra upstream rockz!".encode("utf-8"))
+        self.wfile.write(b"Gefyra upstream rockz!")
 
     def log_message(self, *args, **kwargs):
         print("Upstream request")
@@ -79,7 +79,7 @@ class PeerRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write("Gefyra peer rockz, too!".encode("utf-8"))
+        self.wfile.write(b"Gefyra peer rockz, too!")
 
     def log_message(self, *args, **kwargs):
         print("Peer1 request")
@@ -90,7 +90,7 @@ class Peer2RequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write("Gefyra peer with different output, here!".encode("utf-8"))
+        self.wfile.write(b"Gefyra peer with different output, here!")
 
     def log_message(self, *args, **kwargs):
         print("Peer2 request")
@@ -99,8 +99,8 @@ class Peer2RequestHandler(BaseHTTPRequestHandler):
 def serve(
     handler=UpstreamRequestHandler,
     port: int = 4443,
-    tls_keypath: Optional[str] = None,
-    tls_certpath: Optional[str] = None,
+    tls_keypath: str | None = None,
+    tls_certpath: str | None = None,
 ):
     httpd = HTTPServer(("localhost", port), handler)
     if tls_keypath and tls_certpath:

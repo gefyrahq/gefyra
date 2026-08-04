@@ -1,5 +1,5 @@
-from gefyra.types.bridge import GefyraBridge
 from gefyra.configuration import ClientConfiguration
+from gefyra.types.bridge import GefyraBridge
 
 
 def test_bridge_body_generation():

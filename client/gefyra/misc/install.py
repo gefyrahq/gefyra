@@ -1,4 +1,5 @@
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
+
 from gefyra.misc.comps import COMPONENTS
 from gefyra.misc.utils import str_presenter
 
@@ -8,7 +9,7 @@ if TYPE_CHECKING:
 
 def synthesize_config_as_dict(
     options: "GefyraInstallOptions",
-    components: Optional[List[str]] = [],  # noqa: B006
+    components: list[str] | None = [],  # noqa: B006
 ) -> list[dict]:
     req_comps = []
     if components:
@@ -35,7 +36,7 @@ def synthesize_config_as_dict(
 
 def synthesize_config_as_yaml(
     options: "GefyraInstallOptions",
-    components: Optional[List[str]] = [],  # noqa: B006
+    components: list[str] | None = [],  # noqa: B006
 ) -> str:
     import yaml
 

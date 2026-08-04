@@ -2,23 +2,19 @@ import logging
 from pathlib import Path
 
 # from time import sleep
-from typing import List, Optional, Tuple, Union
-
 from kubernetes.client import ApiException
-
-from gefyra.local.bridge import get_all_containers, get_gefyrabridge
-from gefyra.types import ExactMatchHeader, GefyraLocalContainer
-from gefyra.local.mount import get_gefyrabridgemount
-from gefyra.exceptions import GefyraBridgeError
-from gefyra.types.bridge import PrefixMatchHeader, RegexMatchHeader
-from gefyra.types.bridge_mount import GefyraBridgeMount  # , CommandTimeoutError
-from gefyra.types import GefyraBridge
-from gefyra.configuration import ClientConfiguration
 
 from gefyra.api.utils import (
     random_string,
     stopwatch,
 )  # get_workload_information
+from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import GefyraBridgeError
+from gefyra.local.bridge import get_all_containers, get_gefyrabridge
+from gefyra.local.mount import get_gefyrabridgemount
+from gefyra.types import ExactMatchHeader, GefyraBridge, GefyraLocalContainer
+from gefyra.types.bridge import PrefixMatchHeader, RegexMatchHeader
+from gefyra.types.bridge_mount import GefyraBridgeMount  # , CommandTimeoutError
 
 logger = logging.getLogger(__name__)
 
@@ -33,9 +29,7 @@ def create_bridge(
     timeout: int = 0,
     wait: bool = False,
     connection_name: str = "",
-    rules: List[
-        List[Union[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]]
-    ] = [],
+    rules: list[list[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]] = [],
 ) -> "GefyraBridge":
     """
     Create a GefyraBridge object
@@ -123,7 +117,7 @@ def create_bridge(
 
 
 def wait_for_deletion(
-    gefyra_bridges: List, config: "ClientConfiguration", timeout: int = 60
+    gefyra_bridges: list, config: "ClientConfiguration", timeout: int = 60
 ):
     from kubernetes.watch import Watch
 
@@ -148,14 +142,14 @@ def wait_for_deletion(
 
 @stopwatch
 def delete_bridge(
-    name: Optional[str] = None,
-    mount_name: Optional[str] = None,
+    name: str | None = None,
+    mount_name: str | None = None,
     connection_name: str = "",
     wait: bool = False,
-    timeout: Optional[int] = 60,
+    timeout: int | None = 60,
 ) -> bool:
-    from gefyra.local.bridge import handle_delete_gefyrabridge
     from gefyra.configuration import ClientConfiguration
+    from gefyra.local.bridge import handle_delete_gefyrabridge
 
     config = ClientConfiguration(connection_name=connection_name)
     if name:
@@ -201,8 +195,8 @@ def unbridge_all(
 ) -> bool:
     from gefyra.configuration import ClientConfiguration
     from gefyra.local.bridge import (
-        handle_delete_gefyrabridge,
         get_all_gefyrabridges,
+        handle_delete_gefyrabridge,
     )
 
     config = ClientConfiguration(connection_name=connection_name)
@@ -221,12 +215,12 @@ def unbridge_all(
 
 @stopwatch
 def list_bridges(
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
     connection_name: str = "",
     filter_client: bool = True,
     get_containers: bool = False,
-) -> List[Tuple[GefyraLocalContainer | None, GefyraBridge]]:
+) -> list[tuple[GefyraLocalContainer | None, GefyraBridge]]:
     """
     Retrieve all GefyraBridge objects
     """
@@ -282,8 +276,8 @@ def list_bridges(
 def get_bridge(
     bridge_name: str,
     connection_name: str = "",
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
     resolve_container: bool = True,
 ) -> GefyraBridge:
     """

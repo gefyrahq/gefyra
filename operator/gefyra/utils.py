@@ -1,13 +1,12 @@
 import logging
 import select
 import tarfile
-from tempfile import TemporaryFile
 import time
-from typing import Any, AsyncIterable, Callable, List
+from collections.abc import AsyncIterable, Callable
+from tempfile import TemporaryFile
+from typing import Any
 
 import kubernetes as k8s
-
-
 from websocket import ABNF
 
 logger = logging.getLogger("gefyra.utils")
@@ -119,7 +118,7 @@ def exec_command_pod(
     pod_name: str,
     namespace: str,
     container_name: str,
-    command: List[str],
+    command: list[str],
 ) -> str:
     """
     Exec a command on a Pod and exit

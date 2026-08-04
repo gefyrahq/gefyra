@@ -4,10 +4,10 @@ import os
 import click
 import kopf
 import kubernetes as k8s
-
-from gefyra.clientstate import GefyraClientObject, GefyraClient
-from gefyra.configuration import configuration
 from statemachine.exceptions import TransitionNotAllowed
+
+from gefyra.clientstate import GefyraClient, GefyraClientObject
+from gefyra.configuration import configuration
 
 # A simple registry for locks based on resource UID or name
 locks = {}

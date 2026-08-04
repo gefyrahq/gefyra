@@ -2,13 +2,14 @@ import asyncio
 import logging
 import os
 import platform
+import subprocess
 import sys
 from pathlib import Path
-import subprocess
 from time import sleep
+
 import pytest
-from pytest_kubernetes.providers import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
+from pytest_kubernetes.providers import AClusterManager
 
 from tests.utils import GefyraDockerClient
 

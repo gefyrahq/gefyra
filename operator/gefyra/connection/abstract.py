@@ -1,26 +1,26 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AbstractGefyraConnectionProvider(ABC):
     provider_type = ""
 
     @abstractmethod
-    async def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
+    async def installed(self, config: dict[Any, Any] | None = None) -> bool:
         """
         Check if this Gefyra connection provider is properly installed to the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    async def install(self, config: Optional[Dict[Any, Any]] = None):
+    async def install(self, config: dict[Any, Any] | None = None):
         """
         Install this Gefyra connection provider to the cluster
         """
         raise NotImplementedError
 
     @abstractmethod
-    async def uninstall(self, config: Optional[Dict[Any, Any]] = None):
+    async def uninstall(self, config: dict[Any, Any] | None = None):
         """
         Uninstall this Gefyra connection provider from the cluster
         """
@@ -34,7 +34,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def add_peer(self, peer_id: str, parameters: Optional[Dict[Any, Any]] = None):
+    async def add_peer(self, peer_id: str, parameters: dict[Any, Any] | None = None):
         """
         Add a new peer to the connection provider
         """
@@ -48,7 +48,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_peer_config(self, peer_id: str) -> Dict[str, str]:
+    async def get_peer_config(self, peer_id: str) -> dict[str, str]:
         """
         Returns a dict of configuration values for the peer to be stored in the Peer CRD
         """
@@ -67,7 +67,7 @@ class AbstractGefyraConnectionProvider(ABC):
         peer_id: str,
         destination_ip: str,
         destination_port: int,
-        parameters: Optional[Dict[Any, Any]] = None,
+        parameters: dict[Any, Any] | None = None,
     ) -> str:
         """
         Add a destintation route to this connection provider proxy, returns
@@ -103,7 +103,7 @@ class AbstractGefyraConnectionProvider(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def validate(self, gclient: dict, hints: Dict[Any, Any]):
+    async def validate(self, gclient: dict, hints: dict[Any, Any]):
         """
         Validate the Gefyra client object with this connection provider
         Raises a kopf.AdmissionError if validation fails

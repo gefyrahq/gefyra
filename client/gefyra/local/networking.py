@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local import CREATED_BY_LABEL
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _get_client_networks(config: ClientConfiguration) -> List[str]:
+def _get_client_networks(config: ClientConfiguration) -> list[str]:
     clients = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
         namespace=config.NAMESPACE,
         plural="gefyraclients",
@@ -38,12 +38,12 @@ def get_or_create_gefyra_network(
 
 
 def _get_subnet(
-    config: ClientConfiguration, network_name: str, occupied_networks: List[str]
+    config: ClientConfiguration, network_name: str, occupied_networks: list[str]
 ) -> str:
     from docker.errors import APIError
 
     tries = 255
-    networks: List[Network] = []
+    networks: list[Network] = []
     subnet = ""
     # this is a workaround to select a free subnet (instead of finding it with python code)
     for i in range(tries):

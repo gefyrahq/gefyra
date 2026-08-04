@@ -1,18 +1,16 @@
-import os
 import asyncio
+import os
 import signal
 
 import kopf
 import kubernetes as k8s
 
-from gefyra.connection.stowaway import Stowaway
 from gefyra.configuration import configuration
-
-from gefyra.connection.stowaway.utils import parse_wg_output
+from gefyra.connection.stowaway import Stowaway
 from gefyra.connection.stowaway.resources.configmaps import (
     create_stowaway_proxyroute_configmap,
 )
-
+from gefyra.connection.stowaway.utils import parse_wg_output
 
 WIREGUARD_RECONCILIATION = 60
 custom_object_api = k8s.client.CustomObjectsApi()
@@ -29,7 +27,7 @@ async def periodic(interval_sec, coro_name, *args, **kwargs):
 
 
 async def read_wireguard_status(logger):
-    from gefyra.clientstate import GefyraClientObject, GefyraClient
+    from gefyra.clientstate import GefyraClient, GefyraClientObject
 
     try:
         raw_gefyra_clients = custom_object_api.list_namespaced_custom_object(

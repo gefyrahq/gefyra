@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 import logging
-from typing import Any, Dict, List, Optional, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 from gefyra.local.mount import get_gefyrabridgemount
 from gefyra.local.utils import WatchEventsMixin
@@ -21,7 +21,7 @@ class GefyraBridgeMount(WatchEventsMixin):
     # the uid from Kubernetes for this object
     uid: str
     # the labels of this Gefyra object
-    labels: Dict[str, str]
+    labels: dict[str, str]
     # the provider of the mount
     provider: str
     # target
@@ -31,9 +31,9 @@ class GefyraBridgeMount(WatchEventsMixin):
 
     # the state of the mount
     _state: str
-    _state_transitions: Dict[str, str]
-    _created: Optional[str]
-    provider_parameter: Optional[StowawayParameter] = None
+    _state_transitions: dict[str, str]
+    _created: str | None
+    provider_parameter: StowawayParameter | None = None
 
     @classmethod
     def from_raw(cls, config: "ClientConfiguration", gbridgemount: dict[str, Any]):
@@ -53,7 +53,7 @@ class GefyraBridgeMount(WatchEventsMixin):
             "_state_transitions": self._state_transitions,
         }
         if fetch_events:
-            events: List[str] = []
+            events: list[str] = []
             self.watch_events(events.append, None, 1)
             res["events"] = events
         return res

@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import logging
 import random
 import string
 import time
-from typing import Iterable, TYPE_CHECKING, Tuple, Optional
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from gefyra.exceptions import GefyraBridgeError
-
 
 if TYPE_CHECKING:
     # from gefyra.types import GefyraBridge
@@ -68,7 +69,7 @@ def stopwatch(func):
     return wrapper
 
 
-def get_workload_information(target: str) -> Tuple[str, str, str]:
+def get_workload_information(target: str) -> tuple[str, str, str]:
     try:
         _bits = list(filter(None, target.split("/")))
         workload_type, workload_name = _bits[0:2]
@@ -81,7 +82,7 @@ def get_workload_information(target: str) -> Tuple[str, str, str]:
     return workload_type, workload_name, container_name
 
 
-def _parse_k8s_cpu_to_cpu_quota(cpu: Optional[str]) -> Optional[int]:
+def _parse_k8s_cpu_to_cpu_quota(cpu: str | None) -> int | None:
     """
     Convert K8s CPU specifications into a Docker/CFS cpu_quota value (in µs), based on the default period of 100000 µs.
       "100m"  -> 100 * 100 = 10000
@@ -107,7 +108,7 @@ def _parse_k8s_cpu_to_cpu_quota(cpu: Optional[str]) -> Optional[int]:
         return None
 
 
-def _parse_k8s_mem_to_bytes(mem: Optional[str]) -> Optional[int]:
+def _parse_k8s_mem_to_bytes(mem: str | None) -> int | None:
     if not mem:
         return None
     v = mem.strip()
@@ -143,7 +144,7 @@ def _parse_k8s_mem_to_bytes(mem: Optional[str]) -> Optional[int]:
 
 def _inherit_resources_from_workload(
     config: ClientConfiguration, namespace: str, ref: str
-) -> Tuple[Optional[str], Optional[str]]:
+) -> tuple[str | None, str | None]:
     """
     Returns (cpu, memory) quantities as strings from a workload reference like:
       'pod/<name>', 'deployment/<name>' or 'statefulset/<name>' (case-insensitive)
@@ -161,8 +162,8 @@ def _inherit_resources_from_workload(
         # assume it's a pod name if no kind prefix is provided
         kind, name = "pod", parts[0]
 
-    cpu_val: Optional[str] = None
-    mem_val: Optional[str] = None
+    cpu_val: str | None = None
+    mem_val: str | None = None
 
     try:
         if kind in ("deployment", "deploy", "deployments"):
@@ -191,7 +192,7 @@ def _inherit_resources_from_workload(
     return cpu_val, mem_val
 
 
-def _extract_cpu_mem_from_containers(containers) -> Tuple[Optional[str], Optional[str]]:
+def _extract_cpu_mem_from_containers(containers) -> tuple[str | None, str | None]:
     """
     Retrieves CPU and memory values (limits or, if not present, requests) from the first container in a list.
     """

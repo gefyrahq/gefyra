@@ -1,18 +1,19 @@
-from typing import Any, Callable, Dict, Optional
-from kopf import TemporaryError
+import asyncio
+from collections.abc import Callable
+from typing import Any, Dict, Optional
+
 import kopf
 import kubernetes as k8s
-from kubernetes.client import ApiException, V1PodList, V1Pod
-import asyncio
+from kopf import TemporaryError
+from kubernetes.client import ApiException, V1Pod, V1PodList
 
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
-from gefyra.configuration import OperatorConfiguration
-
 from gefyra.bridge.carrier2.config import (
     Carrier2Config,
     Carrier2Proxy,
     CarrierProbe,
 )
+from gefyra.bridge.carrier2.utils import read_carrier2_config
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
     _tls_cert_from_k8s_secret,
@@ -20,8 +21,7 @@ from gefyra.bridge_mount.utils import (
     get_all_probes,
     get_upstreams_for_svc,
 )
-from gefyra.bridge.carrier2.utils import read_carrier2_config
-
+from gefyra.configuration import OperatorConfiguration
 
 app_api = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -72,7 +72,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     provider_type = "carrier2"
 
-    async def install(self, parameters: Optional[Dict[Any, Any]] = None):
+    async def install(self, parameters: dict[Any, Any] | None = None):
         """
         Install this Gefyra bridge provider to the Kubernetes Pod
         """
@@ -117,7 +117,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         container_port: int,
         destination_host: str,
         destination_port: int,
-        parameters: Optional[Dict[Any, Any]] = None,
+        parameters: dict[Any, Any] | None = None,
     ):
         # params not needed since carrier just updates based on all objects
         """
@@ -325,10 +325,10 @@ class Carrier2(AbstractGefyraBridgeProvider):
             self.namespace = bridge_mount["targetNamespace"]
             self.container = bridge_mount["targetContainer"]
             self.target = bridge_mount["target"]
-            setattr(self, "_get_bridge_mount_resource_cache", bridge_mount)
-        return getattr(self, "_get_bridge_mount_resource_cache")
+            self._get_bridge_mount_resource_cache = bridge_mount
+        return self._get_bridge_mount_resource_cache
 
-    async def _get_bridge_mount_provider_parameter(self) -> Optional[dict]:
+    async def _get_bridge_mount_provider_parameter(self) -> dict | None:
         """
         Get the bridge mount provider parameter
         """
