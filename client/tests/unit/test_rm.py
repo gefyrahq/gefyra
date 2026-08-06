@@ -315,7 +315,7 @@ def test_cleanup_stale_bridges_no_connection():
     from gefyra.api.rm import cleanup_stale_bridges
 
     with patch(
-        "gefyra.configuration.ClientConfiguration", side_effect=Exception("no conn")
+        "gefyra.configuration.ClientConfiguration", side_effect=RuntimeError("no conn")
     ):
         result = cleanup_stale_bridges(connection_name="default")
 

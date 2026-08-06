@@ -47,6 +47,7 @@ def _get_subnet(
     tries = 255
     networks: list[Network] = []
     subnet = ""
+    temp_network = None
     # this is a workaround to select a free subnet (instead of finding it with python code)
     for i in range(tries):
         try:
@@ -59,6 +60,8 @@ def _get_subnet(
                     f"network {network_name}-{i} already exists, trying next one"
                 )
                 continue
+        if not temp_network:
+            raise RuntimeError("Could not create a temporary network")
         networks.append(temp_network)
         subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
         if subnet not in occupied_networks:
