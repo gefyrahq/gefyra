@@ -177,10 +177,12 @@ class WatchEventsMixin:
                     and event["object"].event_time
                     and event["object"].event_time > created
                 ):
-                    if self.name in event["object"].involved_object.name:
-                        if update_callback:
-                            if event["object"].message:
-                                update_callback(event["object"].message)
+                    if (
+                        self.name in event["object"].involved_object.name
+                        and update_callback
+                        and event["object"].message
+                    ):
+                        update_callback(event["object"].message)
 
                     if event["object"].reason == stop_reason:
                         w.stop()

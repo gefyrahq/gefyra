@@ -210,7 +210,7 @@ def disconnect_client(
             _manage_container_and_bridges(
                 connection_name=connection_name, force=yes, update_callback=bar.text
             )
-        except (RuntimeError, Exception):
+        except RuntimeError:
             bar.text(f"No local connection '{connection_name}'...")
         if not nowait:
             bar.text("Waiting for the GefyraClient to be in state 'WAITING'...")

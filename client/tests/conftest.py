@@ -13,12 +13,17 @@ OPERATOR_IN_CACHE = os.environ.get("OPERATOR_IN_CACHE", "false").lower() == "tru
 STOWAWAY_IN_CACHE = os.environ.get("STOWAWAY_IN_CACHE", "false").lower() == "true"
 
 
+class GefyraReadyEventNotFoundError(RuntimeError):
+    pass
+
+
 @pytest.fixture(scope="session")
 def demo_backend_image(request):
     name = "quay.io/gefyra/pyserver:latest"
     subprocess.run(
         ("docker pull quay.io/gefyra/pyserver:latest"),
         shell=True,
+        check=False,
     )
     return name
 
@@ -70,6 +75,7 @@ def operator_image(request):
                 f" {(Path(__file__).parent / Path('../../operator/')).resolve()}"
             ),
             shell=True,
+            check=False,
         )
     else:
         print("Skipping operator image build since OPERATOR_IN_CACHE is set to true")
@@ -88,6 +94,7 @@ def stowaway_image(request):
                 f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
             ),
             shell=True,
+            check=False,
         )
     else:
         print("Skipping stowaway image build since STOWAWAY_IN_CACHE is set to true")
@@ -106,6 +113,7 @@ def carrier2_image(request):
                 f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
             ),
             shell=True,
+            check=False,
         )
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
@@ -178,9 +186,9 @@ def check_operator_running(k3d, after: datetime):
                     as_dict=False,
                 )
             )
-        except Exception as e:
+        except RuntimeError as e:
             print(e)
-        raise Exception("Gefyra-Ready event not found")
+        raise GefyraReadyEventNotFoundError("Gefyra-Ready event not found")
 
 
 def check_images_loaded(k3d, operator_image, stowaway_image):

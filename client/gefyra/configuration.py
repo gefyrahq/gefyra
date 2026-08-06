@@ -183,6 +183,8 @@ class ClientConfiguration:
                 )
                 return f"{_ip}:{self.cargo_endpoint_port}"
             else:
+                from docker.errors import DockerException
+
                 try:
                     _ip_output = self.DOCKER.containers.run(
                         "alpine", "getent ahostsv4 host.docker.internal", remove=True
@@ -190,7 +192,7 @@ class ClientConfiguration:
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
                     logger.debug(f"Found host.docker.internal IP: {_ip}")
                     return f"{_ip}:{self.cargo_endpoint_port}"
-                except Exception as e:
+                except (DockerException, UnicodeDecodeError, IndexError) as e:
                     logger.error("Could not create a valid configuration: " + str(e))
 
     @CARGO_ENDPOINT.setter

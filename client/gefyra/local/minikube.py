@@ -38,7 +38,7 @@ def detect_minikube_config(profile: str | None = "minikube") -> dict:
             " Minikube? Please also review your profile with 'minikube profile list'"
             " and try again. Minikube profiles are case-sensitive."
         )
-    except Exception as e:
+    except (json.JSONDecodeError, OSError) as e:
         raise MinikubeError(
             f"There was an error reading the Minikube configuration: {e}"
         )

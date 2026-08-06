@@ -130,8 +130,12 @@ class GefyraClient(WatchEventsMixin):
                     self._wg_handshake = self.wg_status["latest_handshake"]
                 else:
                     self._wg_handshake = "No handshake"
-            except Exception:
-                pass
+            except (AttributeError, KeyError, TypeError) as e:
+                logger.debug(
+                    "Could not parse wireguard status for client '%s': %s",
+                    self.client_id,
+                    e,
+                )
         else:
             self.wg_status = None
         self._created = _object["metadata"].get("creationTimestamp", "")

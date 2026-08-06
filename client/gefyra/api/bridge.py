@@ -48,6 +48,7 @@ def create_bridge(
 
     # from gefyra.local.bridge import get_all_gefyrabridges
     from gefyra.configuration import ClientConfiguration
+    from gefyra.exceptions import GefyraBridgeMountNotFound
     from gefyra.local.bridge import (
         handle_create_gefyrabridge,
     )
@@ -79,7 +80,7 @@ def create_bridge(
             name=bridge_mount_name,
         )
         bridge_mount = GefyraBridgeMount(config, mount)
-    except Exception:
+    except (GefyraBridgeMountNotFound, KeyError, TypeError):
         raise GefyraBridgeError(
             f"Could not find GefyraBridgeMount '{bridge_mount_name}'"
         )
@@ -136,11 +137,10 @@ def wait_for_deletion(
         timeout_seconds=timeout,
         _request_timeout=timeout,
     ):
-        if event["type"] == "DELETED":
-            if event["object"]["metadata"]["uid"] in uids:
-                deleted.append(event["object"]["metadata"]["uid"])
-                if set(deleted) == set(uids):
-                    return True
+        if event["type"] == "DELETED" and event["object"]["metadata"]["uid"] in uids:
+            deleted.append(event["object"]["metadata"]["uid"])
+            if set(deleted) == set(uids):
+                return True
 
 
 @stopwatch

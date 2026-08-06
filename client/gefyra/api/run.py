@@ -122,10 +122,11 @@ def run(
     privileged: bool | None = None,
     extra_container_args: dict | None = None,
 ) -> bool:
-    from docker.errors import APIError
+    from docker.errors import APIError, DockerException
     from kubernetes.client import ApiException
 
     from gefyra.cluster.utils import get_env_from_pod_container
+    from gefyra.exceptions import GefyraConnectionError
     from gefyra.local.bridge import deploy_app_container
     from gefyra.local.cargo import probe_wireguard_connection
     from gefyra.local.utils import (
@@ -152,7 +153,7 @@ def run(
     #
     try:
         probe_wireguard_connection(config)
-    except Exception as e:
+    except (GefyraConnectionError, DockerException) as e:
         logger.error(e)
         logger.error(
             "\n\033[1m[Hint]\033[0m You may need to run the Cargo Container first."

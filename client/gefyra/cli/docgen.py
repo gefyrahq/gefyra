@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Generate markdown documentation for the Gefyra CLI.
 

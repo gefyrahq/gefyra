@@ -146,36 +146,38 @@ def install(
 
 @stopwatch
 def uninstall(kubeconfig: Path | None = None, kubecontext: str | None = None, **kwargs):
+    from kubernetes.client import ApiException
+
     from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
     logger.info("Removing all Gefyra bridge mounts")
     try:
         remove_remainder_bridge_mounts(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing all Gefyra bridges")
     try:
         remove_remainder_bridges(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing remainder Gefyra clients")
     try:
         remove_all_clients()
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing Gefyra namespace")
     try:
         remove_gefyra_namespace(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing Gefyra API extensions")
     try:
         remove_gefyra_crds(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing Gefyra RBAC resources")
     try:
         remove_gefyra_rbac(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)

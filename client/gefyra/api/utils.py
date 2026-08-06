@@ -103,7 +103,7 @@ def _parse_k8s_cpu_to_cpu_quota(cpu: str | None) -> int | None:
         if quota != 0 and quota < 1000:
             quota = 1000  # mind. 1 ms
         return quota
-    except Exception as e:
+    except (ValueError, OverflowError) as e:
         logger.debug(f"Failed parsing CPU quantity '{cpu}': {e}")
         return None
 
@@ -132,12 +132,12 @@ def _parse_k8s_mem_to_bytes(mem: str | None) -> int | None:
             try:
                 num = float(v[: -len(suf)])
                 return int(num * fac)
-            except Exception as e:
+            except (ValueError, OverflowError) as e:
                 logger.debug(f"Failed parsing memory quantity '{mem}': {e}")
                 return None
     try:
         return int(float(v))
-    except Exception as e:
+    except (ValueError, OverflowError) as e:
         logger.debug(f"Failed parsing memory quantity '{mem}': {e}")
         return None
 
@@ -165,6 +165,8 @@ def _inherit_resources_from_workload(
     cpu_val: str | None = None
     mem_val: str | None = None
 
+    from kubernetes.client import ApiException
+
     try:
         if kind in ("deployment", "deploy", "deployments"):
             api = config.K8S_APP_API
@@ -184,7 +186,7 @@ def _inherit_resources_from_workload(
 
         else:
             logger.debug(f"Unsupported workload kind in reference '{ref}'")
-    except Exception as e:
+    except (ApiException, AttributeError, KeyError, TypeError, IndexError) as e:
         logger.debug(f"Could not inherit resources from '{ref}' in '{namespace}': {e}")
     logger.debug(
         "Inherit resources from workload '%s': CPU=%s, Memory=%s", ref, cpu_val, mem_val
@@ -200,7 +202,7 @@ def _extract_cpu_mem_from_containers(containers) -> tuple[str | None, str | None
         return None, None
     try:
         res = containers[0].resources
-    except Exception:
+    except (AttributeError, IndexError, TypeError):
         logger.debug("No resources found in container spec.")
         return None, None
     limits = (res and getattr(res, "limits", None)) or {}

@@ -88,7 +88,7 @@ def rm_all(
     wait: bool = False,
     force: bool = False,
 ) -> bool:
-    from docker.errors import NotFound
+    from docker.errors import APIError, NotFound
 
     from gefyra.api.bridge import wait_for_deletion
     from gefyra.configuration import ClientConfiguration
@@ -137,7 +137,7 @@ def rm_all(
             container.remove(force=force)
         except NotFound:
             logger.warning(f"Container '{name}' already removed")
-        except Exception as e:
+        except APIError as e:
             logger.warning(f"Failed to remove container '{name}': {e}")
 
     return True
@@ -153,6 +153,9 @@ def cleanup_stale_bridges(
     This is intentionally best-effort: if the cluster or Docker is unreachable
     the function logs a warning and returns 0.
     """
+    from docker.errors import DockerException
+    from kubernetes.client import ApiException
+
     from gefyra.configuration import ClientConfiguration
     from gefyra.local.bridge import (
         get_all_containers,
@@ -163,7 +166,7 @@ def cleanup_stale_bridges(
     if config is None:
         try:
             config = ClientConfiguration(connection_name=connection_name)
-        except Exception as e:
+        except (RuntimeError, OSError, ValueError, DockerException, ApiException) as e:
             logger.warning(
                 "cleanup_stale_bridges: no active connection, skipping: %s", e
             )
@@ -171,7 +174,7 @@ def cleanup_stale_bridges(
 
     try:
         containers = get_all_containers(config)
-    except Exception as e:
+    except (RuntimeError, DockerException, ApiException) as e:
         logger.warning("cleanup_stale_bridges: cannot list containers, skipping: %s", e)
         return 0
 
@@ -179,7 +182,7 @@ def cleanup_stale_bridges(
 
     try:
         all_bridges = get_all_gefyrabridges(config)
-    except Exception as e:
+    except (RuntimeError, DockerException, ApiException) as e:
         logger.warning("cleanup_stale_bridges: cannot list bridges, skipping: %s", e)
         return 0
 

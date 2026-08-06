@@ -108,11 +108,11 @@ def get_all_containers(config: ClientConfiguration) -> list[GefyraLocalContainer
                 address = container.attrs["NetworkSettings"]["Networks"][
                     config.NETWORK_NAME
                 ]["IPAddress"].split("/")[0]
-            except Exception:
+            except (AttributeError, KeyError, IndexError, TypeError):
                 address = "unknown"
             try:
                 namespace = container.attrs["HostConfig"]["DnsSearch"][0].split(".")[0]
-            except Exception:
+            except (AttributeError, KeyError, IndexError, TypeError):
                 namespace = "unknown"
             container_information.append(
                 GefyraLocalContainer(

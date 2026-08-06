@@ -73,8 +73,9 @@ def _get_subnet(
 def handle_create_network(
     config: ClientConfiguration, banned_subnets: list[str] | None = None
 ) -> "Network":
-    from docker.errors import NotFound
+    from docker.errors import APIError, NotFound
     from docker.types import IPAMConfig, IPAMPool
+    from kubernetes.client import ApiException
 
     if banned_subnets is None:
         banned_subnets = []
@@ -142,7 +143,7 @@ def handle_create_network(
                 options=options,
             )
             break
-        except Exception as e:
+        except (APIError, ApiException, RuntimeError, KeyError, TypeError) as e:
             logger.warning(f"Could not create Gefyra network due to: {e}")
             i = i + 1
             continue
