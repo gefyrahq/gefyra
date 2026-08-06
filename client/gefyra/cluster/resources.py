@@ -1,23 +1,22 @@
 import logging
-from typing import List, Dict, Union
-from gefyra.exceptions import PodNotFoundError, WorkloadNotFoundError
 
 from kubernetes.client import (
-    V1Deployment,
     ApiException,
-    V1StatefulSet,
+    V1Deployment,
     V1Pod,
+    V1StatefulSet,
 )
 
 from gefyra.api.utils import get_workload_type
 from gefyra.configuration import ClientConfiguration
+from gefyra.exceptions import PodNotFoundError, WorkloadNotFoundError
 
 logger = logging.getLogger(__name__)
 
 
 def owner_reference_consistent(
     pod: V1Pod,
-    workload: Union[V1Deployment, V1StatefulSet],
+    workload: V1Deployment | V1StatefulSet,
     config: ClientConfiguration,
 ) -> bool:
     if workload.kind == "StatefulSet":
@@ -40,7 +39,7 @@ def owner_reference_consistent(
 
 def get_pods_and_containers_for_workload(
     config: ClientConfiguration, name: str, namespace: str, workload_type: str
-) -> Dict[str, List[str]]:
+) -> dict[str, list[str]]:
     result = {}
     API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
     workload_type = get_workload_type(workload_type)
@@ -84,7 +83,7 @@ def get_pods_and_containers_for_workload(
 
 def get_pods_and_containers_for_pod_name(
     config: ClientConfiguration, name: str, namespace: str
-) -> Dict[str, List[str]]:
+) -> dict[str, list[str]]:
     result = {}
     API_EXCEPTION_MSG = "Exception when calling Kubernetes API: {}"
     try:

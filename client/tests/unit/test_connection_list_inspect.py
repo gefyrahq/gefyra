@@ -1,9 +1,9 @@
-import unittest
-from unittest.mock import Mock, patch, call
 import json
+import unittest
+from unittest.mock import Mock, call, patch
 
 from click.testing import CliRunner
-from gefyra.cli.connections import list_connections, inspect_connection
+from gefyra.cli.connections import inspect_connection, list_connections
 
 
 class TestListConnections(unittest.TestCase):

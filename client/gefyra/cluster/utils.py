@@ -1,9 +1,7 @@
 import logging
 from time import sleep
-from typing import Tuple
 
 from gefyra.configuration import ClientConfiguration
-
 
 logger = logging.getLogger(__name__)
 
@@ -79,12 +77,12 @@ def is_operator_running(config: ClientConfiguration) -> bool:
 
 def retrieve_pod_and_container(
     workload: str, namespace: str, config: ClientConfiguration
-) -> Tuple[str, str]:
-    from gefyra.cluster.resources import (
-        get_pods_and_containers_for_workload,
-        get_pods_and_containers_for_pod_name,
-    )
+) -> tuple[str, str]:
     from gefyra.api.utils import get_workload_type
+    from gefyra.cluster.resources import (
+        get_pods_and_containers_for_pod_name,
+        get_pods_and_containers_for_workload,
+    )
 
     container_name = ""
     workload_type, workload_name = workload.split("/", 1)

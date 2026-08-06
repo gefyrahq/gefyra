@@ -1,10 +1,11 @@
 import json
 import os
-from typing import List, Optional, Literal
-from alive_progress import alive_bar
+from typing import Literal
+
 import click
-from gefyra.exceptions import CommandTimeoutError
-from gefyra.types import ExactMatchHeader
+from alive_progress import alive_bar
+from tabulate import tabulate
+
 from gefyra.cli import console
 from gefyra.cli.utils import (
     AliasedGroup,
@@ -14,6 +15,8 @@ from gefyra.cli.utils import (
     parse_match_path,
     standard_error_handler,
 )
+from gefyra.exceptions import CommandTimeoutError
+from gefyra.types import ExactMatchHeader
 from gefyra.types.bridge import (
     ExactMatchPath,
     GefyraBridge,
@@ -22,7 +25,6 @@ from gefyra.types.bridge import (
     RegexMatchHeader,
     RegexMatchPath,
 )
-from tabulate import tabulate
 
 
 @click.group(
@@ -131,12 +133,12 @@ def create_bridge(
     local,
     ports,
     mount,
-    match_header_exact: List[ExactMatchHeader],
-    match_header_prefix: List[PrefixMatchHeader],
-    match_header_regex: List[RegexMatchHeader],
-    match_path_exact: List[ExactMatchPath],
-    match_path_prefix: List[PrefixMatchPath],
-    match_path_regex: List[RegexMatchPath],
+    match_header_exact: list[ExactMatchHeader],
+    match_header_prefix: list[PrefixMatchHeader],
+    match_header_regex: list[RegexMatchHeader],
+    match_path_exact: list[ExactMatchPath],
+    match_path_prefix: list[PrefixMatchPath],
+    match_path_regex: list[RegexMatchPath],
     no_probe_handling,
     connection_name,
     nowait,
@@ -219,9 +221,9 @@ def delete_bridge(
     name: str,
     connection_name: str,
     all: bool = False,
-    mount: Optional[str] = None,
+    mount: str | None = None,
     nowait: bool = False,
-    timeout: Optional[int] = 60,
+    timeout: int | None = 60,
 ):
     from gefyra import api
 

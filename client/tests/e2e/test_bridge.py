@@ -1,9 +1,7 @@
 import pytest
-
 from pytest_kubernetes.providers import AClusterManager
 
 from tests.e2e.base import GefyraTestCase
-
 
 LOCAL_CONTAINER_NAME = "gefyra-new-backend"
 

@@ -1,25 +1,24 @@
 import subprocess
 from time import sleep
-import docker
-from gefyra.api import status
-from gefyra.types import GefyraClientState, StatusSummary
-import requests
 
-from kubernetes.config import load_kube_config
+import docker
+import requests
+from click.testing import CliRunner
+from gefyra.api import status
+from gefyra.cli.main import cli
+from gefyra.types import GefyraClientState, StatusSummary
 from kubernetes.client import (
+    ApiException,
+    AppsV1Api,
+    CoreV1Api,
+    CustomObjectsApi,
+    RbacAuthorizationV1Api,
+    V1ObjectMeta,
     V1Pod,
     V1Service,
-    V1ObjectMeta,
-    CoreV1Api,
-    RbacAuthorizationV1Api,
-    AppsV1Api,
-    CustomObjectsApi,
 )
-from kubernetes.client import ApiException
+from kubernetes.config import load_kube_config
 
-from click.testing import CliRunner
-
-from gefyra.cli.main import cli
 from tests.e2e.const import CONNECTION_NAME
 
 
@@ -141,7 +140,7 @@ class GefyraTestMixin:
             name=name, namespace=namespace
         )
         metadata: V1ObjectMeta = service.metadata
-        for key in annotations.keys():
+        for key in annotations:
             self.assertIn(key, metadata.annotations)
             self.assertEqual(annotations[key], metadata.annotations[key])
         return True
