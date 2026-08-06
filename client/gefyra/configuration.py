@@ -340,7 +340,7 @@ class ClientConfiguration:
                         f"Could not find service gefyra-stowaway-wireguard in {self.NAMESPACE}"
                     ) from None
                 else:
-                    raise e
+                    raise
 
 
 def get_gefyra_config_location() -> str:

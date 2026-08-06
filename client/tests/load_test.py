@@ -11,31 +11,34 @@ CLIENTS = {}
 
 
 def gefyra_client(cmd: str):
-    subprocess.run((f"poetry run g {cmd}"), shell=True)
+    subprocess.run((f"poetry run g {cmd}"), shell=True, check=True)
 
 
 def kubectl(cmd):
-    subprocess.run((f"kubectl {cmd}"), shell=True)
+    subprocess.run((f"kubectl {cmd}"), shell=True, check=True)
 
 
 def setup():
-    cwd = pathlib.Path().resolve()
-    subprocess.run(("docker pull quay.io/gefyra/gefyra-tesocket:0.1.0"), shell=True)
+    cwd = pathlib.Path.cwd()
+    subprocess.run(
+        ("docker pull quay.io/gefyra/gefyra-tesocket:0.1.0"), shell=True, check=True
+    )
     subprocess.run(
         (
             f"k3d cluster create gefyra-loadtesting --kubeconfig-switch-context --kubeconfig-update-default --config {cwd}/tests/k3d_cluster.yaml"
         ),
         shell=True,
+        check=True,
     )
     gefyra_client("install --version pr-807 --apply")
 
 
 def teardown():
-    subprocess.run(("k3d cluster rm gefyra-loadtesting"), shell=True)
+    subprocess.run(("k3d cluster rm gefyra-loadtesting"), shell=True, check=True)
     print(f"Deleting {len(CLIENTS.keys())} GefyraClient config files")
     for client in CLIENTS:
         delete_client_config(client)
-        subprocess.run((f"docker rm -f gefyra-cargo-{client}"), shell=True)
+        subprocess.run((f"docker rm -f gefyra-cargo-{client}"), shell=True, check=True)
 
 
 def create_client(name: str):

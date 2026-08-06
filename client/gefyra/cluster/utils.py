@@ -56,7 +56,7 @@ def get_env_from_pod_container(
                     f" try {counter}."
                 )
             else:
-                raise e
+                raise
     raise RuntimeError(
         f"Failed to get env from pod {pod_name} in namespace {namespace} after"
         f" {retries} tries."

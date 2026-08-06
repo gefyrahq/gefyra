@@ -122,7 +122,7 @@ def connect_client(
     client_config,
     connection_name: str,
     minikube: str | None = None,
-    mtu: int = None,
+    mtu: int | None = None,
     cargo_image: str | None = None,
     force: bool = False,
     timeout: int = 60,

@@ -75,9 +75,7 @@ class GefyraTestMixin:
     def kubectl(self, *args):
         cmd = ["kubectl"]
         cmd.extend(args)
-        return subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
-        )
+        return subprocess.run(cmd, capture_output=True, check=True)
 
     def _stop_container(self, container):
         try:
@@ -95,7 +93,7 @@ class GefyraTestMixin:
                 except docker.errors.NotFound:
                     pass
             else:
-                raise e
+                raise
 
     def assert_pod_ready(self, pod_name: str, namespace: str, retries=3, interval=1):
         counter = 0
@@ -110,8 +108,8 @@ class GefyraTestMixin:
         raise AssertionError(f"Pod {pod_name} is not ready.")
 
     def _pod_ready(self, pod: V1Pod):
-        return all([c.status == "True" for c in pod.status.conditions]) and all(
-            [c.ready for c in pod.status.container_statuses]
+        return all(c.status == "True" for c in pod.status.conditions) and all(
+            c.ready for c in pod.status.container_statuses
         )
 
     def assert_service_available(
@@ -129,7 +127,7 @@ class GefyraTestMixin:
                     sleep(interval)
                     continue
                 else:
-                    raise e
+                    raise
             return True
         raise AssertionError(f"Service {name} not available within {retries} retries.")
 
