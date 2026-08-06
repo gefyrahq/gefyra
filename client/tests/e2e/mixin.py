@@ -138,9 +138,9 @@ class GefyraTestMixin:
             name=name, namespace=namespace
         )
         metadata: V1ObjectMeta = service.metadata
-        for key in annotations:
+        for key, value in annotations.items():
             self.assertIn(key, metadata.annotations)
-            self.assertEqual(annotations[key], metadata.annotations[key])
+            self.assertEqual(value, metadata.annotations[key])
         return True
 
     def _deployment_ready(self, deployment):

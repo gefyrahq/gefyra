@@ -2,6 +2,7 @@ import os
 from copy import deepcopy
 from pathlib import Path
 from time import sleep
+from typing import ClassVar
 
 import docker
 import docker.errors
@@ -67,7 +68,7 @@ def get_v1pod(
 
 class GefyraBaseTest(GefyraTestMixin):
     provider = None  # minikube or k3d
-    params = {}
+    params: ClassVar[dict] = {}
     kubeconfig = "~/.kube/config"
 
     @property
@@ -520,10 +521,9 @@ class GefyraBaseTest(GefyraTestMixin):
             get_gefyra_config_location(),
             f"{CONNECTION_NAME}_client.json",
         )
-        fh = open(file_loc, "w+")
-        fh.write(c_file)
-        fh.seek(0)
-        fh.close()
+        with open(file_loc, "w+") as fh:
+            fh.write(c_file)
+            fh.seek(0)
         sleep(10)
         res = runner.invoke(
             cli,
@@ -731,10 +731,9 @@ class GefyraBaseTest(GefyraTestMixin):
             get_gefyra_config_location(),
             f"{CONNECTION_NAME}_client.json",
         )
-        fh = open(file_loc, "w+")
-        fh.write(c_file)
-        fh.seek(0)
-        fh.close()
+        with open(file_loc, "w+") as fh:
+            fh.write(c_file)
+            fh.seek(0)
         sleep(10)
         res = runner.invoke(
             cli,
@@ -842,7 +841,7 @@ class GefyraTestCase:
                         name=pod.metadata.name, namespace="gefyra"
                     )
                     print(logs)
-        except Exception as e:
+        except Exception as e:  # noqa
             print(f"Could not retrieve operator logs: {e}")
         print("---------------------")
 
@@ -860,7 +859,7 @@ class GefyraTestCase:
         while retries > 0:
             try:
                 response = requests.get(url, headers=headers, timeout=5)
-            except Exception as e:
+            except requests.RequestException as e:
                 print(f"Request to {url} failed: {e}")
                 retries -= 1
                 sleep(1)
