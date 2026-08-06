@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import Mock, call, patch
 
 from click.testing import CliRunner
+
 from gefyra.cli.connections import inspect_connection, list_connections
 
 

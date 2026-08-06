@@ -43,10 +43,10 @@ def create_client(name: str):
 
 
 def create_client_config(name: str):
-    cl = tempfile.NamedTemporaryFile(delete_on_close=False, delete=False)
-    print(f"Creating GefyraClient config file for {name} at {cl.name}")
-    gefyra_client(f"clients write {name} --local > {cl.name}")
-    CLIENTS[name] = {"config": cl.name}
+    with tempfile.NamedTemporaryFile(delete_on_close=False, delete=False) as cl:
+        print(f"Creating GefyraClient config file for {name} at {cl.name}")
+        gefyra_client(f"clients write {name} --local > {cl.name}")
+        CLIENTS[name] = {"config": cl.name}
 
 
 def delete_client_config(name: str):
@@ -101,7 +101,7 @@ def main():
     try:
         print("Running tests!")
         activate_clients_test()
-    except Exception as e:
+    except Exception as e: # noqa
         print(e)
     teardown()
 

@@ -1,9 +1,9 @@
 import json
 
-from gefyra.api.clients import write_client_file
-from gefyra.types import GefyraClient
 from pytest_kubernetes.providers import AClusterManager
 
+from gefyra.api.clients import write_client_file
+from gefyra.types import GefyraClient
 from tests.e2e.base import GefyraTestCase
 
 

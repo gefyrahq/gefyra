@@ -1,9 +1,9 @@
 from time import sleep
 
 import pytest
-from gefyra.types import GefyraClient, GefyraClientState
 from pytest_kubernetes.providers import AClusterManager
 
+from gefyra.types import GefyraClient, GefyraClientState
 from tests.e2e.base import GefyraTestCase
 
 

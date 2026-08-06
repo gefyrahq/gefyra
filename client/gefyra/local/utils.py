@@ -1,7 +1,7 @@
-from collections.abc import Callable
 import datetime
 import os
 import uuid
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from gefyra.configuration import ClientConfiguration, logger

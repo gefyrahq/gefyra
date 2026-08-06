@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import kubernetes.client.exceptions
+
 from gefyra.configuration import ClientConfiguration
 from gefyra.misc.uninstall import (
     remove_all_clients,
@@ -56,9 +57,13 @@ class TestRemoveAllClients(unittest.TestCase):
         """Test error handling during client deletion"""
         client1 = Mock(client_id="client-1")
         mock_list_client.return_value = [client1]
-        mock_delete_client.side_effect = Exception("Deletion failed")
 
-        with self.assertRaises(Exception):
+        class MyException(Exception):
+            pass
+
+        mock_delete_client.side_effect = MyException("Deletion failed")
+
+        with self.assertRaises(MyException):
             remove_all_clients()
 
         mock_delete_client.assert_called_once_with("client-1", force=True, wait=True)
