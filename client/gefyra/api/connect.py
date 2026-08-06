@@ -40,7 +40,7 @@ def connect(
     minikube_profile: str | None = None,
     mtu: int | None = None,
     probe_timeout: int = 60,
-    update_callback: callable | None = None,
+    update_callback: Callable | None = None,
     cargo_image: str | None = None,
     force: bool = False,
     timeout: int = 60,

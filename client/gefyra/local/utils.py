@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import datetime
 import os
 import uuid
@@ -150,7 +151,7 @@ users:
 class WatchEventsMixin:
     def watch_events(
         self,
-        update_callback: callable | None = None,
+        update_callback: Callable | None = None,
         stop_reason: str = "Ready",
         timeout: int = 60,
     ) -> bool:
