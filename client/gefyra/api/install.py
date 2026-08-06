@@ -2,7 +2,6 @@ import dataclasses
 import logging
 import time
 from pathlib import Path
-from typing import List, Optional
 
 from gefyra.cluster.utils import is_operator_running
 from gefyra.exceptions import ClusterError
@@ -41,12 +40,12 @@ PRESET_TYPE_MAPPING = {"aws": "remote", "eks": "remote"}
 
 @stopwatch
 def install(
-    component: Optional[List[str]] = None,
-    preset: Optional[str] = None,
+    component: list[str] | None = None,
+    preset: str | None = None,
     apply: bool = False,
     wait: bool = False,
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
     **kwargs,
 ) -> str:
     from gefyra.configuration import ClientConfiguration
@@ -146,9 +145,7 @@ def install(
 
 
 @stopwatch
-def uninstall(
-    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None, **kwargs
-):
+def uninstall(kubeconfig: Path | None = None, kubecontext: str | None = None, **kwargs):
     from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)

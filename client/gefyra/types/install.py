@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import Dict
 
 from gefyra.configuration import __VERSION__
 
@@ -39,15 +38,15 @@ class GefyraInstallOptions:
             )
         ),
     )
-    service_labels: Dict[str, str] = field(
-        default_factory=lambda: {},
+    service_labels: dict[str, str] = field(
+        default_factory=dict,
         metadata=dict(
             help="Additional Kubernetes labels for the Stowaway service (default: [])",
             type="array",
         ),
     )
-    service_annotations: Dict[str, str] = field(
-        default_factory=lambda: {},
+    service_annotations: dict[str, str] = field(
+        default_factory=dict,
         metadata=dict(
             help="Kubernetes annotations for the Stowaway service (default: [])",
             type="array",

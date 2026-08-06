@@ -7,15 +7,14 @@ prepared() always sees a replica count mismatch.
 """
 
 import logging
+from pathlib import Path
 from time import sleep
 from unittest.mock import MagicMock
 
-from pathlib import Path
 import pytest
+from gefyra.configuration import OperatorConfiguration
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
-
-from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger()
 logger.addHandler(logging.NullHandler())

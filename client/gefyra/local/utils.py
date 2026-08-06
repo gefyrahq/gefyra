@@ -1,26 +1,26 @@
 import datetime
 import os
-from typing import List, Optional, TYPE_CHECKING
 import uuid
+from typing import TYPE_CHECKING
 
 from gefyra.configuration import ClientConfiguration, logger
 from gefyra.local import (
+    ACTIVE_KUBECONFIG_CONTEXT_LABEL,
+    ACTIVE_KUBECONFIG_LABEL,
     BRIDGE_ID_LABEL,
+    CARGO_ENDPOINT_LABEL,
+    CARGO_LABEL,
     CLIENT_ID_LABEL,
     CONNECTION_NAME_LABEL,
     CREATED_BY_LABEL,
-    ACTIVE_KUBECONFIG_LABEL,
-    ACTIVE_KUBECONFIG_CONTEXT_LABEL,
-    CARGO_ENDPOINT_LABEL,
     VERSION_LABEL,
-    CARGO_LABEL,
 )
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
 
 
-def get_processed_paths(base_path: str, volumes: List[str]) -> Optional[List[str]]:
+def get_processed_paths(base_path: str, volumes: list[str]) -> list[str] | None:
     if volumes is None:
         return None
     results = []
@@ -46,8 +46,9 @@ def handle_docker_get_or_create_container(
 def handle_docker_create_container(
     config: ClientConfiguration, image: str, **kwargs
 ) -> "Container":
-    import gefyra.configuration
     import docker
+
+    import gefyra.configuration
 
     try:
         config.DOCKER.images.get(image)
@@ -91,14 +92,15 @@ def handle_docker_run_container(
     )
 
 
-def get_connection_from_kubeconfig(kubeconfig: Optional[str] = None) -> Optional[str]:
+def get_connection_from_kubeconfig(kubeconfig: str | None = None) -> str | None:
     import yaml
 
     if kubeconfig:
         _file = kubeconfig
     else:
-        from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
         from pathlib import Path
+
+        from kubernetes.config.kube_config import KUBE_CONFIG_DEFAULT_LOCATION
 
         _file = str(Path(KUBE_CONFIG_DEFAULT_LOCATION).expanduser())
 
@@ -148,7 +150,7 @@ users:
 class WatchEventsMixin:
     def watch_events(
         self,
-        update_callback: Optional[callable] = None,
+        update_callback: callable | None = None,
         stop_reason: str = "Ready",
         timeout: int = 60,
     ) -> bool:
@@ -182,8 +184,7 @@ class WatchEventsMixin:
                     if event["object"].reason == stop_reason:
                         w.stop()
                         return False
-            else:
-                return True
+            return True
         except k8s.client.exceptions.ApiException as e:
             if e.status == 403:
                 raise RuntimeError(

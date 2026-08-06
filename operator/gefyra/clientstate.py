@@ -1,8 +1,7 @@
 import asyncio
+import tarfile
 from datetime import datetime, timezone
 from logging import Logger
-import tarfile
-from typing import Optional, Tuple
 
 import kopf
 import kubernetes as k8s
@@ -72,7 +71,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
         model: GefyraClientObject,
         configuration: OperatorConfiguration,
         logger: Logger,
-        initial: Optional[State] = None,  # Added initial state parameter
+        initial: State | None = None,  # Added initial state parameter
     ):
         super().__init__(
             model=model, start_value=initial or GefyraClient.requested.value
@@ -104,14 +103,14 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
         return self.data["metadata"]["namespace"]
 
     @property
-    def sunset(self) -> Optional[datetime]:
+    def sunset(self) -> datetime | None:
         if sunset := self.data.get("sunset"):
             return datetime.fromisoformat(sunset.strip("Z"))
         else:
             return None
 
     @property
-    def max_connection_age(self) -> Optional[int]:
+    def max_connection_age(self) -> int | None:
         if (
             self.operator_configuration.STOWAWAY_MAX_CONNECTION_AGE
             and self.operator_configuration.STOWAWAY_MAX_CONNECTION_AGE > 0
@@ -244,7 +243,6 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
             await self.cleanup_all_bridges()
         except Exception as e:
             self.logger.warning(f"Error during termination of GefyraClient: {e}")
-            pass
 
     async def can_add_client(self):
         if await self.connection_provider.peer_exists(self.object_name):
@@ -276,7 +274,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
             await self._patch_object({"providerConfig": conn_data})
             await self.post_event(
                 reason="GefyraClient connection",
-                message=f"GefyraClient '{self.object_name}' connecting via 'Interface.Address {str(conn_data['Interface.Address'])}'",
+                message=f"GefyraClient '{self.object_name}' connecting via 'Interface.Address {conn_data['Interface.Address']!s}'",
             )
         except k8s.client.ApiException as e:
             if e.status == 500:
@@ -336,7 +334,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
                     name=bridge["metadata"]["name"],
                 )
 
-    async def get_latest_transition(self) -> Optional[datetime]:
+    async def get_latest_transition(self) -> datetime | None:
         """
         > Get the latest transition time for a GefyraClient
         :return: The latest transition times
@@ -363,7 +361,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
         else:
             return None
 
-    async def get_latest_state(self) -> Optional[Tuple[str, datetime]]:
+    async def get_latest_state(self) -> tuple[str, datetime] | None:
         """
         It returns the latest state of the GefyraClient, and the timestamp of
         when it was in that state

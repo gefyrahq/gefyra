@@ -1,27 +1,26 @@
 import factory
-
 from kubernetes.client import (
+    V1ConfigMap,
+    V1Container,
+    V1ContainerPort,
+    V1ContainerStatus,
     V1Deployment,
     V1DeploymentSpec,
     V1HorizontalPodAutoscalerList,
-    V1ObjectMeta,
+    V1HTTPGetAction,
     V1LabelSelector,
-    V1PodTemplateSpec,
+    V1ObjectMeta,
+    V1OwnerReference,
     V1Pod,
+    V1PodCondition,
     V1PodList,
     V1PodSpec,
-    V1Container,
-    V1ContainerPort,
-    V1OwnerReference,
     V1PodStatus,
-    V1PodCondition,
-    V1ContainerStatus,
+    V1PodTemplateSpec,
     V1Probe,
-    V1HTTPGetAction,
     V1Service,
-    V1ServiceSpec,
     V1ServicePort,
-    V1ConfigMap,
+    V1ServiceSpec,
 )
 
 

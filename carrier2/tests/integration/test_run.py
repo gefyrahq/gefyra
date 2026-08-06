@@ -1,9 +1,9 @@
 from time import sleep
-from pytest_kubernetes.providers import AClusterManager
-import requests
-from requests.adapters import HTTPAdapter, Retry
 
+import requests
 import utils
+from pytest_kubernetes.providers import AClusterManager
+from requests.adapters import HTTPAdapter, Retry
 
 
 def test_a_run_pod(k3d: AClusterManager, carrier2_image):

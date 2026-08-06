@@ -1,8 +1,11 @@
+import logging
+from collections.abc import Iterable
 from dataclasses import fields
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any
+
 import click
 from click import ClickException
-import logging
+
 from gefyra.types import ExactMatchHeader
 from gefyra.types.bridge import (
     ExactMatchPath,
@@ -11,7 +14,6 @@ from gefyra.types.bridge import (
     RegexMatchHeader,
     RegexMatchPath,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +36,7 @@ class AliasedCommand(click.Command):
     def __init__(
         self,
         name,
-        alias: Optional[Iterable] = None,
+        alias: Iterable | None = None,
         context_settings=None,
         callback=None,
         params=None,
@@ -124,8 +126,8 @@ class OptionEatAll(click.Option):
     def __init__(self, *args, **kwargs):
         self.save_other_options = kwargs.pop("save_other_options", True)
         nargs = kwargs.pop("nargs", -1)
-        assert nargs == -1, "nargs, if set, must be -1 not {}".format(nargs)
-        super(OptionEatAll, self).__init__(*args, **kwargs)
+        assert nargs == -1, f"nargs, if set, must be -1 not {nargs}"
+        super().__init__(*args, **kwargs)
         self._previous_parser_process = None
         self._eat_all_parser = None
 
@@ -151,7 +153,7 @@ class OptionEatAll(click.Option):
             # call the actual process
             self._previous_parser_process(value, state)
 
-        retval = super(OptionEatAll, self).add_to_parser(parser, ctx)
+        retval = super().add_to_parser(parser, ctx)
         for name in self.opts:
             our_parser = parser._long_opt.get(name) or parser._short_opt.get(name)
             if our_parser:
@@ -195,7 +197,7 @@ def multi_options(options):
     return decorator
 
 
-def installoptions_to_cli_options() -> List[Dict[str, Union[bool, str, Any, None]]]:
+def installoptions_to_cli_options() -> list[dict[str, bool | str | Any | None]]:
     from gefyra.types import GefyraInstallOptions
 
     result = []
@@ -213,7 +215,7 @@ def installoptions_to_cli_options() -> List[Dict[str, Union[bool, str, Any, None
     return result
 
 
-def parse_ip_port_map(ctx, param, ports: Tuple[str]) -> dict:
+def parse_ip_port_map(ctx, param, ports: tuple[str]) -> dict:
     def v(p: str):
         if not p.isnumeric():
             raise RuntimeError(f"Invalid port {p}. Please use integer numbers as port.")
@@ -232,7 +234,7 @@ def parse_ip_port_map(ctx, param, ports: Tuple[str]) -> dict:
     return res
 
 
-def parse_env(ctx, param, envs: Tuple[str]) -> List[str]:
+def parse_env(ctx, param, envs: tuple[str]) -> list[str]:
     res = []
     for env in envs:
         if "=" not in env:
@@ -253,7 +255,7 @@ def parse_workload(ctx, param, workload: str) -> str:
     return workload
 
 
-def check_connection_name(ctx, param, selected: Optional[str] = None) -> str:
+def check_connection_name(ctx, param, selected: str | None = None) -> str:
     from gefyra import api
 
     if not selected:
@@ -300,7 +302,7 @@ def _coerce_value(value: str) -> Any:
     return value
 
 
-def parse_extra_container_args(extra_args: List[str]) -> Dict[str, Any]:
+def parse_extra_container_args(extra_args: list[str]) -> dict[str, Any]:
     """
     Parse Click's extra args (unknown options) into a dict of docker-py kwargs.
 
@@ -310,7 +312,7 @@ def parse_extra_container_args(extra_args: List[str]) -> Dict[str, Any]:
     Args that use '=' syntax are also supported: ['--cpu-shares=512'].
     Boolean flags (no value) are set to True.
     """
-    result: Dict[str, Any] = {}
+    result: dict[str, Any] = {}
     i = 0
     while i < len(extra_args):
         arg = extra_args[i]
@@ -343,9 +345,9 @@ def parse_extra_container_args(extra_args: List[str]) -> Dict[str, Any]:
 
 
 def parse_match_header(
-    ctx, param, match_header_raw: Tuple[str]
-) -> List[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]:
-    res: List[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader] = []
+    ctx, param, match_header_raw: tuple[str]
+) -> list[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader]:
+    res: list[ExactMatchHeader | PrefixMatchHeader | RegexMatchHeader] = []
     for match_header in match_header_raw:
         try:
             name, value = match_header.split(":")
@@ -363,9 +365,9 @@ def parse_match_header(
 
 
 def parse_match_path(
-    ctx, param, match_path_raw: Tuple[str]
-) -> List[ExactMatchPath | PrefixMatchPath | RegexMatchPath]:
-    res: List[ExactMatchPath | PrefixMatchPath | RegexMatchPath] = []
+    ctx, param, match_path_raw: tuple[str]
+) -> list[ExactMatchPath | PrefixMatchPath | RegexMatchPath]:
+    res: list[ExactMatchPath | PrefixMatchPath | RegexMatchPath] = []
     for match_path in match_path_raw:
         if param.name == "match_path_exact":
             res.append(ExactMatchPath(path=match_path))

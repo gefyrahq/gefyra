@@ -1,7 +1,8 @@
-from datetime import datetime
 import logging
-from gefyra.clientstate import GefyraClient
+from datetime import datetime
+
 import pytest
+from gefyra.clientstate import GefyraClient
 from pytest_kubernetes.providers import AClusterManager
 
 

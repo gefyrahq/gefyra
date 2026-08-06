@@ -1,16 +1,16 @@
 import unittest
 from unittest.mock import Mock, patch
-import kubernetes.client.exceptions
 
+import kubernetes.client.exceptions
+from gefyra.configuration import ClientConfiguration
 from gefyra.misc.uninstall import (
     remove_all_clients,
+    remove_gefyra_crds,
+    remove_gefyra_namespace,
+    remove_gefyra_rbac,
     remove_remainder_bridge_mounts,
     remove_remainder_bridges,
-    remove_gefyra_namespace,
-    remove_gefyra_crds,
-    remove_gefyra_rbac,
 )
-from gefyra.configuration import ClientConfiguration
 
 
 class TestRemoveAllClients(unittest.TestCase):

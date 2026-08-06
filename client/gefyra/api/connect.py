@@ -1,28 +1,22 @@
 import base64
 import logging
 import os
+from collections.abc import Callable
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, Callable, List, Optional
+from typing import IO
 
 import docker
 
 from gefyra.api.clients import get_client
+from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
 from gefyra.exceptions import (
     ClientConfigurationError,
     GefyraClientNotFound,
     GefyraConnectionError,
 )
+from gefyra.local.cargo import determine_wireguard_mtu, probe_wireguard_connection
 from gefyra.local.clients import handle_get_gefyraclient
 from gefyra.local.minikube import detect_minikube_config
-
-from .utils import stopwatch
-
-if TYPE_CHECKING:
-    pass
-
-
-from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
-from gefyra.local.cargo import determine_wireguard_mtu, probe_wireguard_connection
 from gefyra.local.networking import handle_remove_network
 from gefyra.local.utils import compose_kubeconfig_for_serviceaccount
 from gefyra.types import (
@@ -32,20 +26,22 @@ from gefyra.types import (
     GefyraConnectionItem,
 )
 
+from .utils import stopwatch
+
 logger = logging.getLogger(__name__)
 
 
 @stopwatch
-def connect(  # noqa: C901
+def connect(
     connection_name: str,
-    client_config: Optional[IO],
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
-    minikube_profile: Optional[str] = None,
-    mtu: Optional[int] = None,
+    client_config: IO | None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
+    minikube_profile: str | None = None,
+    mtu: int | None = None,
     probe_timeout: int = 60,
-    update_callback: Optional[callable] = None,
-    cargo_image: Optional[str] = None,
+    update_callback: callable | None = None,
+    cargo_image: str | None = None,
     force: bool = False,
     timeout: int = 60,
 ) -> bool:
@@ -162,7 +158,7 @@ def disconnect(
 
 
 @stopwatch
-def list_connections() -> List[GefyraConnectionItem]:
+def list_connections() -> list[GefyraConnectionItem]:
     from gefyra.local import CARGO_LABEL, CONNECTION_NAME_LABEL, VERSION_LABEL
 
     config = ClientConfiguration()
@@ -185,17 +181,13 @@ def list_connections() -> List[GefyraConnectionItem]:
             state = "stopped"
         result.append(
             GefyraConnectionItem(
-                **{
-                    "name": cargo_container.labels.get(
-                        CONNECTION_NAME_LABEL, "unknown"
-                    ),
-                    "version": cargo_container.labels.get(VERSION_LABEL, "unknown"),
-                    "created": cargo_container.attrs.get("Created", "unknown"),
-                    "status": state,
-                    "client_status": None,
-                    "wireguard_probe": False,
-                    "mtu": mtu,
-                }
+                name=cargo_container.labels.get(CONNECTION_NAME_LABEL, "unknown"),
+                version=cargo_container.labels.get(VERSION_LABEL, "unknown"),
+                created=cargo_container.attrs.get("Created", "unknown"),
+                status=state,
+                client_status=None,
+                wireguard_probe=False,
+                mtu=mtu,
             )
         )
     return result
@@ -259,7 +251,6 @@ def remove_connection(connection_name: str, force: bool = False) -> bool:
         client.wait_for_state(GefyraClientState.WAITING, timeout=60)
     except Exception as e:  # noqa E722
         logger.debug(e)
-        pass
     try:
         cargo_container = config.DOCKER.containers.get(
             f"{config.CARGO_CONTAINER_NAME}",
@@ -267,12 +258,10 @@ def remove_connection(connection_name: str, force: bool = False) -> bool:
         cargo_container.remove(force=True)
     except docker.errors.NotFound as e:
         logger.debug(e)
-        pass
     try:
         handle_remove_network(config)
     except docker.errors.NotFound as e:
         logger.debug(e)
-        pass
     try:
         # remove kubeconfig file
         os.remove(os.path.join(get_gefyra_config_location(), f"{connection_name}.yaml"))
