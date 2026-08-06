@@ -101,7 +101,7 @@ def main():
     try:
         print("Running tests!")
         activate_clients_test()
-    except Exception as e: # noqa
+    except Exception as e:  # noqa
         print(e)
     teardown()
 
