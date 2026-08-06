@@ -1,9 +1,8 @@
 from unittest.mock import Mock, patch
 
-from kubernetes.client import ApiException
-
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.bridge import handle_delete_gefyrabridge
+from kubernetes.client import ApiException
 
 
 def test_delete_bridge_with_404_error():

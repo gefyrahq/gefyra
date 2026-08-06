@@ -1,5 +1,4 @@
 import pytest
-
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.mount import get_gbridgemount_body
 

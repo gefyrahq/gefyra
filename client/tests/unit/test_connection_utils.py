@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, Mock, patch
 import click
 import kubernetes.client.exceptions
 import urllib3.exceptions
-
 from gefyra.cli.connections import _manage_container_and_bridges
 
 

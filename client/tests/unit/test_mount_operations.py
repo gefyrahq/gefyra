@@ -1,10 +1,9 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from kubernetes.client import ApiException
-
 from gefyra.exceptions import GefyraBridgeMountNotFound
 from gefyra.local.mount import get_gefyrabridgemount, handle_delete_gefyramount
+from kubernetes.client import ApiException
 
 
 class TestGetGefyrabridgemount:
