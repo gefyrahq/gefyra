@@ -1,10 +1,9 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from kubernetes.client import ApiException
-
 from gefyra.exceptions import GefyraBridgeMountNotFound
 from gefyra.local.mount import get_gefyrabridgemount, handle_delete_gefyramount
+from kubernetes.client import ApiException
 
 
 class TestGetGefyrabridgemount:
@@ -81,11 +80,13 @@ class TestHandleDeleteGefyramount:
         config.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object.return_value = {
             "metadata": {"name": "my-mount"}
         }
-        with patch("gefyra.local.mount.time.sleep") as mock_sleep:
-            with pytest.raises(TimeoutError):
-                handle_delete_gefyramount(
-                    config, "my-mount", force=False, wait=True, timeout=5
-                )
+        with (
+            patch("gefyra.local.mount.time.sleep") as mock_sleep,
+            pytest.raises(TimeoutError),
+        ):
+            handle_delete_gefyramount(
+                config, "my-mount", force=False, wait=True, timeout=5
+            )
         assert mock_sleep.call_count == 5
 
     def test_force_removes_finalizers_before_delete(self):

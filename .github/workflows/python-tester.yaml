@@ -275,16 +275,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
-      - name: Set fake kubeconfig
-        shell: bash
-        run: |
-          mkdir -p ~/.kube/
-          cd ~/.kube
-          touch config
+      # - name: Set fake kubeconfig
+      #   shell: bash
+      #   run: |
+      #     mkdir -p ~/.kube/
+      #     cd ~/.kube
+      #     touch config
       - name: Set up Python
         uses: actions/setup-python@v6.3.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       - name: Install Poetry
         uses: snok/install-poetry@v1.4.2
         with:
@@ -427,7 +427,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6.3.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       # https://github.com/opensafely-core/job-server/issues/3429
       - name: Install Poetry
         uses: snok/install-poetry@v1.4.2
@@ -519,7 +519,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6.3.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       - name: Checkout
         uses: actions/checkout@v7.0.1
       - name: Install Poetry

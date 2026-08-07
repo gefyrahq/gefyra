@@ -1,7 +1,9 @@
 import ast
+import sys
 import warnings
 
 import click
+
 from gefyra.cli.utils import (
     OptionEatAll,
     check_connection_name,
@@ -13,10 +15,10 @@ from gefyra.cli.utils import (
 
 
 @click.command(
-    context_settings=dict(
-        ignore_unknown_options=True,
-        allow_extra_args=True,
-    ),
+    context_settings={
+        "ignore_unknown_options": True,
+        "allow_extra_args": True,
+    },
 )
 @click.option(
     "-d",
@@ -263,4 +265,4 @@ def run(
     except ValueError as e:
         raise click.UsageError(str(e)) from e
     if not result:
-        exit(1)
+        sys.exit(1)

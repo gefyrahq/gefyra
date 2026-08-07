@@ -15,7 +15,7 @@ def probe_wireguard_connection(config: ClientConfiguration):
     from docker.models.containers import Container
 
     cargo: Container = config.DOCKER.containers.get(f"{config.CARGO_CONTAINER_NAME}")
-    for _attempt in range(0, config.CARGO_PROBE_TIMEOUT * 2):
+    for _attempt in range(config.CARGO_PROBE_TIMEOUT * 2):
         logger.debug(
             f"Probing connection to {config.STOWAWAY_IP} (attempt {_attempt}/{config.CARGO_PROBE_TIMEOUT * 2}))"
         )
@@ -52,7 +52,7 @@ def determine_wireguard_mtu(config: ClientConfiguration) -> int | None:
 
 
 def create_wireguard_config(
-    params: StowawayConfig, cargo_endpoint: str, mtu: str = None
+    params: StowawayConfig, cargo_endpoint: str, mtu: str | None = None
 ) -> str:
     mtu_line = f"MTU = {mtu}\n" if mtu else ""
     return (
@@ -62,8 +62,8 @@ def create_wireguard_config(
         f"PrivateKey = {params.iprivatekey}\n"
         f"DNS = {params.idns}\n"
         "PreUp = sysctl -w net.ipv4.ip_forward=1\n"
-        "PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o $(ip -4 -o addr show | grep \"\\.149/\" | awk '{print $2}' | cut -d'@' -f1) -j MASQUERADE\n"  # noqa E501
-        "PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o $(ip -4 -o addr show | grep \"\\.149/\" | awk '{print $2}' | cut -d'@' -f1) -j MASQUERADE\n"  # noqa E501
+        "PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o $(ip -4 -o addr show | grep \"\\.149/\" | awk '{print $2}' | cut -d'@' -f1) -j MASQUERADE\n"
+        "PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o $(ip -4 -o addr show | grep \"\\.149/\" | awk '{print $2}' | cut -d'@' -f1) -j MASQUERADE\n"
         "[Peer]\n"
         f"PublicKey = {params.ppublickey}\n"
         f"Endpoint = {cargo_endpoint}\n"

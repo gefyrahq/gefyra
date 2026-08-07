@@ -1,13 +1,15 @@
 import json
 import os
-from typing import Optional, Literal
-from alive_progress import alive_bar
+from typing import Literal
+
 import click
+from alive_progress import alive_bar
+from tabulate import tabulate
+
 from gefyra.cli import console
 from gefyra.cli.utils import AliasedGroup, standard_error_handler
 from gefyra.exceptions import CommandTimeoutError
 from gefyra.types import GefyraBridgeMount
-from tabulate import tabulate
 
 
 @click.group(
@@ -81,10 +83,10 @@ def create(
     connection_name: str = "",
     nowait: bool = False,
     timeout: int = 0,
-    name: Optional[str] = None,
-    tls_certificate: Optional[list[str]] = None,
-    tls_key: Optional[list[str]] = None,
-    tls_sni: Optional[list[str]] = None,
+    name: str | None = None,
+    tls_certificate: list[str] | None = None,
+    tls_key: list[str] | None = None,
+    tls_sni: list[str] | None = None,
 ):
     from gefyra import api
 

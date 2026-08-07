@@ -2,7 +2,6 @@ import dataclasses
 import logging
 import time
 from pathlib import Path
-from typing import List, Optional
 
 from gefyra.cluster.utils import is_operator_running
 from gefyra.exceptions import ClusterError
@@ -41,12 +40,12 @@ PRESET_TYPE_MAPPING = {"aws": "remote", "eks": "remote"}
 
 @stopwatch
 def install(
-    component: Optional[List[str]] = None,
-    preset: Optional[str] = None,
+    component: list[str] | None = None,
+    preset: str | None = None,
     apply: bool = False,
     wait: bool = False,
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
     **kwargs,
 ) -> str:
     from gefyra.configuration import ClientConfiguration
@@ -146,39 +145,39 @@ def install(
 
 
 @stopwatch
-def uninstall(
-    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None, **kwargs
-):
+def uninstall(kubeconfig: Path | None = None, kubecontext: str | None = None, **kwargs):
+    from kubernetes.client import ApiException
+
     from gefyra.configuration import ClientConfiguration
 
     config = ClientConfiguration(kube_config_file=kubeconfig, kube_context=kubecontext)
     logger.info("Removing all Gefyra bridge mounts")
     try:
         remove_remainder_bridge_mounts(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing all Gefyra bridges")
     try:
         remove_remainder_bridges(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing remainder Gefyra clients")
     try:
         remove_all_clients()
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing Gefyra namespace")
     try:
         remove_gefyra_namespace(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing Gefyra API extensions")
     try:
         remove_gefyra_crds(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)
     logger.info("Removing Gefyra RBAC resources")
     try:
         remove_gefyra_rbac(config)
-    except Exception as e:
+    except (ApiException, RuntimeError, OSError, ValueError) as e:
         logger.debug(e)

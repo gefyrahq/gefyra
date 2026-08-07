@@ -1,4 +1,5 @@
 import click
+
 from gefyra.cli.console import info
 
 
@@ -13,6 +14,7 @@ from gefyra.cli.console import info
 @click.pass_context
 def version(ctx, no_check):
     import requests
+
     import gefyra.configuration as config
 
     info(f"Gefyra client version: {config.__VERSION__}")

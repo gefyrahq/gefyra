@@ -1,6 +1,5 @@
 import logging
 import os
-from typing import Optional
 
 import click
 from click import pass_context
@@ -19,10 +18,10 @@ logger = logging.getLogger("gefyra")
 def _check_and_install(
     config: ClientConfiguration,
     connection_name: str = "",
-    preset: Optional[str] = None,
+    preset: str | None = None,
     bar=None,
-    registry: Optional[str] = None,
-    mtu: Optional[str] = None,
+    registry: str | None = None,
+    mtu: str | None = None,
 ) -> bool:
     status = api.status(connection_name=connection_name)
 
@@ -78,10 +77,10 @@ def _check_and_install(
 @standard_error_handler
 def cluster_up(
     ctx,
-    minikube: Optional[str] = None,
-    preset: Optional[str] = None,
-    registry: Optional[str] = None,
-    mtu: Optional[int] = None,
+    minikube: str | None = None,
+    preset: str | None = None,
+    registry: str | None = None,
+    mtu: int | None = None,
 ):
     import os
     from time import sleep
@@ -181,29 +180,28 @@ def cluster_up(
             get_gefyra_config_location(),
             f"{connection_name}_client.json",
         )
-        fh = open(loc, "w+")
-        fh.write(json_str)
-        fh.seek(0)
-        bar()
-        bar.title = f"Connecting local network '{config.NETWORK_NAME}' to the cluster (up to 10 min)"
-        logger.debug(f"Minikube profile {minikube}")
-        try:
-            # setting the probe timeout to a much higher value
-            api.connect(
-                connection_name,
-                client_config=fh,
-                minikube_profile=minikube,
-                probe_timeout=180,
-            )
-        except GefyraConnectionError as e:
-            raise GefyraConnectionError(
-                f"Gefyra could not successfully establish the connection to '{config.CARGO_ENDPOINT.split(':')[0]}'.\n"
-                "If you have run 'gefyra up' with a remote cluster, a newly created route may not be working "
-                "immediately.\n"
-                f"Try running 'gefyra up{' --preset ' + preset if preset else ''}' again after some time. "
-                f"Error: {e}"
-            ) from None
-        fh.close()
+        with open(loc, "w+") as fh:
+            fh.write(json_str)
+            fh.seek(0)
+            bar()
+            bar.title = f"Connecting local network '{config.NETWORK_NAME}' to the cluster (up to 10 min)"
+            logger.debug(f"Minikube profile {minikube}")
+            try:
+                # setting the probe timeout to a much higher value
+                api.connect(
+                    connection_name,
+                    client_config=fh,
+                    minikube_profile=minikube,
+                    probe_timeout=180,
+                )
+            except GefyraConnectionError as e:
+                raise GefyraConnectionError(
+                    f"Gefyra could not successfully establish the connection to '{config.CARGO_ENDPOINT.split(':')[0]}'.\n"
+                    "If you have run 'gefyra up' with a remote cluster, a newly created route may not be working "
+                    "immediately.\n"
+                    f"Try running 'gefyra up{' --preset ' + preset if preset else ''}' again after some time. "
+                    f"Error: {e}"
+                ) from None
         os.remove(loc)
         bar()
         bar.title = "Gefyra is ready"

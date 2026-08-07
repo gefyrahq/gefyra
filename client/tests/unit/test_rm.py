@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock, patch
-import pytest
 
-from gefyra.api.rm import rm, rm_all, _get_bridges_for_container
+import pytest
+from gefyra.api.rm import _get_bridges_for_container, rm, rm_all
 
 
 @pytest.fixture
@@ -315,7 +315,7 @@ def test_cleanup_stale_bridges_no_connection():
     from gefyra.api.rm import cleanup_stale_bridges
 
     with patch(
-        "gefyra.configuration.ClientConfiguration", side_effect=Exception("no conn")
+        "gefyra.configuration.ClientConfiguration", side_effect=RuntimeError("no conn")
     ):
         result = cleanup_stale_bridges(connection_name="default")
 

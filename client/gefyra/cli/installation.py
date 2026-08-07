@@ -1,14 +1,14 @@
 import logging
+
 import click
 
-from gefyra.misc.comps import COMPONENTS
 from gefyra.api.install import LB_PRESETS
-
 from gefyra.cli.utils import (
     installoptions_to_cli_options,
     multi_options,
     standard_error_handler,
 )
+from gefyra.misc.comps import COMPONENTS
 
 logger = logging.getLogger("gefyra")
 
@@ -48,12 +48,13 @@ logger = logging.getLogger("gefyra")
 @standard_error_handler
 def install(ctx, component, preset, apply, wait, **kwargs):
     from alive_progress import alive_bar
+
     from gefyra import api
 
     # filter out empty kwargs
     empty_kwargs = [k for k, v in kwargs.items() if not v]
     if empty_kwargs:
-        logger.warn(f"Filtered out empty CLI params: {', '.join(empty_kwargs)}")
+        logger.warning(f"Filtered out empty CLI params: {', '.join(empty_kwargs)}")
     kwargs = {k: v for k, v in kwargs.items() if v}
 
     if wait and not apply:
@@ -91,6 +92,7 @@ def install(ctx, component, preset, apply, wait, **kwargs):
 @standard_error_handler
 def uninstall(force):
     from alive_progress import alive_bar
+
     from gefyra import api
 
     if not force:

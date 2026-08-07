@@ -1,25 +1,24 @@
 import subprocess
 from time import sleep
-import docker
-from gefyra.api import status
-from gefyra.types import GefyraClientState, StatusSummary
-import requests
 
-from kubernetes.config import load_kube_config
+import docker
+import requests
+from click.testing import CliRunner
+from gefyra.api import status
+from gefyra.cli.main import cli
+from gefyra.types import GefyraClientState, StatusSummary
 from kubernetes.client import (
+    ApiException,
+    AppsV1Api,
+    CoreV1Api,
+    CustomObjectsApi,
+    RbacAuthorizationV1Api,
+    V1ObjectMeta,
     V1Pod,
     V1Service,
-    V1ObjectMeta,
-    CoreV1Api,
-    RbacAuthorizationV1Api,
-    AppsV1Api,
-    CustomObjectsApi,
 )
-from kubernetes.client import ApiException
+from kubernetes.config import load_kube_config
 
-from click.testing import CliRunner
-
-from gefyra.cli.main import cli
 from tests.e2e.const import CONNECTION_NAME
 
 
@@ -76,9 +75,7 @@ class GefyraTestMixin:
     def kubectl(self, *args):
         cmd = ["kubectl"]
         cmd.extend(args)
-        return subprocess.run(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
-        )
+        return subprocess.run(cmd, capture_output=True, check=True)
 
     def _stop_container(self, container):
         try:
@@ -96,7 +93,7 @@ class GefyraTestMixin:
                 except docker.errors.NotFound:
                     pass
             else:
-                raise e
+                raise
 
     def assert_pod_ready(self, pod_name: str, namespace: str, retries=3, interval=1):
         counter = 0
@@ -111,8 +108,8 @@ class GefyraTestMixin:
         raise AssertionError(f"Pod {pod_name} is not ready.")
 
     def _pod_ready(self, pod: V1Pod):
-        return all([c.status == "True" for c in pod.status.conditions]) and all(
-            [c.ready for c in pod.status.container_statuses]
+        return all(c.status == "True" for c in pod.status.conditions) and all(
+            c.ready for c in pod.status.container_statuses
         )
 
     def assert_service_available(
@@ -130,7 +127,7 @@ class GefyraTestMixin:
                     sleep(interval)
                     continue
                 else:
-                    raise e
+                    raise
             return True
         raise AssertionError(f"Service {name} not available within {retries} retries.")
 
@@ -141,9 +138,9 @@ class GefyraTestMixin:
             name=name, namespace=namespace
         )
         metadata: V1ObjectMeta = service.metadata
-        for key in annotations.keys():
+        for key, value in annotations.items():
             self.assertIn(key, metadata.annotations)
-            self.assertEqual(annotations[key], metadata.annotations[key])
+            self.assertEqual(value, metadata.annotations[key])
         return True
 
     def _deployment_ready(self, deployment):

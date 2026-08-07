@@ -1,52 +1,46 @@
+import os
+from copy import deepcopy
 from pathlib import Path
 from time import sleep
-from typing import List
+from typing import ClassVar
+
 import docker
 import docker.errors
-from kubernetes.config import load_kube_config
-
-import requests
-
-from kubernetes.client import (
-    CoreV1Api,
-    RbacAuthorizationV1Api,
-    AppsV1Api,
-    CustomObjectsApi,
-    V1Pod,
-)
-from pytest_kubernetes.providers import AClusterManager
 import pytest
-
-from click.testing import CliRunner, Result
-from copy import deepcopy
-import os
-
+import requests
 from click import BadParameter
+from click.testing import CliRunner, Result
 from docker.context import ContextAPI
-from gefyra.cli.utils import check_connection_name
-
-
-from gefyra.api.clients import list_client, write_client_file
-from gefyra.api.install import LB_PRESETS
-
-from gefyra.cli.main import cli
-from gefyra.local.bridge import handle_delete_gefyrabridge
-from gefyra.types import GefyraClientState
-
 from gefyra.api import (
     create_bridge,
+    list_containers,
     run,
     status,
     unbridge_all,
-    list_containers,
 )
+from gefyra.api.clients import list_client, write_client_file
+from gefyra.api.install import LB_PRESETS
 from gefyra.api.status import StatusSummary
+from gefyra.cli.main import cli
+from gefyra.cli.utils import check_connection_name
 from gefyra.cluster.resources import (
     get_pods_and_containers_for_pod_name,
     get_pods_and_containers_for_workload,
     owner_reference_consistent,
 )
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+from gefyra.local.bridge import handle_delete_gefyrabridge
+from gefyra.types import GefyraClientState
+from kubernetes.client import (
+    AppsV1Api,
+    CoreV1Api,
+    CustomObjectsApi,
+    RbacAuthorizationV1Api,
+    V1Pod,
+)
+from kubernetes.config import load_kube_config
+from pytest_kubernetes.providers import AClusterManager
+
 from tests.e2e.const import CONNECTION_NAME
 from tests.e2e.mixin import GefyraTestMixin
 
@@ -68,13 +62,13 @@ def get_v1pod(
                 f"Pod {pod_name} in namespace {namespace} does not exist."
             )
         else:
-            raise e
+            raise
     return pod
 
 
 class GefyraBaseTest(GefyraTestMixin):
     provider = None  # minikube or k3d
-    params = {}
+    params: ClassVar[dict] = {}
     kubeconfig = "~/.kube/config"
 
     @property
@@ -351,7 +345,7 @@ class GefyraBaseTest(GefyraTestMixin):
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
-        pod_name = list(pod_container_dict.keys())[0]
+        pod_name = next(iter(pod_container_dict.keys()))
         self.assert_carrier_uninstalled(name=pod_name, namespace="default")
         self.assert_gefyra_operational_no_bridge()
         self._stop_container(self.default_run_params["name"])
@@ -393,7 +387,7 @@ class GefyraBaseTest(GefyraTestMixin):
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
-        pod_name = list(pod_container_dict.keys())[0]
+        pod_name = next(iter(pod_container_dict.keys()))
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         res_bridge = create_bridge(**bridge_params)
         self.assertTrue(res_bridge)
@@ -403,7 +397,7 @@ class GefyraBaseTest(GefyraTestMixin):
         pod_container_dict = get_pods_and_containers_for_workload(
             default_configuration, "hello-nginxdemo", "default", "deployment"
         )
-        pod_name = list(pod_container_dict.keys())[0]
+        pod_name = next(iter(pod_container_dict.keys()))
         bridge_params["target"] = f"pod/{pod_name}/hello-nginx"
         with self.assertRaises(RuntimeError) as rte:
             create_bridge(**bridge_params)
@@ -527,10 +521,9 @@ class GefyraBaseTest(GefyraTestMixin):
             get_gefyra_config_location(),
             f"{CONNECTION_NAME}_client.json",
         )
-        fh = open(file_loc, "w+")
-        fh.write(c_file)
-        fh.seek(0)
-        fh.close()
+        with open(file_loc, "w+") as fh:
+            fh.write(c_file)
+            fh.seek(0)
         sleep(10)
         res = runner.invoke(
             cli,
@@ -738,10 +731,9 @@ class GefyraBaseTest(GefyraTestMixin):
             get_gefyra_config_location(),
             f"{CONNECTION_NAME}_client.json",
         )
-        fh = open(file_loc, "w+")
-        fh.write(c_file)
-        fh.seek(0)
-        fh.close()
+        with open(file_loc, "w+") as fh:
+            fh.write(c_file)
+            fh.seek(0)
         sleep(10)
         res = runner.invoke(
             cli,
@@ -793,7 +785,7 @@ class GefyraTestCase:
             except docker.errors.NotFound:
                 pass
 
-    def cmd(self, kubeconfig: Path, command: str, params: List[str]) -> Result:
+    def cmd(self, kubeconfig: Path, command: str, params: list[str]) -> Result:
         load_kube_config(str(kubeconfig))
         from gefyra.cli.main import cli
 
@@ -833,9 +825,7 @@ class GefyraTestCase:
             ],
             as_dict=False,
         )
-        if no_sa and no_sa == "True":
-            return True
-        return False
+        return bool(no_sa and no_sa == "True")
 
     def _print_operator_logs(self):
         print("--- Operator Logs ---")
@@ -851,12 +841,16 @@ class GefyraTestCase:
                         name=pod.metadata.name, namespace="gefyra"
                     )
                     print(logs)
-        except Exception as e:
+        except Exception as e:  # noqa
             print(f"Could not retrieve operator logs: {e}")
         print("---------------------")
 
     def assert_get_contains(
-        self, url: str, expected_content: str, retries: int = 60, headers: dict = None
+        self,
+        url: str,
+        expected_content: str,
+        retries: int = 60,
+        headers: dict | None = None,
     ):
         """
         Helper function to assert that a GET request to a URL contains expected content.
@@ -865,7 +859,7 @@ class GefyraTestCase:
         while retries > 0:
             try:
                 response = requests.get(url, headers=headers, timeout=5)
-            except Exception as e:
+            except requests.RequestException as e:
                 print(f"Request to {url} failed: {e}")
                 retries -= 1
                 sleep(1)

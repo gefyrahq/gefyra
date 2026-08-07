@@ -7,7 +7,7 @@ import struct
 import sys
 from os import path
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from gefyra.exceptions import ClientConfigurationError
 from gefyra.local import (
@@ -54,25 +54,25 @@ def fix_pywin32_in_frozen_build() -> None:  # pragma: no cover
         importlib._bootstrap._load(spec)  # type: ignore
 
 
-class ClientConfiguration(object):
+class ClientConfiguration:
     def __init__(
         self,
-        docker_client: Optional[DockerClient] = None,
+        docker_client: DockerClient | None = None,
         network_name: str = "",
-        connection_name: Optional[str] = None,
+        connection_name: str | None = None,
         cargo_endpoint_host: str = "",
         cargo_endpoint_port: str = "31820",
         cargo_container_name: str = "",
-        registry: Optional[str] = "",
+        registry: str | None = "",
         operator_image_url: str = "",
         stowaway_image_url: str = "",
         carrier_image_url: str = "",
         cargo_image_url: str = "",
-        kube_config_file: Optional[Path] = None,
-        kube_context: Optional[str] = None,
-        wireguard_mtu: Optional[str] = None,
+        kube_config_file: Path | None = None,
+        kube_context: str | None = None,
+        wireguard_mtu: str | None = None,
         client_id: str = "",
-        gefyra_config_root: Optional[Union[str, Path]] = None,
+        gefyra_config_root: str | Path | None = None,
         ignore_connection: bool = False,  # work with kubeconfig not connection
         ignore_docker: bool = False,
     ):
@@ -178,11 +178,13 @@ class ClientConfiguration(object):
                     fcntl.ioctl(
                         _soc.fileno(),
                         0x8915,
-                        struct.pack("256s", "docker0".encode("utf-8")[:15]),
+                        struct.pack("256s", b"docker0"[:15]),
                     )[20:24]
                 )
                 return f"{_ip}:{self.cargo_endpoint_port}"
             else:
+                from docker.errors import DockerException
+
                 try:
                     _ip_output = self.DOCKER.containers.run(
                         "alpine", "getent ahostsv4 host.docker.internal", remove=True
@@ -190,7 +192,7 @@ class ClientConfiguration(object):
                     _ip = _ip_output.decode("utf-8").split(" ")[0]
                     logger.debug(f"Found host.docker.internal IP: {_ip}")
                     return f"{_ip}:{self.cargo_endpoint_port}"
-                except Exception as e:
+                except (DockerException, UnicodeDecodeError, IndexError) as e:
                     logger.error("Could not create a valid configuration: " + str(e))
 
     @CARGO_ENDPOINT.setter
@@ -296,7 +298,7 @@ class ClientConfiguration(object):
     def get_kubernetes_api_url(self) -> str:
         return self.K8S_CORE_API.api_client.configuration.host
 
-    def get_stowaway_host(self, port: Optional[str]) -> str:
+    def get_stowaway_host(self, port: str | None) -> str:
         """
         Return the cargo endpoint
         If the endpoint is not set, it will try to estimate if from the K8s service
@@ -340,7 +342,7 @@ class ClientConfiguration(object):
                         f"Could not find service gefyra-stowaway-wireguard in {self.NAMESPACE}"
                     ) from None
                 else:
-                    raise e
+                    raise
 
 
 def get_gefyra_config_location() -> str:

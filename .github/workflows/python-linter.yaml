@@ -13,5 +13,9 @@ jobs:
     steps:
     - uses: actions/checkout@v7.0.1
     - uses: astral-sh/ruff-action@v4.1.0
+      with:
+        src: >-
+          client/
+          operator/
 
           

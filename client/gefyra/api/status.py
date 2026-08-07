@@ -10,12 +10,12 @@ from gefyra.types import (
     StatusSummary,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
 def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
     from docker.errors import NotFound
+
     from gefyra.local import CARGO_ENDPOINT_LABEL, VERSION_LABEL
 
     # these are the default values
@@ -136,7 +136,6 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
             _status.stowaway_image = stowaway_pod.spec.containers[0].image
     except ApiException as e:
         logger.warning(e)
-        pass
 
     return _status
 
