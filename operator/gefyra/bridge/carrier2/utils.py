@@ -1,3 +1,4 @@
+from collections.abc import Callable
 import time
 from ssl import SSLEOFError
 
@@ -13,7 +14,7 @@ def stream_exec_retries(
     container: str,
     commands: list[str],
     retries: int = 30,
-    stop_cb: callable | None = None,
+    stop_cb: Callable | None = None,
 ):
     from kubernetes.client.rest import ApiException
 
@@ -40,7 +41,7 @@ def stream_exec(
     namespace: str,
     container: str,
     commands: list[str],
-    stop_cb: callable | None = None,
+    stop_cb: Callable | None = None,
 ):
     from kubernetes.stream import stream
 
