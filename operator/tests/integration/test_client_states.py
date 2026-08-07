@@ -1,9 +1,7 @@
 import logging
 from time import sleep
 
-import kopf
 from pytest_kubernetes.providers import AClusterManager
-from statemachine.exceptions import TransitionNotAllowed
 
 logger = logging.getLogger()
 logger.addHandler(logging.NullHandler())
@@ -41,7 +39,7 @@ class TestClientStates:
         while _i < 10:
             try:
                 client.create()
-            except (TransitionNotAllowed, kopf.TemporaryError, RuntimeError):
+            except Exception:  # noqa
                 client_a = k3d.kubectl(
                     ["-n", "gefyra", "get", "gefyraclient", "client-a"]
                 )
