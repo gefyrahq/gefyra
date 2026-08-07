@@ -22,6 +22,7 @@ class TestClientStates:
         from gefyra.configuration import OperatorConfiguration
 
         k3d = gefyra_crd
+        k3d.apply("tests/fixtures/a_gefyra_client.yaml")
         client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
         obj = GefyraClientObject(client_a)
         GefyraClient(obj, OperatorConfiguration(), logger)
@@ -31,6 +32,7 @@ class TestClientStates:
         from gefyra.configuration import OperatorConfiguration
 
         k3d = gefyra_crd
+        k3d.apply("tests/fixtures/a_gefyra_client.yaml")
         client_a = k3d.kubectl(["-n", "gefyra", "get", "gefyraclient", "client-a"])
         obj = GefyraClientObject(client_a)
         client = GefyraClient(obj, OperatorConfiguration(), logger)
