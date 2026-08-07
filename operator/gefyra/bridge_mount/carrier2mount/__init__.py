@@ -467,7 +467,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         if probes:
             carrier_config.probes = CarrierProbe(
                 httpGet=list(
-                    set(
+                    {
                         probe.http_get.port
                         for probe in probes
                         if probe.http_get.port not in upstream_ports
@@ -475,10 +475,10 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             not probe.http_get.scheme
                             or probe.http_get.scheme.lower() == "http"
                         )
-                    )
+                    }
                 ),
                 httpsGet=list(
-                    set(
+                    {
                         probe.http_get.port
                         for probe in probes
                         if probe.http_get.port not in upstream_ports
@@ -486,7 +486,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             probe.http_get.scheme
                             and probe.http_get.scheme.lower() == "https"
                         )
-                    )
+                    }
                 ),
             )
         return carrier_config
@@ -515,11 +515,11 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         pods = await self._original_pods
         if (
             len(
-                set(
+                {
                     pod.metadata.owner_references[0].name
                     for pod in pods.items
                     if pod.metadata.owner_references
-                )
+                }
             )
             > 1
         ):
@@ -886,7 +886,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 self.logger.error(
                     f"Exception when deleting service {gefyra_svc_name}: {e}"
                 )
-                raise e
+                raise
 
     def gefyra_svc_name(self):
         name, _ = self._split_target_type_name(self.target)
@@ -918,7 +918,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 self.logger.error(
                     f"Exception when deleting workload {type_.__name__}/{gefyra_deployment_name}: {e}"
                 )
-                raise e
+                raise
 
     async def _store_pod_original_config(
         self, container: k8s.client.V1Container, pod_name: str
@@ -963,7 +963,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     ),
                 )
             else:
-                raise e
+                raise
 
     async def _patch_pod_with_original_config(self, pod_name: str) -> V1Pod:
         pod = await asyncio.to_thread(

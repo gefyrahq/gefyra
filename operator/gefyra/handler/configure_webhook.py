@@ -89,11 +89,10 @@ async def check_validate_provider_parameters(body, diff, logger, operation, **_)
                 "Cannot set 'providerParameter' when "
                 f"state is not {GefyraClient.waiting.value}"
             )
-    if operation == "CREATE":
-        if bool(body.get("providerParameter")):
-            raise kopf.AdmissionError(
-                "Cannot set 'providerParameter' when creating a Gefyra client"
-            )
+    if operation == "CREATE" and bool(body.get("providerParameter")):
+        raise kopf.AdmissionError(
+            "Cannot set 'providerParameter' when creating a Gefyra client"
+        )
     if sunset := body.get("sunset"):
         try:
             datetime.fromisoformat(sunset.strip("Z"))

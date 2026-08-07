@@ -99,7 +99,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # self.pods is an async property
         pods = await self.pods
         if not all(
-            [self.pod_ready_and_healthy(pod, self.container) for pod in pods.items]
+            self.pod_ready_and_healthy(pod, self.container) for pod in pods.items
         ):
             raise TemporaryError("Pods are not ready")
         return True
@@ -183,7 +183,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 if probes:
                     config.probes = CarrierProbe(
                         httpGet=list(
-                            set(
+                            {
                                 probe.http_get.port
                                 for probe in probes
                                 if probe.http_get.port not in upstream_ports
@@ -191,10 +191,10 @@ class Carrier2(AbstractGefyraBridgeProvider):
                                     not probe.http_get.scheme
                                     or probe.http_get.scheme.lower() == "http"
                                 )
-                            )
+                            }
                         ),
                         httpsGet=list(
-                            set(
+                            {
                                 probe.http_get.port
                                 for probe in probes
                                 if probe.http_get.port not in upstream_ports
@@ -202,7 +202,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                                     probe.http_get.scheme
                                     and probe.http_get.scheme.lower() == "https"
                                 )
-                            )
+                            }
                         ),
                     )
         return config
@@ -435,7 +435,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         )
         config_str = "\n".join(config_str_list)
         pod_config = Carrier2Config.from_string(config_str)
-        if not any([bool(proxy.bridges) for proxy in pod_config.proxy]):
+        if not any(bool(proxy.bridges) for proxy in pod_config.proxy):
             return False
 
         proxy = next(
@@ -445,7 +445,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         if proxy is None:
             return False
 
-        if name and name not in proxy.bridges.keys():
+        if name and name not in proxy.bridges:
             return False
 
         bridge_exists = any(
@@ -463,8 +463,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
         if (
             "labels" not in bridge_request["metadata"]
             or "gefyra.dev/bridge-mount"
-            not in bridge_request["metadata"]["labels"].keys()
-            or "gefyra.dev/client" not in bridge_request["metadata"]["labels"].keys()
+            not in bridge_request["metadata"]["labels"]
+            or "gefyra.dev/client" not in bridge_request["metadata"]["labels"]
         ):
             raise kopf.AdmissionError(
                 "The requested GefyraBridge does not set the labels 'gefyra.dev/bridge-mount' and 'gefyra.dev/client'"

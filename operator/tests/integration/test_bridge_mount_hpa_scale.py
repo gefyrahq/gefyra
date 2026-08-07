@@ -83,9 +83,7 @@ class TestBridgeMountHPAScale:
             # which creates a fresh provider instance on each invocation.
             provider = bm.bridge_mount_provider
             for attr in list(vars(provider)):
-                if attr.startswith("get_pods_workload_cache-") or attr.startswith(
-                    "_get_workload_cache-"
-                ):
+                if attr.startswith(("get_pods_workload_cache-", "_get_workload_cache-")):
                     delattr(provider, attr)
 
             print(bm)

@@ -152,7 +152,7 @@ async def reconcile_proxyroutes(logger):
         if len(raw_gefyra_bridges["items"]) == 0:
             # if we find proxy routes, but there are no bridges -> remove debris
             if routes and len(routes) != 0:
-                for _, value in routes.items():
+                for value in routes.values():
                     stowaway_port = value.split(",")[1]
                     try:
                         await asyncio.to_thread(
@@ -188,10 +188,7 @@ async def reconcile_proxyroutes(logger):
                         bridge["client"] == peer
                         and bridge["destinationIP"] == destination_ip
                         and str(stowaway_port)
-                        in map(
-                            lambda x: x.split(":")[1],
-                            bridge["clusterEndpoint"].values(),
-                        )
+                        in (x.split(":")[1] for x in bridge["clusterEndpoint"].values())
                     ):
                         # this bridge corresponds to the route
                         final_routes[key] = value

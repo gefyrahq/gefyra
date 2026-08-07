@@ -13,7 +13,7 @@ logger = logging.getLogger("gefyra.utils")
 
 
 def get_label_selector(labels: dict[str, str]) -> str:
-    return ",".join(["{0}={1}".format(*label) for label in list(labels.items())])
+    return ",".join(["{}={}".format(*label) for label in list(labels.items())])
 
 
 class WSFileManager:
@@ -97,7 +97,7 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
                     tar_buffer.write(out)
                 elif err:
                     logger.debug(
-                        "Error copying file {0}".format(err.decode("utf-8", "replace"))
+                        "Error copying file {}".format(err.decode("utf-8", "replace"))
                     )
                 if closed:
                     break
@@ -110,7 +110,7 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
                 return True
         except Exception as e:
             logger.info(e)
-            raise e
+            raise
 
 
 def exec_command_pod(
