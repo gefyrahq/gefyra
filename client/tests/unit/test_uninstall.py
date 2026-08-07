@@ -130,7 +130,7 @@ class TestRemoveRemainderBridges(unittest.TestCase):
     def test_remove_remainder_bridges_list_fails(self):
         """Test when listing bridges fails"""
         self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.side_effect = (
-            Exception("List failed")
+            kubernetes.client.exceptions.ApiException("List failed")
         )
 
         result = remove_remainder_bridges(self.config)
@@ -323,8 +323,8 @@ class TestRemoveRemainderBridgeMounts(unittest.TestCase):
         self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
             mounts_response
         )
-        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = Exception(
-            "Delete failed"
+        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = kubernetes.client.exceptions.ApiException(
+            status=500, reason="Delete failed"
         )
 
         result = remove_remainder_bridge_mounts(self.config)
