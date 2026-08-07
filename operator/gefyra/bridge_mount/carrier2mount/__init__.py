@@ -1,53 +1,54 @@
-from copy import deepcopy
+import asyncio  # Added asyncio import
 import datetime
-from functools import partial
 import json
-from typing import Callable, List, Tuple, Union
 import uuid
-from kopf import TemporaryError
+from collections.abc import Callable
+from copy import deepcopy
+from functools import partial
+from typing import List, Tuple, Union
+
 import kopf
 import kubernetes as k8s
+from kopf import TemporaryError
 from kubernetes.client import (
+    ApiException,
+    AutoscalingV2Api,
     V1Deployment,
     V1HorizontalPodAutoscaler,
     V1HorizontalPodAutoscalerList,
-    V1StatefulSet,
-    V1PodList,
-    V1Pod,
-    ApiException,
-    V1Service,
     V1ObjectMeta,
-    V1ServiceSpec,
+    V1Pod,
+    V1PodList,
     V1Probe,
-    AutoscalingV2Api,
+    V1Service,
+    V1ServiceSpec,
+    V1StatefulSet,
 )
-import asyncio  # Added asyncio import
-
-from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
-from gefyra.bridge_mount.utils import (
-    _get_tls_from_provider_parameters,
-    inject_tls_file,
-    _tls_cert_from_k8s_secret,
-    _tls_key_from_k8s_secret,
-    generate_duplicate_workload_name,
-    generate_duplicate_svc_name,
-    generate_k8s_conform_name,
-    get_all_probes,
-    get_ports_for_workload,
-    get_upstreams_for_svc,
-    update_tls_file,
-)
-from gefyra.utils import async_all, async_any, wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
 from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
 from gefyra.bridge_mount.exceptions import (
     BridgeMountException,
     BridgeMountInstallException,
     BridgeMountTargetException,
 )
+from gefyra.bridge_mount.utils import (
+    _get_tls_from_provider_parameters,
+    _tls_cert_from_k8s_secret,
+    _tls_key_from_k8s_secret,
+    generate_duplicate_svc_name,
+    generate_duplicate_workload_name,
+    generate_k8s_conform_name,
+    get_all_probes,
+    get_ports_for_workload,
+    get_upstreams_for_svc,
+    inject_tls_file,
+    update_tls_file,
+)
+from gefyra.configuration import OperatorConfiguration
+from gefyra.utils import async_all, async_any, wait_until_condition
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -174,7 +175,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
     def _split_target_type_name(
         self, target
-    ) -> Tuple[str, Union["V1Deployment", "V1StatefulSet", "V1Pod"]]:
+    ) -> tuple[str, Union["V1Deployment", "V1StatefulSet", "V1Pod"]]:
         parts = target.split("/", 1)
         if len(parts) == 2:
             kind, name = parts[0].lower(), parts[1]
@@ -439,7 +440,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         )
         return pods
 
-    async def _default_upstream(self, rport: int) -> List[str]:
+    async def _default_upstream(self, rport: int) -> list[str]:
         name, _ = self._split_target_type_name(self.target)
         svc_name = generate_duplicate_svc_name(
             workload_name=name, container_name=self.container
@@ -450,7 +451,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         return get_upstreams_for_svc(svc=svc, rport=rport)
 
     async def _set_carrier_upstream(
-        self, upstream_ports: list[int], probes: List[V1Probe]
+        self, upstream_ports: list[int], probes: list[V1Probe]
     ) -> Carrier2Config:
         carrier_config = Carrier2Config()
 

@@ -1,9 +1,8 @@
-from typing import List, Optional
 import time
 from ssl import SSLEOFError
 
-from kopf import TemporaryError
 import kubernetes as k8s
+from kopf import TemporaryError
 from websocket import WebSocketConnectionClosedException
 
 
@@ -12,9 +11,9 @@ def stream_exec_retries(
     name: str,
     namespace: str,
     container: str,
-    commands: List[str],
+    commands: list[str],
     retries: int = 30,
-    stop_cb: Optional[callable] = None,
+    stop_cb: callable | None = None,
 ):
     from kubernetes.client.rest import ApiException
 
@@ -40,8 +39,8 @@ def stream_exec(
     name: str,
     namespace: str,
     container: str,
-    commands: List[str],
-    stop_cb: Optional[callable] = None,
+    commands: list[str],
+    stop_cb: callable | None = None,
 ):
     from kubernetes.stream import stream
 
@@ -99,7 +98,7 @@ def stream_exec(
 
 def read_carrier2_config(
     logger, name: str, namespace: str, container: str | None = None, retries: int = 30
-) -> List[str]:
+) -> list[str]:
     return read_carrier2_file(
         logger, name, namespace, "/tmp/config.yaml", container, retries
     )
@@ -112,9 +111,9 @@ def read_carrier2_file(
     filename: str,
     container: str | None = None,
     retries: int = 30,
-) -> List[str]:
-    from kubernetes.stream import stream
+) -> list[str]:
     from kubernetes.client.rest import ApiException
+    from kubernetes.stream import stream
 
     core_v1_api = k8s.client.CoreV1Api()
 

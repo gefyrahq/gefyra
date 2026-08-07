@@ -1,13 +1,12 @@
 import logging
 
-
 from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
 
 def remove_all_clients():
-    from gefyra.api.clients import list_client, delete_client
+    from gefyra.api.clients import delete_client, list_client
 
     clients = list_client()
     for client in clients:
@@ -23,7 +22,7 @@ def remove_remainder_bridge_mounts(config: ClientConfiguration):
             plural="gefyrabridgemounts",
         )
     except Exception:
-        return None
+        return
     for mount in mounts.get("items"):
         try:
             config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
@@ -43,7 +42,7 @@ def remove_remainder_bridge_mounts(config: ClientConfiguration):
             )
         except Exception:
             continue
-    return None
+    return
 
 
 def remove_remainder_bridges(config: ClientConfiguration):
@@ -55,7 +54,7 @@ def remove_remainder_bridges(config: ClientConfiguration):
             plural="gefyrabridges",
         )
     except Exception:
-        return None
+        return
     for bridge in gbridges.get("items"):
         try:
             config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
@@ -75,7 +74,7 @@ def remove_remainder_bridges(config: ClientConfiguration):
             )
         except Exception:
             continue
-    return None
+    return
 
 
 def remove_gefyra_namespace(config: ClientConfiguration):

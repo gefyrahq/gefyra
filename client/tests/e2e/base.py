@@ -1,52 +1,45 @@
+import os
+from copy import deepcopy
 from pathlib import Path
 from time import sleep
-from typing import List
+
 import docker
 import docker.errors
-from kubernetes.config import load_kube_config
-
-import requests
-
-from kubernetes.client import (
-    CoreV1Api,
-    RbacAuthorizationV1Api,
-    AppsV1Api,
-    CustomObjectsApi,
-    V1Pod,
-)
-from pytest_kubernetes.providers import AClusterManager
 import pytest
-
-from click.testing import CliRunner, Result
-from copy import deepcopy
-import os
-
+import requests
 from click import BadParameter
+from click.testing import CliRunner, Result
 from docker.context import ContextAPI
-from gefyra.cli.utils import check_connection_name
-
-
-from gefyra.api.clients import list_client, write_client_file
-from gefyra.api.install import LB_PRESETS
-
-from gefyra.cli.main import cli
-from gefyra.local.bridge import handle_delete_gefyrabridge
-from gefyra.types import GefyraClientState
-
 from gefyra.api import (
     create_bridge,
+    list_containers,
     run,
     status,
     unbridge_all,
-    list_containers,
 )
+from gefyra.api.clients import list_client, write_client_file
+from gefyra.api.install import LB_PRESETS
 from gefyra.api.status import StatusSummary
+from gefyra.cli.main import cli
+from gefyra.cli.utils import check_connection_name
 from gefyra.cluster.resources import (
     get_pods_and_containers_for_pod_name,
     get_pods_and_containers_for_workload,
     owner_reference_consistent,
 )
 from gefyra.configuration import ClientConfiguration, get_gefyra_config_location
+from gefyra.local.bridge import handle_delete_gefyrabridge
+from gefyra.types import GefyraClientState
+from kubernetes.client import (
+    AppsV1Api,
+    CoreV1Api,
+    CustomObjectsApi,
+    RbacAuthorizationV1Api,
+    V1Pod,
+)
+from kubernetes.config import load_kube_config
+from pytest_kubernetes.providers import AClusterManager
+
 from tests.e2e.const import CONNECTION_NAME
 from tests.e2e.mixin import GefyraTestMixin
 
@@ -793,7 +786,7 @@ class GefyraTestCase:
             except docker.errors.NotFound:
                 pass
 
-    def cmd(self, kubeconfig: Path, command: str, params: List[str]) -> Result:
+    def cmd(self, kubeconfig: Path, command: str, params: list[str]) -> Result:
         load_kube_config(str(kubeconfig))
         from gefyra.cli.main import cli
 

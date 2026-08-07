@@ -1,5 +1,6 @@
-from multiprocessing import Process, Queue
 import subprocess
+from multiprocessing import Process, Queue
+
 import requests
 from requests.adapters import HTTPAdapter, Retry
 

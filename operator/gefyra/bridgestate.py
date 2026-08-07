@@ -1,16 +1,15 @@
 from datetime import datetime
-from typing import Any, Optional
-from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
-from gefyra.bridge.factory import BridgeProviderType, bridge_provider_factory
+from typing import Any
 
 import kopf
 import kubernetes as k8s
 from statemachine import State, StateChart
 
 from gefyra.base import GefyraStateObject, StateControllerMixin
-from gefyra.configuration import OperatorConfiguration
-
+from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.bridge.exceptions import BridgeException, BridgeInstallException
+from gefyra.bridge.factory import BridgeProviderType, bridge_provider_factory
+from gefyra.configuration import OperatorConfiguration
 
 
 class GefyraBridgeObject(GefyraStateObject):
@@ -77,7 +76,7 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
         model: GefyraBridgeObject,
         configuration: OperatorConfiguration,
         logger: Any,
-        initial: Optional[State] = None,
+        initial: State | None = None,
     ):
         super().__init__(
             model=model, start_value=initial or GefyraBridge.requested.value
@@ -108,7 +107,7 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
         return provider
 
     @property
-    def sunset(self) -> Optional[datetime]:
+    def sunset(self) -> datetime | None:
         if sunset := self.data.get("sunset"):
             return datetime.fromisoformat(sunset.strip("Z"))
         else:
@@ -301,7 +300,7 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
     async def on_restore(self):
         await self.send("set_installed")
 
-    async def on_impair(self, exception: Optional[BridgeException] = None):
+    async def on_impair(self, exception: BridgeException | None = None):
         message = (
             exception.message
             if exception and hasattr(exception, "message")

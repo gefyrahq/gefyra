@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
 import subprocess
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 class HealthCheck(BaseHTTPRequestHandler):

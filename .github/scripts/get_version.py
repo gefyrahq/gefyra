@@ -3,7 +3,7 @@ import os
 env_file = os.getenv("GITHUB_ENV")
 
 with open("pyproject.toml") as f:
-    for line in f.readlines():
+    for line in f:
         if "version" in line:
             version = line.split("=")[1]
             version = version.strip()

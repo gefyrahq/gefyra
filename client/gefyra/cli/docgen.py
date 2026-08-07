@@ -10,7 +10,6 @@ Usage:
 """
 
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -495,7 +494,7 @@ def generate_toc(cli: click.Group) -> str:
     return "\n".join(lines)
 
 
-def generate_docs(output: Optional[str] = None) -> str:
+def generate_docs(output: str | None = None) -> str:
     """
     Generate CLI documentation markdown.
 
@@ -549,7 +548,7 @@ def generate_docs(output: Optional[str] = None) -> str:
     type=click.Path(),
     help="Output file path for generated documentation",
 )
-def main(output: Optional[str] = None):
+def main(output: str | None = None):
     """Generate markdown documentation for the Gefyra CLI."""
     content = generate_docs(output)
     if not output:
