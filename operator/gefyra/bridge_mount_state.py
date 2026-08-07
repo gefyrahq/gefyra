@@ -1,24 +1,22 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import kopf
 import kubernetes as k8s
 from statemachine import State, StateChart
 
-
 from gefyra.base import GefyraStateObject, StateControllerMixin
-from gefyra.configuration import OperatorConfiguration
+from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.bridge_mount.factory import (
-    BridgeMountProviderType,
-    bridge_mount_provider_factory,
-)
 from gefyra.bridge_mount.exceptions import (
     BridgeMountInstallException,
     BridgeMountTargetException,
 )
-from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.bridge_mount.factory import (
+    BridgeMountProviderType,
+    bridge_mount_provider_factory,
+)
+from gefyra.configuration import OperatorConfiguration
 
 
 class GefyraBridgeMountObject(GefyraStateObject):
@@ -93,7 +91,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         model: GefyraBridgeMountObject,
         configuration: OperatorConfiguration,
         logger,
-        initial: Optional[State] = None,  # Added initial state parameter
+        initial: State | None = None,  # Added initial state parameter
     ):
         super().__init__(
             model=model, start_value=initial or GefyraBridgeMount.requested.value
@@ -103,7 +101,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         self.logger = logger
         self.custom_api = k8s.client.CustomObjectsApi()
         self.events_api = k8s.client.EventsV1Api()
-        self._bridge_mount_provider: Optional[AbstractGefyraBridgeMountProvider] = None
+        self._bridge_mount_provider: AbstractGefyraBridgeMountProvider | None = None
 
     @property
     def bridge_mount_provider(self) -> AbstractGefyraBridgeMountProvider:
@@ -126,7 +124,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         return self._bridge_mount_provider
 
     @property
-    def sunset(self) -> Optional[datetime]:
+    def sunset(self) -> datetime | None:
         if sunset := self.data.get("sunset"):
             return datetime.fromisoformat(sunset.strip("Z")).replace(
                 tzinfo=timezone.utc

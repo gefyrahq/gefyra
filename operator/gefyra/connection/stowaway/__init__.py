@@ -1,42 +1,42 @@
+import asyncio
+import os
 import random
 import re
 import string
 from collections import defaultdict
 from os import path
-import os
 from typing import Any, Dict, Optional
+
+import kopf
+import kubernetes as k8s
+
+from gefyra.configuration import OperatorConfiguration
+from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 from gefyra.connection.stowaway.resources.configmaps import (
     create_stowaway_proxyroute_configmap,
 )
 from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
 from gefyra.resources.events import _get_now
-import kopf
-import kubernetes as k8s
-import asyncio
-
 from gefyra.utils import exec_command_pod, get_label_selector, stream_copy_from_pod
-from gefyra.connection.abstract import AbstractGefyraConnectionProvider
-from gefyra.configuration import OperatorConfiguration
 
 from .components import (
     check_config_configmap,
     check_proxyroute_configmap,
     check_serviceaccount,
-    check_stowaway_statefulset,
     check_stowaway_nodeport_service,
+    check_stowaway_statefulset,
+    create_stowaway_configmap,
+    create_stowaway_statefulset,
     handle_config_configmap,
-    handle_serviceaccount,
     handle_proxyroute_configmap,
+    handle_serviceaccount,
+    handle_stowaway_nodeport_service,
     handle_stowaway_proxy_service,
     handle_stowaway_statefulset,
-    handle_stowaway_nodeport_service,
-    create_stowaway_statefulset,
-    create_stowaway_configmap,
     remove_stowaway_configmaps,
     remove_stowaway_services,
     remove_stowaway_statefulset,
 )
-
 
 # Module-level lock to serialize proxyroutes ConfigMap read-modify-write operations.
 # Without this, concurrent bridge activations race on the ConfigMap and overwrite
@@ -92,7 +92,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             return output
 
-    async def install(self, config: Optional[Dict[Any, Any]] = None):
+    async def install(self, config: dict[Any, Any] | None = None):
         await handle_serviceaccount(self.logger, self.configuration)
         await handle_proxyroute_configmap(self.logger, self.configuration)
         await handle_config_configmap(self.logger, self.configuration)
@@ -104,7 +104,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             self.logger, self.configuration, sts_stowaway
         )
 
-    async def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
+    async def installed(self, config: dict[Any, Any] | None = None) -> bool:
         return all(
             [
                 await check_serviceaccount(self.logger),
@@ -120,7 +120,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             ]
         )
 
-    async def uninstall(self, config: Optional[Dict[Any, Any]] = None):
+    async def uninstall(self, config: dict[Any, Any] | None = None):
         await remove_stowaway_services(self.logger, self.configuration)
         await remove_stowaway_statefulset(
             self.logger,
@@ -139,7 +139,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         else:
             return False
 
-    async def add_peer(self, peer_id: str, parameters: Optional[Dict[Any, Any]] = None):
+    async def add_peer(self, peer_id: str, parameters: dict[Any, Any] | None = None):
         parameters = parameters or {}
         self.logger.info(
             f"Adding peer {peer_id} to stowaway with parameters: {parameters}"
@@ -208,7 +208,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         peer_id: str,
         destination_ip: str,
         destination_port: int,
-        parameters: Optional[Dict[Any, Any]] = None,
+        parameters: dict[Any, Any] | None = None,
     ):
         # create service with random port that is not taken
         stowaway_port = await self._edit_proxyroutes_configmap(
@@ -345,7 +345,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             return False
 
-    async def validate(self, gclient: dict, hints: Dict[Any, Any] = {}):
+    async def validate(self, gclient: dict, hints: dict[Any, Any] = {}):
         if wireguard_parameter := gclient.get("providerParameter"):
             if subnet := wireguard_parameter.get("subnet"):
                 if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
@@ -394,7 +394,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             await asyncio.sleep(1)
             _i += 1
 
-    async def _get_stowaway_pod(self) -> Optional[k8s.client.V1Pod]:
+    async def _get_stowaway_pod(self) -> k8s.client.V1Pod | None:
         stowaway_pod = await asyncio.to_thread(
             core_v1_api.list_namespaced_pod,
             self.configuration.NAMESPACE,
@@ -424,9 +424,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
 
     async def _edit_peer_configmap(
         self,
-        add: Optional[str] = None,
-        remove: Optional[str] = None,
-        subnet: Optional[str] = None,
+        add: str | None = None,
+        remove: str | None = None,
+        subnet: str | None = None,
     ) -> None:
         _config = create_stowaway_configmap()
         configmap = await asyncio.to_thread(
@@ -488,8 +488,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
     async def _edit_proxyroutes_configmap(
         self,
         peer_id: str,
-        add: Optional[str] = None,
-        remove: Optional[str] = None,
+        add: str | None = None,
+        remove: str | None = None,
     ) -> int:
         async with _proxyroutes_configmap_lock:
             _config = create_stowaway_proxyroute_configmap()

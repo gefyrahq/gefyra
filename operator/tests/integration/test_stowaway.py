@@ -1,12 +1,11 @@
-from enum import Enum
 import logging
 import os
+from enum import Enum
 from time import sleep
+
 import pytest
-
-from pytest_kubernetes.providers import AClusterManager
-
 from gefyra.configuration import OperatorConfiguration
+from pytest_kubernetes.providers import AClusterManager
 
 logger = logging.getLogger(__name__)
 
@@ -286,11 +285,11 @@ class TestStowaway:
         assert len(svc["items"]) == 3
 
     async def test_h_provider_notexists(self, k3d: AClusterManager):
+        import kopf
         from gefyra.connection.factory import (
             ConnectionProviderType,
             connection_provider_factory,
         )
-        import kopf
 
         stowaway = connection_provider_factory.get(
             ConnectionProviderType.STOWAWAY,

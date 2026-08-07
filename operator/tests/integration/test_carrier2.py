@@ -1,13 +1,12 @@
 import logging
 from pathlib import Path
 from time import sleep
-from pytest_kubernetes.providers import AClusterManager
+
 import requests
+from pytest_kubernetes.providers import AClusterManager
 from requests.adapters import HTTPAdapter, Retry
-
-from utils import read_carrier2_config
 from tests.utils import post_event_noop
-
+from utils import read_carrier2_config
 
 logger = logging.getLogger()
 

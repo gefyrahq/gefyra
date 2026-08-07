@@ -1,7 +1,7 @@
-from typing import Callable
-from gefyra.configuration import OperatorConfiguration
+from collections.abc import Callable
 
 from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
+from gefyra.configuration import OperatorConfiguration
 
 
 class Carrier2BridgeMountBuilder:
