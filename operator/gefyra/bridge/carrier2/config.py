@@ -120,11 +120,11 @@ class Carrier2Config(BaseModel):
             read_func,
             lambda s: all(
                 bool(
-                        container.state
-                        and container.state.running
-                        and container.state.running.started_at
-                    )
-                    for container in s.status.container_statuses
+                    container.state
+                    and container.state.running
+                    and container.state.running.started_at
+                )
+                for container in s.status.container_statuses
             ),
             timeout=120,
             backoff=2,
@@ -227,7 +227,7 @@ class Carrier2Config(BaseModel):
                             self.proxy[proxy_idx].bridges = {
                                 bridge_name: self._convert_bridge_to_rule(bridge, rport)
                             }
-                except Exception as e:
+                except (IndexError, KeyError, TypeError, ValueError) as e:
                     if current_bridge_add and bridge_name == current_bridge_add:
                         raise BridgeInstallException(
                             f"Could not install GefyraBridge: {e}"

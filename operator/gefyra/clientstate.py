@@ -141,7 +141,9 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
         return time_since_active > max_age_seconds
 
     async def should_terminate(self) -> bool:
-        if self.sunset and self.sunset <= datetime.utcnow():
+        if self.sunset and self.sunset <= datetime.now(timezone.utc).replace(
+            tzinfo=None
+        ):
             # remove this client because the sunset time is in the past
             await self.post_event(
                 reason="Sunset reached",
@@ -241,7 +243,15 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
                 self.logger, sa_name, self.namespace
             )
             await self.cleanup_all_bridges()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            kopf.TemporaryError,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+            tarfile.ReadError,
+        ) as e:
             self.logger.warning(f"Error during termination of GefyraClient: {e}")
 
     async def can_add_client(self):
@@ -352,9 +362,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
             )
         )
         if timestamps:
-            return max(
-                datetime.fromisoformat(x.strip("Z")) for x in timestamps
-            )
+            return max(datetime.fromisoformat(x.strip("Z")) for x in timestamps)
         else:
             return None
 

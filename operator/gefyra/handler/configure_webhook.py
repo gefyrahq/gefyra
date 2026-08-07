@@ -176,7 +176,13 @@ async def check_validate_bridge_parameters(
                 None,
                 logger,
             )
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             raise kopf.AdmissionError(
                 f"Cannot create GefyraBridge provider {provider_parameter} due to: {e}"
             )

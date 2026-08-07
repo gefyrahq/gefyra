@@ -202,7 +202,7 @@ class TestBridgeMountObject:
         await mount.prepare()
         try:
             await mount.install()
-        except Exception:
+        except RuntimeError:
             pass
 
         new_deployment = gefyra_crd.kubectl(

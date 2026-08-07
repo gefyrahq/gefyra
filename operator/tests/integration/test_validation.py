@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from gefyra.clientstate import GefyraClient
@@ -19,7 +19,7 @@ async def test_a_gefyraclients_validator(operator: AClusterManager):
     body = {
         "metadata": {"name": "test1"},
         "provider": "stowaway",
-        "sunset": f"{datetime.now().isoformat()}Z",
+        "sunset": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
     }
     await check_validate_provider_parameters(body, diff, logger, operation)
 

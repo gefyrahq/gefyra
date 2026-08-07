@@ -5,7 +5,8 @@ import re
 import string
 from collections import defaultdict
 from os import path
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any
 
 import kopf
 import kubernetes as k8s
@@ -86,7 +87,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 "stowaway",
                 ["wg"],
             )
-        except Exception as e:
+        except (k8s.client.ApiException, RuntimeError, ValueError) as e:
             self.logger.error(f"Unable to read Wireguard status: {e}")
             return None
         else:
@@ -184,7 +185,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 _config.metadata.name,
                 _config.metadata.namespace,
             )
-            return self._translate_peer_name(peer_id) in configmap.data["PEERS"].split(",")
+            return self._translate_peer_name(peer_id) in configmap.data["PEERS"].split(
+                ","
+            )
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
                 f"Error looking up peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
@@ -342,19 +345,20 @@ class Stowaway(AbstractGefyraConnectionProvider):
     async def validate(self, gclient: dict, hints: dict[Any, Any] | None = None):
         if hints is None:
             hints = {}
-        if wireguard_parameter := gclient.get("providerParameter"):
-            if subnet := wireguard_parameter.get("subnet"):
-                if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
-                    raise kopf.AdmissionError(
-                        f"The Wireguard subnet '{subnet}' does not validate with regex"
-                        f" '{WIREGUARD_CIDR_PATTERN}'."
-                    )
-                if hints.get(
-                    "added"
-                ) == "providerParameter" and await self._subnet_taken(subnet):
-                    raise kopf.AdmissionError(
-                        f"The Wireguard subnet '{subnet}' is already taken."
-                    )
+        if (wireguard_parameter := gclient.get("providerParameter")) and (
+            subnet := wireguard_parameter.get("subnet")
+        ):
+            if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
+                raise kopf.AdmissionError(
+                    f"The Wireguard subnet '{subnet}' does not validate with regex"
+                    f" '{WIREGUARD_CIDR_PATTERN}'."
+                )
+            if hints.get("added") == "providerParameter" and await self._subnet_taken(
+                subnet
+            ):
+                raise kopf.AdmissionError(
+                    f"The Wireguard subnet '{subnet}' is already taken."
+                )
 
     async def _subnet_taken(self, subnet: str) -> bool:
         _config = create_stowaway_configmap()
@@ -414,8 +418,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 },
                 namespace=self.configuration.NAMESPACE,
             )
-        except k8s.client.exceptions.ApiException as e:
-            self.logger.exception(e)
+        except k8s.client.exceptions.ApiException:
+            self.logger.exception("Failed to notify stowaway pod")
         await asyncio.sleep(1)
 
     async def _edit_peer_configmap(
@@ -565,11 +569,11 @@ class Stowaway(AbstractGefyraConnectionProvider):
         )
 
         # Wireguard config is unfortunately no valid TOML
-        with open(tmpfile_conf, "r") as f:
-            peer_connection_details_raw = f.read()
+        peer_connection_details_raw = await asyncio.to_thread(
+            Path(tmpfile_conf).read_text
+        )
         os.remove(tmpfile_conf)
-        with open(tmpfile_pubkey, "r") as f:
-            peer_connection_pubkey = f.read()
+        peer_connection_pubkey = await asyncio.to_thread(Path(tmpfile_pubkey).read_text)
         os.remove(tmpfile_pubkey)
 
         peer_connection_details = self._read_wireguard_config(
@@ -597,8 +601,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
                     continue
                 key, value = line.split("=", 1)
                 data[f"{_prefix}.{key.strip()}"] = value.strip()
-            except Exception as e:
-                self.logger.exception(e)
+            except ValueError:
+                self.logger.exception("Failed parsing wireguard config line: %s", line)
         return dict(data)
 
 

@@ -1,7 +1,7 @@
+import asyncio
 import logging
 import os
 from enum import Enum
-from time import sleep
 
 import pytest
 from gefyra.configuration import OperatorConfiguration
@@ -104,7 +104,7 @@ class TestStowaway:
             namespace="gefyra",
             timeout=120,
         )
-        sleep(2)
+        await asyncio.sleep(2)
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,
@@ -175,7 +175,7 @@ class TestStowaway:
             namespace="gefyra",
             timeout=120,
         )
-        sleep(2)
+        await asyncio.sleep(2)
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,

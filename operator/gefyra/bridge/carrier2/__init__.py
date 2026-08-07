@@ -1,6 +1,6 @@
 import asyncio
 from collections.abc import Callable
-from typing import Any, Dict, Optional
+from typing import Any
 
 import kopf
 import kubernetes as k8s
@@ -281,8 +281,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                     )
             except ApiException as e:
                 if e.status == 404:
-                    # TODO better exception typing here
-                    raise Exception(NOT_FOUND_MSG)
+                    raise RuntimeError(NOT_FOUND_MSG)
                 raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
             v1_label_selector = workload.spec.selector.match_labels
@@ -292,8 +291,9 @@ class Carrier2(AbstractGefyraBridgeProvider):
             )
 
             if not label_selector:
-                # TODO better exception typing here
-                raise Exception(f"No label selector set for {workload_type} - {name}.")
+                raise RuntimeError(
+                    f"No label selector set for {workload_type} - {name}."
+                )
             pods = await asyncio.to_thread(
                 core_v1_api.list_namespaced_pod,
                 namespace=namespace,
@@ -423,7 +423,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         try:
             pods = await self.pods
             pod: V1Pod = pods.items[0]
-        except Exception as e:
+        except (ApiException, IndexError, KeyError, TypeError, RuntimeError) as e:
             # if the deployment, pod, etc. does not exist anymore
             self.logger.error(e)
             return False
@@ -462,8 +462,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # check if labels set
         if (
             "labels" not in bridge_request["metadata"]
-            or "gefyra.dev/bridge-mount"
-            not in bridge_request["metadata"]["labels"]
+            or "gefyra.dev/bridge-mount" not in bridge_request["metadata"]["labels"]
             or "gefyra.dev/client" not in bridge_request["metadata"]["labels"]
         ):
             raise kopf.AdmissionError(
@@ -479,7 +478,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 "gefyrabridgemounts",
                 bridge_request["target"],
             )
-        except Exception:
+        except (ApiException, KeyError, TypeError):
             raise kopf.AdmissionError(
                 "The target GefyraBridgeMounts does not exist or cannot be read"
             ) from None
@@ -497,7 +496,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 plural="gefyrabridges",
                 namespace=self.configuration.NAMESPACE,
             )
-        except Exception as e:
+        except (ApiException, RuntimeError, ValueError) as e:
             raise kopf.AdmissionError(f"Cannot read GefyraBridges: {e}")
 
         for existing_bridge in bridges.get("items"):

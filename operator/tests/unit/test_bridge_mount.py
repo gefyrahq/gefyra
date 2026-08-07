@@ -391,7 +391,9 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         healthy_pod.status.phase = "Running"
         healthy_pod.status.container_statuses[0].ready = True
         healthy_pod.status.container_statuses[0].started = True
-        running_state = V1ContainerStateRunning(started_at=datetime.datetime.now())
+        running_state = V1ContainerStateRunning(
+            started_at=datetime.datetime.now(datetime.timezone.utc)
+        )
         healthy_pod.status.container_statuses[0].state = V1ContainerState(
             running=running_state
         )

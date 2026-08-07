@@ -5,7 +5,7 @@ import uuid
 from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
-from typing import List, Tuple, Union
+from typing import Union
 
 import kopf
 import kubernetes as k8s
@@ -83,10 +83,8 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
         duplication_labels = {}
-        for key in labels:
-            duplication_labels[key] = generate_k8s_conform_name(
-                f"{labels[key]}", "-gefyra"
-            )
+        for key, value in labels.items():
+            duplication_labels[key] = generate_k8s_conform_name(f"{value}", "-gefyra")
         return duplication_labels
 
     def _clean_annotations(self, annotations: dict[str, str]) -> dict[str, str]:
@@ -392,12 +390,21 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     async def prepare(self):
         try:
             await self._duplicate_workload()
-        except Exception as e:
+        except (
+            ApiException,
+            BridgeInstallException,
+            BridgeMountException,
+            RuntimeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+        ) as e:
             raise BridgeMountInstallException(e)
 
     @property
     async def _gefyra_pods(self) -> V1PodList:
-        _, type_ = self._split_target_type_name(self.target)
+        _, _ = self._split_target_type_name(self.target)
         return await self.get_pods_workload(
             name=f"{self._gefyra_workload_type}/{self._gefyra_workload_name}",
             namespace=self.namespace,
@@ -431,8 +438,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         )
 
         if not label_selector:
-            # TODO better exception typing here
-            raise Exception(f"No label selector set for {self.target}.")
+            raise RuntimeError(f"No label selector set for {self.target}.")
         pods = await asyncio.to_thread(
             core_v1_api.list_namespaced_pod,
             namespace=namespace,
@@ -783,7 +789,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         workload = await self._get_workload(self.target, self.namespace)
         if hasattr(workload.spec, "template") and workload.spec.template is not None:
             workload.spec.template.metadata.annotations = {
-                "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
+                "kubectl.kubernetes.io/restartedAt": datetime.datetime.now(
+                    datetime.timezone.utc
+                ).isoformat()
             }
             new_workload = await asyncio.to_thread(
                 self._patch_namespaced_(type_),
@@ -859,7 +867,14 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 plural="gefyrabridgemounts",
                 namespace=self.configuration.NAMESPACE,
             )
-        except Exception as e:
+        except (
+            ApiException,
+            BridgeMountTargetException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             raise kopf.AdmissionError(f"Cannot read GefyraBridgeMounts: {e}")
         for bridge_mount in bridge_mounts.get("items"):
             if (
@@ -1016,7 +1031,16 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         await self.uninstall_service()
         try:
             await self.restore_original_workload()
-        except Exception as e:
+        except (
+            ApiException,
+            BridgeInstallException,
+            BridgeMountException,
+            RuntimeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+        ) as e:
             self.logger.error(
                 f"Could not restore original workload for {self.name} due to: {e}"
             )

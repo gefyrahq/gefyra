@@ -149,7 +149,16 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     async def target_exists(self) -> bool:
         try:
             return await self.bridge_mount_provider.target_exists()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountTargetException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.warning(
                 f"Error checking target existence for '{self.object_name}': {e}"
             )
@@ -186,7 +195,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             return await bmp.prepared() and await bmp.ready()
         except BridgeMountTargetException:
             return False
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             await self.post_event(
                 reason="Not intact",
                 message=f"GefyraBridgeMount '{self.object_name}' not intact: {e}",
@@ -203,7 +220,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         )
         try:
             await self.bridge_mount_provider.uninstall()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.warning(
                 f"Failed to clean up artifacts for missing mount "
                 f"'{self.object_name}': {e}"
@@ -261,7 +286,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.install()
-        except (BridgeMountInstallException, BridgeInstallException, Exception) as e:
+        except (
+            BridgeMountInstallException,
+            BridgeInstallException,
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             await self.post_event(
                 reason="Failed to install GefyraBridgeMount",
                 message=str(e),
@@ -290,13 +323,27 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.uninstall()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.error(
                 f"Cannot uninstall GefyraBridgeMount '{self.object_name}' due to: {e}"
             )
         try:
             await self.cleanup_all_bridges()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.error(f"Cannot cleanup remaining GefyraBridges due to: {e}")
 
     async def cleanup_all_bridges(self) -> None:  # Made async

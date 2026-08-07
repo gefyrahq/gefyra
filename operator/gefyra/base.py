@@ -154,7 +154,7 @@ class StateControllerMixin:
                 namespace=self.operator_configuration.NAMESPACE,
                 body=event,
             )
-        except Exception as e:
+        except (k8s.client.ApiException, RuntimeError, ValueError) as e:
             self.logger.error(
                 f"Could not post event to object '{self.data['kind']}/{self.data['metadata']['name']}': {e}"
             )

@@ -29,7 +29,7 @@ def stream_exec_retries(
             time.sleep(1)
             continue
         except WebSocketConnectionClosedException:
-            raise Exception(
+            raise RuntimeError(
                 f"Failed to exec commands with {retries} retries due to closed connection"
             )
     raise TemporaryError(f"Failed to exec commands with {retries} retries", delay=10)
@@ -43,6 +43,7 @@ def stream_exec(
     commands: list[str],
     stop_cb: Callable | None = None,
 ):
+    from kubernetes.client.rest import ApiException
     from kubernetes.stream import stream
 
     core_v1_api = k8s.client.CoreV1Api()
@@ -90,7 +91,15 @@ def stream_exec(
             logger.debug(f"Last output: {last_ouput}")
 
         resp.close()
-    except Exception:
+    except (
+        ApiException,
+        RuntimeError,
+        ValueError,
+        TypeError,
+        SSLEOFError,
+        ConnectionResetError,
+        WebSocketConnectionClosedException,
+    ):
         if resp and resp.is_open():
             resp.close()
         raise

@@ -1,6 +1,7 @@
 import asyncio
 
 import kopf
+import kubernetes as k8s
 
 from gefyra.bridgestate import GefyraBridge, GefyraBridgeObject
 from gefyra.configuration import configuration
@@ -85,7 +86,13 @@ async def bridge_reconcile(body, logger, **kwargs):
                 is_intact = True
                 try:
                     is_intact = await bridge.is_intact
-                except Exception as e:
+                except (
+                    k8s.client.ApiException,
+                    RuntimeError,
+                    ValueError,
+                    KeyError,
+                    TypeError,
+                ) as e:
                     logger.error(f"Error probing this GefyraBridge: {e}")
                     # GefryaBridge not intact -> restoring
                     await bridge.send("restore")
@@ -97,7 +104,13 @@ async def bridge_reconcile(body, logger, **kwargs):
                 await bridge.install()
             if bridge.installed.is_active:
                 await bridge.activate()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             logger.error(f"Unexpected error reconciling this GefyraBridge: {e}")
 
 
@@ -114,5 +127,11 @@ async def bridge_delete(body, logger, namespace, name, **kwargs):
     async with lock:
         try:
             await bridge.send("terminate")
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             logger.error(f"Unexpected error removing this GefyraBridge: {e}")

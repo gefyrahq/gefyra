@@ -36,7 +36,7 @@ async def read_wireguard_status(logger):
             plural="gefyraclients",
             namespace=configuration.NAMESPACE,
         )
-    except Exception as e:
+    except k8s.client.ApiException as e:
         logger.error(f"Could not read clients from Stowaway watcher: {e}")
         return
     else:
@@ -62,7 +62,7 @@ async def read_wireguard_status(logger):
         return
     try:
         wg_data = parse_wg_output(wg_status)
-    except Exception as e:
+    except (ValueError, KeyError, TypeError) as e:
         logger.error(f"Could not parse Wireguard status: {e}")
         return
     else:
@@ -116,7 +116,13 @@ async def read_wireguard_status(logger):
                             #     reason="GefyraClient connection",
                             #     message="Updated Wireguard status (see .status.wireguard field)",
                             # )
-            except Exception as e:
+            except (
+                k8s.client.ApiException,
+                RuntimeError,
+                ValueError,
+                KeyError,
+                TypeError,
+            ) as e:
                 logger.error(
                     f"Error processing Wireguard status for GefyraClient '{body['metadata']['name']}': {e}"
                 )
@@ -143,7 +149,7 @@ async def reconcile_proxyroutes(logger):
             plural="gefyrabridges",
             namespace=configuration.NAMESPACE,
         )
-    except Exception as e:
+    except k8s.client.ApiException as e:
         logger.error(f"Could not list all GefyraBridges: {e}")
         return
     else:
@@ -160,7 +166,12 @@ async def reconcile_proxyroutes(logger):
                             name=f"gefyra-stowaway-proxy-{stowaway_port}",
                             namespace=configuration.NAMESPACE,
                         )
-                    except Exception:
+                    except k8s.client.ApiException as e:
+                        logger.debug(
+                            "Could not remove stale proxy service %s: %s",
+                            stowaway_port,
+                            e,
+                        )
                         continue
                 configmap.data = {}
                 await asyncio.to_thread(
@@ -220,7 +231,8 @@ async def reconcile_proxyroutes(logger):
                             name=svc,
                             namespace=configuration.NAMESPACE,
                         )
-                    except Exception:
+                    except k8s.client.ApiException as e:
+                        logger.debug("Could not remove service %s: %s", svc, e)
                         continue
                 stowaway_pod = await stowaway._get_stowaway_pod()
                 if stowaway_pod is None:

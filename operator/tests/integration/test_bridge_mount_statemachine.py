@@ -1,6 +1,6 @@
+import asyncio
 import logging
 from pathlib import Path
-from time import sleep
 from unittest.mock import MagicMock
 
 from gefyra.configuration import OperatorConfiguration
@@ -75,7 +75,7 @@ class TestBridgeMountStateMachine:
             except TemporaryError:
                 retries -= 1
 
-            sleep(2)
+            await asyncio.sleep(2)
 
         gefyra_crd.wait(
             "deployment/" + name + "-gefyra",

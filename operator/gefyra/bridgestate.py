@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 import kopf
@@ -115,7 +115,9 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
 
     @property
     async def should_terminate(self) -> bool:
-        if self.sunset and self.sunset <= datetime.utcnow():
+        if self.sunset and self.sunset <= datetime.now(timezone.utc).replace(
+            tzinfo=None
+        ):
             # remove this bridge because the sunset time is in the past
             self.logger.warning(
                 f"Bridge '{self.object_name}' should be terminated "
@@ -165,7 +167,14 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
             destination = self.data["destinationIP"]
             await self.handle_proxyroute_setup(destination)
             await self.send("establish")
-        except Exception as e:
+        except (
+            BridgeException,
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             await self.send("impair", exception=e)
 
     @property
@@ -266,7 +275,7 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
                         await self.connection_provider.remove_destination(
                             self.data["client"], destination, int(source_port)
                         )
-                    except Exception as e:
+                    except (k8s.client.ApiException, RuntimeError, ValueError) as e:
                         self.logger.error(f"Could not remove destination: {e}")
                     continue
                 else:
@@ -278,7 +287,14 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
                             await (await self.bridge_provider).remove_proxy_route(
                                 target_port, proxy_host, proxy_port
                             )
-                    except Exception as e:
+                    except (
+                        BridgeException,
+                        k8s.client.ApiException,
+                        RuntimeError,
+                        ValueError,
+                        KeyError,
+                        TypeError,
+                    ) as e:
                         self.logger.error(e)
                     # if there is another bridge using this connetion path, we don't want to remove the route from
                     # the connection provider
@@ -289,7 +305,7 @@ class GefyraBridge(StateChart, StateControllerMixin):  # Reverted to StateMachin
                         await self.connection_provider.remove_destination(
                             self.data["client"], destination, int(source_port)
                         )
-                    except Exception as e:
+                    except (k8s.client.ApiException, RuntimeError, ValueError) as e:
                         self.logger.error(f"Could not remove destination: {e}")
                     continue
             else:

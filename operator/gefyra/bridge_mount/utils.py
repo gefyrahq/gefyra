@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import binascii
 import time
 from functools import partial
 
@@ -98,36 +99,36 @@ def _read_k8s_secret_tls_value(name: str, key: str, namespace: str = "default") 
         if now - timestamp < 60 and key in data:
             try:
                 return base64.b64decode(data[key]).decode("utf-8")
-            except Exception as e:
-                raise Exception(
+            except (binascii.Error, UnicodeDecodeError) as e:
+                raise ValueError(
                     f"Could not base64 decode key '{key}' in secret '{name}' "
                     f"from namespace '{namespace}': {e}"
-                )
+                ) from e
 
     try:
         secret = _get_core_v1_api().read_namespaced_secret(name, namespace)
         if not secret.data:
-            raise Exception(f"Secret '{name}' in namespace '{namespace}' has no data")
+            raise ValueError(f"Secret '{name}' in namespace '{namespace}' has no data")
 
         _K8S_SECRET_CACHE[cache_key] = (secret.data, now)
 
         if key not in secret.data:
-            raise Exception(
+            raise KeyError(
                 f"Key '{key}' not found in secret '{name}' in namespace '{namespace}'"
             )
 
         try:
             return base64.b64decode(secret.data[key]).decode("utf-8")
-        except Exception as e:
-            raise Exception(
+        except (binascii.Error, UnicodeDecodeError) as e:
+            raise ValueError(
                 f"Could not base64 decode key '{key}' in secret '{name}' "
                 f"from namespace '{namespace}': {e}"
-            )
+            ) from e
     except k8s.client.ApiException as e:
-        raise Exception(
+        raise RuntimeError(
             f"Failed to read secret '{name}' in namespace '{namespace}' "
             f"from Kubernetes API: {e.reason} ({e.status})"
-        )
+        ) from e
 
 
 def _tls_param_from_key_secret(
@@ -266,11 +267,11 @@ async def inject_tls_file(
         read_func,
         lambda s: all(
             bool(
-                    container.state
-                    and container.state.running
-                    and container.state.running.started_at
-                )
-                for container in s.status.container_statuses
+                container.state
+                and container.state.running
+                and container.state.running.started_at
+            )
+            for container in s.status.container_statuses
         ),
         timeout=120,
         backoff=2,

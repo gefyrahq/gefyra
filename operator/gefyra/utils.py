@@ -108,7 +108,7 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
                 member = tar.getmember(source_path.split("/", 1)[1])
                 tar.makefile(member, destination_path)
                 return True
-        except Exception as e:
+        except (OSError, tarfile.TarError, RuntimeError, ValueError) as e:
             logger.info(e)
             raise
 
@@ -162,7 +162,7 @@ def wait_until_condition(
             if cond_func(resp):
                 return resp
         except k8s.client.ApiException as e:
-            logging.warning(f"Failed read_func: {e.reason} (status {e.status})")
+            logger.warning(f"Failed read_func: {e.reason} (status {e.status})")
 
         time.sleep(backoff)
 
