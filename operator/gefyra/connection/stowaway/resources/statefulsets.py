@@ -1,5 +1,5 @@
 import kubernetes as k8s
-from kubernetes.client import V1Probe, V1HTTPGetAction
+from kubernetes.client import V1HTTPGetAction, V1Probe
 
 from gefyra.configuration import OperatorConfiguration
 

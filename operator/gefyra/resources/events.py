@@ -1,17 +1,22 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 import kubernetes as k8s
 
 
 def _get_now() -> str:
-    return datetime.utcnow().isoformat(timespec="microseconds") + "Z"
+    return (
+        datetime.now(timezone.utc)
+        .isoformat(timespec="microseconds")
+        .replace("+00:00", "Z")
+    )
 
 
 def create_operator_ready_event(namespace: str) -> k8s.client.EventsV1Event:
     now = _get_now()
+    now_ts = datetime.now(timezone.utc).timestamp()
     return k8s.client.EventsV1Event(
         metadata=k8s.client.V1ObjectMeta(
-            name=f"gefyra-operator-startup-{datetime.utcnow().timestamp()}",
+            name=f"gefyra-operator-startup-{now_ts}",
             namespace=namespace,
         ),
         reason="Gefyra-Ready",

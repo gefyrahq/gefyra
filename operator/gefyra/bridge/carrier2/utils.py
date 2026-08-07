@@ -1,9 +1,9 @@
-from typing import List, Optional
 import time
+from collections.abc import Callable
 from ssl import SSLEOFError
 
-from kopf import TemporaryError
 import kubernetes as k8s
+from kopf import TemporaryError
 from websocket import WebSocketConnectionClosedException
 
 
@@ -12,9 +12,9 @@ def stream_exec_retries(
     name: str,
     namespace: str,
     container: str,
-    commands: List[str],
+    commands: list[str],
     retries: int = 30,
-    stop_cb: Optional[callable] = None,
+    stop_cb: Callable | None = None,
 ):
     from kubernetes.client.rest import ApiException
 
@@ -29,7 +29,7 @@ def stream_exec_retries(
             time.sleep(1)
             continue
         except WebSocketConnectionClosedException:
-            raise Exception(
+            raise RuntimeError(
                 f"Failed to exec commands with {retries} retries due to closed connection"
             )
     raise TemporaryError(f"Failed to exec commands with {retries} retries", delay=10)
@@ -40,9 +40,10 @@ def stream_exec(
     name: str,
     namespace: str,
     container: str,
-    commands: List[str],
-    stop_cb: Optional[callable] = None,
+    commands: list[str],
+    stop_cb: Callable | None = None,
 ):
+    from kubernetes.client.rest import ApiException
     from kubernetes.stream import stream
 
     core_v1_api = k8s.client.CoreV1Api()
@@ -90,16 +91,24 @@ def stream_exec(
             logger.debug(f"Last output: {last_ouput}")
 
         resp.close()
-    except Exception as e:
+    except (
+        ApiException,
+        RuntimeError,
+        ValueError,
+        TypeError,
+        SSLEOFError,
+        ConnectionResetError,
+        WebSocketConnectionClosedException,
+    ):
         if resp and resp.is_open():
             resp.close()
-        raise e
+        raise
     return last_ouput
 
 
 def read_carrier2_config(
     logger, name: str, namespace: str, container: str | None = None, retries: int = 30
-) -> List[str]:
+) -> list[str]:
     return read_carrier2_file(
         logger, name, namespace, "/tmp/config.yaml", container, retries
     )
@@ -112,9 +121,9 @@ def read_carrier2_file(
     filename: str,
     container: str | None = None,
     retries: int = 30,
-) -> List[str]:
-    from kubernetes.stream import stream
+) -> list[str]:
     from kubernetes.client.rest import ApiException
+    from kubernetes.stream import stream
 
     core_v1_api = k8s.client.CoreV1Api()
 

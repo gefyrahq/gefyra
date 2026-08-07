@@ -1,24 +1,22 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 import kopf
 import kubernetes as k8s
 from statemachine import State, StateChart
 
-
 from gefyra.base import GefyraStateObject, StateControllerMixin
-from gefyra.configuration import OperatorConfiguration
+from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.bridge_mount.factory import (
-    BridgeMountProviderType,
-    bridge_mount_provider_factory,
-)
 from gefyra.bridge_mount.exceptions import (
     BridgeMountInstallException,
     BridgeMountTargetException,
 )
-from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.bridge_mount.factory import (
+    BridgeMountProviderType,
+    bridge_mount_provider_factory,
+)
+from gefyra.configuration import OperatorConfiguration
 
 
 class GefyraBridgeMountObject(GefyraStateObject):
@@ -93,7 +91,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         model: GefyraBridgeMountObject,
         configuration: OperatorConfiguration,
         logger,
-        initial: Optional[State] = None,  # Added initial state parameter
+        initial: State | None = None,  # Added initial state parameter
     ):
         super().__init__(
             model=model, start_value=initial or GefyraBridgeMount.requested.value
@@ -103,7 +101,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         self.logger = logger
         self.custom_api = k8s.client.CustomObjectsApi()
         self.events_api = k8s.client.EventsV1Api()
-        self._bridge_mount_provider: Optional[AbstractGefyraBridgeMountProvider] = None
+        self._bridge_mount_provider: AbstractGefyraBridgeMountProvider | None = None
 
     @property
     def bridge_mount_provider(self) -> AbstractGefyraBridgeMountProvider:
@@ -126,7 +124,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         return self._bridge_mount_provider
 
     @property
-    def sunset(self) -> Optional[datetime]:
+    def sunset(self) -> datetime | None:
         if sunset := self.data.get("sunset"):
             return datetime.fromisoformat(sunset.strip("Z")).replace(
                 tzinfo=timezone.utc
@@ -151,7 +149,16 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
     async def target_exists(self) -> bool:
         try:
             return await self.bridge_mount_provider.target_exists()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountTargetException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.warning(
                 f"Error checking target existence for '{self.object_name}': {e}"
             )
@@ -188,7 +195,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             return await bmp.prepared() and await bmp.ready()
         except BridgeMountTargetException:
             return False
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             await self.post_event(
                 reason="Not intact",
                 message=f"GefyraBridgeMount '{self.object_name}' not intact: {e}",
@@ -205,7 +220,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         )
         try:
             await self.bridge_mount_provider.uninstall()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.warning(
                 f"Failed to clean up artifacts for missing mount "
                 f"'{self.object_name}': {e}"
@@ -263,7 +286,15 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.install()
-        except (BridgeMountInstallException, BridgeInstallException, Exception) as e:
+        except (
+            BridgeMountInstallException,
+            BridgeInstallException,
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             await self.post_event(
                 reason="Failed to install GefyraBridgeMount",
                 message=str(e),
@@ -292,13 +323,27 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.uninstall()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            BridgeMountInstallException,
+            BridgeInstallException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.error(
                 f"Cannot uninstall GefyraBridgeMount '{self.object_name}' due to: {e}"
             )
         try:
             await self.cleanup_all_bridges()
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             self.logger.error(f"Cannot cleanup remaining GefyraBridges due to: {e}")
 
     async def cleanup_all_bridges(self) -> None:  # Made async

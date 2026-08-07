@@ -81,7 +81,7 @@ class GefyraDockerClient:
     def _get_docker_info_by_name(self, name):
         try:
             return self.docker.info()[name].lower()
-        except Exception:
+        except KeyError:
             return ""
 
     def connect(self, configs: dict):
@@ -131,7 +131,7 @@ class GefyraDockerClient:
                 r = self.container.exec_run("wg")
                 if "transfer:" in r.output.decode("utf-8"):
                     break
-            except Exception:
+            except (RuntimeError, AttributeError, ValueError):
                 pass
             _i -= 1
             sleep(1)
