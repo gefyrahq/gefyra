@@ -19,7 +19,7 @@
     "nuxt": "^4.5.2"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^9.2.0",
+    "@antfu/eslint-config": "^9.3.0",
     "@iconify-json/devicon-plain": "^1.2.57",
     "@iconify-json/material-icon-theme": "^1.2.70",
     "@iconify-json/mdi": "^1.2.3",
