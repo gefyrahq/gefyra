@@ -1,5 +1,6 @@
-from datetime import datetime, timedelta
 import json
+from datetime import datetime, timedelta, timezone
+
 from pytest_kubernetes.providers import AClusterManager
 
 
@@ -8,7 +9,11 @@ def test_a_expire_client(
 ):
     k3d = operator
     k3d.apply("tests/fixtures/a_gefyra_client.yaml")
-    _timeout = f"{datetime.utcnow() + timedelta(seconds=10)}Z"
+    _timeout = (
+        (datetime.now(timezone.utc) + timedelta(seconds=10))
+        .isoformat()
+        .replace("+00:00", "Z")
+    )
     k3d.kubectl(
         [
             "-n",

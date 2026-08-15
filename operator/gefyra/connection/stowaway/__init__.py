@@ -1,42 +1,43 @@
+import asyncio
+import os
 import random
 import re
 import string
 from collections import defaultdict
 from os import path
-import os
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any
+
+import kopf
+import kubernetes as k8s
+
+from gefyra.configuration import OperatorConfiguration
+from gefyra.connection.abstract import AbstractGefyraConnectionProvider
 from gefyra.connection.stowaway.resources.configmaps import (
     create_stowaway_proxyroute_configmap,
 )
 from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
 from gefyra.resources.events import _get_now
-import kopf
-import kubernetes as k8s
-import asyncio
-
 from gefyra.utils import exec_command_pod, get_label_selector, stream_copy_from_pod
-from gefyra.connection.abstract import AbstractGefyraConnectionProvider
-from gefyra.configuration import OperatorConfiguration
 
 from .components import (
     check_config_configmap,
     check_proxyroute_configmap,
     check_serviceaccount,
-    check_stowaway_statefulset,
     check_stowaway_nodeport_service,
+    check_stowaway_statefulset,
+    create_stowaway_configmap,
+    create_stowaway_statefulset,
     handle_config_configmap,
-    handle_serviceaccount,
     handle_proxyroute_configmap,
+    handle_serviceaccount,
+    handle_stowaway_nodeport_service,
     handle_stowaway_proxy_service,
     handle_stowaway_statefulset,
-    handle_stowaway_nodeport_service,
-    create_stowaway_statefulset,
-    create_stowaway_configmap,
     remove_stowaway_configmaps,
     remove_stowaway_services,
     remove_stowaway_statefulset,
 )
-
 
 # Module-level lock to serialize proxyroutes ConfigMap read-modify-write operations.
 # Without this, concurrent bridge activations race on the ConfigMap and overwrite
@@ -86,13 +87,13 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 "stowaway",
                 ["wg"],
             )
-        except Exception as e:
+        except (k8s.client.ApiException, RuntimeError, ValueError) as e:
             self.logger.error(f"Unable to read Wireguard status: {e}")
             return None
         else:
             return output
 
-    async def install(self, config: Optional[Dict[Any, Any]] = None):
+    async def install(self, config: dict[Any, Any] | None = None):
         await handle_serviceaccount(self.logger, self.configuration)
         await handle_proxyroute_configmap(self.logger, self.configuration)
         await handle_config_configmap(self.logger, self.configuration)
@@ -104,7 +105,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             self.logger, self.configuration, sts_stowaway
         )
 
-    async def installed(self, config: Optional[Dict[Any, Any]] = None) -> bool:
+    async def installed(self, config: dict[Any, Any] | None = None) -> bool:
         return all(
             [
                 await check_serviceaccount(self.logger),
@@ -120,7 +121,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             ]
         )
 
-    async def uninstall(self, config: Optional[Dict[Any, Any]] = None):
+    async def uninstall(self, config: dict[Any, Any] | None = None):
         await remove_stowaway_services(self.logger, self.configuration)
         await remove_stowaway_statefulset(
             self.logger,
@@ -132,14 +133,11 @@ class Stowaway(AbstractGefyraConnectionProvider):
         pod = await self._get_stowaway_pod()
         # check if stowaway pod is ready
         if pod and pod.status.container_statuses is not None:
-            if pod.status.container_statuses[0].ready:
-                return True
-            else:
-                return False
+            return bool(pod.status.container_statuses[0].ready)
         else:
             return False
 
-    async def add_peer(self, peer_id: str, parameters: Optional[Dict[Any, Any]] = None):
+    async def add_peer(self, peer_id: str, parameters: dict[Any, Any] | None = None):
         parameters = parameters or {}
         self.logger.info(
             f"Adding peer {peer_id} to stowaway with parameters: {parameters}"
@@ -187,10 +185,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 _config.metadata.name,
                 _config.metadata.namespace,
             )
-            if self._translate_peer_name(peer_id) in configmap.data["PEERS"].split(","):
-                return True
-            else:
-                return False
+            return self._translate_peer_name(peer_id) in configmap.data["PEERS"].split(
+                ","
+            )
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
                 f"Error looking up peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
@@ -208,7 +205,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
         peer_id: str,
         destination_ip: str,
         destination_port: int,
-        parameters: Optional[Dict[Any, Any]] = None,
+        parameters: dict[Any, Any] | None = None,
     ):
         # create service with random port that is not taken
         stowaway_port = await self._edit_proxyroutes_configmap(
@@ -283,7 +280,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 self.logger.error(
                     f"Error removing proxy service {proxy_svc.metadata.name}: Status {e.status} Reason {e.reason} Body {e.body}"
                 )
-                raise e
+                raise
         stowaway_pod = await self._get_stowaway_pod()
         if stowaway_pod is None:
             raise RuntimeError("No Stowaway Pod found for destination removal")
@@ -334,7 +331,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             if configmap.data is None:
                 return False
-            for k, v in configmap.data.items():
+            for v in configmap.data.values():
                 if f"{destination_ip}:{destination_port}" in v:
                     return True
             return False
@@ -345,20 +342,23 @@ class Stowaway(AbstractGefyraConnectionProvider):
             )
             return False
 
-    async def validate(self, gclient: dict, hints: Dict[Any, Any] = {}):
-        if wireguard_parameter := gclient.get("providerParameter"):
-            if subnet := wireguard_parameter.get("subnet"):
-                if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
-                    raise kopf.AdmissionError(
-                        f"The Wireguard subnet '{subnet}' does not validate with regex"
-                        f" '{WIREGUARD_CIDR_PATTERN}'."
-                    )
-                if hints.get(
-                    "added"
-                ) == "providerParameter" and await self._subnet_taken(subnet):
-                    raise kopf.AdmissionError(
-                        f"The Wireguard subnet '{subnet}' is already taken."
-                    )
+    async def validate(self, gclient: dict, hints: dict[Any, Any] | None = None):
+        if hints is None:
+            hints = {}
+        if (wireguard_parameter := gclient.get("providerParameter")) and (
+            subnet := wireguard_parameter.get("subnet")
+        ):
+            if not bool(WIREGUARD_CIDR_PATTERN.match(subnet)):
+                raise kopf.AdmissionError(
+                    f"The Wireguard subnet '{subnet}' does not validate with regex"
+                    f" '{WIREGUARD_CIDR_PATTERN}'."
+                )
+            if hints.get("added") == "providerParameter" and await self._subnet_taken(
+                subnet
+            ):
+                raise kopf.AdmissionError(
+                    f"The Wireguard subnet '{subnet}' is already taken."
+                )
 
     async def _subnet_taken(self, subnet: str) -> bool:
         _config = create_stowaway_configmap()
@@ -394,7 +394,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             await asyncio.sleep(1)
             _i += 1
 
-    async def _get_stowaway_pod(self) -> Optional[k8s.client.V1Pod]:
+    async def _get_stowaway_pod(self) -> k8s.client.V1Pod | None:
         stowaway_pod = await asyncio.to_thread(
             core_v1_api.list_namespaced_pod,
             self.configuration.NAMESPACE,
@@ -418,15 +418,15 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 },
                 namespace=self.configuration.NAMESPACE,
             )
-        except k8s.client.exceptions.ApiException as e:
-            self.logger.exception(e)
+        except k8s.client.exceptions.ApiException:
+            self.logger.exception("Failed to notify stowaway pod")
         await asyncio.sleep(1)
 
     async def _edit_peer_configmap(
         self,
-        add: Optional[str] = None,
-        remove: Optional[str] = None,
-        subnet: Optional[str] = None,
+        add: str | None = None,
+        remove: str | None = None,
+        subnet: str | None = None,
     ) -> None:
         _config = create_stowaway_configmap()
         configmap = await asyncio.to_thread(
@@ -488,8 +488,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
     async def _edit_proxyroutes_configmap(
         self,
         peer_id: str,
-        add: Optional[str] = None,
-        remove: Optional[str] = None,
+        add: str | None = None,
+        remove: str | None = None,
     ) -> int:
         async with _proxyroutes_configmap_lock:
             _config = create_stowaway_proxyroute_configmap()
@@ -569,11 +569,11 @@ class Stowaway(AbstractGefyraConnectionProvider):
         )
 
         # Wireguard config is unfortunately no valid TOML
-        with open(tmpfile_conf, "r") as f:
-            peer_connection_details_raw = f.read()
+        peer_connection_details_raw = await asyncio.to_thread(
+            Path(tmpfile_conf).read_text
+        )
         os.remove(tmpfile_conf)
-        with open(tmpfile_pubkey, "r") as f:
-            peer_connection_pubkey = f.read()
+        peer_connection_pubkey = await asyncio.to_thread(Path(tmpfile_pubkey).read_text)
         os.remove(tmpfile_pubkey)
 
         peer_connection_details = self._read_wireguard_config(
@@ -601,8 +601,8 @@ class Stowaway(AbstractGefyraConnectionProvider):
                     continue
                 key, value = line.split("=", 1)
                 data[f"{_prefix}.{key.strip()}"] = value.strip()
-            except Exception as e:
-                self.logger.exception(e)
+            except ValueError:
+                self.logger.exception("Failed parsing wireguard config line: %s", line)
         return dict(data)
 
 

@@ -1,10 +1,10 @@
 import json
-from unittest import IsolatedAsyncioTestCase, TestCase
-from unittest.mock import AsyncMock, DEFAULT, patch
-
-from kubernetes.client import V1Deployment, V1Probe
-
 import logging
+from unittest import IsolatedAsyncioTestCase, TestCase
+from unittest.mock import DEFAULT, AsyncMock, patch
+
+from gefyra.configuration import OperatorConfiguration
+from kubernetes.client import V1Deployment, V1Probe
 
 from tests.utils import post_event_noop
 
@@ -17,8 +17,6 @@ from ..factories import (
     V1ProbeFactory,
     V1ServiceFactory,
 )
-
-from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger(__name__)
 
@@ -43,14 +41,16 @@ class TestBridgeMountSync(TestCase):
     def test_bridge_mount_deployment_cloning(self):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from kubernetes.client import (
-            V1Deployment as _V1Deployment,
-            V1DeploymentSpec,
-            V1ObjectMeta,
-            V1LabelSelector,
-            V1PodTemplateSpec,
-            V1PodSpec,
             V1Container,
             V1ContainerPort,
+            V1DeploymentSpec,
+            V1LabelSelector,
+            V1ObjectMeta,
+            V1PodSpec,
+            V1PodTemplateSpec,
+        )
+        from kubernetes.client import (
+            V1Deployment as _V1Deployment,
         )
 
         mount = Carrier2BridgeMount(
@@ -332,9 +332,10 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         assert await mount._upstream_set  # Await
 
     async def test_pod_ready_and_healthy(self):  # Made async
+        import datetime
+
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
         from kubernetes.client import V1ContainerState, V1ContainerStateRunning
-        import datetime
 
         mount = Carrier2BridgeMount(
             name="test",
@@ -390,7 +391,9 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         healthy_pod.status.phase = "Running"
         healthy_pod.status.container_statuses[0].ready = True
         healthy_pod.status.container_statuses[0].started = True
-        running_state = V1ContainerStateRunning(started_at=datetime.datetime.now())
+        running_state = V1ContainerStateRunning(
+            started_at=datetime.datetime.now(datetime.timezone.utc)
+        )
         healthy_pod.status.container_statuses[0].state = V1ContainerState(
             running=running_state
         )

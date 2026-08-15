@@ -1,5 +1,5 @@
-import kubernetes as k8s
 import kopf
+import kubernetes as k8s
 from statemachine.exceptions import TransitionNotAllowed
 
 from gefyra.bridge_mount_state import GefyraBridgeMount, GefyraBridgeMountObject
@@ -169,12 +169,11 @@ async def bridge_mount_reconcile(body, logger, **kwargs):
                     else:
                         await bridge_mount.install()
 
-                if bridge_mount.active.is_active:
-                    if not await bridge_mount.is_intact:
-                        logger.warning(
-                            "GefyraBridgeMount is impaired. Transitioning to restoring state."
-                        )
-                        await bridge_mount.send("restore")
+                if bridge_mount.active.is_active and not await bridge_mount.is_intact:
+                    logger.warning(
+                        "GefyraBridgeMount is impaired. Transitioning to restoring state."
+                    )
+                    await bridge_mount.send("restore")
     # this happens when either the transition from x to y is not allowed
     # or when the condition for the transition is not fulfilled.
     except TransitionNotAllowed as e:

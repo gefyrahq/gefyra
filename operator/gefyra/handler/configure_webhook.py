@@ -1,26 +1,24 @@
+import asyncio
 import logging
 from datetime import datetime
 
-import kubernetes as k8s
 import kopf
-import asyncio
+import kubernetes as k8s
 
-from gefyra.clientstate import GefyraClient
-
-from gefyra.configuration import configuration
-from gefyra.connection.factory import (
-    ConnectionProviderType,
-    connection_provider_factory,
+from gefyra.bridge.factory import (
+    BridgeProviderType,
+    bridge_provider_factory,
 )
 from gefyra.bridge_mount.factory import (
     BridgeMountProviderType,
     bridge_mount_provider_factory,
 )
-from gefyra.bridge.factory import (
-    BridgeProviderType,
-    bridge_provider_factory,
+from gefyra.clientstate import GefyraClient
+from gefyra.configuration import configuration
+from gefyra.connection.factory import (
+    ConnectionProviderType,
+    connection_provider_factory,
 )
-
 from gefyra.resources.events import create_operator_webhook_ready_event
 
 logger = logging.getLogger(__name__)
@@ -91,11 +89,10 @@ async def check_validate_provider_parameters(body, diff, logger, operation, **_)
                 "Cannot set 'providerParameter' when "
                 f"state is not {GefyraClient.waiting.value}"
             )
-    if operation == "CREATE":
-        if bool(body.get("providerParameter")):
-            raise kopf.AdmissionError(
-                "Cannot set 'providerParameter' when creating a Gefyra client"
-            )
+    if operation == "CREATE" and bool(body.get("providerParameter")):
+        raise kopf.AdmissionError(
+            "Cannot set 'providerParameter' when creating a Gefyra client"
+        )
     if sunset := body.get("sunset"):
         try:
             datetime.fromisoformat(sunset.strip("Z"))
@@ -179,7 +176,13 @@ async def check_validate_bridge_parameters(
                 None,
                 logger,
             )
-        except Exception as e:
+        except (
+            k8s.client.ApiException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             raise kopf.AdmissionError(
                 f"Cannot create GefyraBridge provider {provider_parameter} due to: {e}"
             )

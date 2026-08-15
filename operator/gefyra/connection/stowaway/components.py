@@ -1,15 +1,16 @@
-from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
-import kubernetes as k8s
 import asyncio
+
+import kubernetes as k8s
 
 from gefyra.configuration import OperatorConfiguration
 from gefyra.connection.stowaway.resources import (
-    create_stowaway_proxyroute_configmap,
     create_stowaway_configmap,
-    create_stowaway_statefulset,
-    create_stowaway_serviceaccount,
     create_stowaway_nodeport_service,
+    create_stowaway_proxyroute_configmap,
+    create_stowaway_serviceaccount,
+    create_stowaway_statefulset,
 )
+from gefyra.connection.stowaway.resources.services import create_stowaway_proxy_service
 
 core_v1_api = k8s.client.CoreV1Api()
 app = k8s.client.AppsV1Api()
@@ -26,7 +27,7 @@ async def handle_serviceaccount(logger, configuration: OperatorConfiguration):
         logger.info("Gefyra Stowaway Serviceaccount created")
     except k8s.client.exceptions.ApiException as e:
         if e.status != 409:
-            raise e
+            raise
 
 
 async def check_serviceaccount(logger):
@@ -43,7 +44,7 @@ async def check_serviceaccount(logger):
             logger.warning("Gefyra Stowaway Serviceaccount does not exist")
             return False
         else:
-            raise e
+            raise
 
 
 async def handle_proxyroute_configmap(
@@ -74,7 +75,7 @@ async def handle_proxyroute_configmap(
             )
             logger.info("Stowaway proxy route configmap patched")
         else:
-            raise e
+            raise
     return configmap_proxyroute
 
 
@@ -92,7 +93,7 @@ async def check_proxyroute_configmap(logger) -> k8s.client.V1ConfigMap:
             logger.warning("Stowaway proxy route configmap does not exist")
             return False
         else:
-            raise e
+            raise
 
 
 async def handle_config_configmap(
@@ -121,7 +122,7 @@ async def handle_config_configmap(
             )
             logger.info("Stowaway config configmap patched")
         else:
-            raise e
+            raise
     return configmap
 
 
@@ -141,7 +142,7 @@ async def check_config_configmap(
             logger.warning("Stowaway config configmap does not exist")
             return False
         else:
-            raise e
+            raise
 
 
 async def handle_stowaway_statefulset(
@@ -171,7 +172,7 @@ async def handle_stowaway_statefulset(
             )
             logger.info("Stowaway deployment patched")
         else:
-            raise e
+            raise
     return stowaway_sts
 
 
@@ -202,7 +203,7 @@ async def check_stowaway_statefulset(
             logger.warning("Stowaway statefulset does not exist")
             return False
         else:
-            raise e
+            raise
 
 
 async def handle_stowaway_nodeport_service(
@@ -235,7 +236,7 @@ async def handle_stowaway_nodeport_service(
             # )
             # logger.info("Stowaway nodeport service patched")
         else:
-            raise e
+            raise
 
 
 async def check_stowaway_nodeport_service(
@@ -255,7 +256,7 @@ async def check_stowaway_nodeport_service(
             logger.warning("Stowaway nodeport service does not exist")
             return False
         else:
-            raise e
+            raise
 
 
 async def remove_stowaway_services(logger, configuration: OperatorConfiguration):
@@ -338,5 +339,5 @@ async def handle_stowaway_proxy_service(
             )
             logger.info(f"Stowaway proxy service for port {port} patched")
         else:
-            raise e
+            raise
     return proxy_service_stowaway
