@@ -23,7 +23,7 @@
     "@iconify-json/devicon-plain": "^1.2.57",
     "@iconify-json/material-icon-theme": "^1.2.70",
     "@iconify-json/mdi": "^1.2.3",
-    "eslint": "^10.8.0",
+    "eslint": "^10.8.1",
     "eslint-plugin-format": "^2.0.1",
     "sass-embedded": "^1.100.0"
   }
