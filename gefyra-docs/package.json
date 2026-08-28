@@ -25,6 +25,6 @@
     "@iconify-json/mdi": "^1.2.3",
     "eslint": "^10.8.1",
     "eslint-plugin-format": "^2.0.1",
-    "sass-embedded": "^1.102.0"
+    "sass-embedded": "^1.103.1"
   }
 }
