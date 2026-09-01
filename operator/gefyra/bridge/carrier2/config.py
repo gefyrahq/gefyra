@@ -1,21 +1,18 @@
 import asyncio
+import logging
 from enum import StrEnum
 from functools import partial
-import logging
-import yaml
-
-from typing import List, Optional
-from pydantic import ConfigDict, Field, BaseModel
 
 import kubernetes as k8s
+import yaml
+from pydantic import BaseModel, ConfigDict, Field
 
+from gefyra.bridge.carrier2.const import RELOAD_CARRIER2_DEBUG, RELOAD_CARRIER2_INFO
 from gefyra.bridge.carrier2.utils import (
     stream_exec_retries,
 )
-from gefyra.utils import wait_until_condition
-from gefyra.bridge.carrier2.const import RELOAD_CARRIER2_DEBUG, RELOAD_CARRIER2_INFO
 from gefyra.bridge.exceptions import BridgeInstallException
-
+from gefyra.utils import wait_until_condition
 
 logger = logging.getLogger(__name__)
 
@@ -76,13 +73,13 @@ class CarrierProbe(BaseModel):
 class CarrierTLS(BaseModel):
     certificate: str = "./tests/fixtures/test_cert.pem"
     key: str = "./tests/fixtures/test_key.pem"
-    sni: Optional[str] = None
+    sni: str | None = None
 
 
 class Carrier2Proxy(BaseModel):
-    port: Optional[int] = None
-    tls: Optional[CarrierTLS] = None
-    clusterUpstream: Optional[list[str]] = None
+    port: int | None = None
+    tls: CarrierTLS | None = None
+    clusterUpstream: list[str] | None = None
     bridges: dict[str, CarrierBridge] = {}
 
 
@@ -95,8 +92,8 @@ class Carrier2Config(BaseModel):
     pid_file: str = "/tmp/carrier2.pid"
     upgrade_sock: str = "/tmp/carrier2.sock"
     upstream_keepalive_pool_size: int = 100
-    probes: Optional[CarrierProbe] = None
-    proxy: List[Carrier2Proxy] = []
+    probes: CarrierProbe | None = None
+    proxy: list[Carrier2Proxy] = []
 
     model_config = ConfigDict(coerce_numbers_to_str=True, use_enum_values=True)
 
@@ -122,14 +119,12 @@ class Carrier2Config(BaseModel):
             wait_until_condition,
             read_func,
             lambda s: all(
-                [
-                    bool(
-                        container.state
-                        and container.state.running
-                        and container.state.running.started_at
-                    )
-                    for container in s.status.container_statuses
-                ]
+                bool(
+                    container.state
+                    and container.state.running
+                    and container.state.running.started_at
+                )
+                for container in s.status.container_statuses
             ),
             timeout=120,
             backoff=2,
@@ -232,7 +227,7 @@ class Carrier2Config(BaseModel):
                             self.proxy[proxy_idx].bridges = {
                                 bridge_name: self._convert_bridge_to_rule(bridge, rport)
                             }
-                except Exception as e:
+                except (IndexError, KeyError, TypeError, ValueError) as e:
                     if current_bridge_add and bridge_name == current_bridge_add:
                         raise BridgeInstallException(
                             f"Could not install GefyraBridge: {e}"
@@ -247,7 +242,7 @@ class Carrier2Config(BaseModel):
             rules=self._get_rules_for_bridge(bridge),
         )
 
-    def _get_rules_for_bridge(self, bridge: dict) -> List[CarrierRule]:
+    def _get_rules_for_bridge(self, bridge: dict) -> list[CarrierRule]:
         rules = []
         for rule in bridge["providerParameter"]["rules"]:
             if "match" in rule:

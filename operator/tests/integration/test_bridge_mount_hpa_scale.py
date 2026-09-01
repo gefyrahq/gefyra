@@ -6,16 +6,16 @@ Without the fix, the mount would loop forever in PREPARING because
 prepared() always sees a replica count mismatch.
 """
 
+import asyncio
 import logging
-from time import sleep
+from pathlib import Path
 from unittest.mock import MagicMock
 
-from pathlib import Path
 import pytest
+from gefyra.configuration import OperatorConfiguration
+from kopf import TemporaryError
 from pytest_kubernetes.providers import AClusterManager
 from statemachine.exceptions import TransitionNotAllowed
-
-from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger()
 logger.addHandler(logging.NullHandler())
@@ -84,8 +84,8 @@ class TestBridgeMountHPAScale:
             # which creates a fresh provider instance on each invocation.
             provider = bm.bridge_mount_provider
             for attr in list(vars(provider)):
-                if attr.startswith("get_pods_workload_cache-") or attr.startswith(
-                    "_get_workload_cache-"
+                if attr.startswith(
+                    ("get_pods_workload_cache-", "_get_workload_cache-")
                 ):
                     delattr(provider, attr)
 
@@ -126,11 +126,11 @@ class TestBridgeMountHPAScale:
                     break
             except TransitionNotAllowed:
                 retries -= 1
-            except Exception:
+            except TemporaryError:
                 print(f"TemporaryError {retries}")
                 retries -= 1
 
-            sleep(3)
+            await asyncio.sleep(3)
 
         assert bm.active.is_active, (
             f"BridgeMount should be ACTIVE but is "

@@ -1,12 +1,11 @@
-from enum import Enum
+import asyncio
 import logging
 import os
-from time import sleep
+from enum import Enum
+
 import pytest
-
-from pytest_kubernetes.providers import AClusterManager
-
 from gefyra.configuration import OperatorConfiguration
+from pytest_kubernetes.providers import AClusterManager
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +104,7 @@ class TestStowaway:
             namespace="gefyra",
             timeout=120,
         )
-        sleep(2)
+        await asyncio.sleep(2)
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,
@@ -176,7 +175,7 @@ class TestStowaway:
             namespace="gefyra",
             timeout=120,
         )
-        sleep(2)
+        await asyncio.sleep(2)
         output = k3d.kubectl(
             ["exec", "gefyra-stowaway-0", "-n", "gefyra", "--", "ls", "/config"],
             as_dict=False,
@@ -286,11 +285,11 @@ class TestStowaway:
         assert len(svc["items"]) == 3
 
     async def test_h_provider_notexists(self, k3d: AClusterManager):
+        import kopf
         from gefyra.connection.factory import (
             ConnectionProviderType,
             connection_provider_factory,
         )
-        import kopf
 
         stowaway = connection_provider_factory.get(
             ConnectionProviderType.STOWAWAY,

@@ -1,20 +1,19 @@
 import logging
 import select
 import tarfile
-from tempfile import TemporaryFile
 import time
-from typing import Any, AsyncIterable, Callable, List
+from collections.abc import AsyncIterable, Callable
+from tempfile import TemporaryFile
+from typing import Any
 
 import kubernetes as k8s
-
-
 from websocket import ABNF
 
 logger = logging.getLogger("gefyra.utils")
 
 
 def get_label_selector(labels: dict[str, str]) -> str:
-    return ",".join(["{0}={1}".format(*label) for label in list(labels.items())])
+    return ",".join(["{}={}".format(*label) for label in list(labels.items())])
 
 
 class WSFileManager:
@@ -98,7 +97,7 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
                     tar_buffer.write(out)
                 elif err:
                     logger.debug(
-                        "Error copying file {0}".format(err.decode("utf-8", "replace"))
+                        "Error copying file {}".format(err.decode("utf-8", "replace"))
                     )
                 if closed:
                     break
@@ -109,9 +108,9 @@ def stream_copy_from_pod(pod_name, namespace, source_path, destination_path):
                 member = tar.getmember(source_path.split("/", 1)[1])
                 tar.makefile(member, destination_path)
                 return True
-        except Exception as e:
+        except (OSError, tarfile.TarError, RuntimeError, ValueError) as e:
             logger.info(e)
-            raise e
+            raise
 
 
 def exec_command_pod(
@@ -119,7 +118,7 @@ def exec_command_pod(
     pod_name: str,
     namespace: str,
     container_name: str,
-    command: List[str],
+    command: list[str],
 ) -> str:
     """
     Exec a command on a Pod and exit
@@ -163,7 +162,7 @@ def wait_until_condition(
             if cond_func(resp):
                 return resp
         except k8s.client.ApiException as e:
-            logging.warning(f"Failed read_func: {e.reason} (status {e.status})")
+            logger.warning(f"Failed read_func: {e.reason} (status {e.status})")
 
         time.sleep(backoff)
 

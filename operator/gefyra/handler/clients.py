@@ -4,10 +4,10 @@ import os
 import click
 import kopf
 import kubernetes as k8s
-
-from gefyra.clientstate import GefyraClientObject, GefyraClient
-from gefyra.configuration import configuration
 from statemachine.exceptions import TransitionNotAllowed
+
+from gefyra.clientstate import GefyraClient, GefyraClientObject
+from gefyra.configuration import configuration
 
 # A simple registry for locks based on resource UID or name
 locks = {}
@@ -94,7 +94,7 @@ try:
     if "priority" in _ctx.params and _ctx.params["priority"] == 666:
         RECONCILIATION_INTERVAL = 2
     else:
-        interval = os.environ.get("GEFYRA_OPERATOR_RECONCILIATION_INTERVAL", 1800)
+        interval = os.environ.get("GEFYRA_OPERATOR_RECONCILIATION_INTERVAL", "1800")
         RECONCILIATION_INTERVAL = int(interval)
         print("interval is set to", RECONCILIATION_INTERVAL)
 except RuntimeError:

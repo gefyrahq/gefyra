@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
-from pytest_kubernetes.providers import AClusterManager
 
+from pytest_kubernetes.providers import AClusterManager
 from tests.utils import post_event_noop
 
 logger = logging.getLogger()
@@ -202,7 +202,7 @@ class TestBridgeMountObject:
         await mount.prepare()
         try:
             await mount.install()
-        except Exception:
+        except RuntimeError:
             pass
 
         new_deployment = gefyra_crd.kubectl(

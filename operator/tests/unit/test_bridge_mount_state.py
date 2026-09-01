@@ -3,9 +3,8 @@ from datetime import datetime, timedelta, timezone
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from statemachine.exceptions import TransitionNotAllowed
-
 from gefyra.configuration import OperatorConfiguration
+from statemachine.exceptions import TransitionNotAllowed
 
 logger = logging.getLogger(__name__)
 
