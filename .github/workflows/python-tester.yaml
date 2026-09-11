@@ -464,7 +464,7 @@ jobs:
           minikube image load /tmp/operator/operator.tar
           minikube image tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.5.4
           minikube image tag ${{ needs.build_stowaway.outputs.tags }} quay.io/gefyra/stowaway:2.5.4
-          minikube image ls -a
+          minikube image ls
       - name: Install dependencies
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
