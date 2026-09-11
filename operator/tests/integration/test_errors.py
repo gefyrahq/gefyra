@@ -1,4 +1,5 @@
 import logging
+
 from pytest_kubernetes.providers import AClusterManager
 
 logger = logging.getLogger()

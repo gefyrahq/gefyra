@@ -1,10 +1,9 @@
 import base64
 from unittest import IsolatedAsyncioTestCase, TestCase
-from unittest.mock import MagicMock, patch, AsyncMock
-
-from kubernetes.client import ApiException
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from gefyra.bridge_mount import utils
+from kubernetes.client import ApiException
 
 
 class TestBridgeMountUtils(TestCase):

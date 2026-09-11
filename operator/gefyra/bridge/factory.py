@@ -1,9 +1,9 @@
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable
 
-from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
 from gefyra.bridge.carrier2 import Carrier2Builder
+from gefyra.configuration import OperatorConfiguration
 
 
 class BridgeProviderType(Enum):

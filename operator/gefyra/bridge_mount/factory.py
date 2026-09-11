@@ -1,9 +1,10 @@
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable
+from typing import Any
 
-from gefyra.configuration import OperatorConfiguration
 from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
 from gefyra.bridge_mount.carrier2mount.builder import Carrier2BridgeMountBuilder
+from gefyra.configuration import OperatorConfiguration
 
 
 class BridgeMountProviderType(Enum):

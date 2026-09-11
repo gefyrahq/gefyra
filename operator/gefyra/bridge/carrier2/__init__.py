@@ -1,18 +1,19 @@
-from typing import Any, Callable, Dict, Optional
-from kopf import TemporaryError
+import asyncio
+from collections.abc import Callable
+from typing import Any
+
 import kopf
 import kubernetes as k8s
-from kubernetes.client import ApiException, V1PodList, V1Pod
-import asyncio
+from kopf import TemporaryError
+from kubernetes.client import ApiException, V1Pod, V1PodList
 
 from gefyra.bridge.abstract import AbstractGefyraBridgeProvider
-from gefyra.configuration import OperatorConfiguration
-
 from gefyra.bridge.carrier2.config import (
     Carrier2Config,
     Carrier2Proxy,
     CarrierProbe,
 )
+from gefyra.bridge.carrier2.utils import read_carrier2_config
 from gefyra.bridge_mount.utils import (
     _get_tls_from_provider_parameters,
     _tls_cert_from_k8s_secret,
@@ -20,8 +21,7 @@ from gefyra.bridge_mount.utils import (
     get_all_probes,
     get_upstreams_for_svc,
 )
-from gefyra.bridge.carrier2.utils import read_carrier2_config
-
+from gefyra.configuration import OperatorConfiguration
 
 app_api = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -72,7 +72,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
 
     provider_type = "carrier2"
 
-    async def install(self, parameters: Optional[Dict[Any, Any]] = None):
+    async def install(self, parameters: dict[Any, Any] | None = None):
         """
         Install this Gefyra bridge provider to the Kubernetes Pod
         """
@@ -99,7 +99,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # self.pods is an async property
         pods = await self.pods
         if not all(
-            [self.pod_ready_and_healthy(pod, self.container) for pod in pods.items]
+            self.pod_ready_and_healthy(pod, self.container) for pod in pods.items
         ):
             raise TemporaryError("Pods are not ready")
         return True
@@ -117,7 +117,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         container_port: int,
         destination_host: str,
         destination_port: int,
-        parameters: Optional[Dict[Any, Any]] = None,
+        parameters: dict[Any, Any] | None = None,
     ):
         # params not needed since carrier just updates based on all objects
         """
@@ -183,7 +183,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 if probes:
                     config.probes = CarrierProbe(
                         httpGet=list(
-                            set(
+                            {
                                 probe.http_get.port
                                 for probe in probes
                                 if probe.http_get.port not in upstream_ports
@@ -191,10 +191,10 @@ class Carrier2(AbstractGefyraBridgeProvider):
                                     not probe.http_get.scheme
                                     or probe.http_get.scheme.lower() == "http"
                                 )
-                            )
+                            }
                         ),
                         httpsGet=list(
-                            set(
+                            {
                                 probe.http_get.port
                                 for probe in probes
                                 if probe.http_get.port not in upstream_ports
@@ -202,7 +202,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                                     probe.http_get.scheme
                                     and probe.http_get.scheme.lower() == "https"
                                 )
-                            )
+                            }
                         ),
                     )
         return config
@@ -281,8 +281,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                     )
             except ApiException as e:
                 if e.status == 404:
-                    # TODO better exception typing here
-                    raise Exception(NOT_FOUND_MSG)
+                    raise RuntimeError(NOT_FOUND_MSG)
                 raise RuntimeError(API_EXCEPTION_MSG.format(e))
 
             v1_label_selector = workload.spec.selector.match_labels
@@ -292,8 +291,9 @@ class Carrier2(AbstractGefyraBridgeProvider):
             )
 
             if not label_selector:
-                # TODO better exception typing here
-                raise Exception(f"No label selector set for {workload_type} - {name}.")
+                raise RuntimeError(
+                    f"No label selector set for {workload_type} - {name}."
+                )
             pods = await asyncio.to_thread(
                 core_v1_api.list_namespaced_pod,
                 namespace=namespace,
@@ -325,10 +325,10 @@ class Carrier2(AbstractGefyraBridgeProvider):
             self.namespace = bridge_mount["targetNamespace"]
             self.container = bridge_mount["targetContainer"]
             self.target = bridge_mount["target"]
-            setattr(self, "_get_bridge_mount_resource_cache", bridge_mount)
-        return getattr(self, "_get_bridge_mount_resource_cache")
+            self._get_bridge_mount_resource_cache = bridge_mount
+        return self._get_bridge_mount_resource_cache
 
-    async def _get_bridge_mount_provider_parameter(self) -> Optional[dict]:
+    async def _get_bridge_mount_provider_parameter(self) -> dict | None:
         """
         Get the bridge mount provider parameter
         """
@@ -423,7 +423,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         try:
             pods = await self.pods
             pod: V1Pod = pods.items[0]
-        except Exception as e:
+        except (ApiException, IndexError, KeyError, TypeError, RuntimeError) as e:
             # if the deployment, pod, etc. does not exist anymore
             self.logger.error(e)
             return False
@@ -435,7 +435,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         )
         config_str = "\n".join(config_str_list)
         pod_config = Carrier2Config.from_string(config_str)
-        if not any([bool(proxy.bridges) for proxy in pod_config.proxy]):
+        if not any(bool(proxy.bridges) for proxy in pod_config.proxy):
             return False
 
         proxy = next(
@@ -445,7 +445,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
         if proxy is None:
             return False
 
-        if name and name not in proxy.bridges.keys():
+        if name and name not in proxy.bridges:
             return False
 
         bridge_exists = any(
@@ -462,9 +462,8 @@ class Carrier2(AbstractGefyraBridgeProvider):
         # check if labels set
         if (
             "labels" not in bridge_request["metadata"]
-            or "gefyra.dev/bridge-mount"
-            not in bridge_request["metadata"]["labels"].keys()
-            or "gefyra.dev/client" not in bridge_request["metadata"]["labels"].keys()
+            or "gefyra.dev/bridge-mount" not in bridge_request["metadata"]["labels"]
+            or "gefyra.dev/client" not in bridge_request["metadata"]["labels"]
         ):
             raise kopf.AdmissionError(
                 "The requested GefyraBridge does not set the labels 'gefyra.dev/bridge-mount' and 'gefyra.dev/client'"
@@ -479,7 +478,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 "gefyrabridgemounts",
                 bridge_request["target"],
             )
-        except Exception:
+        except (ApiException, KeyError, TypeError):
             raise kopf.AdmissionError(
                 "The target GefyraBridgeMounts does not exist or cannot be read"
             ) from None
@@ -497,7 +496,7 @@ class Carrier2(AbstractGefyraBridgeProvider):
                 plural="gefyrabridges",
                 namespace=self.configuration.NAMESPACE,
             )
-        except Exception as e:
+        except (ApiException, RuntimeError, ValueError) as e:
             raise kopf.AdmissionError(f"Cannot read GefyraBridges: {e}")
 
         for existing_bridge in bridges.get("items"):

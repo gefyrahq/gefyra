@@ -1,18 +1,16 @@
-import os
 import asyncio
+import os
 import signal
 
 import kopf
 import kubernetes as k8s
 
-from gefyra.connection.stowaway import Stowaway
 from gefyra.configuration import configuration
-
-from gefyra.connection.stowaway.utils import parse_wg_output
+from gefyra.connection.stowaway import Stowaway
 from gefyra.connection.stowaway.resources.configmaps import (
     create_stowaway_proxyroute_configmap,
 )
-
+from gefyra.connection.stowaway.utils import parse_wg_output
 
 WIREGUARD_RECONCILIATION = 60
 custom_object_api = k8s.client.CustomObjectsApi()
@@ -29,7 +27,7 @@ async def periodic(interval_sec, coro_name, *args, **kwargs):
 
 
 async def read_wireguard_status(logger):
-    from gefyra.clientstate import GefyraClientObject, GefyraClient
+    from gefyra.clientstate import GefyraClient, GefyraClientObject
 
     try:
         raw_gefyra_clients = custom_object_api.list_namespaced_custom_object(
@@ -38,7 +36,7 @@ async def read_wireguard_status(logger):
             plural="gefyraclients",
             namespace=configuration.NAMESPACE,
         )
-    except Exception as e:
+    except k8s.client.ApiException as e:
         logger.error(f"Could not read clients from Stowaway watcher: {e}")
         return
     else:
@@ -64,7 +62,7 @@ async def read_wireguard_status(logger):
         return
     try:
         wg_data = parse_wg_output(wg_status)
-    except Exception as e:
+    except (ValueError, KeyError, TypeError) as e:
         logger.error(f"Could not parse Wireguard status: {e}")
         return
     else:
@@ -118,7 +116,13 @@ async def read_wireguard_status(logger):
                             #     reason="GefyraClient connection",
                             #     message="Updated Wireguard status (see .status.wireguard field)",
                             # )
-            except Exception as e:
+            except (
+                k8s.client.ApiException,
+                RuntimeError,
+                ValueError,
+                KeyError,
+                TypeError,
+            ) as e:
                 logger.error(
                     f"Error processing Wireguard status for GefyraClient '{body['metadata']['name']}': {e}"
                 )
@@ -145,7 +149,7 @@ async def reconcile_proxyroutes(logger):
             plural="gefyrabridges",
             namespace=configuration.NAMESPACE,
         )
-    except Exception as e:
+    except k8s.client.ApiException as e:
         logger.error(f"Could not list all GefyraBridges: {e}")
         return
     else:
@@ -154,7 +158,7 @@ async def reconcile_proxyroutes(logger):
         if len(raw_gefyra_bridges["items"]) == 0:
             # if we find proxy routes, but there are no bridges -> remove debris
             if routes and len(routes) != 0:
-                for _, value in routes.items():
+                for value in routes.values():
                     stowaway_port = value.split(",")[1]
                     try:
                         await asyncio.to_thread(
@@ -162,7 +166,12 @@ async def reconcile_proxyroutes(logger):
                             name=f"gefyra-stowaway-proxy-{stowaway_port}",
                             namespace=configuration.NAMESPACE,
                         )
-                    except Exception:
+                    except k8s.client.ApiException as e:
+                        logger.debug(
+                            "Could not remove stale proxy service %s: %s",
+                            stowaway_port,
+                            e,
+                        )
                         continue
                 configmap.data = {}
                 await asyncio.to_thread(
@@ -190,10 +199,7 @@ async def reconcile_proxyroutes(logger):
                         bridge["client"] == peer
                         and bridge["destinationIP"] == destination_ip
                         and str(stowaway_port)
-                        in map(
-                            lambda x: x.split(":")[1],
-                            bridge["clusterEndpoint"].values(),
-                        )
+                        in (x.split(":")[1] for x in bridge["clusterEndpoint"].values())
                     ):
                         # this bridge corresponds to the route
                         final_routes[key] = value
@@ -225,7 +231,8 @@ async def reconcile_proxyroutes(logger):
                             name=svc,
                             namespace=configuration.NAMESPACE,
                         )
-                    except Exception:
+                    except k8s.client.ApiException as e:
+                        logger.debug("Could not remove service %s: %s", svc, e)
                         continue
                 stowaway_pod = await stowaway._get_stowaway_pod()
                 if stowaway_pod is None:

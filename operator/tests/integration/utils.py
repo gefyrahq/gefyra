@@ -1,7 +1,4 @@
-from typing import List
-
-
-def read_carrier2_config(core_api, name: str, namespace: str) -> List[str]:
+def read_carrier2_config(core_api, name: str, namespace: str) -> list[str]:
     from kubernetes.stream import stream
 
     exec_command = ["busybox", "sh"]

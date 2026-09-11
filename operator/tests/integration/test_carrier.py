@@ -1,7 +1,7 @@
 import logging
 import os
-import pytest
 
+import pytest
 from gefyra.configuration import OperatorConfiguration
 
 logger = logging.getLogger(__name__)

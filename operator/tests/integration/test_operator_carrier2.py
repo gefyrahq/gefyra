@@ -1,5 +1,4 @@
 from pytest_kubernetes.providers import AClusterManager
-
 from utils import read_carrier2_config
 
 
@@ -55,7 +54,7 @@ def test_a_create_bridge_mount(operator: AClusterManager):
     )
     config = config[0].replace("\n ", "").replace(" ", "")
     assert (
-        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"  # noqa: E501
+        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"
         in config
     )
     # assert "./tests/fixtures/test_cert.pem" in config
@@ -84,10 +83,10 @@ def test_b_second_bridge(operator: AClusterManager):
     config = config[0].replace("\n ", "").replace(" ", "")
     print(config)
     assert (
-        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"  # noqa: E501
+        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"
         in config
     )
-    assert "name:x-gefyravalue:peer2" in config  # noqa: E501
+    assert "name:x-gefyravalue:peer2" in config
 
 
 def test_delete_bridge(operator: AClusterManager):
@@ -114,7 +113,7 @@ def test_delete_bridge(operator: AClusterManager):
     config = config[0].replace("\n ", "").replace(" ", "")
     print(config)
     assert (
-        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"  # noqa: E501
+        "bridge-a:endpoint:gefyra-stowaway-proxy-10000.gefyra.svc.cluster.local:10000rules:-match:-matchHeader:name:x-gefyravalue:peer1"
         not in config
     )
-    assert "name:x-gefyravalue:peer2" in config  # noqa: E501
+    assert "name:x-gefyravalue:peer2" in config

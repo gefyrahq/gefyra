@@ -1,20 +1,20 @@
+import asyncio
 import collections
 import threading
 
 import kopf
 import kubernetes as k8s
-import asyncio
 
-from gefyra.resources.crds import (
-    create_gefyraclient_definition,
-    create_gefyrabridge_definition,
-    create_bridge_mount_definition,
-)
-from gefyra.resources.events import create_operator_ready_event
 from gefyra.connection.factory import (
     ConnectionProviderType,
     connection_provider_factory,
 )
+from gefyra.resources.crds import (
+    create_bridge_mount_definition,
+    create_gefyrabridge_definition,
+    create_gefyraclient_definition,
+)
+from gefyra.resources.events import create_operator_ready_event
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -36,7 +36,7 @@ async def handle_crds(logger) -> None:
                 "Please remove it manually if you encounter issues."
             )
         else:
-            raise e
+            raise
     gclients = create_gefyraclient_definition()
     try:
         await asyncio.to_thread(
@@ -50,7 +50,7 @@ async def handle_crds(logger) -> None:
                 "be outdated. Please remove it manually if you encounter issues."
             )
         else:
-            raise e
+            raise
 
     gbridgemounts = create_bridge_mount_definition()
     try:
@@ -65,7 +65,7 @@ async def handle_crds(logger) -> None:
                 "be outdated. Please remove it manually if you encounter issues."
             )
         else:
-            raise e
+            raise
 
 
 @kopf.on.startup()

@@ -1,6 +1,8 @@
 import json
 import logging
+
 from pytest_kubernetes.providers import AClusterManager
+
 from tests.utils import GefyraDockerClient
 
 logger = logging.getLogger(__name__)
@@ -13,7 +15,7 @@ def test_a_bridge(
     k3d = operator
     try:
         k3d.kubectl(["create", "namespace", "demo"])
-    except Exception:
+    except RuntimeError:
         pass
     k3d.wait("ns/demo", "jsonpath='{.status.phase}'=Active")
     k3d.apply("tests/fixtures/demo_pods.yaml")

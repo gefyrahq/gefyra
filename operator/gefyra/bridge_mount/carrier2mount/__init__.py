@@ -1,53 +1,54 @@
-from copy import deepcopy
+import asyncio  # Added asyncio import
 import datetime
-from functools import partial
 import json
-from typing import Callable, List, Tuple, Union
 import uuid
-from kopf import TemporaryError
+from collections.abc import Callable
+from copy import deepcopy
+from functools import partial
+from typing import Union
+
 import kopf
 import kubernetes as k8s
+from kopf import TemporaryError
 from kubernetes.client import (
+    ApiException,
+    AutoscalingV2Api,
     V1Deployment,
     V1HorizontalPodAutoscaler,
     V1HorizontalPodAutoscalerList,
-    V1StatefulSet,
-    V1PodList,
-    V1Pod,
-    ApiException,
-    V1Service,
     V1ObjectMeta,
-    V1ServiceSpec,
+    V1Pod,
+    V1PodList,
     V1Probe,
-    AutoscalingV2Api,
+    V1Service,
+    V1ServiceSpec,
+    V1StatefulSet,
 )
-import asyncio  # Added asyncio import
-
-from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
-from gefyra.configuration import OperatorConfiguration
 
 from gefyra.bridge.carrier2.config import Carrier2Config, Carrier2Proxy, CarrierProbe
-from gefyra.bridge_mount.utils import (
-    _get_tls_from_provider_parameters,
-    inject_tls_file,
-    _tls_cert_from_k8s_secret,
-    _tls_key_from_k8s_secret,
-    generate_duplicate_workload_name,
-    generate_duplicate_svc_name,
-    generate_k8s_conform_name,
-    get_all_probes,
-    get_ports_for_workload,
-    get_upstreams_for_svc,
-    update_tls_file,
-)
-from gefyra.utils import async_all, async_any, wait_until_condition
 from gefyra.bridge.carrier2.utils import read_carrier2_config
 from gefyra.bridge.exceptions import BridgeInstallException
+from gefyra.bridge_mount.abstract import AbstractGefyraBridgeMountProvider
 from gefyra.bridge_mount.exceptions import (
     BridgeMountException,
     BridgeMountInstallException,
     BridgeMountTargetException,
 )
+from gefyra.bridge_mount.utils import (
+    _get_tls_from_provider_parameters,
+    _tls_cert_from_k8s_secret,
+    _tls_key_from_k8s_secret,
+    generate_duplicate_svc_name,
+    generate_duplicate_workload_name,
+    generate_k8s_conform_name,
+    get_all_probes,
+    get_ports_for_workload,
+    get_upstreams_for_svc,
+    inject_tls_file,
+    update_tls_file,
+)
+from gefyra.configuration import OperatorConfiguration
+from gefyra.utils import async_all, async_any, wait_until_condition
 
 app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
@@ -82,10 +83,8 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
     def _get_duplication_labels(self, labels: dict[str, str]) -> dict[str, str]:
         duplication_labels = {}
-        for key in labels:
-            duplication_labels[key] = generate_k8s_conform_name(
-                f"{labels[key]}", "-gefyra"
-            )
+        for key, value in labels.items():
+            duplication_labels[key] = generate_k8s_conform_name(f"{value}", "-gefyra")
         return duplication_labels
 
     def _clean_annotations(self, annotations: dict[str, str]) -> dict[str, str]:
@@ -174,7 +173,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
     def _split_target_type_name(
         self, target
-    ) -> Tuple[str, Union["V1Deployment", "V1StatefulSet", "V1Pod"]]:
+    ) -> tuple[str, Union["V1Deployment", "V1StatefulSet", "V1Pod"]]:
         parts = target.split("/", 1)
         if len(parts) == 2:
             kind, name = parts[0].lower(), parts[1]
@@ -391,12 +390,21 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
     async def prepare(self):
         try:
             await self._duplicate_workload()
-        except Exception as e:
+        except (
+            ApiException,
+            BridgeInstallException,
+            BridgeMountException,
+            RuntimeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+        ) as e:
             raise BridgeMountInstallException(e)
 
     @property
     async def _gefyra_pods(self) -> V1PodList:
-        _, type_ = self._split_target_type_name(self.target)
+        _, _ = self._split_target_type_name(self.target)
         return await self.get_pods_workload(
             name=f"{self._gefyra_workload_type}/{self._gefyra_workload_name}",
             namespace=self.namespace,
@@ -430,8 +438,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         )
 
         if not label_selector:
-            # TODO better exception typing here
-            raise Exception(f"No label selector set for {self.target}.")
+            raise RuntimeError(f"No label selector set for {self.target}.")
         pods = await asyncio.to_thread(
             core_v1_api.list_namespaced_pod,
             namespace=namespace,
@@ -439,7 +446,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         )
         return pods
 
-    async def _default_upstream(self, rport: int) -> List[str]:
+    async def _default_upstream(self, rport: int) -> list[str]:
         name, _ = self._split_target_type_name(self.target)
         svc_name = generate_duplicate_svc_name(
             workload_name=name, container_name=self.container
@@ -450,7 +457,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         return get_upstreams_for_svc(svc=svc, rport=rport)
 
     async def _set_carrier_upstream(
-        self, upstream_ports: list[int], probes: List[V1Probe]
+        self, upstream_ports: list[int], probes: list[V1Probe]
     ) -> Carrier2Config:
         carrier_config = Carrier2Config()
 
@@ -466,7 +473,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         if probes:
             carrier_config.probes = CarrierProbe(
                 httpGet=list(
-                    set(
+                    {
                         probe.http_get.port
                         for probe in probes
                         if probe.http_get.port not in upstream_ports
@@ -474,10 +481,10 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             not probe.http_get.scheme
                             or probe.http_get.scheme.lower() == "http"
                         )
-                    )
+                    }
                 ),
                 httpsGet=list(
-                    set(
+                    {
                         probe.http_get.port
                         for probe in probes
                         if probe.http_get.port not in upstream_ports
@@ -485,7 +492,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                             probe.http_get.scheme
                             and probe.http_get.scheme.lower() == "https"
                         )
-                    )
+                    }
                 ),
             )
         return carrier_config
@@ -514,11 +521,11 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         pods = await self._original_pods
         if (
             len(
-                set(
+                {
                     pod.metadata.owner_references[0].name
                     for pod in pods.items
                     if pod.metadata.owner_references
-                )
+                }
             )
             > 1
         ):
@@ -782,7 +789,9 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         workload = await self._get_workload(self.target, self.namespace)
         if hasattr(workload.spec, "template") and workload.spec.template is not None:
             workload.spec.template.metadata.annotations = {
-                "kubectl.kubernetes.io/restartedAt": datetime.datetime.now().isoformat()
+                "kubectl.kubernetes.io/restartedAt": datetime.datetime.now(
+                    datetime.timezone.utc
+                ).isoformat()
             }
             new_workload = await asyncio.to_thread(
                 self._patch_namespaced_(type_),
@@ -858,7 +867,14 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 plural="gefyrabridgemounts",
                 namespace=self.configuration.NAMESPACE,
             )
-        except Exception as e:
+        except (
+            ApiException,
+            BridgeMountTargetException,
+            RuntimeError,
+            ValueError,
+            KeyError,
+            TypeError,
+        ) as e:
             raise kopf.AdmissionError(f"Cannot read GefyraBridgeMounts: {e}")
         for bridge_mount in bridge_mounts.get("items"):
             if (
@@ -885,7 +901,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 self.logger.error(
                     f"Exception when deleting service {gefyra_svc_name}: {e}"
                 )
-                raise e
+                raise
 
     def gefyra_svc_name(self):
         name, _ = self._split_target_type_name(self.target)
@@ -917,7 +933,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                 self.logger.error(
                     f"Exception when deleting workload {type_.__name__}/{gefyra_deployment_name}: {e}"
                 )
-                raise e
+                raise
 
     async def _store_pod_original_config(
         self, container: k8s.client.V1Container, pod_name: str
@@ -962,7 +978,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
                     ),
                 )
             else:
-                raise e
+                raise
 
     async def _patch_pod_with_original_config(self, pod_name: str) -> V1Pod:
         pod = await asyncio.to_thread(
@@ -1015,7 +1031,16 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         await self.uninstall_service()
         try:
             await self.restore_original_workload()
-        except Exception as e:
+        except (
+            ApiException,
+            BridgeInstallException,
+            BridgeMountException,
+            RuntimeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            IndexError,
+        ) as e:
             self.logger.error(
                 f"Could not restore original workload for {self.name} due to: {e}"
             )

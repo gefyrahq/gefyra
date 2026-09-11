@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class AbstractGefyraBridgeProvider(ABC):
     @abstractmethod
-    async def install(self, parameters: Optional[Dict[Any, Any]] = None):
+    async def install(self, parameters: dict[Any, Any] | None = None):
         """
         Install this Gefyra bridge provider to the Kubernetes Pod
         """
@@ -37,7 +37,7 @@ class AbstractGefyraBridgeProvider(ABC):
         container_port: int,
         destination_host: str,
         destination_port: int,
-        parameters: Optional[Dict[Any, Any]] = None,
+        parameters: dict[Any, Any] | None = None,
     ):
         """
         Add a new proxy_route to the bridge provider

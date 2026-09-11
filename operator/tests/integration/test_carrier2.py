@@ -1,13 +1,12 @@
+import asyncio
 import logging
 from pathlib import Path
-from time import sleep
-from pytest_kubernetes.providers import AClusterManager
+
 import requests
+from pytest_kubernetes.providers import AClusterManager
 from requests.adapters import HTTPAdapter, Retry
-
-from utils import read_carrier2_config
 from tests.utils import post_event_noop
-
+from utils import read_carrier2_config
 
 logger = logging.getLogger()
 
@@ -99,7 +98,7 @@ class TestCarrier2:
             except AssertionError:
                 print("Retrying to get the expected response from the service")
                 content_retries -= 1
-                sleep(1)
+                await asyncio.sleep(1)
         raise AssertionError(
             f"Could not get the expected response from the service. Got: {resp.text}"
         )

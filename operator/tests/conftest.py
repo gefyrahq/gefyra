@@ -2,29 +2,35 @@ import asyncio
 import logging
 import os
 import platform
+import subprocess
 import sys
 from pathlib import Path
-import subprocess
 from time import sleep
+
 import pytest
-from pytest_kubernetes.providers import AClusterManager
 from pytest_kubernetes.options import ClusterOptions
+from pytest_kubernetes.providers import AClusterManager
 
 from tests.utils import GefyraDockerClient
 
 CARRIER_IN_CACHE = os.environ.get("CARRIER_IN_CACHE", "false").lower() == "true"
 OPERATOR_IN_CACHE = os.environ.get("OPERATOR_IN_CACHE", "false").lower() == "true"
 STOWAWAY_IN_CACHE = os.environ.get("STOWAWAY_IN_CACHE", "false").lower() == "true"
+logger = logging.getLogger(__name__)
+
+
+class K3dClusterDidNotExitError(RuntimeError):
+    pass
+
+
+class GefyraReadyEventNotFoundError(RuntimeError):
+    pass
 
 
 @pytest.fixture(autouse=True, scope="module")
 def reload_kubernetes():
     for key in list(sys.modules.keys()):
-        if (
-            key.startswith("kubernetes")
-            or key.startswith("k8s")
-            or key.startswith("gefyra")
-        ):
+        if key.startswith(("kubernetes", "k8s", "gefyra")):
             del sys.modules[key]
 
 
@@ -72,7 +78,7 @@ def k3d(k8s_manager):
             timeout += 1
             sleep(1)
         if not exited:
-            raise Exception("K3d cluster did not exit")
+            raise K3dClusterDidNotExitError("K3d cluster did not exit")
 
 
 @pytest.fixture(scope="module")
@@ -114,19 +120,19 @@ def operator(k3d, stowaway_image, carrier2_image):
             for event in events["items"]:
                 if event["reason"] == "Gefyra-Ready":
                     not_found = False
-    except Exception:
+    except (RuntimeError, ValueError, KeyError, TypeError):
         operator.timeout = 10
         try:
             operator.__exit__(None, None, None)
-        except:  # noqa: E722
-            pass
+        except (RuntimeError, AttributeError, ValueError) as e:
+            logger.debug("Error while exiting operator runner: %s", e)
     if not_found:
         operator.timeout = 10
         try:
             operator.__exit__(None, None, None)
-        except:  # noqa: E722
-            pass
-        raise Exception("Gefyra-Ready event not found")
+        except (RuntimeError, AttributeError, ValueError) as e:
+            logger.debug("Error while exiting operator runner: %s", e)
+        raise GefyraReadyEventNotFoundError("Gefyra-Ready event not found")
 
     yield k3d
     purge_gefyra_objects(k3d)
@@ -136,8 +142,8 @@ def operator(k3d, stowaway_image, carrier2_image):
     operator.timeout = 10
     try:
         operator.__exit__(None, None, None)
-    except:  # noqa: E722
-        pass
+    except (RuntimeError, AttributeError, ValueError) as e:
+        logger.debug("Error while exiting operator runner: %s", e)
 
 
 @pytest.fixture(scope="session")
@@ -151,6 +157,7 @@ def stowaway_image(request):
                 f" {(Path(__file__).parent / Path('../../stowaway/')).resolve()}"
             ),
             shell=True,
+            check=False,
         )
     else:
         print("Skipping stowaway image build since STOWAWAY_IN_CACHE is set to true")
@@ -169,6 +176,7 @@ def operator_image(request):
                 f" {(Path(__file__).parent / Path('../')).resolve()}"
             ),
             shell=True,
+            check=False,
         )
     else:
         print("Skipping operator image build since OPERATOR_IN_CACHE is set to true")
@@ -187,6 +195,7 @@ def carrier2_image(request):
                 f" {(Path(__file__).parent / Path('../../carrier2/')).resolve()}"
             ),
             shell=True,
+            check=False,
         )
     else:
         print("Skipping carrier2 image build since CARRIER_IN_CACHE is set to true")
@@ -213,6 +222,7 @@ def demo_backend_image():
     subprocess.run(
         f"docker pull {name}",
         shell=True,
+        check=False,
     )
     yield name
 
@@ -223,6 +233,7 @@ def demo_frontend_image():
     subprocess.run(
         f"docker pull {name}",
         shell=True,
+        check=False,
     )
     yield name
 
@@ -246,6 +257,7 @@ def cargo_image(request):
             f" {(Path(__file__).parent / Path('../../cargo/')).resolve()}"
         ),
         shell=True,
+        check=False,
     )
     # request.addfinalizer(lambda: subprocess.run(f"docker rmi {name}", shell=True))
     return name
@@ -257,8 +269,8 @@ def gclient_a(cargo_image):
     yield c
     try:
         c.delete()
-    except Exception:
-        pass
+    except (RuntimeError, AttributeError, ValueError) as e:
+        logger.debug("Failed deleting gclient-a: %s", e)
 
 
 @pytest.fixture(scope="session")
@@ -267,8 +279,8 @@ def gclient_b():
     yield c
     try:
         c.delete()
-    except Exception:
-        pass
+    except (RuntimeError, AttributeError, ValueError) as e:
+        logger.debug("Failed deleting gclient-b: %s", e)
 
 
 def purge_gefyra_objects(k8s):
