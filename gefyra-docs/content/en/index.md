@@ -58,7 +58,7 @@ A non-invasive, open-source approach engineered for secure enterprise environmen
 #features
   :::u-page-feature
   ---
-  icon: i-gefyra-deadline
+  icon: i-lucide-zap
   ---
   #title
   Supercharge Development Speed
@@ -69,7 +69,7 @@ A non-invasive, open-source approach engineered for secure enterprise environmen
 
   :::u-page-feature
   ---
-  icon: i-gefyra-sweat
+  icon: i-lucide-container
   ---
   #title
   Native Podman & Docker Support
@@ -80,18 +80,18 @@ A non-invasive, open-source approach engineered for secure enterprise environmen
 
   :::u-page-feature
   ---
-  icon: i-gefyra-team
+  icon: i-lucide-users
   ---
   #title
-  User-Specific Bridges
+  Shared Staging Clusters at Enterprise Scale
 
   #description
-  Isolated Multi-User Operations. The completely rewritten cluster operator architecture supports dedicated, user-specific network intercepts. **Multiple developers can safely test and debug inside the exact same shared cluster simultaneously** without network conflicts or disturbing each other.
+  User Specific Bridges. Gefyra’s operator architecture isolates network bridges per individual developer. No matter how large your engineering team is or grows, **every single developer can safely test and debug inside the exact same shared staging cluster simultaneously** — each working securely within their own assigned namespace, with zero traffic collisions.
   :::
 
   :::u-page-feature
   ---
-  icon: i-gefyra-play-button
+  icon: i-lucide-shield-check
   ---
   #title
   Secure Namespace & RBAC Isolation
@@ -102,7 +102,7 @@ A non-invasive, open-source approach engineered for secure enterprise environmen
 
   :::u-page-feature
   ---
-  icon: i-gefyra-link
+  icon: i-lucide-bug
   ---
   #title
   Fight Environment Bugs
@@ -113,7 +113,7 @@ A non-invasive, open-source approach engineered for secure enterprise environmen
 
   :::u-page-feature
   ---
-  icon: i-gefyra-budget
+  icon: i-lucide-laptop
   ---
   #title
   Flexible Workflows

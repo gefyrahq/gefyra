@@ -1,68 +1,136 @@
 <script setup lang="ts">
+interface UseCase {
+  title: string
+  subHeader: string
+  text: string
+  managerValue: string
+  developerValue: string
+  icon: string
+  image?: string
+}
 
+const useCases: UseCase[] = [
+  {
+    title: 'Enterprise-Compliant Local Development (Podman Native)',
+    subHeader: 'No Root. No Docker Desktop Fees. Zero Security Compromises.',
+    text: 'Gefyra integrates seamlessly with native Podman and daemonless container environments. Developers bridge their local code directly into Kubernetes without requiring root privileges or violating strict corporate IT security policies.',
+    managerValue: 'Full alignment with Zero-Trust and RBAC policies; eliminates third-party container licensing friction.',
+    developerValue: 'Native Linux and Podman support without clunky VM workarounds or permission headaches.',
+    icon: 'i-lucide-shield-check',
+  },
+  {
+    title: 'Parallel Testing in Shared Enterprise Clusters',
+    subHeader: 'Stop Burning Cloud Budget on Single-User Staging Environments.',
+    text: 'Scale your engineering team on a single, powerful shared Kubernetes cluster. Powered by Gefyra’s rewritten operator architecture, User-Specific Bridges isolate traffic per namespace. No matter how large your team is or grows, every single developer can test simultaneously without traffic collisions.',
+    managerValue: 'Cuts cloud staging infrastructure costs by up to 70% while supporting unlimited team scaling.',
+    developerValue: 'Isolated sandbox testing inside real, high-performance shared clusters with zero risk of interfering with teammates.',
+    icon: 'i-lucide-users',
+  },
+  {
+    title: 'Live Remote Debugging with Real Cluster Data',
+    subHeader: 'Set Breakpoints in Local Code While Intercepting Live Cluster Traffic.',
+    text: 'Stop wasting hours building brittle local mocks or docker-compose setups that inevitably drift from production. Gefyra routes live traffic from your target Kubernetes cluster straight into your familiar local IDE (VS Code, IntelliJ, PyCharm).',
+    managerValue: 'Drastically reduces "works on my machine" bugs leaking into staging or production.',
+    developerValue: 'Step-through debugging against real cloud databases, microservices, and live environment states.',
+    icon: 'i-lucide-bug',
+  },
+  {
+    title: 'Instant Feedback Loops (Save & See)',
+    subHeader: 'Eliminate the 15-Minute CI/CD Build-and-Push Penalty.',
+    text: 'Gefyra overlays containers in Kubernetes with your local code in real time. Validate frontend updates, API payloads, or core business logic instantly inside the target cluster context—without building or pushing a single Docker image.',
+    managerValue: 'Maximizes engineering velocity, developer throughput, and time-to-market.',
+    developerValue: 'Immediate feedback on every code change; zero context switching while waiting for pipelines.',
+    icon: 'i-lucide-zap',
+  },
+]
 </script>
 
 <template>
   <UPageSection class="border-t">
     <template #title>
-      Gefyra Usecases
+      Gefyra Use Cases
     </template>
 
-    <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-      <div class="md:max-w-1/2">
-        <ProseH2>
-          Kubernetes as Development Platform
-        </ProseH2>
+    <template #description>
+      From enterprise compliance to instant feedback — four ways Gefyra accelerates Kubernetes development.
+    </template>
 
-        <ProseP>
-          Local containers on board! If you want to use Kubernetes as your development platform, Gefyra is the right tool for you. It <strong>enables you to run your code in Kubernetes</strong> without the need to build and push containers. Gefyra overlays the container in Kubernetes with <strong> your local container</strong>. Instantly see the <strong>effects of your code changes</strong> in Kubernetes.
-        </ProseP>
+    <div class="flex flex-col gap-16 sm:gap-24">
+      <article
+        v-for="(useCase, index) in useCases"
+        :key="useCase.title"
+        class="flex flex-col items-center justify-between gap-8 lg:flex-row lg:gap-12"
+        :class="{ 'lg:flex-row-reverse': index % 2 === 1 }"
+      >
+        <div class="flex flex-1 flex-col gap-4 lg:max-w-1/2">
+          <div class="flex items-center gap-3">
+            <span
+              class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary"
+            >
+              {{ index + 1 }}
+            </span>
+            <UIcon
+              :name="useCase.icon"
+              class="size-5 shrink-0 text-primary"
+            />
+          </div>
 
-        <ProseP>
-          The highest possible development velocity is achieved by using Gefyra in combination with a <strong>local or remote Kubernetes cluster</strong>.
-        </ProseP>
+          <ProseH2 class="!mt-0">
+            {{ useCase.title }}
+          </ProseH2>
 
-        <UButton
-          to="https://www.blueshoe.io/blog/alternative-to-telepresence-2-gefyra/"
-          target="_blank"
-          size="xl"
-          trailing-icon="i-lucide-arrow-right"
-        >
-          See Gefrya in Action
-        </UButton>
-      </div>
+          <p class="text-base font-semibold text-primary text-pretty sm:text-lg">
+            {{ useCase.subHeader }}
+          </p>
 
-      <div class="md:max-w-1/2 overflow-hidden">
-        <img
-          src="/img/run.svg"
-          class="run-icon"
-          mode="svg"
-        >
-      </div>
-    </div>
+          <ProseP class="!mt-0">
+            {{ useCase.text }}
+          </ProseP>
 
-    <div class="flex flex-col items-center justify-between gap-4 md:flex-row">
-      <div class="md:max-w-1/2 md:order-2">
-        <ProseH2>
-          Shared Kubernetes-based Resources
-        </ProseH2>
+          <div class="mt-2 grid gap-4 sm:grid-cols-2">
+            <UPageFeature
+              icon="i-lucide-briefcase-business"
+              title="Manager Value"
+              :description="useCase.managerValue"
+              orientation="vertical"
+            />
+            <UPageFeature
+              icon="i-lucide-code-xml"
+              title="Developer Value"
+              :description="useCase.developerValue"
+              orientation="vertical"
+            />
+          </div>
+        </div>
 
-        <ProseP>
-          Suppose you are working on a feature that requires collaboration with other team members, such as frontend developers, backend engineers, and database administrators. With Gefyra, you can <strong>create a shared environment accessible to the entire team</strong>.
-        </ProseP>
-
-        <ProseP>
-          Each team member can work on their respective components while having shared resources available (for example a large database). Gefyra <strong>enables you to share your local code with your team</strong> and <strong>collaborate on a shared environment</strong>.
-        </ProseP>
-      </div>
-
-      <div class="md:max-w-1/2 overflow-hidden md:order-1">
-        <img
-          src="/img/bridge.svg"
-          class="run-icon"
-          mode="svg"
-        >
-      </div>
+        <div class="w-full flex-1 overflow-hidden lg:max-w-1/2">
+          <NuxtImg
+            v-if="useCase.image"
+            :src="useCase.image"
+            :alt="useCase.title"
+            class="w-full rounded-xl"
+            loading="lazy"
+            format="webp"
+          />
+          <div
+            v-else
+            class="flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-default bg-elevated/50 text-muted"
+            role="img"
+            :aria-label="`Placeholder image for ${useCase.title}`"
+          >
+            <UIcon
+              :name="useCase.icon"
+              class="size-12 opacity-40"
+            />
+            <span class="text-sm font-medium tracking-wide uppercase">
+              Image placeholder
+            </span>
+            <span class="max-w-56 text-center text-xs opacity-70">
+              {{ useCase.title }}
+            </span>
+          </div>
+        </div>
+      </article>
     </div>
   </UPageSection>
 </template>
