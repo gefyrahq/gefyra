@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v7.0.1
       # https://github.com/docker/setup-qemu-action
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4.3.0
+        uses: docker/setup-qemu-action@v4.4.0
       # https://github.com/docker/setup-buildx-action
       - name: Set up Docker Buildx
         id: buildx
