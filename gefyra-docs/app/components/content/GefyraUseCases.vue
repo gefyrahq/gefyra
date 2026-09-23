@@ -42,6 +42,14 @@ const useCases: UseCase[] = [
     developerValue: 'Immediate feedback on every code change; zero context switching while waiting for pipelines.',
     icon: 'i-lucide-zap',
   },
+  {
+    title: 'Autonomous AI Agents in Native Kubernetes',
+    subHeader: 'Eliminate the CI/CD Penalty for AI-Generated Code and Agent Workflows.',
+    text: 'Gefyra bridges your AI agent’s local execution environment directly with your Kubernetes staging cluster using real-time container overlaying. Your AI agent accesses real K8s services, internal databases, and cluster-internal DNS names locally. Inbound cluster traffic routes seamlessly to the agent\'s local code, allowing autonomous code generation, feature updates, and bug fixes to be validated instantly under real cluster conditions—without building or pushing a single Docker image.',
+    managerValue: 'Drastically reduces LLM execution costs and token usage by shrinking the AI feedback loop from 15-minute CI/CD pipelines to milliseconds. Accelerates time-to-market for AI features with guaranteed production compatibility.',
+    developerValue: 'Instant validation of AI-generated code against real cluster dependencies; zero context switching while waiting for builds, with full IDE debugging capabilities for local agent pipelines.',
+    icon: 'i-lucide-brain',
+  },
 ]
 </script>
 
