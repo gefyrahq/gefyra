@@ -46,7 +46,7 @@ def reload_carrier2_config(core_api, name: str, namespace: str):
     from kubernetes.stream import stream
 
     commands = [
-        "RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ]; then RUST_LOG=debug carrier2 -c /tmp/config.yaml -u -d &> /tmp/carrier.log; else RUST_LOG=debug carrier2 -c /tmp/config.yaml -d &> /tmp/carrier.log; fi"
+        "RUST_LOG=debug; kill -SIGQUIT $(cat /tmp/carrier2.pid); if [ $? -eq 0 ] && [ -S /tmp/carrier2.sock ]; then RUST_LOG=debug carrier2 -c /tmp/config.yaml -u -d &> /tmp/carrier.log; else RUST_LOG=debug carrier2 -c /tmp/config.yaml -d &> /tmp/carrier.log; fi"
     ]
     exec_command = ["busybox", "sh"]
 

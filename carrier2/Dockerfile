@@ -1,8 +1,5 @@
-# Use a Rust base image with Cargo installed
-FROM rust:latest AS builder
-RUN apt update && apt install -y cmake clang musl musl-tools
-# this is a current workaround as musl-g++ is not found by Cmake
-RUN ln -s /bin/g++ /bin/musl-g++
+# Use messense/rust-musl-cross base image
+FROM messense/rust-musl-cross:x86_64-musl AS builder
 
 # Set the working directory inside the container
 WORKDIR /carrier
@@ -14,8 +11,7 @@ COPY ./src ./src
 COPY ./benches ./benches
 
 # Build your application
-RUN rustup target add x86_64-unknown-linux-musl
-RUN cargo build --release --target=x86_64-unknown-linux-musl
+RUN cargo build --release
 
 
 ## -- Production --
