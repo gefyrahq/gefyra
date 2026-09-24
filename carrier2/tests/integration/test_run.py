@@ -157,6 +157,16 @@ def test_c_configure_cluster_upstream(k3d: AClusterManager):
     session.mount("http://localhost:8091", HTTPAdapter(max_retries=retries))
 
     # the is now served from backend-shadow (from the cluster) via Carrier2
-    resp = session.get("http://localhost:8091/color")
-    assert resp.status_code == 200
-    assert "green" in resp.text  # { "color": "green" }
+    try:
+        resp = session.get("http://localhost:8091/color")
+        assert resp.status_code == 200
+        assert "green" in resp.text  # { "color": "green" }
+    except Exception as e:
+        import subprocess
+
+        print("TEST FAILED! GETTING LOGS...")
+        print("Backend pod logs:")
+        subprocess.run(["kubectl", "logs", "backend", "-n", "demo"])
+        print("Backend-shadow pod logs:")
+        subprocess.run(["kubectl", "logs", "backend-shadow", "-n", "demo"])
+        raise e
