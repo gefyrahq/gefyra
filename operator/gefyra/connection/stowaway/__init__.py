@@ -383,7 +383,7 @@ class Stowaway(AbstractGefyraConnectionProvider):
             core_v1_api.delete_namespaced_pod,
             pod.metadata.name,
             pod.metadata.namespace,
-            grace_period_seconds=0,
+            grace_period_seconds=120,
         )
         # busy wait
         _i = 0
