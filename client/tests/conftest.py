@@ -1,6 +1,6 @@
 import os
 import subprocess
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from time import sleep
 
@@ -132,7 +132,7 @@ def operator_with_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
     # capture timestamp before apply so we don't miss the Gefyra-Ready event
-    now = datetime.now(timezone.utc) - timedelta(seconds=5)
+    now = datetime.now(UTC) - timedelta(seconds=5)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator.yaml"))
     check_operator_running(k3d, after=now)
     print("Operator is running, proceeding with tests...")
@@ -144,7 +144,7 @@ def operator_no_sa(k3d: AClusterManager, operator_image, stowaway_image):
     # we can omit loading images if they are already present in the cluster
     check_images_loaded(k3d, operator_image, stowaway_image)
     # capture timestamp before apply so we don't miss the Gefyra-Ready event
-    now = datetime.now(timezone.utc) - timedelta(seconds=5)
+    now = datetime.now(UTC) - timedelta(seconds=5)
     k3d.apply(Path(__file__).parent / Path("fixtures/operator_no_sa.yaml"))
     check_operator_running(k3d, after=now)
     print("Operator is running, proceeding with tests...")
@@ -161,7 +161,7 @@ def check_operator_running(k3d, after: datetime):
         for event in events["items"]:
             if (
                 event["eventTime"]
-                and datetime.fromisoformat(event["eventTime"].replace("Z", "+00:00"))
+                and datetime.fromisoformat(event["eventTime"].replace("Z", "+00:00"))  # noqa: FURB162
                 > after
                 and event["reason"] == "Gefyra-Ready"
             ):
