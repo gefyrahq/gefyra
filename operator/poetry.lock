@@ -928,18 +928,18 @@ files = [
 
 [[package]]
 name = "kopf"
-version = "1.44.6"
+version = "1.45.0"
 description = "Kubernetes Operator Pythonic Framework (Kopf)"
 optional = false
-python-versions = ">=3.10"
+python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "kopf-1.44.6-py3-none-any.whl", hash = "sha256:793b6a403be5fe389365172b117a8e1385a5d18eb80fdb1dfe0f50e9c7d7862d"},
-    {file = "kopf-1.44.6.tar.gz", hash = "sha256:39c32d172394f0a891c19bfa2382c0e4bab783a63fdd1f0d9209aa043856127a"},
+    {file = "kopf-1.45.0-py3-none-any.whl", hash = "sha256:adc406a1ed253c502469500f0e9cffccd51cb4f1db823617779891d58759936b"},
+    {file = "kopf-1.45.0.tar.gz", hash = "sha256:b5ce87c1d558316ef81ec7fb0fcc6a5b8ea7fe82eb3240f5df8ff395a1fbbfa7"},
 ]
 
 [package.dependencies]
-aiohttp = ">=3.11.0"
+aiohttp = ">=3.14.0"
 click = ">=8.2.0"
 iso8601 = "*"
 jsonpatch = "*"
