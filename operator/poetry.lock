@@ -1933,14 +1933,14 @@ dev = ["black", "build", "freezegun", "mdx_truly_sane_lists", "mike", "mkdocs", 
 
 [[package]]
 name = "python-statemachine"
-version = "3.2.1"
+version = "3.2.2"
 description = "Python Finite State Machines made easy."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "python_statemachine-3.2.1-py3-none-any.whl", hash = "sha256:609b46fcc68f400affac42a2fe514a5b5e552cb859319475f91e1f08696d7759"},
-    {file = "python_statemachine-3.2.1.tar.gz", hash = "sha256:dff36682cab00ba7f797e01ebdd90c4dbb2c2e00fe7cfcc9f926f63c50266507"},
+    {file = "python_statemachine-3.2.2-py3-none-any.whl", hash = "sha256:141d20e00776815692e424d3df825b1bd7ccaeedc6fda7787ddf249e767e1676"},
+    {file = "python_statemachine-3.2.2.tar.gz", hash = "sha256:5968c5e07a537f7531b8b1d0a0d5067a3452c88941fa0ac6c244870d48f78325"},
 ]
 
 [package.extras]
