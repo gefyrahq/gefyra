@@ -16,6 +16,7 @@ import asyncio
 
 from gefyra.utils import exec_command_pod, get_label_selector, stream_copy_from_pod
 from gefyra.connection.abstract import AbstractGefyraConnectionProvider
+from gefyra.stowaway_config import STOWAWAY_LABELS
 from gefyra.configuration import OperatorConfiguration
 
 from .components import (
@@ -47,11 +48,6 @@ app = k8s.client.AppsV1Api()
 core_v1_api = k8s.client.CoreV1Api()
 custom_api = k8s.client.CustomObjectsApi()
 
-STOWAWAY_LABELS = {
-    "gefyra.dev/app": "stowaway",
-    "gefyra.dev/role": "connection",
-    "gefyra.dev/provider": "stowaway",
-}
 
 PROXY_RELOAD_COMMAND = [
     "/bin/bash",
@@ -130,6 +126,23 @@ class Stowaway(AbstractGefyraConnectionProvider):
 
     async def ready(self) -> bool:
         pod = await self._get_stowaway_pod()
+        # Reconciliation can leave the old pod ready until the controller
+        # starts its rollout. Wait for the pod from the updated template.
+        if pod:
+            sts = await asyncio.to_thread(
+                app.read_namespaced_stateful_set,
+                "gefyra-stowaway",
+                self.configuration.NAMESPACE,
+            )
+            if (
+                not sts.status
+                or sts.status.observed_generation is None
+                or sts.status.observed_generation < sts.metadata.generation
+                or not sts.status.update_revision
+                or (pod.metadata.labels or {}).get("controller-revision-hash")
+                != sts.status.update_revision
+            ):
+                return False
         # check if stowaway pod is ready
         if pod and pod.status.container_statuses is not None:
             if pod.status.container_statuses[0].ready:

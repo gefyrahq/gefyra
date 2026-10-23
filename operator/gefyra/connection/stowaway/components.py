@@ -3,6 +3,7 @@ import kubernetes as k8s
 import asyncio
 
 from gefyra.configuration import OperatorConfiguration
+from gefyra.connection.stowaway.reconciliation import stowaway_patch
 from gefyra.connection.stowaway.resources import (
     create_stowaway_proxyroute_configmap,
     create_stowaway_configmap,
@@ -158,21 +159,46 @@ async def handle_stowaway_statefulset(
         logger.info("Stowaway deployment created")
     except k8s.client.exceptions.ApiException as e:
         if e.status == 409:
-            # the Stowaway deployment already exist
-            logger.warning(
-                "Stowaway deployment already available, now patching it with current"
-                " configuration"
+            existing = await asyncio.to_thread(
+                app.read_namespaced_stateful_set,
+                stowaway_sts.metadata.name,
+                configuration.NAMESPACE,
             )
-            await asyncio.to_thread(
-                app.patch_namespaced_stateful_set,
-                name=stowaway_sts.metadata.name,
-                body=stowaway_sts,
-                namespace=configuration.NAMESPACE,
-            )
-            logger.info("Stowaway deployment patched")
+            await reconcile_stowaway_statefulset(logger, existing, stowaway_sts)
         else:
             raise e
     return stowaway_sts
+
+
+async def reconcile_stowaway_statefulset(logger, existing, desired):
+    for attempt in range(3):
+        patch = stowaway_patch(existing, desired)
+        if not patch:
+            return
+        try:
+            await asyncio.to_thread(
+                app.patch_namespaced_stateful_set,
+                name=desired.metadata.name,
+                namespace=desired.metadata.namespace,
+                body=patch,
+                _content_type="application/json-patch+json",
+            )
+        except k8s.client.exceptions.ApiException as error:
+            if error.status not in (409, 422) or attempt == 2:
+                raise
+            current = await asyncio.to_thread(
+                app.read_namespaced_stateful_set,
+                desired.metadata.name,
+                desired.metadata.namespace,
+            )
+            # A failed JSON Patch test can return 422. Retry only if the
+            # resource actually changed; surface ordinary validation errors.
+            if current.metadata.resource_version == existing.metadata.resource_version:
+                raise
+            existing = current
+        else:
+            logger.info("Stowaway pod template updated with current configuration")
+            return
 
 
 async def check_stowaway_statefulset(
@@ -185,17 +211,7 @@ async def check_stowaway_statefulset(
             stowaway_sts.metadata.name,
             stowaway_sts.metadata.namespace,
         )
-        if (
-            sts.spec.template.spec.containers[0].image
-            != stowaway_sts.spec.template.spec.containers[0].image  # type: ignore
-        ):
-            logger.warning("Stowaway image does not match, reinstalling...")
-            await asyncio.to_thread(
-                app.delete_namespaced_stateful_set,
-                name=stowaway_sts.metadata.name,
-                namespace=stowaway_sts.metadata.namespace,
-            )
-            await handle_stowaway_statefulset(logger, configuration, labels)
+        await reconcile_stowaway_statefulset(logger, sts, stowaway_sts)
         return True
     except k8s.client.exceptions.ApiException as e:
         if e.status == 404:

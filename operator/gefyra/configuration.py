@@ -1,5 +1,12 @@
 from decouple import config
 
+from gefyra.stowaway_config import (
+    parse_json,
+    validate_labels,
+    validate_tolerations,
+    validate_failure_threshold,
+)
+
 
 class OperatorConfiguration:
     def __init__(self):
@@ -37,6 +44,28 @@ class OperatorConfiguration:
             cast=lambda v: int(v) if v else -1,
             default=-1,
         )
+        self.STOWAWAY_NODE_SELECTOR = parse_json(
+            config("GEFYRA_STOWAWAY_NODE_SELECTOR", default="{}"),
+            "GEFYRA_STOWAWAY_NODE_SELECTOR",
+        )
+        self.STOWAWAY_TOLERATIONS = parse_json(
+            config("GEFYRA_STOWAWAY_TOLERATIONS", default="[]"),
+            "GEFYRA_STOWAWAY_TOLERATIONS",
+        )
+        self.STOWAWAY_POD_LABELS = parse_json(
+            config("GEFYRA_STOWAWAY_POD_LABELS", default="{}"),
+            "GEFYRA_STOWAWAY_POD_LABELS",
+        )
+        self.STOWAWAY_STARTUP_PROBE_FAILURE_THRESHOLD = parse_json(
+            config("GEFYRA_STOWAWAY_STARTUP_PROBE_FAILURE_THRESHOLD", default="3"),
+            "GEFYRA_STOWAWAY_STARTUP_PROBE_FAILURE_THRESHOLD",
+        )
+        validate_labels(self.STOWAWAY_NODE_SELECTOR, "GEFYRA_STOWAWAY_NODE_SELECTOR")
+        validate_labels(
+            self.STOWAWAY_POD_LABELS, "GEFYRA_STOWAWAY_POD_LABELS", protect_builtin=True
+        )
+        validate_tolerations(self.STOWAWAY_TOLERATIONS, "GEFYRA_STOWAWAY_TOLERATIONS")
+        validate_failure_threshold(self.STOWAWAY_STARTUP_PROBE_FAILURE_THRESHOLD)
         # Carrier
         self.CARRIER_IMAGE = config(
             "GEFYRA_CARRIER_IMAGE", default="quay.io/gefyra/carrier"
