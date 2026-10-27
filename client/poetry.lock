@@ -1550,14 +1550,14 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "requests
 
 [[package]]
 name = "pytest-kubernetes"
-version = "0.8.0"
+version = "0.9.0"
 description = "A lightweight pytest plugin for managing local Kubernetes clusters (minikube, k3d, kind)"
 optional = false
-python-versions = "<3.15,>=3.11"
+python-versions = "<3.16,>=3.11"
 groups = ["dev"]
 files = [
-    {file = "pytest_kubernetes-0.8.0-py3-none-any.whl", hash = "sha256:f4fe7ac40262ca294df737eb12840597b9c2b48b813d839e4485b9caffc4e27f"},
-    {file = "pytest_kubernetes-0.8.0.tar.gz", hash = "sha256:9d94f998ab284aa3286836950ac783a2e865ae73d7a9edc7aed6556f21e18cfa"},
+    {file = "pytest_kubernetes-0.9.0-py3-none-any.whl", hash = "sha256:b26499856058edc9ee0ec89f0eebfae0c141ce7c50d54eb9f69957f3c27973b6"},
+    {file = "pytest_kubernetes-0.9.0.tar.gz", hash = "sha256:000a0c5066b1c2d5c7a374bd66faf98194ce1e38fe484fa4864cf2619cb19264"},
 ]
 
 [package.dependencies]
@@ -2065,4 +2065,4 @@ propcache = ">=0.2.1"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11.7,<3.15"
-content-hash = "a2cc81445320cdbdbfe8b342e0e195aa51866e70089996720fec13e81c112e95"
+content-hash = "48ccf98a6d16c185351d278cd74044f5ec28a95131a0c42c4a1a5022197c7d6e"
