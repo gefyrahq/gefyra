@@ -1,0 +1,92 @@
+name: Create release
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+    inputs:
+      part:
+        description: Semantic version part to increment
+        required: true
+        default: patch
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    name: Check for releasable changes
+    runs-on: ubuntu-latest
+    outputs:
+      found: ${{ steps.changes.outputs.found }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Compare with the latest release
+        id: changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          latest_tag="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
+          release_range="HEAD"
+          if [[ -n "$latest_tag" ]]; then
+            release_range="$latest_tag..HEAD"
+          fi
+
+          feature_commits="$(git log "$release_range" --format='%h %s' --grep='^feat:')"
+          if [[ -n "$feature_commits" ]]; then
+            echo "::error::Release aborted: unreleased feat: commits require review."
+            echo "$feature_commits"
+            exit 1
+          fi
+
+          if [[ -z "$latest_tag" ]]; then
+            echo "No previous release found."
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$(git rev-list --count "$release_range")" -gt 0 ]]; then
+            echo "Changes found after $latest_tag."
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes found after $latest_tag; skipping release."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    name: Bump version and publish release
+    needs: changes
+    if: >-
+      needs.changes.outputs.found == 'true' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Install Poetry
+        uses: snok/install-poetry@v1.4.2
+        with:
+          version: "2.1.1"
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          : "${GH_TOKEN:?Add a RELEASE_TOKEN repository secret to trigger downstream release workflows}"
+          python .github/scripts/release.py "${{ inputs.part || 'patch' }}"
