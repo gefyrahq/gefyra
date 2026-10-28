@@ -32,6 +32,7 @@ jobs:
     - name: Setup PyAPP and build
       working-directory: client/
       env:
+        PYAPP_PYTHON_VERSION: '3.11'
         PYAPP_FULL_ISOLATION: 1
         PYAPP_PROJECT_NAME: gefyra
         PYAPP_EXEC_SPEC: gefyra.cli.main:main

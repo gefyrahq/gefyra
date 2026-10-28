@@ -33,6 +33,7 @@ jobs:
         poetry build
     - name: Setup PyAPP and build
       env:
+        PYAPP_PYTHON_VERSION: '3.11'
         PYAPP_FULL_ISOLATION: 1
         PYAPP_PROJECT_NAME: gefyra
         PYAPP_EXEC_SPEC: gefyra.cli.main:main
