@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import MagicMock, Mock, patch
 
 import urllib3.exceptions
-
 from gefyra.api.status import _get_client_status, _get_cluster_status, status
 from gefyra.local import CARGO_ENDPOINT_LABEL, VERSION_LABEL
 from gefyra.types import StatusSummary

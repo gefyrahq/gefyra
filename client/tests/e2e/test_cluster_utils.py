@@ -1,6 +1,5 @@
-from pytest_kubernetes.providers import AClusterManager
-
 from gefyra.configuration import ClientConfiguration
+from pytest_kubernetes.providers import AClusterManager
 
 
 def test_get_env_from_pod(k3d: AClusterManager, carrier2_image):

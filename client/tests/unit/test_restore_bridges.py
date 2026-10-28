@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-
 from gefyra.api.run import _restore_bridges_for_container
 
 

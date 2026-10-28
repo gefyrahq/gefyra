@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 import yaml
-
 from gefyra.api.utils import generate_env_dict_from_strings, get_workload_type
 from gefyra.cli.utils import parse_env, parse_ip_port_map, parse_workload
 from gefyra.local.utils import get_connection_from_kubeconfig, get_processed_paths

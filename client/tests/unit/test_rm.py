@@ -1,7 +1,6 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from gefyra.api.rm import _get_bridges_for_container, rm, rm_all
 
 

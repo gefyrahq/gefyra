@@ -4,6 +4,9 @@ from time import sleep
 import docker
 import requests
 from click.testing import CliRunner
+from gefyra.api import status
+from gefyra.cli.main import cli
+from gefyra.types import GefyraClientState, StatusSummary
 from kubernetes.client import (
     ApiException,
     AppsV1Api,
@@ -16,9 +19,6 @@ from kubernetes.client import (
 )
 from kubernetes.config import load_kube_config
 
-from gefyra.api import status
-from gefyra.cli.main import cli
-from gefyra.types import GefyraClientState, StatusSummary
 from tests.e2e.const import CONNECTION_NAME
 
 
