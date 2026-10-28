@@ -333,7 +333,11 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
 
     async def test_pod_ready_and_healthy(self):  # Made async
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
-        from kubernetes.client import V1ContainerState, V1ContainerStateRunning
+        from kubernetes.client import (
+            V1ContainerState,
+            V1ContainerStateRunning,
+            V1ContainerStateWaiting,
+        )
         import datetime
 
         mount = Carrier2BridgeMount(
@@ -369,7 +373,7 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         # Test case 5: Container state not running
         pod_state_not_running = NginxPodFactory()
         pod_state_not_running.status.container_statuses[0].state = V1ContainerState(
-            running=True
+            waiting=V1ContainerStateWaiting()
         )
         assert not await mount.pod_ready_and_healthy(
             pod_state_not_running, "nginx"
