@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import kubernetes.client.exceptions
+
 from gefyra.configuration import ClientConfiguration
 from gefyra.misc.uninstall import (
     remove_all_clients,

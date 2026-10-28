@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 import pytest
 from docker.errors import APIError
+
 from gefyra.configuration import ClientConfiguration
 
 
