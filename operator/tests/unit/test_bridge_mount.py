@@ -2,7 +2,13 @@ import json
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import AsyncMock, DEFAULT, patch
 
-from kubernetes.client import V1Deployment, V1Probe
+from kubernetes.client import (
+    V1ContainerState,
+    V1ContainerStateRunning,
+    V1ContainerStateWaiting,
+    V1Deployment,
+    V1Probe,
+)
 
 import logging
 
@@ -333,11 +339,6 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
 
     async def test_pod_ready_and_healthy(self):  # Made async
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
-        from kubernetes.client import (
-            V1ContainerState,
-            V1ContainerStateRunning,
-            V1ContainerStateWaiting,
-        )
         import datetime
 
         mount = Carrier2BridgeMount(
