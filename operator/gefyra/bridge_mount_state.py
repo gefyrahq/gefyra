@@ -16,6 +16,7 @@ from gefyra.bridge_mount.factory import (
 )
 from gefyra.bridge_mount.exceptions import (
     BridgeMountInstallException,
+    BridgeMountRolloutInProgress,
     BridgeMountTargetException,
 )
 from gefyra.bridge.exceptions import BridgeInstallException
@@ -263,6 +264,9 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.install()
+        except BridgeMountRolloutInProgress:
+            # Retry installation without restoring and preparing the shadow again.
+            raise
         except (BridgeMountInstallException, BridgeInstallException, Exception) as e:
             await self.post_event(
                 reason="Failed to install GefyraBridgeMount",

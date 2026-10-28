@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from unittest import IsolatedAsyncioTestCase, TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import kopf
 from statemachine.exceptions import TransitionNotAllowed
 
 from gefyra.configuration import OperatorConfiguration
@@ -311,3 +312,175 @@ class TestBridgeMountHPAScaleScenario(IsolatedAsyncioTestCase):
 
         result = await provider.prepared()
         assert result is True
+
+
+class TestBridgeMountRolloutRetry(IsolatedAsyncioTestCase):
+    def _mixed_pods(self):
+        from tests.factories import NginxPodFactory, V1PodListFactory
+
+        return V1PodListFactory(
+            items=[
+                NginxPodFactory(metadata__owner_references__0__name="nginx-old"),
+                NginxPodFactory(metadata__owner_references__0__name="nginx-new"),
+            ]
+        )
+
+    async def test_prepare_waits_without_modifying_shadow_and_resumes(self):
+        bm = _make_bridge_mount()
+        provider = bm.bridge_mount_provider
+        pods = self._mixed_pods()
+        provider.get_pods_workload = AsyncMock(return_value=pods)
+        provider._duplicate_workload = AsyncMock()
+
+        for _ in range(3):
+            with self.assertRaises(kopf.TemporaryError):
+                await provider.prepare()
+        provider._duplicate_workload.assert_not_awaited()
+
+        pods.items.pop(0)
+        await provider.prepare()
+        provider._duplicate_workload.assert_awaited_once()
+
+    async def test_prepare_read_failure_does_not_modify_shadow(self):
+        from gefyra.bridge_mount.exceptions import BridgeMountInstallException
+
+        bm = _make_bridge_mount()
+        provider = bm.bridge_mount_provider
+        provider.get_pods_workload = AsyncMock(side_effect=RuntimeError("API error"))
+        provider._duplicate_workload = AsyncMock()
+
+        with self.assertRaises(BridgeMountInstallException):
+            await provider.prepare()
+        provider._duplicate_workload.assert_not_awaited()
+
+    async def test_prepare_does_not_add_readiness_or_workload_type_restrictions(self):
+        from tests.factories import NginxPodFactory, V1PodListFactory
+
+        for target in ("deploy/nginx", "sts/nginx", "pod/nginx"):
+            with self.subTest(target=target):
+                bm = _make_bridge_mount()
+                provider = bm.bridge_mount_provider
+                provider.target = target
+                # A single controller is allowed even when its Pod is unready.
+                pod = NginxPodFactory(status__phase="Pending")
+                provider.get_pods_workload = AsyncMock(
+                    return_value=V1PodListFactory(items=[pod])
+                )
+                provider._duplicate_workload = AsyncMock()
+                await provider.prepare()
+                provider._duplicate_workload.assert_awaited_once()
+
+    async def test_install_race_waits_without_impairing_or_patching_originals(self):
+        from gefyra.bridge_mount import carrier2mount
+
+        bm = _make_bridge_mount(state="PREPARING")
+        provider = bm.bridge_mount_provider
+        provider.get_pods_workload = AsyncMock(return_value=self._mixed_pods())
+        provider.pod_ready_and_healthy = AsyncMock(return_value=True)
+        with patch.object(carrier2mount, "core_v1_api") as core:
+            with self.assertRaises(kopf.TemporaryError):
+                await bm.install()
+            core.patch_namespaced_pod.assert_not_called()
+            core.patch_namespaced_config_map.assert_not_called()
+            core.create_namespaced_config_map.assert_not_called()
+        assert not bm.error.is_active
+
+        provider.install = AsyncMock()
+        provider.ready = AsyncMock(return_value=True)
+        await bm.install()
+        assert bm.active.is_active
+
+    async def test_real_install_failure_still_impairs(self):
+        from gefyra.bridge.exceptions import BridgeInstallException
+
+        for error in (
+            BridgeInstallException("Probes not compatible"),
+            kopf.TemporaryError("Failed to patch Pod", delay=10),
+        ):
+            with self.subTest(error=type(error).__name__):
+                bm = _make_bridge_mount(state="INSTALLING")
+                bm.bridge_mount_provider.prepared = AsyncMock(return_value=True)
+                bm.bridge_mount_provider.install = AsyncMock(side_effect=error)
+                await bm.install()
+                assert bm.error.is_active
+
+    async def test_handlers_retry_with_fresh_mounts_and_resume_after_rollout(self):
+        from copy import deepcopy
+
+        from gefyra.bridge_mount_state import GefyraBridgeMount
+        from gefyra.handler import bridge_mounts
+
+        # Rebuild from persisted state on every invocation, as Kopf does.
+        cases = (
+            ("REQUESTED", False),
+            ("ACTIVE", True),
+            ("ERROR", True),
+            ("RESTORING", True),
+            ("PREPARING", False),
+            ("INSTALLING", False),
+            ("PREPARING", True),
+            ("INSTALLING", True),
+        )
+        for initial, was_active in cases:
+            with self.subTest(state=initial, was_active=was_active):
+                body = deepcopy(_make_bridge_mount(state=initial).data)
+                if was_active:
+                    body["stateTransitions"] = {"ACTIVE": "2026-01-01T00:00:00Z"}
+                pods = self._mixed_pods()
+                duplicate = AsyncMock()
+
+                def make_mount(obj, configuration, logger, initial):
+                    bm = GefyraBridgeMount(obj, configuration, logger, initial=initial)
+                    bm.post_event = AsyncMock()
+
+                    def save_state(state):
+                        body["state"] = str(state)
+                        body.setdefault("stateTransitions", {})[str(state)] = (
+                            "2026-01-01T00:00:00Z"
+                        )
+
+                    obj._write_state = MagicMock(side_effect=save_state)
+                    provider = bm.bridge_mount_provider
+                    provider.get_pods_workload = AsyncMock(return_value=pods)
+                    provider.pod_ready_and_healthy = AsyncMock(return_value=True)
+                    provider._duplicate_workload = duplicate
+                    provider.target_exists = AsyncMock(return_value=True)
+                    provider.ready = AsyncMock(return_value=False)
+                    if len(pods.items) == 1:
+                        provider.install = AsyncMock()
+                        provider.ready.return_value = True
+                    return bm
+
+                handler = (
+                    bridge_mounts.bridge_mount_reconcile
+                    if was_active
+                    else bridge_mounts.bridge_mount_created
+                )
+                with patch.object(
+                    bridge_mounts, "GefyraBridgeMount", side_effect=make_mount
+                ) as mount_class:
+                    mount_class.active = GefyraBridgeMount.active
+                    for _ in range(3):
+                        with self.assertRaises(kopf.TemporaryError):
+                            await handler(body, logger)
+                    duplicate.assert_not_awaited()
+                    assert "ERROR" not in body.get("stateTransitions", {})
+
+                    pods.items.pop(0)
+                    await handler(body, logger)
+                    assert body["state"] == "ACTIVE"
+                    if initial in ("PREPARING", "INSTALLING"):
+                        duplicate.assert_not_awaited()
+                    else:
+                        duplicate.assert_awaited_once()
+
+    async def test_delete_does_not_wait_for_rollout(self):
+        from gefyra.handler import bridge_mounts
+
+        bm = _make_bridge_mount(state="PREPARING")
+        bm.bridge_mount_provider.uninstall = AsyncMock()
+        bm.cleanup_all_bridges = AsyncMock()
+        with patch.object(bridge_mounts, "GefyraBridgeMount", return_value=bm):
+            await bridge_mounts.bridgemount_deleted(bm.data, logger)
+        assert bm.terminated.is_active
+        bm.bridge_mount_provider.uninstall.assert_awaited_once()
