@@ -340,10 +340,18 @@ jobs:
         working-directory: ./client
         run: poetry run coverage run --append -m pytest --retries 5 -x tests/e2e
         env:
+          GEFYRA_TEST_DIAGNOSTICS_DIR: ${{ github.workspace }}/client/test-diagnostics
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
           CARGO_IN_CACHE: true
           STOWAWAY_IN_CACHE: true
+      - name: Upload client E2E failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: client-e2e-diagnostics-${{ github.run_attempt }}
+          path: client/test-diagnostics/*.log
+          if-no-files-found: ignore
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
