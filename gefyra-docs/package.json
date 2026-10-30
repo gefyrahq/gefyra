@@ -11,7 +11,7 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
-    "@barzhsieh/nuxt-content-mermaid": "^3.0.4",
+    "@barzhsieh/nuxt-content-mermaid": "^3.0.5",
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/scripts": "^1.3.12",
     "better-sqlite3": "^12.11.1",
@@ -23,8 +23,8 @@
     "@iconify-json/devicon-plain": "^1.2.62",
     "@iconify-json/material-icon-theme": "^1.2.72",
     "@iconify-json/mdi": "^1.2.3",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "eslint-plugin-format": "^2.0.1",
-    "sass-embedded": "^1.105.1"
+    "sass-embedded": "^1.106.1"
   }
 }

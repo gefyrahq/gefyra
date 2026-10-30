@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v7.0.1
     - name: Set up Python
-      uses: actions/setup-python@v7.0.0
+      uses: actions/setup-python@v7.1.0
       with:
         python-version: '3.11'
     - name: Install Poetry
@@ -33,10 +33,11 @@ jobs:
         poetry build
     - name: Setup PyAPP and build
       env:
+        PYAPP_PYTHON_VERSION: '3.11'
         PYAPP_FULL_ISOLATION: 1
         PYAPP_PROJECT_NAME: gefyra
         PYAPP_EXEC_SPEC: gefyra.cli.main:main
-        PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate cli-tracker
+        PYAPP_PIP_EXTRA_ARGS: click alive-progress tabulate
         PYAPP_DISTRIBUTION_EMBED: 1
       working-directory: client/
       run: |
