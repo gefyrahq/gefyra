@@ -168,13 +168,14 @@ class TestBridgeMountObject:
         )
 
         assert new_deployment["metadata"]["name"] == name + "-gefyra"
-        assert new_deployment["metadata"]["labels"]["app"] == "nginx-gefyra"
+        assert new_deployment["metadata"]["labels"]["app"] == "nginx-sts-gefyra"
         assert (
-            new_deployment["spec"]["selector"]["matchLabels"]["app"] == "nginx-gefyra"
+            new_deployment["spec"]["selector"]["matchLabels"]["app"]
+            == "nginx-sts-gefyra"
         )
         assert (
             new_deployment["spec"]["template"]["metadata"]["labels"]["app"]
-            == "nginx-gefyra"
+            == "nginx-sts-gefyra"
         )
         await mount.uninstall()
         gefyra_crd.kubectl(["delete", "-f", str(file_path)], as_dict=False)
