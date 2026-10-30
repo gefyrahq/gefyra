@@ -3,16 +3,16 @@ kind: StatefulSet
 metadata:
   name: nginx-sts
   labels:
-    app: nginx
+    app: nginx-sts
 spec:
   selector:
     matchLabels:
-      app: nginx
+      app: nginx-sts
   replicas: 1
   template:
     metadata:
       labels:
-        app: nginx
+        app: nginx-sts
     spec:
       containers:
       - name: nginx
@@ -23,11 +23,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginx
+  name: nginx-sts
   namespace: default
 spec:
   selector:
-    app: nginx
+    app: nginx-sts
   ports:
   - protocol: TCP
     port: 5002
@@ -36,7 +36,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: nginx
+  name: nginx-sts
   namespace: default
   annotations:
     ingress.kubernetes.io/ssl-redirect: "false"
@@ -48,6 +48,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: nginx
+            name: nginx-sts
             port:
               number: 5002

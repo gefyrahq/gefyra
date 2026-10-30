@@ -1,3 +1,6 @@
+from kopf import TemporaryError
+
+
 class BridgeMountException(Exception):
     message: str
 
@@ -11,3 +14,7 @@ class BridgeMountInstallException(BridgeMountException):
 
 class BridgeMountTargetException(BridgeMountException):
     pass
+
+
+class BridgeMountRolloutInProgress(TemporaryError):
+    """Wait for the target Pods to share a controller before changing the mount."""
