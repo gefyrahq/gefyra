@@ -923,14 +923,14 @@ files = [
 
 [[package]]
 name = "kopf"
-version = "1.45.1"
+version = "1.45.2"
 description = "Kubernetes Operator Pythonic Framework (Kopf)"
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
 files = [
-    {file = "kopf-1.45.1-py3-none-any.whl", hash = "sha256:7355b9ca1932303afc48fce3cd282472edcac3fed534d11c0db82d545fccb828"},
-    {file = "kopf-1.45.1.tar.gz", hash = "sha256:12ab33251a2d250ae59d415fede7bc6ca2a95267125dc7bd6ad8f29ed29fde4a"},
+    {file = "kopf-1.45.2-py3-none-any.whl", hash = "sha256:14582509dfdf6d9b01996914d1c1727bec58740b3ce224d559aa2c0d9255780b"},
+    {file = "kopf-1.45.2.tar.gz", hash = "sha256:5baa180cfdebe1c5095d2a0a96d7d91825b6920541a0825c55719c36abb0054f"},
 ]
 
 [package.dependencies]
