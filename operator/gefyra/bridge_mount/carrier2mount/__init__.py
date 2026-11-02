@@ -426,7 +426,13 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
         # use workloads metadata uuid for owner references with field selector to get pods
         if isinstance(workload, (V1Deployment, V1StatefulSet)):
-            v1_label_selector = workload.spec.selector.match_labels
+            v1_label_selector = dict(workload.spec.selector.match_labels)
+            # Old shadow Pods must not satisfy readiness for the refreshed shadow.
+            duplication_id = (workload.spec.template.metadata.labels or {}).get(
+                "bridge.gefyra.dev/duplication-id"
+            )
+            if duplication_id:
+                v1_label_selector["bridge.gefyra.dev/duplication-id"] = duplication_id
         else:
             v1_label_selector = workload.metadata.labels
 
