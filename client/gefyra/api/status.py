@@ -148,6 +148,10 @@ def status(connection_name: str = "") -> GefyraStatus:
     config = ClientConfiguration(connection_name=connection_name)
 
     cluster = _get_cluster_status(config)
+    if cluster.operator and cluster.operator_image:
+        from gefyra.cluster.utils import warn_client_operator_version_mismatch
+
+        warn_client_operator_version_mismatch(cluster.operator_image)
     try:
         client = _get_client_status(config)
     except urllib3.exceptions.MaxRetryError as e:

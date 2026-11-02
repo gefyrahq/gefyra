@@ -1,9 +1,41 @@
 import logging
+import warnings
 from time import sleep
 
-from gefyra.configuration import ClientConfiguration
+from gefyra.configuration import __VERSION__, ClientConfiguration
 
 logger = logging.getLogger(__name__)
+
+
+def image_ref_to_tag(image: str) -> str | None:
+    if not isinstance(image, str) or not image or ":" not in image:
+        return None
+    return image.rsplit(":", 1)[-1]
+
+
+def normalize_gefyra_version(version: str) -> str:
+    return version.replace("-", ".")
+
+
+def client_operator_version_mismatch_message(operator_image: str) -> str | None:
+    operator_version = image_ref_to_tag(operator_image)
+    if not operator_version:
+        return None
+    if normalize_gefyra_version(operator_version) == normalize_gefyra_version(
+        __VERSION__
+    ):
+        return None
+    return (
+        f"Gefyra client version {__VERSION__} does not match operator version"
+        f" {operator_version} in the cluster. This may cause compatibility issues;"
+        " consider running `gefyra operator update`."
+    )
+
+
+def warn_client_operator_version_mismatch(operator_image: str) -> None:
+    message = client_operator_version_mismatch_message(operator_image)
+    if message:
+        warnings.warn(message, UserWarning, stacklevel=2)
 
 
 def get_env_from_pod_container(
