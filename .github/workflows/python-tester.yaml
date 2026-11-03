@@ -513,6 +513,20 @@ jobs:
           name: coverage_data-${{ matrix.os }}
           path: ./client/.coverage*
 
+  release_test_minikube:
+    name: test_minikube
+    if: ${{ startsWith(github.head_ref, 'automated-release/') }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            driver: ''
+            kubectl_os: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Skip Minikube tests for version-only release PR
+        run: echo "Minikube tests are not required for automated release PRs."
+
   test_operator:
     name: Pytest Gefyra Operator
     needs:
