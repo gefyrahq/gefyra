@@ -3,8 +3,9 @@
 ## Automated release
 
 1. Create a `RELEASE_TOKEN` repository secret containing a fine-grained personal
-access token with read and write access to repository contents. The token is
-required so that publishing the release triggers the package, binary, and
+access token with read and write access to repository contents and pull requests.
+The token is required so that the workflow can create and auto-merge the version
+bump pull request and publishing the release triggers the package, binary, and
 notification workflows.
 2. Run the **Create release** workflow from the default branch and select the
 semantic version part to increment.
@@ -13,7 +14,9 @@ The workflow also runs every Monday at 08:00 UTC, using a patch version bump.
 The workflow does nothing when there are no commits after the latest published
 release. It aborts when an unreleased commit subject starts with `feat:` so that
 the pending feature can be reviewed before choosing a release version.
-Otherwise it runs `.github/scripts/release.py`, which performs the steps below.
+Otherwise it opens a version bump pull request and enables auto-merge. After the
+repository rules permit that pull request to merge, the workflow tags the merge
+commit and publishes the GitHub release.
 
 ## Manual release
 
