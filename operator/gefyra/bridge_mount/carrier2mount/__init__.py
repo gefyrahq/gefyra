@@ -46,6 +46,7 @@ from gefyra.bridge.exceptions import BridgeInstallException
 from gefyra.bridge_mount.exceptions import (
     BridgeMountException,
     BridgeMountInstallException,
+    BridgeMountRolloutInProgress,
     BridgeMountTargetException,
 )
 
@@ -390,7 +391,11 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
     async def prepare(self):
         try:
+            # Wait before rotating the shadow's duplication ID during a rollout.
+            self._check_pod_controllers(await self._original_pods)
             await self._duplicate_workload()
+        except BridgeMountRolloutInProgress:
+            raise
         except Exception as e:
             raise BridgeMountInstallException(e)
 
@@ -421,7 +426,13 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
 
         # use workloads metadata uuid for owner references with field selector to get pods
         if isinstance(workload, (V1Deployment, V1StatefulSet)):
-            v1_label_selector = workload.spec.selector.match_labels
+            v1_label_selector = dict(workload.spec.selector.match_labels)
+            # Old shadow Pods must not satisfy readiness for the refreshed shadow.
+            duplication_id = (workload.spec.template.metadata.labels or {}).get(
+                "bridge.gefyra.dev/duplication-id"
+            )
+            if duplication_id:
+                v1_label_selector["bridge.gefyra.dev/duplication-id"] = duplication_id
         else:
             v1_label_selector = workload.metadata.labels
 
@@ -509,9 +520,7 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
         else:
             return True
 
-    async def install(self):
-        upstream_ports = []
-        pods = await self._original_pods
+    def _check_pod_controllers(self, pods: V1PodList) -> None:
         if (
             len(
                 set(
@@ -523,10 +532,16 @@ class Carrier2BridgeMount(AbstractGefyraBridgeMountProvider):
             > 1
         ):
             # there is probably an update in progress
-            raise TemporaryError(
+            raise BridgeMountRolloutInProgress(
                 "Cannot install Gefyra Carrier2 on pods controlled by more than one controller.",
                 delay=10,
             )
+
+    async def install(self):
+        upstream_ports = []
+        pods = await self._original_pods
+        # Recheck in case a rollout started after shadow preparation.
+        self._check_pod_controllers(pods)
         for idx, pod in enumerate(pods.items):
             if pod.status.phase == "Terminating":
                 continue
