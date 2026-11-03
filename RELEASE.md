@@ -6,7 +6,8 @@
 access token with read and write access to repository contents and pull requests.
 The token is required so that the workflow can create and auto-merge the version
 bump pull request and publishing the release triggers the package, binary, and
-notification workflows.
+notification workflows. If the organization requires approval for fine-grained
+tokens, approve the token before running the workflow.
 2. Run the **Create release** workflow from the default branch and select the
 semantic version part to increment.
 

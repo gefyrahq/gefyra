@@ -1,4 +1,5 @@
 import argparse
+import os
 import subprocess
 import tomllib
 from pathlib import Path
@@ -17,7 +18,7 @@ def run(*command: str, capture_output: bool = False) -> str:
         cwd=ROOT,
         check=True,
         text=True,
-        capture_output=capture_output,
+        stdout=subprocess.PIPE if capture_output else None,
     )
     return result.stdout.strip() if capture_output else ""
 
@@ -50,21 +51,66 @@ def prepare(part: str) -> None:
 
     run("git", "commit", "-m", f"chore: bump version to {tag}")
     branch = f"automated-release/{tag}"
-    run("git", "push", "origin", f"HEAD:refs/heads/{branch}")
-    pull_request = run(
-        "gh",
-        "pr",
-        "create",
-        "--base",
-        "main",
-        "--head",
-        branch,
-        "--title",
-        f"chore: bump version to {tag}",
-        "--body",
-        f"Automated version bump for release {tag}.",
+    remote_branch = run(
+        "git",
+        "ls-remote",
+        "--heads",
+        "origin",
+        f"refs/heads/{branch}",
         capture_output=True,
     )
+    push_args = ["git", "push"]
+    if remote_branch:
+        remote_sha = remote_branch.split()[0]
+        push_args.append(f"--force-with-lease=refs/heads/{branch}:{remote_sha}")
+    run(*push_args, "origin", f"HEAD:refs/heads/{branch}")
+
+    repository = os.getenv("GITHUB_REPOSITORY")
+    if not repository:
+        repository = run(
+            "gh",
+            "repo",
+            "view",
+            "--json",
+            "nameWithOwner",
+            "--jq",
+            ".nameWithOwner",
+            capture_output=True,
+        )
+    owner = repository.split("/", maxsplit=1)[0]
+    pull_request = run(
+        "gh",
+        "api",
+        "--method",
+        "GET",
+        f"repos/{repository}/pulls",
+        "-f",
+        "state=open",
+        "-f",
+        f"head={owner}:{branch}",
+        "--jq",
+        ".[0].html_url",
+        capture_output=True,
+    )
+    if not pull_request:
+        pull_request = run(
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{repository}/pulls",
+            "-f",
+            f"title=chore: bump version to {tag}",
+            "-f",
+            f"head={branch}",
+            "-f",
+            "base=main",
+            "-f",
+            f"body=Automated version bump for release {tag}.",
+            "--jq",
+            ".html_url",
+            capture_output=True,
+        )
     run("gh", "pr", "merge", "--auto", "--merge", pull_request)
 
 
