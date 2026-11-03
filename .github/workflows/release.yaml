@@ -3,6 +3,8 @@ name: Create release
 on:
   schedule:
     - cron: "0 8 * * 1"
+  pull_request:
+    types: [closed]
   workflow_dispatch:
     inputs:
       part:
@@ -17,6 +19,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: release
@@ -25,6 +28,7 @@ concurrency:
 jobs:
   changes:
     name: Check for releasable changes
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       found: ${{ steps.changes.outputs.found }}
@@ -61,8 +65,8 @@ jobs:
             echo "found=false" >> "$GITHUB_OUTPUT"
           fi
 
-  release:
-    name: Bump version and publish release
+  prepare:
+    name: Create version bump pull request
     needs: changes
     if: >-
       needs.changes.outputs.found == 'true' &&
@@ -84,9 +88,33 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      - name: Create release
+      - name: Create version bump pull request
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
           : "${GH_TOKEN:?Add a RELEASE_TOKEN repository secret to trigger downstream release workflows}"
-          python .github/scripts/release.py "${{ inputs.part || 'patch' }}"
+          python .github/scripts/release.py prepare "${{ inputs.part || 'patch' }}"
+
+  publish:
+    name: Tag and publish release
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'automated-release/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v7.0.0
+        with:
+          python-version: "3.11"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          : "${GH_TOKEN:?Add a RELEASE_TOKEN repository secret to trigger downstream release workflows}"
+          python .github/scripts/release.py publish
