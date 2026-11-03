@@ -181,7 +181,6 @@ async def reconcile_stowaway_statefulset(logger, existing, desired):
                 name=desired.metadata.name,
                 namespace=desired.metadata.namespace,
                 body=patch,
-                _content_type="application/json-patch+json",
             )
         except k8s.client.exceptions.ApiException as error:
             if error.status not in (409, 422) or attempt == 2:
