@@ -51,11 +51,22 @@ def install(ctx, component, preset, apply, wait, **kwargs):
 
     from gefyra import api
 
-    # filter out empty kwargs
-    empty_kwargs = [k for k, v in kwargs.items() if not v]
+    # Preserve explicit resets ({} / []) and validate zero for the new settings.
+    stowaway_options = {
+        "stowaway_node_selector",
+        "stowaway_tolerations",
+        "stowaway_pod_labels",
+        "stowaway_startup_probe_failure_threshold",
+    }
+    # Keep the existing filtering behavior for other installation options.
+    empty_kwargs = [k for k, v in kwargs.items() if not v and k not in stowaway_options]
     if empty_kwargs:
         logger.warning(f"Filtered out empty CLI params: {', '.join(empty_kwargs)}")
-    kwargs = {k: v for k, v in kwargs.items() if v}
+    kwargs = {
+        k: v
+        for k, v in kwargs.items()
+        if v or (k in stowaway_options and v is not None)
+    }
 
     if wait and not apply:
         raise click.BadOptionUsage(

@@ -1,6 +1,11 @@
 from dataclasses import dataclass, field
 
 from gefyra.configuration import __VERSION__
+from gefyra.stowaway_config import (
+    validate_failure_threshold,
+    validate_labels,
+    validate_tolerations,
+)
 
 
 @dataclass
@@ -95,3 +100,40 @@ class GefyraInstallOptions:
             "is_flag": True,
         },
     )
+
+    stowaway_node_selector: dict[str, str] = field(
+        default_factory=dict,
+        metadata={
+            "help": "Stowaway nodeSelector as a JSON object (default: {})",
+            "type": "json",
+        },
+    )
+    stowaway_tolerations: list[dict[str, str | int]] = field(
+        default_factory=list,
+        metadata={
+            "help": "Stowaway tolerations as a JSON array (default: [])",
+            "type": "json",
+        },
+    )
+    stowaway_pod_labels: dict[str, str] = field(
+        default_factory=dict,
+        metadata={
+            "help": "Supplemental Stowaway pod labels as a JSON object (default: {})",
+            "type": "json",
+        },
+    )
+    stowaway_startup_probe_failure_threshold: int = field(
+        default=3,
+        metadata={
+            "help": "Stowaway startup probe failure threshold (default: 3)",
+            "type": int,
+        },
+    )
+
+    def __post_init__(self):
+        validate_labels(self.stowaway_node_selector, "stowaway_node_selector")
+        validate_labels(
+            self.stowaway_pod_labels, "stowaway_pod_labels", protect_builtin=True
+        )
+        validate_tolerations(self.stowaway_tolerations)
+        validate_failure_threshold(self.stowaway_startup_probe_failure_threshold)

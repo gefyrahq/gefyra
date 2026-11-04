@@ -1,4 +1,5 @@
 # flake8: noqa
+import json
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -6,6 +7,24 @@ if TYPE_CHECKING:
 
 
 def data(params: "GefyraInstallOptions") -> list[dict]:
+    stowaway_env = [
+        {
+            "name": "GEFYRA_STOWAWAY_NODE_SELECTOR",
+            "value": json.dumps(params.stowaway_node_selector),
+        },
+        {
+            "name": "GEFYRA_STOWAWAY_TOLERATIONS",
+            "value": json.dumps(params.stowaway_tolerations),
+        },
+        {
+            "name": "GEFYRA_STOWAWAY_POD_LABELS",
+            "value": json.dumps(params.stowaway_pod_labels),
+        },
+        {
+            "name": "GEFYRA_STOWAWAY_STARTUP_PROBE_FAILURE_THRESHOLD",
+            "value": str(params.stowaway_startup_probe_failure_threshold),
+        },
+    ]
     return [
         {
             "apiVersion": "apps/v1",
@@ -42,6 +61,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                 "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
+                                    *stowaway_env,
                                     {
                                         "name": "GEFYRA_STOWAWAY_IMAGE",
                                         "value": f"{params.registry}/stowaway",
@@ -128,6 +148,7 @@ def data(params: "GefyraInstallOptions") -> list[dict]:
                                 "imagePullPolicy": "IfNotPresent",
                                 "ports": [{"containerPort": 9443}],
                                 "env": [
+                                    *stowaway_env,
                                     {"name": "OP_MODE", "value": "webhook"},
                                     {
                                         "name": "GEFYRA_STOWAWAY_IMAGE",
