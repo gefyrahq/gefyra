@@ -44,7 +44,7 @@ def create_gefyrabridge_definition() -> k8s.client.V1CustomResourceDefinition:
             "portMappings": k8s.client.V1JSONSchemaProps(
                 type="array",
                 default=[],
-                items=k8s.client.V1JSONSchemaProps(type="string"),
+                items={"type": "string"},
             ),
             # Service name + port of the corresponding client stowaway proxy
             "clusterEndpoint": k8s.client.V1JSONSchemaProps(
