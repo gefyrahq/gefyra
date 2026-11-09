@@ -21,7 +21,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^10.0.0",
     "@iconify-json/devicon-plain": "^1.2.67",
-    "@iconify-json/material-icon-theme": "^1.2.75",
+    "@iconify-json/material-icon-theme": "^1.2.76",
     "@iconify-json/mdi": "^1.2.3",
     "eslint": "^10.14.0",
     "eslint-plugin-format": "^2.0.1",
