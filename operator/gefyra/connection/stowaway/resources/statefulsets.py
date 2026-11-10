@@ -1,12 +1,22 @@
+import json
+
 import kubernetes as k8s
 from kubernetes.client import V1Probe, V1HTTPGetAction
 
 from gefyra.configuration import OperatorConfiguration
+from gefyra.stowaway_config import validate_labels
+
+MANAGED_POD_LABELS_ANNOTATION = "gefyra.dev/stowaway-pod-label-keys"
 
 
 def create_stowaway_statefulset(
     labels: dict[str, str], configuration: OperatorConfiguration
 ) -> k8s.client.V1StatefulSet:
+    validate_labels(
+        configuration.STOWAWAY_POD_LABELS, "stowaway_pod_labels", protect_builtin=True
+    )
+    pod_labels = {**labels, **configuration.STOWAWAY_POD_LABELS}
+    managed_labels = sorted(configuration.STOWAWAY_POD_LABELS.keys() - labels.keys())
     container = k8s.client.V1Container(
         name="stowaway",
         image=f"{configuration.STOWAWAY_IMAGE}:{configuration.STOWAWAY_TAG}",
@@ -21,6 +31,7 @@ def create_stowaway_statefulset(
             limits={"cpu": "0.75", "memory": "500Mi"},
         ),
         startup_probe=V1Probe(
+            failure_threshold=configuration.STOWAWAY_STARTUP_PROBE_FAILURE_THRESHOLD,
             http_get=V1HTTPGetAction(
                 port=51822,
             ),
@@ -62,10 +73,21 @@ def create_stowaway_statefulset(
     )
 
     template = k8s.client.V1PodTemplateSpec(
-        metadata=k8s.client.V1ObjectMeta(labels=labels),
+        metadata=k8s.client.V1ObjectMeta(labels=pod_labels),
         spec=k8s.client.V1PodSpec(
             service_account_name="gefyra-stowaway",
             containers=[container],
+            node_selector=configuration.STOWAWAY_NODE_SELECTOR,
+            tolerations=[
+                k8s.client.V1Toleration(
+                    key=item.get("key"),
+                    operator=item.get("operator", "Equal"),
+                    value=item.get("value"),
+                    effect=item.get("effect"),
+                    toleration_seconds=item.get("tolerationSeconds"),
+                )
+                for item in configuration.STOWAWAY_TOLERATIONS
+            ],
             volumes=[
                 k8s.client.V1Volume(
                     name="proxyroutes",
@@ -103,7 +125,12 @@ def create_stowaway_statefulset(
 
     sts = k8s.client.V1StatefulSet(
         metadata=k8s.client.V1ObjectMeta(
-            name="gefyra-stowaway", namespace=configuration.NAMESPACE, labels=labels
+            name="gefyra-stowaway",
+            namespace=configuration.NAMESPACE,
+            labels=labels,
+            annotations={MANAGED_POD_LABELS_ANNOTATION: json.dumps(managed_labels)}
+            if managed_labels
+            else None,
         ),
         spec=spec,
     )

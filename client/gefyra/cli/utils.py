@@ -164,11 +164,28 @@ class OptionEatAll(click.Option):
         return retval
 
 
+class JSONOption(click.ParamType):
+    name = "json"
+
+    def convert(self, value, param, ctx):
+        from gefyra.stowaway_config import parse_json
+
+        try:
+            name = param.name if param else "option"
+            parsed = parse_json(value, name)
+            if parsed is None:
+                raise ValueError(f"{name} cannot be null; use {{}} or [] to reset it")
+            return parsed
+        except ValueError as error:
+            self.fail(str(error), param, ctx)
+
+
 def multi_options(options):
     map_to_types = {
         "array": list,
         "number": float,
         "string": str,
+        "json": JSONOption(),
     }
 
     def decorator(f):

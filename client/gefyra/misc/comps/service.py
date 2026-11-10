@@ -2,16 +2,12 @@
 from typing import TYPE_CHECKING
 import logging
 
+from gefyra.stowaway_config import STOWAWAY_LABELS
+
 if TYPE_CHECKING:
     from gefyra.types import GefyraInstallOptions
 
 logger = logging.getLogger(__name__)
-
-STOWAWAY_LABELS = {
-    "gefyra.dev/app": "stowaway",
-    "gefyra.dev/role": "connection",
-    "gefyra.dev/provider": "stowaway",
-}
 
 
 def data(params: "GefyraInstallOptions") -> list[dict]:
