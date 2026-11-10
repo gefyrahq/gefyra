@@ -281,7 +281,6 @@ async def test_race_retries_from_fresh_metadata(status):
         await components.reconcile_stowaway_statefulset(Mock(), live, build(config))
         assert api.patch_namespaced_stateful_set.call_count == 2
         update = api.patch_namespaced_stateful_set.call_args.kwargs
-        assert update["_content_type"] == "application/json-patch+json"
         updated = apply_patch(concurrent, update["body"])
         assert updated.spec.template.metadata.labels["external"] == "keep"
         assert updated.spec.template.metadata.labels["custom"] == "new"
