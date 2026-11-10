@@ -84,7 +84,9 @@ def install(
         except:  # noqa
             pass
 
-        objects = synthesize_config_as_dict(options=options, components=component)
+        objects = synthesize_config_as_dict(
+            options=options, components=component, b64encoded=True
+        )
         for objs in objects:
             logger.debug(objs)
             try:

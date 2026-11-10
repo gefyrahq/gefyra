@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 def synthesize_config_as_dict(
     options: "GefyraInstallOptions",
     components: list[str] | None = [],  # noqa: B006
+    b64encoded: bool = False,
 ) -> list[dict]:
     req_comps = []
     if components:
@@ -30,7 +31,7 @@ def synthesize_config_as_dict(
     data = []
     # generate the raw data
     for comp in req_comps:
-        data.extend(comp.data(options))
+        data.extend(comp.data(options, b64encoded=b64encoded))
     return data
 
 
@@ -41,7 +42,7 @@ def synthesize_config_as_yaml(
     import yaml
 
     yaml.add_representer(str, str_presenter)
-    data = synthesize_config_as_dict(options, components)
+    data = synthesize_config_as_dict(options, components, b64encoded=False)
     _docs = []
     for doc in data:
         _docs.append(yaml.dump(doc))
