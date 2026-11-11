@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local import CREATED_BY_LABEL
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def _get_client_networks(config: ClientConfiguration) -> List[str]:
+def _get_client_networks(config: ClientConfiguration) -> list[str]:
     clients = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
         namespace=config.NAMESPACE,
         plural="gefyraclients",
@@ -30,21 +30,24 @@ def _get_client_networks(config: ClientConfiguration) -> List[str]:
 
 
 def get_or_create_gefyra_network(
-    config: ClientConfiguration, banned_subnets: list[str] = []
+    config: ClientConfiguration, banned_subnets: list[str] | None = None
 ) -> "Network":
+    if banned_subnets is None:
+        banned_subnets = []
     gefyra_network = handle_create_network(config, banned_subnets)
     logger.debug(f"Network {gefyra_network.attrs}")
     return gefyra_network
 
 
 def _get_subnet(
-    config: ClientConfiguration, network_name: str, occupied_networks: List[str]
+    config: ClientConfiguration, network_name: str, occupied_networks: list[str]
 ) -> str:
     from docker.errors import APIError
 
     tries = 255
-    networks: List[Network] = []
+    networks: list[Network] = []
     subnet = ""
+    temp_network = None
     # this is a workaround to select a free subnet (instead of finding it with python code)
     for i in range(tries):
         try:
@@ -57,6 +60,8 @@ def _get_subnet(
                     f"network {network_name}-{i} already exists, trying next one"
                 )
                 continue
+        if not temp_network:
+            raise RuntimeError("Could not create a temporary network")
         networks.append(temp_network)
         subnet = temp_network.attrs["IPAM"]["Config"][0]["Subnet"]
         if subnet not in occupied_networks:
@@ -69,11 +74,14 @@ def _get_subnet(
 
 
 def handle_create_network(
-    config: ClientConfiguration, banned_subnets: list[str] = []
+    config: ClientConfiguration, banned_subnets: list[str] | None = None
 ) -> "Network":
-    from docker.errors import NotFound
+    from docker.errors import APIError, NotFound
     from docker.types import IPAMConfig, IPAMPool
+    from kubernetes.client import ApiException
 
+    if banned_subnets is None:
+        banned_subnets = []
     DOCKER_MTU_OPTION = "com.docker.network.driver.mtu"
     network_name = f"{config.NETWORK_NAME}"
     try:
@@ -138,7 +146,7 @@ def handle_create_network(
                 options=options,
             )
             break
-        except Exception as e:
+        except (APIError, ApiException, RuntimeError, KeyError, TypeError) as e:
             logger.warning(f"Could not create Gefyra network due to: {e}")
             i = i + 1
             continue

@@ -152,7 +152,7 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
             logger=logger,
         )
         await mount.prepare()  # Await
-        app.read_namespaced_deployment.assert_called_once()
+        self.assertEqual(app.read_namespaced_deployment.call_count, 2)
         app.create_namespaced_deployment.assert_called_once()
 
         app.reset_mock()
@@ -199,13 +199,17 @@ class TestBridgeMountObject(IsolatedAsyncioTestCase):
         app=DEFAULT,
         core_v1_api=DEFAULT,
         custom_object_api=DEFAULT,
+        autoscaling_api=DEFAULT,
     )
     async def test_duplicate_already_exists_patches(  # Made async
-        self, app, core_v1_api, custom_object_api
+        self, app, core_v1_api, custom_object_api, autoscaling_api
     ):
         from gefyra.bridge_mount.carrier2mount import Carrier2BridgeMount
 
         app.read_namespaced_deployment.return_value = NginxDeploymentFactory()
+        autoscaling_api.list_namespaced_horizontal_pod_autoscaler.return_value = (
+            V1HPAFactoryList()
+        )
         pod = NginxPodFactory()
         core_v1_api.read_namespaced_pod_status.return_value = pod
         core_v1_api.list_namespaced_pod.return_value = V1PodListFactory(items=[pod])

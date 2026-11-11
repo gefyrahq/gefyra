@@ -1,13 +1,12 @@
 import os
 from unittest import TestCase
-import pytest
 from unittest.mock import patch
 
+import pytest
 import yaml
-
-from gefyra.local.utils import get_connection_from_kubeconfig, get_processed_paths
 from gefyra.api.utils import generate_env_dict_from_strings, get_workload_type
 from gefyra.cli.utils import parse_env, parse_ip_port_map, parse_workload
+from gefyra.local.utils import get_connection_from_kubeconfig, get_processed_paths
 
 
 @patch("kubernetes.config.kube_config.KUBE_CONFIG_DEFAULT_LOCATION", "/tmp/kube.yaml")
@@ -27,17 +26,16 @@ def test_b_get_connection_from_kubeconfig_connection():
             },
         ],
     }
-    f = open("/tmp/kube.yaml", "w")
-    yaml.dump(data, f)
-    f.close()
-    try:
-        endpoint = get_connection_from_kubeconfig()
-        assert endpoint == "127.0.0.1:8090"
-    except AssertionError:
-        os.remove(f.name)
-        raise
-    else:
-        os.remove(f.name)
+    with open("/tmp/kube.yaml", "w") as f:
+        yaml.dump(data, f)
+        try:
+            endpoint = get_connection_from_kubeconfig()
+            assert endpoint == "127.0.0.1:8090"
+        except AssertionError:
+            os.remove(f.name)
+            raise
+        else:
+            os.remove(f.name)
 
 
 @patch("kubernetes.config.kube_config.KUBE_CONFIG_DEFAULT_LOCATION", "/tmp/kube1.yaml")
@@ -100,7 +98,7 @@ def test_env_dict_creation():
 def test_env_parsing():
     try:
         parse_env(None, None, ("APP",))
-    except Exception as e:
+    except ValueError as e:
         assert "use 'ENV=value'" in str(e)
 
     res = parse_env(None, None, ("APP=test-app",))
@@ -113,7 +111,7 @@ def test_workload_parsing():
 
     try:
         res = parse_workload(None, None, "pod")
-    except Exception as e:
+    except ValueError as e:
         assert "Invalid workload format" in str(e)
 
 
@@ -133,11 +131,11 @@ def test_ip_port_map_parsing():
     # string
     try:
         res = parse_ip_port_map(None, None, ("1234:blah",))
-    except Exception as e:
+    except (RuntimeError, ValueError) as e:
         assert "use integer" in str(e)
 
     # invalid format
     try:
         res = parse_ip_port_map(None, None, ("1234:1234:1234:1234",))
-    except Exception as e:
+    except (RuntimeError, ValueError) as e:
         assert "Invalid value" in str(e)

@@ -1,11 +1,41 @@
 import logging
+import warnings
 from time import sleep
-from typing import Tuple
 
-from gefyra.configuration import ClientConfiguration
-
+from gefyra.configuration import __VERSION__, ClientConfiguration
 
 logger = logging.getLogger(__name__)
+
+
+def image_ref_to_tag(image: str) -> str | None:
+    if not isinstance(image, str) or not image or ":" not in image:
+        return None
+    return image.rsplit(":", 1)[-1]
+
+
+def normalize_gefyra_version(version: str) -> str:
+    return version.replace("-", ".")
+
+
+def client_operator_version_mismatch_message(operator_image: str) -> str | None:
+    operator_version = image_ref_to_tag(operator_image)
+    if not operator_version:
+        return None
+    if normalize_gefyra_version(operator_version) == normalize_gefyra_version(
+        __VERSION__
+    ):
+        return None
+    return (
+        f"Gefyra client version {__VERSION__} does not match operator version"
+        f" {operator_version} in the cluster. This may cause compatibility issues;"
+        " consider running `gefyra operator update`."
+    )
+
+
+def warn_client_operator_version_mismatch(operator_image: str) -> None:
+    message = client_operator_version_mismatch_message(operator_image)
+    if message:
+        warnings.warn(message, UserWarning, stacklevel=2)
 
 
 def get_env_from_pod_container(
@@ -58,7 +88,7 @@ def get_env_from_pod_container(
                     f" try {counter}."
                 )
             else:
-                raise e
+                raise
     raise RuntimeError(
         f"Failed to get env from pod {pod_name} in namespace {namespace} after"
         f" {retries} tries."
@@ -79,12 +109,12 @@ def is_operator_running(config: ClientConfiguration) -> bool:
 
 def retrieve_pod_and_container(
     workload: str, namespace: str, config: ClientConfiguration
-) -> Tuple[str, str]:
-    from gefyra.cluster.resources import (
-        get_pods_and_containers_for_workload,
-        get_pods_and_containers_for_pod_name,
-    )
+) -> tuple[str, str]:
     from gefyra.api.utils import get_workload_type
+    from gefyra.cluster.resources import (
+        get_pods_and_containers_for_pod_name,
+        get_pods_and_containers_for_workload,
+    )
 
     container_name = ""
     workload_type, workload_name = workload.split("/", 1)

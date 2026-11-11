@@ -1,9 +1,9 @@
 import unittest
-from unittest.mock import Mock, MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
+
+import click
 import kubernetes.client.exceptions
 import urllib3.exceptions
-import click
-
 from gefyra.cli.connections import _manage_container_and_bridges
 
 
@@ -248,40 +248,36 @@ class TestManageContainerAndBridges(unittest.TestCase):
 
     def test_remove_container_without_force_with_user_confirmation(self):
         """Test removing container with user confirmation"""
-        with patch("gefyra.cli.connections.console"):
-            with patch("gefyra.cli.connections.click.confirm") as mock_confirm:
-                with patch("gefyra.api.list_containers") as mock_list_containers:
-                    with patch("gefyra.api.list_bridges") as mock_list_bridges:
-                        with patch(
-                            "gefyra.configuration.ClientConfiguration"
-                        ) as mock_client_config:
-                            mock_list_bridges.return_value = []
+        with (
+            patch("gefyra.cli.connections.console"),
+            patch("gefyra.cli.connections.click.confirm") as mock_confirm,
+            patch("gefyra.api.list_containers") as mock_list_containers,
+            patch("gefyra.api.list_bridges") as mock_list_bridges,
+            patch("gefyra.configuration.ClientConfiguration") as mock_client_config,
+        ):
+            mock_list_bridges.return_value = []
 
-                            gefyra_container = Mock()
-                            gefyra_container.name = "test-cargo"
-                            mock_list_containers.return_value = [
-                                ("test-connection", [gefyra_container])
-                            ]
+            gefyra_container = Mock()
+            gefyra_container.name = "test-cargo"
+            mock_list_containers.return_value = [
+                ("test-connection", [gefyra_container])
+            ]
 
-                            config_instance = MagicMock()
-                            docker_container = Mock()
-                            config_instance.DOCKER.containers.get.return_value = (
-                                docker_container
-                            )
-                            mock_client_config.return_value = config_instance
+            config_instance = MagicMock()
+            docker_container = Mock()
+            config_instance.DOCKER.containers.get.return_value = docker_container
+            mock_client_config.return_value = config_instance
 
-                            mock_confirm.return_value = True
+            mock_confirm.return_value = True
 
-                            _manage_container_and_bridges(
-                                self.connection_name,
-                                force=False,
-                                update_callback=self.update_callback,
-                            )
+            _manage_container_and_bridges(
+                self.connection_name,
+                force=False,
+                update_callback=self.update_callback,
+            )
 
-                            mock_confirm.assert_called_with(
-                                "Do you want to remove them?", abort=True
-                            )
-                            docker_container.remove.assert_called_once_with(force=True)
+            mock_confirm.assert_called_with("Do you want to remove them?", abort=True)
+            docker_container.remove.assert_called_once_with(force=True)
 
     @patch("gefyra.cli.connections.console")
     @patch("gefyra.configuration.ClientConfiguration")
@@ -313,19 +309,21 @@ class TestManageContainerAndBridges(unittest.TestCase):
 
     def test_update_callback_none(self):
         """Test that function works when update_callback is None"""
-        with patch("gefyra.api.list_bridges") as mock_list_bridges:
-            with patch("gefyra.api.list_containers") as mock_list_containers:
-                with patch("gefyra.api.delete_bridge") as mock_delete_bridge:
-                    bridge_mock = Mock(name="test-bridge")
-                    container_mock = Mock()
-                    mock_list_bridges.return_value = [(container_mock, bridge_mock)]
-                    mock_list_containers.return_value = [("test-connection", [])]
+        with (
+            patch("gefyra.api.list_bridges") as mock_list_bridges,
+            patch("gefyra.api.list_containers") as mock_list_containers,
+            patch("gefyra.api.delete_bridge") as mock_delete_bridge,
+        ):
+            bridge_mock = Mock(name="test-bridge")
+            container_mock = Mock()
+            mock_list_bridges.return_value = [(container_mock, bridge_mock)]
+            mock_list_containers.return_value = [("test-connection", [])]
 
-                    _manage_container_and_bridges(
-                        self.connection_name, force=True, update_callback=None
-                    )
+            _manage_container_and_bridges(
+                self.connection_name, force=True, update_callback=None
+            )
 
-                    mock_delete_bridge.assert_called_once()
+            mock_delete_bridge.assert_called_once()
 
     @patch("gefyra.cli.connections.console")
     @patch("gefyra.api.delete_bridge")
@@ -376,38 +374,34 @@ class TestManageContainerAndBridges(unittest.TestCase):
 
     def test_both_bridges_and_containers_removal(self):
         """Test removing both bridges and containers"""
-        with patch("gefyra.cli.connections.console"):
-            with patch("gefyra.api.list_bridges") as mock_list_bridges:
-                with patch("gefyra.api.list_containers") as mock_list_containers:
-                    with patch("gefyra.api.delete_bridge") as mock_delete_bridge:
-                        with patch(
-                            "gefyra.configuration.ClientConfiguration"
-                        ) as mock_client_config:
-                            bridge_mock = Mock()
-                            bridge_mock.name = "test-bridge"
-                            container_mock = Mock()
-                            gefyra_container = Mock()
-                            gefyra_container.name = "test-cargo"
+        with (
+            patch("gefyra.cli.connections.console"),
+            patch("gefyra.api.list_bridges") as mock_list_bridges,
+            patch("gefyra.api.list_containers") as mock_list_containers,
+            patch("gefyra.api.delete_bridge") as mock_delete_bridge,
+            patch("gefyra.configuration.ClientConfiguration") as mock_client_config,
+        ):
+            bridge_mock = Mock()
+            bridge_mock.name = "test-bridge"
+            container_mock = Mock()
+            gefyra_container = Mock()
+            gefyra_container.name = "test-cargo"
 
-                            mock_list_bridges.return_value = [
-                                (container_mock, bridge_mock)
-                            ]
-                            mock_list_containers.return_value = [
-                                ("test-connection", [gefyra_container])
-                            ]
+            mock_list_bridges.return_value = [(container_mock, bridge_mock)]
+            mock_list_containers.return_value = [
+                ("test-connection", [gefyra_container])
+            ]
 
-                            config_instance = MagicMock()
-                            docker_container = Mock()
-                            config_instance.DOCKER.containers.get.return_value = (
-                                docker_container
-                            )
-                            mock_client_config.return_value = config_instance
+            config_instance = MagicMock()
+            docker_container = Mock()
+            config_instance.DOCKER.containers.get.return_value = docker_container
+            mock_client_config.return_value = config_instance
 
-                            _manage_container_and_bridges(
-                                self.connection_name,
-                                force=True,
-                                update_callback=self.update_callback,
-                            )
+            _manage_container_and_bridges(
+                self.connection_name,
+                force=True,
+                update_callback=self.update_callback,
+            )
 
-                            mock_delete_bridge.assert_called_once()
-                            docker_container.remove.assert_called_once_with(force=True)
+            mock_delete_bridge.assert_called_once()
+            docker_container.remove.assert_called_once_with(force=True)

@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import Optional, Union
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import GefyraBridgeMountNotFound
@@ -40,7 +39,7 @@ def handle_delete_gefyramount(
     name: str,
     force: bool,
     wait: bool,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
 ) -> bool:
     from kubernetes.client import ApiException
 
@@ -91,10 +90,10 @@ def handle_delete_gefyramount(
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
             )
-            raise e
+            raise
 
 
-def parse_secret_notation(value: str) -> Union[str, dict[str, dict[str, str]]]:
+def parse_secret_notation(value: str) -> str | dict[str, dict[str, str]]:
     if not value.lower().startswith("secret:"):
         return value
 
@@ -130,10 +129,10 @@ def parse_secret_notation(value: str) -> Union[str, dict[str, dict[str, str]]]:
 
 
 def get_ports_from_tls_args(
-    tls_certificate: Optional[list[str]] = None,
-    tls_key: Optional[list[str]] = None,
-    tls_sni: Optional[list[str]] = None,
-) -> dict[int, dict[str, dict[str, Union[str, dict[str, dict[str, str]]]]]]:
+    tls_certificate: list[str] | None = None,
+    tls_key: list[str] | None = None,
+    tls_sni: list[str] | None = None,
+) -> dict[int, dict[str, dict[str, str | dict[str, dict[str, str]]]]]:
     """Receives a list of TLS arguments and returns a list of ports that should be used for the mount.
     strings may contain @port to specify the port for which the TLS configuration should be applied.
     If no port is specified, the TLS configuration will be applied to all ports.
@@ -155,11 +154,11 @@ def get_ports_from_tls_args(
         "key": tls_key,
     }
     """
-    ports: dict[int, dict[str, dict[str, Union[str, dict[str, dict[str, str]]]]]] = {}
+    ports: dict[int, dict[str, dict[str, str | dict[str, dict[str, str]]]]] = {}
 
     def parse_arg(
         arg: str,
-    ) -> tuple[Union[str, dict[str, dict[str, str]]], Optional[int]]:
+    ) -> tuple[str | dict[str, dict[str, str]], int | None]:
         """Parse an argument that may contain @port suffix."""
         if "@" in arg:
             value, port_str = arg.rsplit("@", 1)
@@ -207,16 +206,14 @@ def get_ports_from_tls_args(
 
 
 # Type alias for TLS configuration
-TlsConfigGlobal = dict[str, dict[str, Union[list[str], str, dict[str, dict[str, str]]]]]
-TlsConfigPerPort = dict[
-    int, dict[str, dict[str, Union[str, dict[str, dict[str, str]]]]]
-]
+TlsConfigGlobal = dict[str, dict[str, list[str] | str | dict[str, dict[str, str]]]]
+TlsConfigPerPort = dict[int, dict[str, dict[str, str | dict[str, dict[str, str]]]]]
 
 
 def get_tls_config(
-    tls_certificate: Optional[list[str]] = None,
-    tls_key: Optional[list[str]] = None,
-    tls_sni: Optional[list[str]] = None,
+    tls_certificate: list[str] | None = None,
+    tls_key: list[str] | None = None,
+    tls_sni: list[str] | None = None,
 ) -> TlsConfigGlobal | TlsConfigPerPort:
     ports = get_ports_from_tls_args(tls_certificate, tls_key, tls_sni)
 
@@ -253,9 +250,9 @@ def get_gbridgemount_body(
     provider: str,
     target_namespace: str,
     target_container: str,
-    tls_certificate: Optional[list[str]] = None,
-    tls_key: Optional[list[str]] = None,
-    tls_sni: Optional[list[str]] = None,
+    tls_certificate: list[str] | None = None,
+    tls_key: list[str] | None = None,
+    tls_sni: list[str] | None = None,
 ) -> dict[str, str | dict[str, str] | TlsConfigGlobal | TlsConfigPerPort]:
     return {
         "apiVersion": "gefyra.dev/v1",

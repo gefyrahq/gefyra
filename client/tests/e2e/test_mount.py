@@ -1,4 +1,5 @@
 from pathlib import Path
+
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
@@ -19,7 +20,7 @@ def workloads_for_test(operator):
 
 def test_a_create_simple_mount(operator: AClusterManager, workloads_for_test):
     k3d = operator
-    k3d.kubeconfig
+    k3d.kubeconfig  # noqa
     from gefyra.api.mount import create_mount
 
     res = create_mount(

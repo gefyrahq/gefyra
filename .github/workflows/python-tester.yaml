@@ -8,17 +8,18 @@ on:
 
 jobs:
   build_test_image:
+    if: ${{ !startsWith(github.head_ref, 'automated-release/') }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4.2.0
+      uses: docker/setup-qemu-action@v4.4.0
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v4.2.0
+      uses: docker/setup-buildx-action@v4.4.1
 
     - name: PyServer Test Image meta
       id: test_image_meta
@@ -34,7 +35,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v7.3.0
+      uses: docker/build-push-action@v7.4.0
       env:
         DOCKER_BUILD_SUMMARY: false
       with:
@@ -55,18 +56,19 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.carrier2_meta.outputs.tags }}
+    if: ${{ !startsWith(github.head_ref, 'automated-release/') }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4.2.0
+      uses: docker/setup-qemu-action@v4.4.0
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v4.2.0
+      uses: docker/setup-buildx-action@v4.4.1
     - name: Login to quay.io
-      uses: docker/login-action@v4.4.0
+      uses: docker/login-action@v4.7.0
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_ROBOT }}
@@ -85,7 +87,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v7.3.0
+      uses: docker/build-push-action@v7.4.0
       env:
         DOCKER_BUILD_SUMMARY: false
       with:
@@ -109,18 +111,19 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.operator_meta.outputs.tags }}
+    if: ${{ !startsWith(github.head_ref, 'automated-release/') }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4.2.0
+      uses: docker/setup-qemu-action@v4.4.0
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v4.2.0
+      uses: docker/setup-buildx-action@v4.4.1
     - name: Login to quay.io
-      uses: docker/login-action@v4.4.0
+      uses: docker/login-action@v4.7.0
       with:
         registry: quay.io
         username: ${{ secrets.QUAY_ROBOT }}
@@ -142,7 +145,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v7.3.0
+      uses: docker/build-push-action@v7.4.0
       env:
         DOCKER_BUILD_SUMMARY: false
       with:
@@ -168,16 +171,17 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.cargo_meta.outputs.tags }}
+    if: ${{ !startsWith(github.head_ref, 'automated-release/') }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4.2.0
+      uses: docker/setup-qemu-action@v4.4.0
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v4.2.0
+      uses: docker/setup-buildx-action@v4.4.1
     #
     # Gefyra Cargo
     #
@@ -195,7 +199,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v7.3.0
+      uses: docker/build-push-action@v7.4.0
       env:
         DOCKER_BUILD_SUMMARY: false
       with:
@@ -218,16 +222,17 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tags: ${{ steps.stowaway_meta.outputs.tags }}
+    if: ${{ !startsWith(github.head_ref, 'automated-release/') }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
     # https://github.com/docker/setup-qemu-action
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v4.2.0
+      uses: docker/setup-qemu-action@v4.4.0
     # https://github.com/docker/setup-buildx-action
     - name: Set up Docker Buildx
       id: buildx
-      uses: docker/setup-buildx-action@v4.2.0
+      uses: docker/setup-buildx-action@v4.4.1
     #
     # Gefyra Stowaway
     #
@@ -245,7 +250,7 @@ jobs:
         labels: |
           quay.expires-after=24h
     - name: Build and push
-      uses: docker/build-push-action@v7.3.0
+      uses: docker/build-push-action@v7.4.0
       env:
         DOCKER_BUILD_SUMMARY: false
       with:
@@ -274,17 +279,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
-      - name: Set fake kubeconfig
-        shell: bash
-        run: |
-          mkdir -p ~/.kube/
-          cd ~/.kube
-          touch config
+        uses: actions/checkout@v7.0.1
+      # - name: Set fake kubeconfig
+      #   shell: bash
+      #   run: |
+      #     mkdir -p ~/.kube/
+      #     cd ~/.kube
+      #     touch config
       - name: Set up Python
-        uses: actions/setup-python@v6.3.0
+        uses: actions/setup-python@v7.1.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       - name: Install Poetry
         uses: snok/install-poetry@v1.4.2
         with:
@@ -323,7 +328,7 @@ jobs:
           docker load --input /tmp/operator/operator.tar
           docker load --input /tmp/carrier/carrier.tar
           docker load --input /tmp/stowaway/stowaway.tar
-          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.5.4
           docker tag ${{ needs.build_operator.outputs.tags }} operator:pytest
           docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
           docker tag ${{ needs.build_stowaway.outputs.tags }} stowaway:pytest
@@ -365,7 +370,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Set fake kubeconfig
         shell: bash
         run: |
@@ -373,7 +378,7 @@ jobs:
           cd ~/.kube
           touch config
       - name: Set up Python
-        uses: actions/setup-python@v6.3.0
+        uses: actions/setup-python@v7.1.0
         with:
           python-version: '3.11'
       - name: Install Poetry
@@ -407,6 +412,7 @@ jobs:
 
 
   test_minikube:
+    if: ${{ !startsWith(github.head_ref, 'automated-release/') }}
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -423,11 +429,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Set up Python
-        uses: actions/setup-python@v6.3.0
+        uses: actions/setup-python@v7.1.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       # https://github.com/opensafely-core/job-server/issues/3429
       - name: Install Poetry
         uses: snok/install-poetry@v1.4.2
@@ -454,17 +460,17 @@ jobs:
       - name: Load Cargo image on host Docker
         run: |
           docker load --input /tmp/cargo/cargo.tar
-          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.5.4
           docker image ls -a
       - name: Load Gefyra images into Minikube
         run: |
           eval $(minikube docker-env)
-          docker load --input /tmp/pyserver/pyserver.tar
-          docker load --input /tmp/stowaway/stowaway.tar
-          docker load --input /tmp/operator/operator.tar
-          docker tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.4.0
-          docker tag ${{ needs.build_stowaway.outputs.tags }} quay.io/gefyra/stowaway:2.4.0
-          docker image ls -a
+          minikube image load /tmp/pyserver/pyserver.tar
+          minikube image load /tmp/stowaway/stowaway.tar
+          minikube image load /tmp/operator/operator.tar
+          minikube image tag ${{ needs.build_operator.outputs.tags }} quay.io/gefyra/operator:2.5.4
+          minikube image tag ${{ needs.build_stowaway.outputs.tags }} quay.io/gefyra/stowaway:2.5.4
+          minikube image ls
       - name: Install dependencies
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
@@ -507,6 +513,20 @@ jobs:
           name: coverage_data-${{ matrix.os }}
           path: ./client/.coverage*
 
+  release_test_minikube:
+    name: test_minikube
+    if: ${{ startsWith(github.head_ref, 'automated-release/') }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            driver: ''
+            kubectl_os: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Skip Minikube tests for version-only release PR
+        run: echo "Minikube tests are not required for automated release PRs."
+
   test_operator:
     name: Pytest Gefyra Operator
     needs:
@@ -517,11 +537,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v6.3.0
+        uses: actions/setup-python@v7.1.0
         with:
-          python-version: '3.11'
+          python-version: '3.13'
       - name: Checkout
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Install Poetry
         uses: snok/install-poetry@v1.4.2
         with:
@@ -563,7 +583,7 @@ jobs:
           docker load --input /tmp/operator/operator.tar
           docker load --input /tmp/carrier/carrier.tar
           docker load --input /tmp/stowaway/stowaway.tar
-          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.4.0
+          docker tag ${{ needs.build_cargo.outputs.tags }} quay.io/gefyra/cargo:2.5.4
           docker tag ${{ needs.build_operator.outputs.tags }} operator:pytest
           docker tag ${{ needs.build_carrier.outputs.tags }} carrier2:pytest
           docker tag ${{ needs.build_stowaway.outputs.tags }} stowaway:pytest

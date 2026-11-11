@@ -1,14 +1,13 @@
 import logging
 from pathlib import Path
 from time import sleep
-from typing import List, Optional
 
 from gefyra.api.utils import get_workload_information, random_string, stopwatch
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import CommandTimeoutError, GefyraBridgeMountNotFound
 from gefyra.local.mount import (
-    get_gefyrabridgemount,
     get_gbridgemount_body,
+    get_gefyrabridgemount,
     handle_create_gefyrabridgemount,
     handle_delete_gefyramount,
 )
@@ -27,9 +26,9 @@ def create_mount(
     timeout: int = 0,
     mount_name: str | None = None,
     provider: str = "carrier2mount",
-    tls_certificate: Optional[list[str]] = None,
-    tls_key: Optional[list[str]] = None,
-    tls_sni: Optional[list[str]] = None,
+    tls_certificate: list[str] | None = None,
+    tls_key: list[str] | None = None,
+    tls_sni: list[str] | None = None,
 ) -> GefyraBridgeMount:
     from gefyra.configuration import ClientConfiguration
 
@@ -77,8 +76,8 @@ def create_mount(
 def get_mount(
     mount_name: str,
     connection_name: str = "",
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
 ) -> GefyraBridgeMount:
     """
     Get a GefyraBridgeMount object
@@ -102,11 +101,11 @@ def get_mount(
 def delete_mount(
     mount_name: str,
     force: bool = False,
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
-    connection_name: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
+    connection_name: str | None = None,
     wait: bool = False,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
 ) -> bool:
     """
     Delete a GefyraClient configuration
@@ -124,10 +123,10 @@ def delete_mount(
 
 @stopwatch
 def list_mounts(
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
-    connection_name: Optional[str] = None,
-) -> List[GefyraBridgeMount]:
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
+    connection_name: str | None = None,
+) -> list[GefyraBridgeMount]:
     """
     List all GefyraBridgeMount objects
     """

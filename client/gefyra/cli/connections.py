@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import click
 from alive_progress import alive_bar
@@ -29,9 +29,7 @@ def _manage_container_and_bridges(
             console.info(
                 f"There is {len(_bridges)} GefyraBridge(s) running with connection '{connection_name}'."
             )
-            if force:
-                _del = True
-            elif click.confirm("Do you want to remove them?", abort=True):
+            if force or click.confirm("Do you want to remove them?", abort=True):
                 _del = True
             if _del:
                 for _container, gbridge in _bridges:
@@ -51,9 +49,7 @@ def _manage_container_and_bridges(
         console.info(
             f"There is {len(_containers[0][1])} Gefyra container(s) running with connection '{connection_name}'."
         )
-        if force:
-            _del = True
-        elif click.confirm("Do you want to remove them?", abort=True):
+        if force or click.confirm("Do you want to remove them?", abort=True):
             _del = True
         if _del:
             for gcontainers in _containers[0][1]:
@@ -125,9 +121,9 @@ def connect_client(
     ctx,
     client_config,
     connection_name: str,
-    minikube: Optional[str] = None,
-    mtu: int = None,
-    cargo_image: Optional[str] = None,
+    minikube: str | None = None,
+    mtu: int | None = None,
+    cargo_image: str | None = None,
     force: bool = False,
     timeout: int = 60,
 ):
@@ -214,7 +210,7 @@ def disconnect_client(
             _manage_container_and_bridges(
                 connection_name=connection_name, force=yes, update_callback=bar.text
             )
-        except (RuntimeError, Exception):
+        except RuntimeError:
             bar.text(f"No local connection '{connection_name}'...")
         if not nowait:
             bar.text("Waiting for the GefyraClient to be in state 'WAITING'...")

@@ -3,9 +3,10 @@ import logging
 import os
 import socket
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import docker
 
@@ -38,8 +39,8 @@ class GefyraClientConfig:
     gefyra_server: str
     token: str | None = None
     ca_crt: str | None = None
-    registry: Optional[str] = None
-    wireguard_mtu: Optional[str] = None
+    registry: str | None = None
+    wireguard_mtu: str | None = None
 
     def __getattribute__(self, name):
         if name == "gefyra_server":
@@ -79,26 +80,26 @@ class GefyraClient(WatchEventsMixin):
     # the uid from Kubernetes for this object
     uid: str
     # the labels of this Gefyra object
-    labels: Dict[str, str]
+    labels: dict[str, str]
     # the provider of the client, always 'stowaway' in this version of Gefyra
     provider: str
 
     # the state of the client
     _state: str
-    _state_transitions: Dict[str, str]
-    _wg_status: Optional[Dict[str, str]] = None
+    _state_transitions: dict[str, str]
+    _wg_status: dict[str, str] | None = None
     _wg_handshake: str | None = None
-    _created: Optional[str] = None
-    provider_parameter: Optional[StowawayParameter] = None
-    provider_config: Optional[StowawayConfig] = None
-    service_account_name: Optional[str] = None
-    service_account: Optional[Dict[str, str]] = None
+    _created: str | None = None
+    provider_parameter: StowawayParameter | None = None
+    provider_config: StowawayConfig | None = None
+    service_account_name: str | None = None
+    service_account: dict[str, str] | None = None
 
     def __init__(self, gclient: dict[str, Any], config: "ClientConfiguration"):
         self._init_data(gclient)
         self._config = config
 
-    def inspect(self, fetch_events: bool = False) -> dict[str, str | List[str]]:
+    def inspect(self, fetch_events: bool = False) -> dict[str, str | list[str]]:
         res = {
             "client_id": self.client_id,
             "uid": self.uid,
@@ -110,7 +111,7 @@ class GefyraClient(WatchEventsMixin):
         }
 
         if fetch_events:
-            events: List[str] = []
+            events: list[str] = []
             self.watch_events(events.append, None, 1)
             res["events"] = events
         return res
@@ -129,8 +130,12 @@ class GefyraClient(WatchEventsMixin):
                     self._wg_handshake = self.wg_status["latest_handshake"]
                 else:
                     self._wg_handshake = "No handshake"
-            except Exception:
-                pass
+            except (AttributeError, KeyError, TypeError) as e:
+                logger.debug(
+                    "Could not parse wireguard status for client '%s': %s",
+                    self.client_id,
+                    e,
+                )
         else:
             self.wg_status = None
         self._created = _object["metadata"].get("creationTimestamp", "")
@@ -186,8 +191,8 @@ class GefyraClient(WatchEventsMixin):
         self,
         gefyra_server: str,
         k8s_server: str = "",
-        registry: Optional[str] = None,
-        wireguard_mtu: Optional[int] = None,
+        registry: str | None = None,
+        wireguard_mtu: int | None = None,
     ) -> GefyraClientConfig:
         if not bool(self.service_account):
             self.update()
@@ -405,7 +410,7 @@ class GefyraClient(WatchEventsMixin):
                     mini_conf = detect_minikube_config(minikube_profile)
                     if mini_conf["network_name"]:
                         logger.debug("Joining minikube network")
-                        minikube_net: "Network" = self._config.DOCKER.networks.get(
+                        minikube_net: Network = self._config.DOCKER.networks.get(
                             mini_conf["network_name"]
                         )
                         minikube_net.connect(cargo_container)

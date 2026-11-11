@@ -1,15 +1,15 @@
 from pathlib import Path
-from typing import Optional
+
 from gefyra.api.utils import stopwatch
-from gefyra.configuration import ClientConfiguration, __VERSION__
+from gefyra.configuration import __VERSION__, ClientConfiguration
 from gefyra.exceptions import ClusterError
 
 
 @stopwatch
 def update(
-    version: Optional[str] = None,
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    version: str | None = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
 ) -> bool:
     # update operator deployment to latest version
 

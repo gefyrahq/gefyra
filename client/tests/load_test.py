@@ -1,41 +1,44 @@
-from multiprocessing import Pool
 import os
-import subprocess
 import pathlib
 import random
 import string
+import subprocess
 import tempfile
 import time
+from multiprocessing import Pool
 
 CLIENTS = {}
 
 
 def gefyra_client(cmd: str):
-    subprocess.run((f"poetry run g {cmd}"), shell=True)
+    subprocess.run((f"poetry run g {cmd}"), shell=True, check=True)
 
 
 def kubectl(cmd):
-    subprocess.run((f"kubectl {cmd}"), shell=True)
+    subprocess.run((f"kubectl {cmd}"), shell=True, check=True)
 
 
 def setup():
-    cwd = pathlib.Path().resolve()
-    subprocess.run(("docker pull quay.io/gefyra/gefyra-tesocket:0.1.0"), shell=True)
+    cwd = pathlib.Path.cwd()
+    subprocess.run(
+        ("docker pull quay.io/gefyra/gefyra-tesocket:0.1.0"), shell=True, check=True
+    )
     subprocess.run(
         (
             f"k3d cluster create gefyra-loadtesting --kubeconfig-switch-context --kubeconfig-update-default --config {cwd}/tests/k3d_cluster.yaml"
         ),
         shell=True,
+        check=True,
     )
     gefyra_client("install --version pr-807 --apply")
 
 
 def teardown():
-    subprocess.run(("k3d cluster rm gefyra-loadtesting"), shell=True)
+    subprocess.run(("k3d cluster rm gefyra-loadtesting"), shell=True, check=True)
     print(f"Deleting {len(CLIENTS.keys())} GefyraClient config files")
-    for client in CLIENTS.keys():
+    for client in CLIENTS:
         delete_client_config(client)
-        subprocess.run((f"docker rm -f gefyra-cargo-{client}"), shell=True)
+        subprocess.run((f"docker rm -f gefyra-cargo-{client}"), shell=True, check=True)
 
 
 def create_client(name: str):
@@ -43,10 +46,10 @@ def create_client(name: str):
 
 
 def create_client_config(name: str):
-    cl = tempfile.NamedTemporaryFile(delete_on_close=False, delete=False)
-    print(f"Creating GefyraClient config file for {name} at {cl.name}")
-    gefyra_client(f"clients write {name} --local > {cl.name}")
-    CLIENTS[name] = {"config": cl.name}
+    with tempfile.NamedTemporaryFile(delete_on_close=False, delete=False) as cl:
+        print(f"Creating GefyraClient config file for {name} at {cl.name}")
+        gefyra_client(f"clients write {name} --local > {cl.name}")
+        CLIENTS[name] = {"config": cl.name}
 
 
 def delete_client_config(name: str):
@@ -73,7 +76,7 @@ def activate_clients_test(amount: int = 50, processes: int = 10):
     )
 
     start_time = time.time()
-    for _ in range(0, amount):
+    for _ in range(amount):
         name = "".join(random.choices(string.ascii_lowercase + string.digits, k=10))
         CLIENTS[name] = {}
 
@@ -81,7 +84,7 @@ def activate_clients_test(amount: int = 50, processes: int = 10):
     with Pool(processes=processes) as pool:
         pool.map(create_client, CLIENTS.keys())
 
-    for client in CLIENTS.keys():
+    for client in CLIENTS:
         create_client_config(client)
 
     print("[Test] Activating clients")
@@ -101,7 +104,7 @@ def main():
     try:
         print("Running tests!")
         activate_clients_test()
-    except Exception as e:
+    except Exception as e:  # noqa
         print(e)
     teardown()
 

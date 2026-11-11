@@ -16,6 +16,7 @@ from gefyra.bridge_mount.factory import (
 )
 from gefyra.bridge_mount.exceptions import (
     BridgeMountInstallException,
+    BridgeMountRolloutInProgress,
     BridgeMountTargetException,
 )
 from gefyra.bridge.exceptions import BridgeInstallException
@@ -37,6 +38,7 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
 
     kind = "GefyraBridgeMount"
     plural = "gefyrabridgemounts"
+    shadow_refresh_annotation = "gefyra.dev/shadow-refresh-required"
 
     requested = State("Bridge Mount requested", initial=True, value="REQUESTED")
     preparing = State("Bridge Mount preparing", value="PREPARING")
@@ -99,6 +101,9 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             model=model, start_value=initial or GefyraBridgeMount.requested.value
         )  # Pass initial state to super
         self.data = model.data
+        self.shadow_refresh_required = (
+            self.data["metadata"].get("annotations") or {}
+        ).get(self.shadow_refresh_annotation) == "true"
         self.operator_configuration = configuration
         self.logger = logger
         self.custom_api = k8s.client.CustomObjectsApi()
@@ -235,6 +240,8 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             #  TODO self.bridge_mount_provider.check_mount_conditions()
             bmp = self.bridge_mount_provider
             await bmp.prepare()
+            if self.shadow_refresh_required:
+                await self._set_shadow_refresh_required(False)
         except (BridgeMountInstallException, ValueError) as e:
             await self.post_event(
                 reason="Failed to install GefyraBridgeMount",
@@ -243,9 +250,31 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
             )
             await self.impair()
 
+    async def _set_shadow_refresh_required(self, required: bool):
+        await asyncio.to_thread(
+            self.custom_api.patch_namespaced_custom_object,
+            namespace=self.namespace,
+            name=self.object_name,
+            group="gefyra.dev",
+            version="v1",
+            plural=self.plural,
+            body={
+                "metadata": {
+                    "annotations": {
+                        self.shadow_refresh_annotation: "true" if required else None
+                    }
+                }
+            },
+        )
+        self.shadow_refresh_required = required
+
     @install.cond
     async def _bridge_mount_prepared(self):
         bmp = self.bridge_mount_provider
+        if self.shadow_refresh_required:
+            # prepare() waits for controllers to converge before refreshing the shadow.
+            await bmp.prepare()
+            await self._set_shadow_refresh_required(False)
         if self.preparing.is_active:
             # In PREPARING only wait for shadow pods to be ready;
             # replica count will be synced in INSTALLING via prepared().
@@ -263,6 +292,9 @@ class GefyraBridgeMount(StateChart, StateControllerMixin):  # Reverted to StateM
         try:
             bmp = self.bridge_mount_provider
             await bmp.install()
+        except BridgeMountRolloutInProgress:
+            await self._set_shadow_refresh_required(True)
+            raise
         except (BridgeMountInstallException, BridgeInstallException, Exception) as e:
             await self.post_event(
                 reason="Failed to install GefyraBridgeMount",

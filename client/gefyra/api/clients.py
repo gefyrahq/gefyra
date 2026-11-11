@@ -1,7 +1,7 @@
 import logging
 import uuid
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Optional
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import CommandTimeoutError
@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 def add_clients(
     client_id: str,
     quantity: int = 1,
-    registry: Optional[str] = None,
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    registry: str | None = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
 ) -> Iterable[GefyraClient]:
     """
     Add a new client to the connection provider
@@ -37,7 +37,7 @@ def add_clients(
     )
     if quantity > 1 and client_id:
         raise RuntimeError("Cannot specify both quantity > 1 and client_id")
-    result: List[GefyraClient] = []
+    result: list[GefyraClient] = []
     while len(result) < quantity:
         if not bool(client_id):
             generated_uuid = uuid.uuid4()
@@ -55,8 +55,8 @@ def add_clients(
 def get_client(
     client_id: str,
     connection_name: str = "",
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
 ) -> GefyraClient:
     """
     Get a GefyraClient object
@@ -76,11 +76,11 @@ def get_client(
 def delete_client(
     client_id: str,
     force: bool = False,
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
-    connection_name: Optional[str] = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
+    connection_name: str | None = None,
     wait: bool = False,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
 ) -> bool:
     """
     Delete a GefyraClient configuration
@@ -102,13 +102,13 @@ def delete_client(
 @stopwatch
 def write_client_file(
     client_id: str,
-    host: Optional[str] = None,
-    port: Optional[str] = None,
-    kube_api: Optional[str] = None,
-    kubeconfig: Optional[Path] = None,
-    kubecontext: Optional[str] = None,
-    registry: Optional[str] = None,
-    wireguard_mtu: Optional[int] = None,
+    host: str | None = None,
+    port: str | None = None,
+    kube_api: str | None = None,
+    kubeconfig: Path | None = None,
+    kubecontext: str | None = None,
+    registry: str | None = None,
+    wireguard_mtu: int | None = None,
     local: bool = False,
 ) -> str:
     """
@@ -142,8 +142,8 @@ def write_client_file(
 
 @stopwatch
 def list_client(
-    kubeconfig: Optional[Path] = None, kubecontext: Optional[str] = None
-) -> List[GefyraClient]:
+    kubeconfig: Path | None = None, kubecontext: str | None = None
+) -> list[GefyraClient]:
     """
     List all GefyraClient objects
     """

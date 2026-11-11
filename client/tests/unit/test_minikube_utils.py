@@ -1,6 +1,6 @@
+import gefyra.local.minikube as minikube_helpers
 import pytest
 from gefyra.local.minikube import _get_a_worker_ip
-import gefyra.local.minikube as minikube_helpers
 
 
 def test_get_a_worker_ip():

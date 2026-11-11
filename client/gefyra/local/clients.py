@@ -1,7 +1,6 @@
+import logging
 import time
 
-import logging
-from typing import Optional
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import (
     GefyraClientAlreadyExists,
@@ -40,13 +39,13 @@ def handle_create_gefyraclient(config: ClientConfiguration, body) -> dict:
                 counter += 1
                 time.sleep(4)
             else:
-                raise e
+                raise
     return gclient
 
 
 def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict:
-    from kubernetes.client import ApiException
     import urllib3
+    from kubernetes.client import ApiException
 
     try:
         gclient = config.K8S_CUSTOM_OBJECT_API.get_namespaced_custom_object(
@@ -65,7 +64,7 @@ def handle_get_gefyraclient(config: ClientConfiguration, client_id: str) -> dict
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
             )
-            raise e
+            raise
     except urllib3.exceptions.MaxRetryError as e:
         # this connection does not work (at the moment)
         raise GefyraConnectionError(
@@ -82,7 +81,7 @@ def handle_delete_gefyraclient(
     client_id: str,
     force: bool,
     wait: bool = False,
-    timeout: Optional[int] = None,
+    timeout: int | None = None,
 ) -> bool:
     from kubernetes.client import ApiException
 
@@ -124,7 +123,7 @@ def handle_delete_gefyraclient(
             logger.error(
                 f"A Kubernetes API Error occured. \nReason:{e.reason} \nBody:{e.body}"
             )
-            raise e
+            raise
 
 
 def get_gefyraclient_body(

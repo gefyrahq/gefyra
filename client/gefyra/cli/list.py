@@ -1,11 +1,11 @@
 import dataclasses
-from typing import Optional
+
 import click
+from tabulate import tabulate
 
 from gefyra import api
 from gefyra.cli import console
 from gefyra.cli.utils import standard_error_handler
-from tabulate import tabulate
 
 
 @click.command("status", help="List running containers")
@@ -17,7 +17,7 @@ from tabulate import tabulate
 )
 @standard_error_handler
 def list(
-    connection_name: Optional[str] = None,
+    connection_name: str | None = None,
 ):
     _containers = api.list_containers(connection_name)
     container_print = []

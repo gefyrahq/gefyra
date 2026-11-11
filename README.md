@@ -99,10 +99,6 @@ brew install gefyra
 Download the latest binary for Windows under [here](https://github.com/gefyrahq/gefyra/releases/). 
 </details>
 
-#### Docker Desktop Extension
-
-Working with Docker Desktop? We offer an [extension](https://open.docker.com/extensions/marketplace?extensionId=gefyra/docker-desktop-extension) to operate Gefyra through a UI on Docker Desktop.
-
 
 ### Your First Bridge
 Make sure Gefyra is installed on your cluster (`gefyra up`). Some details of the installation depend on your Kubernetes' platform.

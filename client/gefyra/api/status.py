@@ -10,12 +10,12 @@ from gefyra.types import (
     StatusSummary,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
 def _get_client_status(config: ClientConfiguration) -> GefyraClientStatus:
     from docker.errors import NotFound
+
     from gefyra.local import CARGO_ENDPOINT_LABEL, VERSION_LABEL
 
     # these are the default values
@@ -136,7 +136,6 @@ def _get_cluster_status(config: ClientConfiguration) -> GefyraClusterStatus:
             _status.stowaway_image = stowaway_pod.spec.containers[0].image
     except ApiException as e:
         logger.warning(e)
-        pass
 
     return _status
 
@@ -149,6 +148,10 @@ def status(connection_name: str = "") -> GefyraStatus:
     config = ClientConfiguration(connection_name=connection_name)
 
     cluster = _get_cluster_status(config)
+    if cluster.operator and cluster.operator_image:
+        from gefyra.cluster.utils import warn_client_operator_version_mismatch
+
+        warn_client_operator_version_mismatch(cluster.operator_image)
     try:
         client = _get_client_status(config)
     except urllib3.exceptions.MaxRetryError as e:

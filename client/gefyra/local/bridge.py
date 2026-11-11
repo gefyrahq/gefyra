@@ -1,6 +1,5 @@
 import logging
 from time import sleep
-from typing import Dict, List, Optional
 
 from docker.models.containers import Container
 
@@ -8,7 +7,7 @@ from gefyra.cli import console
 from gefyra.configuration import ClientConfiguration
 from gefyra.exceptions import GefyraBridgeNotFound
 from gefyra.local.cargo import get_cargo_ip_from_netaddress
-from gefyra.types import GefyraLocalContainer, ExactMatchHeader
+from gefyra.types import ExactMatchHeader, GefyraLocalContainer
 
 from .utils import handle_docker_run_container
 
@@ -98,7 +97,7 @@ def get_gefyrabridge(config: ClientConfiguration, name: str):
         raise GefyraBridgeNotFound(f"GefyraBridge with name '{name}' not found.")
 
 
-def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer]:
+def get_all_containers(config: ClientConfiguration) -> list[GefyraLocalContainer]:
     container_information = []
     gefyra_net = config.DOCKER.networks.get(f"{config.NETWORK_NAME}")
     containers = gefyra_net.containers
@@ -109,11 +108,11 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
                 address = container.attrs["NetworkSettings"]["Networks"][
                     config.NETWORK_NAME
                 ]["IPAddress"].split("/")[0]
-            except Exception:
+            except (AttributeError, KeyError, IndexError, TypeError):
                 address = "unknown"
             try:
                 namespace = container.attrs["HostConfig"]["DnsSearch"][0].split(".")[0]
-            except Exception:
+            except (AttributeError, KeyError, IndexError, TypeError):
                 namespace = "unknown"
             container_information.append(
                 GefyraLocalContainer(
@@ -128,14 +127,18 @@ def get_all_containers(config: ClientConfiguration) -> List[GefyraLocalContainer
 
 
 def get_match_rules(
-    rule_set: List[List] = [],
-) -> List[Dict[str, Dict[str, str]]]:
+    rule_set: list[list] | None = None,
+) -> list[dict[str, dict[str, str]]]:
+    if rule_set is None:
+        rule_set = []
     return [rule.to_dict() for rules in rule_set for rule in rules]
 
 
 def get_bridge_rules(
-    rules: List[ExactMatchHeader] = [],
-) -> List[Dict[str, List[Dict[str, Dict[str, str]]]]]:
+    rules: list[ExactMatchHeader] | None = None,
+) -> list[dict[str, list[dict[str, dict[str, str]]]]]:
+    if rules is None:
+        rules = []
     return [{"match": get_match_rules(rules)}]
 
 
@@ -144,19 +147,19 @@ def deploy_app_container(
     image: str,
     name: str = "",
     command: str = "",
-    volumes: Optional[List] = None,
-    ports: Optional[Dict] = None,
-    env: Optional[Dict] = None,
+    volumes: list | None = None,
+    ports: dict | None = None,
+    env: dict | None = None,
     auto_remove: bool = False,
-    dns_search: Optional[List[str]] = None,
-    pull: Optional[str] = "missing",
-    platform: Optional[str] = "linux/amd64",
-    cpu_quota: Optional[str] = None,
-    mem_limit: Optional[str] = None,
-    user: Optional[str] = None,
-    security_opts: Optional[List[str]] = None,
-    privileged: Optional[bool] = None,
-    extra_container_args: Optional[Dict] = None,
+    dns_search: list[str] | None = None,
+    pull: str | None = "missing",
+    platform: str | None = "linux/amd64",
+    cpu_quota: str | None = None,
+    mem_limit: str | None = None,
+    user: str | None = None,
+    security_opts: list[str] | None = None,
+    privileged: bool | None = None,
+    extra_container_args: dict | None = None,
 ) -> Container:
     import docker
 

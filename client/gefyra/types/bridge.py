@@ -1,8 +1,9 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from gefyra.configuration import ClientConfiguration
 from gefyra.local.utils import WatchEventsMixin
+
 from .container import GefyraLocalContainer
 
 
@@ -73,7 +74,7 @@ class GefyraBridge(WatchEventsMixin):
     # the local container name
     local_container_name: str | None
     # mapping ports [local:remote]
-    port_mappings: List[str]
+    port_mappings: list[str]
     # the name of the GefyraBridgeMount object
     target: str
     # also handle probes of this container (legacy)
@@ -81,15 +82,15 @@ class GefyraBridge(WatchEventsMixin):
 
     # the state of the bridge
     _state: str | None = None
-    _state_transitions: Dict[str, str] | None = None
-    _created: Optional[str] | None = None
+    _state_transitions: dict[str, str] | None = None
+    _created: str | None = None
 
     # bridge provider {carrier, carrier2}
     provider: str = "carrier2"
     # the connection provider, needed to create a reverse path beweet cluster and local {stowaway}
     connection_provider: str = "stowaway"
     # additional provider parameters for this bridge
-    rules: List[ExactMatchHeader] | None = None
+    rules: list[ExactMatchHeader] | None = None
 
     # local container status
     container: GefyraLocalContainer | None = None
@@ -138,7 +139,7 @@ class GefyraBridge(WatchEventsMixin):
                 "namespace": self.target_namespace,
             }
         if fetch_events:
-            events: List[str] = []
+            events: list[str] = []
             self.watch_events(events.append, None, 1)
             if events:
                 res["events"] = events
@@ -146,7 +147,7 @@ class GefyraBridge(WatchEventsMixin):
 
     @classmethod
     def from_raw(
-        cls, bridge_raw: Dict[Any, Any], config: ClientConfiguration
+        cls, bridge_raw: dict[Any, Any], config: ClientConfiguration
     ) -> "GefyraBridge":
         bridge = cls(
             provider=bridge_raw["provider"],

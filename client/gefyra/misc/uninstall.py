@@ -1,13 +1,12 @@
 import logging
 
-
 from gefyra.configuration import ClientConfiguration
 
 logger = logging.getLogger(__name__)
 
 
 def remove_all_clients():
-    from gefyra.api.clients import list_client, delete_client
+    from gefyra.api.clients import delete_client, list_client
 
     clients = list_client()
     for client in clients:
@@ -15,6 +14,8 @@ def remove_all_clients():
 
 
 def remove_remainder_bridge_mounts(config: ClientConfiguration):
+    from kubernetes.client import ApiException
+
     try:
         mounts = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             group="gefyra.dev",
@@ -22,8 +23,9 @@ def remove_remainder_bridge_mounts(config: ClientConfiguration):
             namespace=config.NAMESPACE,
             plural="gefyrabridgemounts",
         )
-    except Exception:
-        return None
+    except ApiException as e:
+        logger.debug("Could not list Gefyra bridge mounts: %s", e)
+        return
     for mount in mounts.get("items"):
         try:
             config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
@@ -41,12 +43,19 @@ def remove_remainder_bridge_mounts(config: ClientConfiguration):
                 namespace=config.NAMESPACE,
                 name=mount["metadata"]["name"],
             )
-        except Exception:
+        except ApiException as e:
+            logger.debug(
+                "Could not remove GefyraBridgeMount '%s': %s",
+                mount["metadata"].get("name", "<unknown>"),
+                e,
+            )
             continue
-    return None
+    return
 
 
 def remove_remainder_bridges(config: ClientConfiguration):
+    from kubernetes.client import ApiException
+
     try:
         gbridges = config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object(
             group="gefyra.dev",
@@ -54,8 +63,9 @@ def remove_remainder_bridges(config: ClientConfiguration):
             namespace=config.NAMESPACE,
             plural="gefyrabridges",
         )
-    except Exception:
-        return None
+    except ApiException as e:
+        logger.debug("Could not list Gefyra bridges: %s", e)
+        return
     for bridge in gbridges.get("items"):
         try:
             config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object(
@@ -73,9 +83,14 @@ def remove_remainder_bridges(config: ClientConfiguration):
                 namespace=config.NAMESPACE,
                 name=bridge["metadata"]["name"],
             )
-        except Exception:
+        except ApiException as e:
+            logger.debug(
+                "Could not remove GefyraBridge '%s': %s",
+                bridge["metadata"].get("name", "<unknown>"),
+                e,
+            )
             continue
-    return None
+    return
 
 
 def remove_gefyra_namespace(config: ClientConfiguration):

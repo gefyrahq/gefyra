@@ -12,7 +12,7 @@ jobs:
   update_homebrew:
     runs-on: macos-15
     steps:
-    - uses: actions/checkout@v7.0.0
+    - uses: actions/checkout@v7.0.1
     - name: Update Homebrew formula
       working-directory: client/
       env:

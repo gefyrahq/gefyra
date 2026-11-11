@@ -1,16 +1,16 @@
 import unittest
 from unittest.mock import Mock, patch
-import kubernetes.client.exceptions
 
+import kubernetes.client.exceptions
+from gefyra.configuration import ClientConfiguration
 from gefyra.misc.uninstall import (
     remove_all_clients,
+    remove_gefyra_crds,
+    remove_gefyra_namespace,
+    remove_gefyra_rbac,
     remove_remainder_bridge_mounts,
     remove_remainder_bridges,
-    remove_gefyra_namespace,
-    remove_gefyra_crds,
-    remove_gefyra_rbac,
 )
-from gefyra.configuration import ClientConfiguration
 
 
 class TestRemoveAllClients(unittest.TestCase):
@@ -56,9 +56,13 @@ class TestRemoveAllClients(unittest.TestCase):
         """Test error handling during client deletion"""
         client1 = Mock(client_id="client-1")
         mock_list_client.return_value = [client1]
-        mock_delete_client.side_effect = Exception("Deletion failed")
 
-        with self.assertRaises(Exception):
+        class MyException(Exception):
+            pass
+
+        mock_delete_client.side_effect = MyException("Deletion failed")
+
+        with self.assertRaises(MyException):
             remove_all_clients()
 
         mock_delete_client.assert_called_once_with("client-1", force=True, wait=True)
@@ -126,7 +130,7 @@ class TestRemoveRemainderBridges(unittest.TestCase):
     def test_remove_remainder_bridges_list_fails(self):
         """Test when listing bridges fails"""
         self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.side_effect = (
-            Exception("List failed")
+            kubernetes.client.exceptions.ApiException("List failed")
         )
 
         result = remove_remainder_bridges(self.config)
@@ -145,7 +149,7 @@ class TestRemoveRemainderBridges(unittest.TestCase):
             bridges_response
         )
         self.config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.side_effect = (
-            Exception("Patch failed")
+            kubernetes.client.exceptions.ApiException(status=500, reason="Patch failed")
         )
 
         result = remove_remainder_bridges(self.config)
@@ -168,8 +172,8 @@ class TestRemoveRemainderBridges(unittest.TestCase):
         self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
             bridges_response
         )
-        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = Exception(
-            "Delete failed"
+        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = kubernetes.client.exceptions.ApiException(
+            status=500, reason="Delete failed"
         )
 
         result = remove_remainder_bridges(self.config)
@@ -278,7 +282,7 @@ class TestRemoveRemainderBridgeMounts(unittest.TestCase):
     def test_remove_remainder_bridge_mounts_list_fails(self):
         """Test when listing bridge mounts fails"""
         self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.side_effect = (
-            Exception("List failed")
+            kubernetes.client.exceptions.ApiException("List failed")
         )
 
         result = remove_remainder_bridge_mounts(self.config)
@@ -297,7 +301,7 @@ class TestRemoveRemainderBridgeMounts(unittest.TestCase):
             mounts_response
         )
         self.config.K8S_CUSTOM_OBJECT_API.patch_namespaced_custom_object.side_effect = (
-            Exception("Patch failed")
+            kubernetes.client.exceptions.ApiException(status=500, reason="Patch failed")
         )
 
         result = remove_remainder_bridge_mounts(self.config)
@@ -319,8 +323,8 @@ class TestRemoveRemainderBridgeMounts(unittest.TestCase):
         self.config.K8S_CUSTOM_OBJECT_API.list_namespaced_custom_object.return_value = (
             mounts_response
         )
-        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = Exception(
-            "Delete failed"
+        self.config.K8S_CUSTOM_OBJECT_API.delete_namespaced_custom_object.side_effect = kubernetes.client.exceptions.ApiException(
+            status=500, reason="Delete failed"
         )
 
         result = remove_remainder_bridge_mounts(self.config)

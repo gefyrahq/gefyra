@@ -1,12 +1,16 @@
 import logging
 import os
 import sys
-from threading import Thread, Event
-from typing import Dict, List, Optional, TYPE_CHECKING
+from threading import Event, Thread
+from typing import TYPE_CHECKING
+
 from gefyra.cluster.utils import retrieve_pod_and_container
 
-from .utils import _parse_k8s_cpu_to_cpu_quota, _parse_k8s_mem_to_bytes
-from .utils import _inherit_resources_from_workload
+from .utils import (
+    _inherit_resources_from_workload,
+    _parse_k8s_cpu_to_cpu_quota,
+    _parse_k8s_mem_to_bytes,
+)
 
 if TYPE_CHECKING:
     from docker.models.containers import Container
@@ -14,8 +18,8 @@ if TYPE_CHECKING:
 from gefyra.configuration import (
     ClientConfiguration,
 )
-from .utils import generate_env_dict_from_strings, stopwatch
 
+from .utils import generate_env_dict_from_strings, stopwatch
 
 logger = logging.getLogger(__name__)
 
@@ -100,32 +104,34 @@ def run(
     connection_name: str,
     name: str = "",
     command: str = "",
-    volumes: Optional[List] = None,
-    ports: Optional[Dict] = None,
+    volumes: list | None = None,
+    ports: dict | None = None,
     detach: bool = True,
     auto_remove: bool = False,
     namespace: str = "",
-    env: Optional[List] = None,
+    env: list | None = None,
     env_from: str = "",
     pull: str = "missing",
     platform: str = "linux/amd64",
-    cpu_from: Optional[str] = None,
-    memory_from: Optional[str] = None,
-    cpu: Optional[str] = None,
-    memory: Optional[str] = None,
-    security_opts: Optional[List[str]] = None,
-    user: Optional[str] = None,
-    privileged: Optional[bool] = None,
-    extra_container_args: Optional[Dict] = None,
+    cpu_from: str | None = None,
+    memory_from: str | None = None,
+    cpu: str | None = None,
+    memory: str | None = None,
+    security_opts: list[str] | None = None,
+    user: str | None = None,
+    privileged: bool | None = None,
+    extra_container_args: dict | None = None,
 ) -> bool:
+    from docker.errors import APIError, DockerException
     from kubernetes.client import ApiException
-    from docker.errors import APIError
+
     from gefyra.cluster.utils import get_env_from_pod_container
+    from gefyra.exceptions import GefyraConnectionError
     from gefyra.local.bridge import deploy_app_container
+    from gefyra.local.cargo import probe_wireguard_connection
     from gefyra.local.utils import (
         get_processed_paths,
     )
-    from gefyra.local.cargo import probe_wireguard_connection
 
     config = ClientConfiguration(connection_name=connection_name)
 
@@ -147,7 +153,7 @@ def run(
     #
     try:
         probe_wireguard_connection(config)
-    except Exception as e:
+    except (GefyraConnectionError, DockerException) as e:
         logger.error(e)
         logger.error(
             "\n\033[1m[Hint]\033[0m You may need to run the Cargo Container first."
@@ -180,8 +186,8 @@ def run(
         env_dict.update(env_overrides)
 
     # Inherit CPU/memory from workloads if requested
-    inherited_cpu: Optional[str] = None
-    inherited_mem: Optional[str] = None
+    inherited_cpu: str | None = None
+    inherited_mem: str | None = None
     if cpu_from:
         inherited_cpu, _ = _inherit_resources_from_workload(config, namespace, cpu_from)
     if memory_from:
