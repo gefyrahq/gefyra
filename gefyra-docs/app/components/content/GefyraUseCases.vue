@@ -6,7 +6,7 @@ interface UseCase {
   managerValue: string
   developerValue: string
   icon: string
-  image?: string
+  mermaid: string
 }
 
 const useCases: UseCase[] = [
@@ -17,6 +17,16 @@ const useCases: UseCase[] = [
     managerValue: 'Full alignment with Zero-Trust and RBAC policies; eliminates third-party container licensing friction.',
     developerValue: 'Native Linux and Podman support without clunky VM workarounds or permission headaches.',
     icon: 'i-lucide-shield-check',
+    mermaid: `flowchart TD
+    subgraph Host["Developer Workstation (Linux / macOS)"]
+        User["Non-Root Developer"] -->|Runs without sudo| Podman["Rootless Podman / Docker Engine"]
+        Podman --> Cargo["Gefyra Cargo Sidecar"]
+    end
+    Cargo <==>|"Encrypted WireGuard Link (UDP 31820)"| Stowaway["Gefyra Stowaway Gateway"]
+    subgraph Cluster["Enterprise Kubernetes Staging Cluster"]
+        Stowaway --> Operator["Gefyra Operator (Scoped RBAC)"]
+        Operator --> Pods["Staging Pods & Services"]
+    end`,
   },
   {
     title: 'Parallel Testing in Shared Enterprise Clusters',
@@ -25,6 +35,29 @@ const useCases: UseCase[] = [
     managerValue: 'Cuts cloud staging infrastructure costs by up to 70% while supporting unlimited team scaling.',
     developerValue: 'Isolated sandbox testing inside real, high-performance shared clusters with zero risk of interfering with teammates.',
     icon: 'i-lucide-users',
+    mermaid: `flowchart LR
+    subgraph Developers["Engineering Team"]
+        DevA["Developer Alice"]
+        DevB["Developer Bob"]
+    end
+
+    subgraph Cluster["Shared Staging Cluster (Zero Collisions)"]
+        subgraph NSA["Namespace: team-billing"]
+            CarrierA["Carrier2 (Alice's Bridge)"]
+            BillingSvc["Billing Service"]
+        end
+        subgraph NSB["Namespace: team-auth"]
+            CarrierB["Carrier2 (Bob's Bridge)"]
+            AuthSvc["Auth Service"]
+        end
+    end
+
+    DevA <==>|Isolated Bridge A| CarrierA
+    DevB <==>|Isolated Bridge B| CarrierB
+    classDef teamAlice fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
+    classDef teamBob fill:#2d3b41,stroke:#6b9ba5,stroke-width:2px,color:#e0eced;
+    class NSA,DevA teamAlice;
+    class NSB,DevB teamBob;`,
   },
   {
     title: 'Live Remote Debugging with Real Cluster Data',
@@ -33,6 +66,19 @@ const useCases: UseCase[] = [
     managerValue: 'Drastically reduces "works on my machine" bugs leaking into staging or production.',
     developerValue: 'Step-through debugging against real cloud databases, microservices, and live environment states.',
     icon: 'i-lucide-bug',
+    mermaid: `sequenceDiagram
+    participant Ingress as K8s Ingress / Gateway
+    participant Carrier as Carrier2 Proxy
+    participant IDE as Local IDE (VS Code / PyCharm)
+    participant DB as Remote Cluster Database
+
+    Ingress->>Carrier: Incoming User Request
+    Carrier->>IDE: Intercept & tunnel to local container
+    Note over IDE: Breakpoint triggers in local editor
+    IDE->>DB: Query remote Postgres / Redis
+    DB-->>IDE: Live cluster dataset returned
+    IDE-->>Carrier: Return response from local code
+    Carrier-->>Ingress: Forward HTTP 200 to client`,
   },
   {
     title: 'Instant Feedback Loops (Save & See)',
@@ -41,6 +87,11 @@ const useCases: UseCase[] = [
     managerValue: 'Maximizes engineering velocity, developer throughput, and time-to-market.',
     developerValue: 'Immediate feedback on every code change; zero context switching while waiting for pipelines.',
     icon: 'i-lucide-zap',
+    mermaid: `flowchart LR
+    Dev["Developer (Editor)"] -->|"1. Hit Save (0.1s)"| Local["Local Container"]
+    Local -->|"2. Hot-Reload (1s)"| Local
+    Local <==>|"3. Live Container Overlay"| K8sPod["Staging K8s Pod"]
+    K8sPod -->|"4. Instant Verified Response"| Client["API / Browser Client"]`,
   },
   {
     title: 'Autonomous AI Agents in Native Kubernetes',
@@ -49,6 +100,17 @@ const useCases: UseCase[] = [
     managerValue: 'Drastically reduces LLM execution costs and token usage by shrinking the AI feedback loop from 15-minute CI/CD pipelines to milliseconds. Accelerates time-to-market for AI features with guaranteed production compatibility.',
     developerValue: 'Instant validation of AI-generated code against real cluster dependencies; zero context switching while waiting for builds, with full IDE debugging capabilities for local agent pipelines.',
     icon: 'i-lucide-brain',
+    mermaid: `flowchart LR
+    subgraph LocalMachine["Local Developer Workspace"]
+        AIAgent["AI Agent (Cursor / Claude Code)"]
+        AIAgent -->|"Writes endpoint & runs tests"| Container["Local Container"]
+    end
+    Container <==>|"Gefyra WireGuard Fabric"| Staging["Staging Kubernetes Cluster"]
+    subgraph RemoteK8s["Cluster Ground Truth"]
+        Staging --> AuthAPI["Internal Auth Microservice"]
+        Staging --> LiveDB[("Live Staging Database")]
+    end
+    LiveDB -.->|"Real data & error response"| AIAgent`,
   },
 ]
 </script>
@@ -60,7 +122,7 @@ const useCases: UseCase[] = [
     </template>
 
     <template #description>
-      From enterprise compliance to instant feedback — four ways Gefyra accelerates Kubernetes development.
+      From enterprise compliance to instant feedback — five ways Gefyra accelerates Kubernetes development.
     </template>
 
     <div class="flex flex-col gap-16 sm:gap-24">
@@ -111,32 +173,8 @@ const useCases: UseCase[] = [
           </div>
         </div>
 
-        <div class="w-full flex-1 overflow-hidden lg:max-w-1/2">
-          <NuxtImg
-            v-if="useCase.image"
-            :src="useCase.image"
-            :alt="useCase.title"
-            class="w-full rounded-xl"
-            loading="lazy"
-            format="webp"
-          />
-          <div
-            v-else
-            class="flex aspect-[4/3] w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-default bg-elevated/50 text-muted"
-            role="img"
-            :aria-label="`Placeholder image for ${useCase.title}`"
-          >
-            <UIcon
-              :name="useCase.icon"
-              class="size-12 opacity-40"
-            />
-            <span class="text-sm font-medium tracking-wide uppercase">
-              Image placeholder
-            </span>
-            <span class="max-w-56 text-center text-xs opacity-70">
-              {{ useCase.title }}
-            </span>
-          </div>
+        <div class="w-full flex-1 overflow-hidden rounded-xl border border-default/20 bg-muted/10 p-2 sm:p-4 lg:max-w-1/2">
+          <Mermaid :code="encodeURIComponent(useCase.mermaid)" />
         </div>
       </article>
     </div>

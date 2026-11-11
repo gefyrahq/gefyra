@@ -1,48 +1,99 @@
 ---
 seo:
-  title: Hello from Gefyra | Blazingly-fast rocket, rock-solid, local application development arrow_right with Kubernetes.
-  description: Gefyra enables blazingly-fast, reliable local application development with Kubernetes. Streamline your workflow, boost productivity, and build with confidence using Gefyra’s powerful development tools.
+  title: Ship verified Kubernetes features | Gefyra — Kubernetes Local Development
+  description: Eliminate slow build loops. Bridge local Docker containers and AI coding agents directly into your live Kubernetes cluster in seconds. 100% open source.
 ---
 
 ::u-page-hero
 ---
 links:
-  - label: Get Started
-    to: /en/quick-start/installation
+  - label: Read the 2-Minute Quickstart
+    to: /en/quickstart/
     color: primary
     size: xl
     trailing-icon: i-lucide-arrow-right
-  - label: Install Docker Extension
-    to: /en/quick-start/installation#docker-desktop-extension
+  - label: Connect your AI Coding Agent
+    to: /en/ai-agents/cluster-ground-truth
     color: neutral
     size: xl
-    trailing-icon: simple-icons-docker
+    trailing-icon: i-lucide-bot
 ---
 #headline
 :icon{name="i-gefyra-logo-vertical" mode="svg" class="home-icon"}
 
 #title
-Blazingly-fast, rock-solid, local application development with Kubernetes.
+Ship verified Kubernetes features. No image builds. No CI waiting loops.
 
 #description
-Run local code in any Kubernetes cluster without the build and push cycle. It overlays containers in the cluster making code changes immediately available. It's a new era of software development.
+Gefyra bridges your local machine into your remote Kubernetes cluster. Run your code and local AI agents natively in your staging environment with instant hot-reloading.
 
 #default
   :::card-group
     ::::card
     ---
-    title: The Problem
+    title: Supercharge Local AI Coding Agents
     ---
-    Building and pushing containers to test them in Kubernetes is repetitive and time-consuming. Every minor code change forces developers into a slow feedback loop:<br /><br /> <b>Commit -> Build -> Push -> Deploy -> Wait -> Test</b>.<br /><br /> This setup burns expensive CI/CD pipeline resources, slows down engineering velocity, and frustrates development teams.
+    **Give Local AI the Missing 50%: Live Cluster Ground Truth.**<br/><br/>
+    Why mock your cluster when your agent can query it directly? Run Cursor, Claude Code, or Gemini CLI against staging databases, identity providers, and internal APIs. Let your agent test and fix code with real feedback, zero hallucinations, and zero remote deployments.
     ::::
 
     ::::card
     ---
-    title: The Solution
+    title: Blazingly Fast Inner Loop (Code ➔ Test in Seconds)
     ---
-    Gefyra runs your local code directly in any Kubernetes cluster instantly. By creating a secure, wireguard-encrypted bridge, Gefyra overlays the existing container in Kubernetes with your local environment. <b>You save your file, and the effects are immediately live in the cluster context.</b> No cloud waste, no pipeline waiting times, just pure development speed.
+    **From 20 minutes to 3 seconds.**<br/><br/>
+    Traditional microservice debugging takes 10+ minutes per code change across container registries and cluster rollouts. Gefyra brings execution down to standard local speeds with native breakpoints, IDE debuggers, and hot-reload engines.
     ::::
   :::
+::
+
+::u-page-section
+---
+class: "border-t"
+---
+#title
+Start Here
+
+#description
+From first install to production settings — three short stops through the docs.
+
+#default
+:docs-path
+::
+
+::u-page-section
+---
+class: "border-t"
+---
+#title
+The Inner-Loop Velocity Gap
+
+#description
+See the difference between the traditional development loop and Gefyra.
+
+#default
+```mermaid
+flowchart TB
+    subgraph Traditional["Traditional Kubernetes Loop: 15 to 25 Minutes per change"]
+        direction LR
+        T1["1. Code Change"] --> T2["2. Docker Build (3m)"]
+        T2 --> T3["3. Registry Push (2m)"]
+        T3 --> T4["4. Deploy Manifests (1m)"]
+        T4 --> T5["5. Pull & Schedule (2m)"]
+        T5 --> T6["6. Manual Verification"]
+    end
+
+    subgraph GefyraLoop["Gefyra Loop: 3 Seconds per change"]
+        direction LR
+        G1["1. Code Change"] -->|Hit Save| G2["2. Instant Hot-Reload"]
+        G2 -->|Zero Build / WireGuard Link| G3["3. Live Cluster Verification (3s)"]
+    end
+
+    classDef trad fill:#2d3b41,stroke:#ef4444,stroke-width:2px,color:#fee2e2;
+    classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
+    class Traditional trad;
+    class GefyraLoop gefyra;
+```
 ::
 
 ::u-page-section
@@ -117,7 +168,6 @@ A non-invasive, open-source approach engineered for secure enterprise environmen
   ---
   #title
   Flexible Workflows
-
   #description
   Direct IDE & Debugger Integration. Connect live remote cluster traffic seamlessly to local breakpoints in VS Code, IntelliJ, or PyCharm. Developers can diagnose heavy cloud bugs using the powerful, familiar desktop tools they love instead of digging through chaotic log files.
   :::
@@ -159,21 +209,60 @@ Gefyra acts as a lightweight user-space application and requires **zero permanen
 class: "border-t"
 ---
 #title
-Let us know about your experience!
+The Blueshoe Cloud & Kubernetes Ecosystem
 
 #description
-We depend on your feedback - Gefyra's was created out of our own needs and the feedback we received from you, and our community.
-We'd appreciate it if you could take 2 minutes of your time to fill out our [feedback form]{.font-bold}.
+Building and scaling cloud-native workloads? Discover other developer tools and consulting services created by the team at [Blueshoe](https://www.blueshoe.io){target="_blank" rel="noopener noreferrer"}:
 
-#links
-  :::u-button
+#default
+:::ecosystem-cards
+  ::::ecosystem-card
   ---
-  color: primary
-  size: xl
-  to: https://forms.gle/AWT9NparpTVk8E978
-  target: _blank
-  trailing-icon: i-lucide-arrow-right
+  title: Django Hurricane
+  tag: Cloud-Native Django
+  logo: /img/ecosystem/hurricane.png
+  url: https://django-hurricane.io
+  linkText: Explore Hurricane →
   ---
-  Give feedback
-  :::
+  **The Kubernetes-native application server for Django.** Achieve 2x throughput, eliminate 404 scanning attacks, and synchronize database migrations directly with Kubernetes startup and readiness probes.
+  ::::
+
+  ::::ecosystem-card
+  ---
+  title: pytest-kubernetes
+  tag: Testing & CI
+  logo: /img/ecosystem/pytest-kubernetes.svg
+  url: https://github.com/Blueshoe/pytest-kubernetes
+  linkText: View on GitHub →
+  ---
+  **Stop mocking Kubernetes. Test against the real thing.** A lightweight pytest plugin that orchestrates authentic local clusters (k3d, kind, minikube) with a single fixture—applying manifests, port-forwarding, and cleaning up automatically.
+  ::::
+
+  ::::ecosystem-card
+  ---
+  title: Blueshoe Cloud Consulting
+  tag: Architecture & Services
+  logo: /img/ecosystem/blueshoe.svg
+  url: https://www.blueshoe.io
+  linkText: Cloud Native Services →
+  ---
+  **Enterprise Kubernetes Architecture & Platform Modernization.** Partner with the creators of Gefyra and Hurricane. We help teams architect, migrate, and scale mission-critical cloud-native platforms with zero downtime.
+  ::::
+:::
+::
+
+::u-page-section
+---
+class: "border-t"
+---
+#title
+Community & Support
+
+#description
+Have questions, architectural ideas, or need help optimizing your deployment? Join the community:
+
+#default
+- Chat with the team on [Discord](https://discord.gg/8NTPMVPaKy){target="_blank" rel="noopener noreferrer"}
+- Follow and connect on [LinkedIn](https://www.linkedin.com/company/blueshoe/){target="_blank" rel="noopener noreferrer"}
+- Star the project and contribute on [GitHub](https://github.com/gefyrahq/gefyra){target="_blank" rel="noopener noreferrer"}
 ::
