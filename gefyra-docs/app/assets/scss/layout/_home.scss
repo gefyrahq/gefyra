@@ -10,6 +10,57 @@
   margin: 0 auto;
 }
 
+// Gefyra Stage Hero Background Texture
+.gefyra-stage {
+  position: relative;
+  overflow: hidden;
+
+  // Background texture layer
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(ellipse 70% 60% at 50% -5%, rgba(246, 188, 0, 0.2), transparent 70%),
+      url('/img/stage-texture.svg');
+    background-position: top center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.85;
+  }
+
+  // Subtle vignette / bottom blend
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, transparent 65%, var(--ui-bg, #fff) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  // Elevate container content above the texture
+  > [data-slot="container"] {
+    position: relative;
+    z-index: 2;
+  }
+}
+
+:is(.dark) .gefyra-stage {
+  &::before {
+    background-image:
+      radial-gradient(ellipse 70% 60% at 50% -5%, rgba(246, 188, 0, 0.24), rgba(29, 42, 47, 0) 75%),
+      url('/img/stage-texture.svg');
+    opacity: 0.95;
+  }
+
+  &::after {
+    background: linear-gradient(180deg, transparent 0%, transparent 65%, var(--ui-bg, #0b1317) 100%);
+  }
+}
+
 // Hide Mermaid interactive controls and header entirely so diagrams appear as clean images
 .mermaid-toolbar,
 .ncm-zoom-toolbar,
@@ -48,25 +99,30 @@
 
   svg {
     font-family: var(--font-sans, 'Public Sans', sans-serif) !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
 
     text,
     .label,
-    .nodeLabel,
-    .actor,
-    .messageText,
-    .noteText {
-      font-size: 15px !important;
+    .nodeLabel {
+      font-size: 16px !important;
       font-weight: 500 !important;
     }
 
+    .actor,
+    text.actor,
+    .messageText,
+    .noteText {
+      font-size: 16px !important;
+      font-weight: 600 !important;
+    }
+
     .edgeLabel {
-      font-size: 13.5px !important;
+      font-size: 14px !important;
     }
 
     .cluster .nodeLabel,
     .cluster text {
-      font-size: 16px !important;
+      font-size: 17px !important;
       font-weight: 700 !important;
     }
 
@@ -86,6 +142,43 @@
       stroke-width: 1.5px !important;
       rx: 8px;
       ry: 8px;
+    }
+  }
+}
+
+// Inner-Loop Velocity Gap diagram typography boost
+.inner-loop-section {
+  .mermaid-block {
+    margin: 2rem 0 !important;
+  }
+
+  .mermaid-wrapper {
+    max-width: 1050px;
+    margin: 0 auto;
+    overflow-x: auto;
+  }
+
+  .mermaid svg {
+    min-width: 780px;
+    font-size: 17px !important;
+
+    text,
+    .label,
+    .nodeLabel {
+      font-size: 17px !important;
+      font-weight: 600 !important;
+      line-height: 1.4 !important;
+    }
+
+    .edgeLabel {
+      font-size: 15px !important;
+      font-weight: 700 !important;
+    }
+
+    .cluster .nodeLabel,
+    .cluster text {
+      font-size: 19px !important;
+      font-weight: 800 !important;
     }
   }
 }
@@ -174,27 +267,240 @@
   color: #f6bc00;
 }
 
+// Light / Bright Theme Mermaid Styling
+html:not(.dark) .mermaid svg,
+html.light .mermaid svg {
+  .node:not([class*="class-"]) rect,
+  .node:not([class*="class-"]) polygon,
+  .node:not([class*="class-"]) circle,
+  .node:not([class*="class-"]) path {
+    fill: #ffffff !important;
+    stroke: #b45309 !important;
+    stroke-width: 2px !important;
+  }
+
+  // Ensure ALL node text is dark slate with high contrast
+  .label text,
+  .node text,
+  .nodeLabel,
+  .label,
+  span.nodeLabel,
+  div.nodeLabel,
+  text {
+    fill: #0f172a !important;
+    color: #0f172a !important;
+    font-weight: 600 !important;
+  }
+
+  // Clusters / Subgraphs in light theme
+  .cluster rect {
+    fill: #f8fafc !important;
+    stroke: #94a3b8 !important;
+    stroke-width: 1.5px !important;
+    rx: 8px;
+    ry: 8px;
+  }
+
+  .cluster .nodeLabel,
+  .cluster text,
+  .cluster span {
+    fill: #0f172a !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 17px !important;
+  }
+
+  // Links and arrows: High contrast deep amber
+  .edgePath .path,
+  .flowchart-link {
+    stroke: #b45309 !important;
+    stroke-width: 2px !important;
+  }
+
+  .marker {
+    fill: #b45309 !important;
+    stroke: #b45309 !important;
+  }
+
+  // Edge text labels
+  .edgeLabel,
+  .edgeLabel text,
+  .edgeLabel span {
+    fill: #0f172a !important;
+    color: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+  }
+
+  .edgeLabel rect {
+    fill: #ffffff !important;
+    stroke: #cbd5e1 !important;
+    stroke-width: 1px !important;
+    rx: 4px;
+    ry: 4px;
+    opacity: 0.98 !important;
+  }
+
+  // Sequence Diagrams in Light Theme
+  .actor {
+    fill: #ffffff !important;
+    stroke: #b45309 !important;
+    stroke-width: 2px !important;
+  }
+
+  text.actor,
+  .actor text {
+    fill: #0f172a !important;
+    font-weight: 700 !important;
+  }
+
+  .actor-line {
+    stroke: #94a3b8 !important;
+    stroke-width: 1.5px !important;
+    stroke-dasharray: 4 !important;
+  }
+
+  .messageLine0,
+  .messageLine1 {
+    stroke: #b45309 !important;
+    stroke-width: 2px !important;
+  }
+
+  .messageText {
+    fill: #0f172a !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+  }
+
+  .note {
+    fill: #fef9c3 !important;
+    stroke: #ca8a04 !important;
+    stroke-width: 1.5px !important;
+  }
+
+  .noteText {
+    fill: #713f12 !important;
+    font-weight: 600 !important;
+  }
+
+  // Semantic class styling for light theme
+  .node.trad rect,
+  .node.blind rect,
+  .node.danger rect {
+    fill: #fef2f2 !important;
+    stroke: #dc2626 !important;
+  }
+  .node.trad text,
+  .node.blind text,
+  .node.danger text {
+    fill: #991b1b !important;
+    color: #991b1b !important;
+  }
+
+  .node.k8sBox rect,
+  .node.remote rect,
+  .node.clusterBox rect {
+    fill: #f0fdf4 !important;
+    stroke: #16a34a !important;
+  }
+  .node.k8sBox text,
+  .node.remote text,
+  .node.clusterBox text {
+    fill: #14532d !important;
+    color: #14532d !important;
+  }
+
+  .node.teamAlice rect,
+  .node.devBox rect,
+  .node.gefyra rect,
+  .node.safe rect {
+    fill: #fffbeb !important;
+    stroke: #b45309 !important;
+  }
+  .node.teamAlice text,
+  .node.devBox text,
+  .node.gefyra text,
+  .node.safe text {
+    fill: #78350f !important;
+    color: #78350f !important;
+  }
+
+  .node.teamBob rect,
+  .node.tunnelBox rect,
+  .node.hook rect {
+    fill: #f0f9ff !important;
+    stroke: #0284c7 !important;
+  }
+  .node.teamBob text,
+  .node.tunnelBox text,
+  .node.hook text {
+    fill: #0c4a6e !important;
+    color: #0c4a6e !important;
+  }
+}
+
+// Dark Theme Mermaid Styling
 html.dark .mermaid svg {
   .node:not([class*="class-"]) rect,
-  .node:not([class*="class-"]) polygon {
+  .node:not([class*="class-"]) polygon,
+  .node:not([class*="class-"]) circle,
+  .node:not([class*="class-"]) path {
     fill: var(--gefyra-slate-900) !important;
     stroke: var(--gefyra-gold) !important;
   }
 
   .label text,
-  .node text {
+  .node text,
+  .nodeLabel,
+  .label,
+  span.nodeLabel,
+  div.nodeLabel,
+  text {
     fill: #f9fafb !important;
+    color: #f9fafb !important;
   }
 
   .cluster rect {
-    fill: rgba(29, 42, 47, 0.7) !important;
+    fill: rgba(29, 42, 47, 0.75) !important;
     stroke: var(--gefyra-slate-600) !important;
+    rx: 8px;
+    ry: 8px;
   }
 
   .cluster .nodeLabel,
-  .cluster text {
+  .cluster text,
+  .cluster span {
     fill: var(--gefyra-gold) !important;
+    color: var(--gefyra-gold) !important;
     font-weight: 700 !important;
+    font-size: 17px !important;
+  }
+
+  .edgePath .path,
+  .flowchart-link {
+    stroke: var(--gefyra-gold) !important;
+    stroke-width: 2px !important;
+  }
+
+  .marker {
+    fill: var(--gefyra-gold) !important;
+    stroke: var(--gefyra-gold) !important;
+  }
+
+  .edgeLabel,
+  .edgeLabel text,
+  .edgeLabel span {
+    fill: #f9fafb !important;
+    color: #f9fafb !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+  }
+
+  .edgeLabel rect {
+    fill: var(--gefyra-slate-950) !important;
+    stroke: var(--gefyra-slate-600) !important;
+    stroke-width: 1px !important;
+    opacity: 0.95 !important;
   }
 
   .actor {
@@ -202,8 +508,10 @@ html.dark .mermaid svg {
     stroke: var(--gefyra-gold) !important;
   }
 
-  text.actor {
+  text.actor,
+  .actor text {
     fill: #f9fafb !important;
+    font-weight: 700 !important;
   }
 
   .actor-line {
@@ -217,6 +525,8 @@ html.dark .mermaid svg {
 
   .messageText {
     fill: #f9fafb !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
   }
 
   .note {
@@ -226,7 +536,62 @@ html.dark .mermaid svg {
 
   .noteText {
     fill: var(--gefyra-slate-950) !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
+  }
+
+  // Semantic class styling for dark theme
+  .node.trad rect,
+  .node.blind rect,
+  .node.danger rect {
+    fill: #451a1a !important;
+    stroke: #ef4444 !important;
+  }
+  .node.trad text,
+  .node.blind text,
+  .node.danger text {
+    fill: #fee2e2 !important;
+    color: #fee2e2 !important;
+  }
+
+  .node.k8sBox rect,
+  .node.remote rect,
+  .node.clusterBox rect {
+    fill: #064e3b !important;
+    stroke: #10b981 !important;
+  }
+  .node.k8sBox text,
+  .node.remote text,
+  .node.clusterBox text {
+    fill: #ecfdf5 !important;
+    color: #ecfdf5 !important;
+  }
+
+  .node.teamAlice rect,
+  .node.devBox rect,
+  .node.gefyra rect,
+  .node.safe rect {
+    fill: #2d3b41 !important;
+    stroke: var(--gefyra-gold) !important;
+  }
+  .node.teamAlice text,
+  .node.devBox text,
+  .node.gefyra text,
+  .node.safe text {
+    fill: var(--gefyra-gold) !important;
+    color: var(--gefyra-gold) !important;
+  }
+
+  .node.teamBob rect,
+  .node.tunnelBox rect,
+  .node.hook rect {
+    fill: #164e63 !important;
+    stroke: #38bdf8 !important;
+  }
+  .node.teamBob text,
+  .node.tunnelBox text,
+  .node.hook text {
+    fill: #f0f9ff !important;
+    color: #f0f9ff !important;
   }
 }
 
@@ -237,8 +602,12 @@ html.dark .mermaid svg {
   grid-template-columns: 1fr;
   margin: 2rem 0;
 
-  @media (min-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 

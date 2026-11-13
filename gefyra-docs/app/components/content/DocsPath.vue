@@ -1,7 +1,7 @@
 <template>
   <div class="docs-path">
     <NuxtLink
-      to="/en/quickstart/"
+      to="/en/quickstart"
       class="docs-path-card"
     >
       <span class="docs-path-step">01</span>

@@ -6,9 +6,10 @@ seo:
 
 ::u-page-hero
 ---
+class: "gefyra-stage"
 links:
   - label: Read the 2-Minute Quickstart
-    to: /en/quickstart/
+    to: /en/quickstart
     color: primary
     size: xl
     trailing-icon: i-lucide-arrow-right
@@ -45,55 +46,6 @@ Gefyra bridges your local machine into your remote Kubernetes cluster. Run your 
     Traditional microservice debugging takes 10+ minutes per code change across container registries and cluster rollouts. Gefyra brings execution down to standard local speeds with native breakpoints, IDE debuggers, and hot-reload engines.
     ::::
   :::
-::
-
-::u-page-section
----
-class: "border-t"
----
-#title
-Start Here
-
-#description
-From first install to production settings — three short stops through the docs.
-
-#default
-:docs-path
-::
-
-::u-page-section
----
-class: "border-t"
----
-#title
-The Inner-Loop Velocity Gap
-
-#description
-See the difference between the traditional development loop and Gefyra.
-
-#default
-```mermaid
-flowchart TB
-    subgraph Traditional["Traditional Kubernetes Loop: 15 to 25 Minutes per change"]
-        direction LR
-        T1["1. Code Change"] --> T2["2. Docker Build (3m)"]
-        T2 --> T3["3. Registry Push (2m)"]
-        T3 --> T4["4. Deploy Manifests (1m)"]
-        T4 --> T5["5. Pull & Schedule (2m)"]
-        T5 --> T6["6. Manual Verification"]
-    end
-
-    subgraph GefyraLoop["Gefyra Loop: 3 Seconds per change"]
-        direction LR
-        G1["1. Code Change"] -->|Hit Save| G2["2. Instant Hot-Reload"]
-        G2 -->|Zero Build / WireGuard Link| G3["3. Live Cluster Verification (3s)"]
-    end
-
-    classDef trad fill:#2d3b41,stroke:#ef4444,stroke-width:2px,color:#fee2e2;
-    classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
-    class Traditional trad;
-    class GefyraLoop gefyra;
-```
 ::
 
 ::u-page-section
@@ -176,6 +128,54 @@ A non-invasive, open-source approach engineered for secure enterprise environmen
 :gefyra-marquee
 ::
 
+::u-page-section
+---
+class: "border-t"
+---
+#title
+Start Here
+
+#description
+From first install to production settings — three short stops through the docs.
+
+#default
+:docs-path
+::
+
+::u-page-section
+---
+class: "border-t inner-loop-section"
+---
+#title
+The Inner-Loop Velocity Gap
+
+#description
+See the difference between the traditional development loop and Gefyra.
+
+#default
+```mermaid
+%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
+flowchart LR
+    subgraph Traditional["Traditional Kubernetes Loop: 15 to 25 Minutes per change"]
+        direction LR
+        T1["1. Code<br/>Change"] --> T2["2. Docker Build<br/>(3 mins)"] --> T3["3. Registry Push<br/>(2 mins)"] --> T4["4. Deploy K8s<br/>(1 min)"] --> T5["5. Pull & Schedule<br/>(2 mins)"] --> T6["6. Verification<br/>(10 mins)"]
+    end
+    classDef trad fill:#2d3b41,stroke:#ef4444,stroke-width:2px,color:#fee2e2;
+    class Traditional trad;
+```
+
+```mermaid
+%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
+flowchart LR
+    subgraph GefyraLoop["Gefyra Loop: 3 Seconds per change"]
+        direction LR
+        G1["1. Code<br/>Change"] -->|Hit Save| G2["2. Instant Hot-Reload<br/>(1 second)"] -->|Live WireGuard Link| G3["3. Live Cluster Verification<br/>(3 seconds)"]
+    end
+    classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
+    class GefyraLoop gefyra;
+```
+::
+
 :gefyra-use-cases
 
 ::u-page-section
@@ -195,11 +195,13 @@ Gefyra acts as a lightweight user-space application and requires **zero permanen
   size: lg
   items:
     - title: gefyra up
-      description: Prepares your local engine environment and establishes a secure, encrypted Wireguard tunnel directly to your target cluster.
-    - title: gefyra bridge
-      description: The Gefyra operator hooks into the selected pod/container and transparently intercepts the traffic, tunneling it straight onto your local machine.
+      description: Prepares your local engine environment and establishes an encrypted WireGuard tunnel directly to your target cluster.
+    - title: gefyra run
+      description: Starts your local Docker/Podman container directly inside the cluster network with internal DNS and database access.
+    - title: gefyra mount & bridge create
+      description: Mounts the cluster workload and routes live ingress/HTTP traffic into your local container based on path or header rules.
     - title: gefyra down
-      description: Clean exit. Once you stop your session, Gefyra completely unbridges the components and removes all cluster-side footprints instantly.
+      description: Clean exit. Removes active bridges, unmounts workloads, and restores original cluster state with zero leftover footprints.
   ---
   :::
 ::
@@ -219,7 +221,7 @@ Building and scaling cloud-native workloads? Discover other developer tools and 
   ::::ecosystem-card
   ---
   title: Django Hurricane
-  tag: Cloud-Native Django
+  tag: Django App
   logo: /img/ecosystem/hurricane.png
   url: https://django-hurricane.io
   linkText: Explore Hurricane →
@@ -236,6 +238,17 @@ Building and scaling cloud-native workloads? Discover other developer tools and 
   linkText: View on GitHub →
   ---
   **Stop mocking Kubernetes. Test against the real thing.** A lightweight pytest plugin that orchestrates authentic local clusters (k3d, kind, minikube) with a single fixture—applying manifests, port-forwarding, and cleaning up automatically.
+  ::::
+
+  ::::ecosystem-card
+  ---
+  title: Kennel
+  tag: Container Security
+  logo: /img/ecosystem/kennel.webp
+  url: https://kennel.blueshoe.io
+  linkText: Explore Kennel →
+  ---
+  **Guard your containers. Instant clarity in one click.** On-demand container image security platform providing SBOM generation, OSV vulnerability scans, layer reconstruction, and end-of-life checks with zero pipeline setup.
   ::::
 
   ::::ecosystem-card

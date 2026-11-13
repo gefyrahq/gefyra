@@ -17,16 +17,23 @@ const useCases: UseCase[] = [
     managerValue: 'Full alignment with Zero-Trust and RBAC policies; eliminates third-party container licensing friction.',
     developerValue: 'Native Linux and Podman support without clunky VM workarounds or permission headaches.',
     icon: 'i-lucide-shield-check',
-    mermaid: `flowchart TD
+    mermaid: `%%{init: {'themeVariables': { 'fontSize': '16px' }}}%%
+flowchart TD
     subgraph Host["Developer Workstation (Linux / macOS)"]
-        User["Non-Root Developer"] -->|Runs without sudo| Podman["Rootless Podman / Docker Engine"]
+        direction LR
+        User["Non-Root Developer"] -->|Runs without sudo| Podman["Podman / Docker Engine"]
         Podman --> Cargo["Gefyra Cargo Sidecar"]
     end
-    Cargo <==>|"Encrypted WireGuard Link (UDP 31820)"| Stowaway["Gefyra Stowaway Gateway"]
+    Cargo <==>|"Encrypted WireGuard Link (UDP 31820)"| Stowaway
     subgraph Cluster["Enterprise Kubernetes Staging Cluster"]
-        Stowaway --> Operator["Gefyra Operator (Scoped RBAC)"]
+        direction LR
+        Stowaway["Gefyra Stowaway"] --> Operator["Gefyra Operator"]
         Operator --> Pods["Staging Pods & Services"]
-    end`,
+    end
+    classDef devBox fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#f8fafc;
+    classDef k8sBox fill:#1d2a2f,stroke:#6b9ba5,stroke-width:2px,color:#f8fafc;
+    class Host devBox;
+    class Cluster k8sBox;`,
   },
   {
     title: 'Parallel Testing in Shared Enterprise Clusters',
@@ -66,11 +73,12 @@ const useCases: UseCase[] = [
     managerValue: 'Drastically reduces "works on my machine" bugs leaking into staging or production.',
     developerValue: 'Step-through debugging against real cloud databases, microservices, and live environment states.',
     icon: 'i-lucide-bug',
-    mermaid: `sequenceDiagram
-    participant Ingress as K8s Ingress / Gateway
+    mermaid: `%%{init: {'themeVariables': { 'fontSize': '18px', 'actorFontSize': '18px', 'messageFontSize': '17px', 'noteFontSize': '16px' }}}%%
+sequenceDiagram
+    participant Ingress as K8s Ingress
     participant Carrier as Carrier2 Proxy
-    participant IDE as Local IDE (VS Code / PyCharm)
-    participant DB as Remote Cluster Database
+    participant IDE as Local IDE
+    participant DB as Remote Cluster DB
 
     Ingress->>Carrier: Incoming User Request
     Carrier->>IDE: Intercept & tunnel to local container
@@ -87,11 +95,13 @@ const useCases: UseCase[] = [
     managerValue: 'Maximizes engineering velocity, developer throughput, and time-to-market.',
     developerValue: 'Immediate feedback on every code change; zero context switching while waiting for pipelines.',
     icon: 'i-lucide-zap',
-    mermaid: `flowchart LR
-    Dev["Developer (Editor)"] -->|"1. Hit Save (0.1s)"| Local["Local Container"]
-    Local -->|"2. Hot-Reload (1s)"| Local
-    Local <==>|"3. Live Container Overlay"| K8sPod["Staging K8s Pod"]
-    K8sPod -->|"4. Instant Verified Response"| Client["API / Browser Client"]`,
+    mermaid: `%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
+flowchart TD
+    Dev["1. Developer (Editor)"] -->|"Hit Save (0.1s)"| Local["2. Local Container (Hot-Reload)"]
+    Local <==>|"Live Container Overlay"| K8sPod["3. Staging K8s Pod"]
+    K8sPod -->|"Instant Verified Response"| Client["4. Browser / Client API"]
+    classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
+    class Dev,Local,K8sPod,Client gefyra;`,
   },
   {
     title: 'Autonomous AI Agents in Native Kubernetes',
@@ -100,17 +110,25 @@ const useCases: UseCase[] = [
     managerValue: 'Drastically reduces LLM execution costs and token usage by shrinking the AI feedback loop from 15-minute CI/CD pipelines to milliseconds. Accelerates time-to-market for AI features with guaranteed production compatibility.',
     developerValue: 'Instant validation of AI-generated code against real cluster dependencies; zero context switching while waiting for builds, with full IDE debugging capabilities for local agent pipelines.',
     icon: 'i-lucide-brain',
-    mermaid: `flowchart LR
-    subgraph LocalMachine["Local Developer Workspace"]
-        AIAgent["AI Agent (Cursor / Claude Code)"]
-        AIAgent -->|"Writes endpoint & runs tests"| Container["Local Container"]
+    mermaid: `%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
+flowchart TD
+    subgraph LocalMachine["Local Workspace (AI Agent)"]
+        direction LR
+        AIAgent["AI Agent<br/>(Cursor / Claude)"] -->|"Writes code & runs tests"| Container["Local Container<br/>(IDE / Dev)"]
     end
-    Container <==>|"Gefyra WireGuard Fabric"| Staging["Staging Kubernetes Cluster"]
-    subgraph RemoteK8s["Cluster Ground Truth"]
-        Staging --> AuthAPI["Internal Auth Microservice"]
-        Staging --> LiveDB[("Live Staging Database")]
+
+    Container <==>|"Gefyra WireGuard Tunnel"| Staging
+
+    subgraph RemoteK8s["Remote Cluster Ground Truth"]
+        direction LR
+        Staging["Staging Pod"] --> LiveDB[("Live Staging DB / APIs")]
     end
-    LiveDB -.->|"Real data & error response"| AIAgent`,
+
+    LiveDB -.->|"Live feedback & real runtime errors"| AIAgent
+    classDef agentBox fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
+    classDef clusterBox fill:#1d2a2f,stroke:#6b9ba5,stroke-width:2px,color:#f8fafc;
+    class LocalMachine agentBox;
+    class RemoteK8s clusterBox;`,
   },
 ]
 </script>

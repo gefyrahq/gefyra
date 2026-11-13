@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 680" fill="none" preserveAspectRatio="xMidYMin slice">
+  <defs>
+    <!-- Technical Grid Pattern -->
+    <pattern id="techGrid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M 48 0 L 0 0 0 48" fill="none" stroke="currentColor" stroke-width="0.75" stroke-opacity="0.08" />
+      <circle cx="0" cy="0" r="1.5" fill="currentColor" fill-opacity="0.18" />
+    </pattern>
+
+    <!-- Top Glow -->
+    <radialGradient id="stageGlow" cx="50%" cy="0%" r="65%">
+      <stop offset="0%" stop-color="#f6bc00" stop-opacity="0.22" />
+      <stop offset="40%" stop-color="#f6bc00" stop-opacity="0.08" />
+      <stop offset="80%" stop-color="#2d3b41" stop-opacity="0.02" />
+      <stop offset="100%" stop-color="#2d3b41" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- WireGuard Tunnel Beam Gradient -->
+    <linearGradient id="tunnelBeam" x1="15%" y1="0%" x2="85%" y2="80%">
+      <stop offset="0%" stop-color="#f6bc00" stop-opacity="0.4" />
+      <stop offset="50%" stop-color="#f6bc00" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#50808a" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Fade to transparent at bottom -->
+    <linearGradient id="bottomFade" x1="0" y1="0" x2="0" y2="100%">
+      <stop offset="50%" stop-color="#000" stop-opacity="1" />
+      <stop offset="100%" stop-color="#000" stop-opacity="0" />
+    </linearGradient>
+
+    <mask id="stageMask">
+      <rect width="1440" height="680" fill="url(#bottomFade)" />
+    </mask>
+  </defs>
+
+  <!-- Masked Content -->
+  <g mask="url(#stageMask)">
+    <!-- Ambient Radial Glow -->
+    <rect width="1440" height="680" fill="url(#stageGlow)" />
+
+    <!-- Technical Grid Layer -->
+    <rect width="1440" height="680" fill="url(#techGrid)" />
+
+    <!-- Isometric Bridge / Network Vectors -->
+    <!-- Suspension / Tunnel Arcs -->
+    <path d="M -100 120 Q 360 480 720 180 T 1540 220" fill="none" stroke="url(#tunnelBeam)" stroke-width="1.75" stroke-dasharray="6 6" />
+    <path d="M 0 200 Q 520 540 960 220 T 1600 300" fill="none" stroke="url(#tunnelBeam)" stroke-width="1.25" stroke-opacity="0.6" />
+    <path d="M 200 50 Q 720 380 1240 100" fill="none" stroke="#f6bc00" stroke-width="0.75" stroke-opacity="0.25" />
+
+    <!-- Network Nodes (Cluster Topology Points) -->
+    <g fill="#f6bc00" opacity="0.6">
+      <circle cx="280" cy="180" r="3" />
+      <circle cx="280" cy="180" r="7" fill="none" stroke="#f6bc00" stroke-width="0.75" opacity="0.5" />
+
+      <circle cx="480" cy="340" r="2.5" />
+      <circle cx="720" cy="180" r="4" />
+      <circle cx="720" cy="180" r="10" fill="none" stroke="#f6bc00" stroke-width="1" opacity="0.6" />
+
+      <circle cx="960" cy="220" r="3" />
+      <circle cx="1160" cy="120" r="2.5" />
+      <circle cx="1280" cy="260" r="2" />
+    </g>
+
+    <!-- Geometric Intersection Crosses -->
+    <g stroke="currentColor" stroke-width="1" stroke-opacity="0.2">
+      <path d="M 240 91 V 99 M 236 95 H 244" />
+      <path d="M 480 139 V 147 M 476 143 H 484" />
+      <path d="M 720 91 V 99 M 716 95 H 724" />
+      <path d="M 960 139 V 147 M 956 143 H 964" />
+      <path d="M 1200 91 V 99 M 1196 95 H 1204" />
+    </g>
+  </g>
+</svg>
