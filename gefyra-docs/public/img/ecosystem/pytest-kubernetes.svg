@@ -1,0 +1,19 @@
+<svg viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="64" cy="64" r="60" fill="#326ce5" fill-opacity="0.1" stroke="#326ce5" stroke-width="4"/>
+  <g transform="translate(16, 16) scale(0.75)" fill="none" stroke="#326ce5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Kubernetes Helm Wheel -->
+    <circle cx="64" cy="64" r="20" fill="#326ce5"/>
+    <circle cx="64" cy="64" r="42" stroke="#326ce5" stroke-width="6" stroke-dasharray="14,8"/>
+    <line x1="64" y1="10" x2="64" y2="44" stroke="#326ce5" stroke-width="6"/>
+    <line x1="64" y1="84" x2="64" y2="118" stroke="#326ce5" stroke-width="6"/>
+    <line x1="10" y1="64" x2="44" y2="64" stroke="#326ce5" stroke-width="6"/>
+    <line x1="84" y1="64" x2="118" y2="64" stroke="#326ce5" stroke-width="6"/>
+    <line x1="26" y1="26" x2="50" y2="50" stroke="#0A9EDC" stroke-width="6"/>
+    <line x1="78" y1="78" x2="102" y2="102" stroke="#0A9EDC" stroke-width="6"/>
+    <line x1="102" y1="26" x2="78" y2="50" stroke="#0A9EDC" stroke-width="6"/>
+    <line x1="50" y1="78" x2="26" y2="102" stroke="#0A9EDC" stroke-width="6"/>
+  </g>
+  <!-- Pytest checkmark accent -->
+  <circle cx="96" cy="96" r="22" fill="#00a86b" stroke="#ffffff" stroke-width="3"/>
+  <path d="M87 96 l6 6 l14 -14" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
