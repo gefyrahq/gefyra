@@ -66,7 +66,7 @@
           LinkedIn
         </a>
         <a
-          href="https://www.blueshoe.io/impressum/"
+          href="https://www.blueshoe.io/legal-notice/"
           target="_blank"
           rel="noopener noreferrer"
           class="text-link"
@@ -74,7 +74,7 @@
           Legal Notice
         </a>
         <a
-          href="https://www.blueshoe.io/datenschutz/"
+          href="https://www.blueshoe.io/data-privacy/"
           target="_blank"
           rel="noopener noreferrer"
           class="text-link"
