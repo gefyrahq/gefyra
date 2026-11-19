@@ -5,6 +5,7 @@ useHead({
       rel: 'preload',
       as: 'image',
       href: '/img/stage-texture.svg',
+      fetchpriority: 'high',
     },
   ],
 })
