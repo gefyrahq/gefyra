@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
@@ -6,13 +8,30 @@ from tests.e2e.base import GefyraTestCase
 LOCAL_CONTAINER_NAME = "gefyra-new-backend"
 
 
+@pytest.fixture(autouse=True)
+def nginx_logs_on_failure(request, operator):
+    failures_before = request.session.testsfailed
+    yield
+    if request.session.testsfailed > failures_before:
+        print("--- nginx-deployment logs ---")
+        try:
+            print(
+                operator.kubectl(
+                    ["logs", "-n", "default", "deployment/nginx-deployment"],
+                    as_dict=False,
+                )
+            )
+        except RuntimeError as error:
+            print(f"Could not retrieve nginx-deployment logs: {error}")
+        print("-----------------------------")
+
+
 @pytest.fixture(scope="class", autouse=True)
 def workloads_for_bridgetests(operator):
-    operator.apply("tests/fixtures/nginx_exposed.yaml")
+    fixture_path = Path(__file__).parent.parent / "fixtures/nginx_exposed.yaml"
+    operator.apply(fixture_path)
     yield
-    operator.kubectl(
-        ["delete", "-f", "tests/fixtures/nginx_exposed.yaml"], as_dict=False
-    )
+    operator.kubectl(["delete", "-f", str(fixture_path)], as_dict=False)
     try:
         operator.kubectl(["delete", "deploy", "nginx-deployment-gefyra"], as_dict=False)
     except RuntimeError:
