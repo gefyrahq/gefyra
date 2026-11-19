@@ -100,6 +100,35 @@
   --gefyra-slate-100: #e0eced;
   --gefyra-slate-50: #f3f8f8;
 
+  // Light mode defaults (high contrast on white pages)
+  --mm-text: #0f172a;
+  --mm-title: #78350f;
+  --mm-line: #92400e;
+  --mm-node-bg: #ffffff;
+  --mm-node-border: #92400e;
+  --mm-cluster-bg: #f1f5f9;
+  --mm-cluster-border: #64748b;
+  --mm-edge-label-bg: #ffffff;
+  --mm-actor-bg: #ffffff;
+  --mm-actor-border: #92400e;
+  --mm-actor-text: #0f172a;
+  --mm-actor-line: #475569;
+  --mm-note-bg: #fef9c3;
+  --mm-note-text: #713f12;
+  --mm-note-border: #a16207;
+  --mm-brand-bg: #fffbeb;
+  --mm-brand-border: #92400e;
+  --mm-brand-text: #78350f;
+  --mm-remote-bg: #f0fdf4;
+  --mm-remote-border: #15803d;
+  --mm-remote-text: #14532d;
+  --mm-alt-bg: #f0f9ff;
+  --mm-alt-border: #0369a1;
+  --mm-alt-text: #0c4a6e;
+  --mm-danger-bg: #fef2f2;
+  --mm-danger-border: #dc2626;
+  --mm-danger-text: #991b1b;
+
   svg {
     // Do not override font-family here — Mermaid sizes boxes with its
     // default metrics; a wider CSS font clips subgraph titles and nodes.
@@ -141,17 +170,18 @@
 
     .edgePath .path,
     .flowchart-link {
-      stroke: var(--gefyra-gold) !important;
+      stroke: var(--mm-line) !important;
       stroke-width: 2px !important;
     }
 
     .marker {
-      fill: var(--gefyra-gold) !important;
-      stroke: var(--gefyra-gold) !important;
+      fill: var(--mm-line) !important;
+      stroke: var(--mm-line) !important;
     }
 
     .cluster rect {
-      stroke: var(--gefyra-slate-400) !important;
+      fill: var(--mm-cluster-bg) !important;
+      stroke: var(--mm-cluster-border) !important;
       stroke-width: 1.5px !important;
       rx: 8px;
       ry: 8px;
@@ -167,10 +197,44 @@
     .node.groupTitle .nodeLabel,
     .node.groupTitle span,
     .node.groupTitle text {
+      fill: var(--mm-title) !important;
+      color: var(--mm-title) !important;
       font-weight: 700 !important;
       font-size: 14px !important;
     }
   }
+}
+
+// Dark mode Mermaid tokens
+html.dark .mermaid,
+html.dark .mermaid-wrapper {
+  --mm-text: #f9fafb;
+  --mm-title: #f6bc00;
+  --mm-line: #f6bc00;
+  --mm-node-bg: #2d3b41;
+  --mm-node-border: #f6bc00;
+  --mm-cluster-bg: rgba(29, 42, 47, 0.75);
+  --mm-cluster-border: #456b75;
+  --mm-edge-label-bg: #1d2a2f;
+  --mm-actor-bg: #2d3b41;
+  --mm-actor-border: #f6bc00;
+  --mm-actor-text: #f9fafb;
+  --mm-actor-line: #456b75;
+  --mm-note-bg: #f6bc00;
+  --mm-note-text: #1d2a2f;
+  --mm-note-border: #bb6b02;
+  --mm-brand-bg: #2d3b41;
+  --mm-brand-border: #f6bc00;
+  --mm-brand-text: #facc15;
+  --mm-remote-bg: #064e3b;
+  --mm-remote-border: #10b981;
+  --mm-remote-text: #ecfdf5;
+  --mm-alt-bg: #164e63;
+  --mm-alt-border: #38bdf8;
+  --mm-alt-text: #f0f9ff;
+  --mm-danger-bg: #451a1a;
+  --mm-danger-border: #ef4444;
+  --mm-danger-text: #fee2e2;
 }
 
 // Inner-Loop Velocity Gap — titled cards with controlled padding
@@ -388,327 +452,246 @@ html.light .inner-loop-section {
   color: #f6bc00;
 }
 
-// Light / Bright Theme Mermaid Styling
-html:not(.dark) .mermaid svg,
-html.light .mermaid svg {
-  .node:not([class*='class-']) rect,
-  .node:not([class*='class-']) polygon,
-  .node:not([class*='class-']) circle,
-  .node:not([class*='class-']) path {
-    fill: #ffffff !important;
-    stroke: #b45309 !important;
+.community-link-icon {
+  color: #ca8a04;
+  height: 1.35rem;
+  margin-bottom: 0.15rem;
+  width: 1.35rem;
+}
+
+:is(.dark) .community-link-icon {
+  color: #f6bc00;
+}
+
+// Mermaid structural + semantic overrides (colors via --mm-* tokens)
+.mermaid svg {
+  .node rect,
+  .node polygon,
+  .node circle,
+  .node path {
+    fill: var(--mm-node-bg) !important;
+    stroke: var(--mm-node-border) !important;
     stroke-width: 2px !important;
   }
 
-  // Ensure ALL node text is dark slate with high contrast
   .label text,
   .node text,
   .nodeLabel,
   .label,
   span.nodeLabel,
   div.nodeLabel,
-  text {
-    fill: #0f172a !important;
-    color: #0f172a !important;
+  .node foreignObject div,
+  .node foreignObject span {
+    fill: var(--mm-text) !important;
+    color: var(--mm-text) !important;
     font-weight: 600 !important;
   }
 
-  // Clusters / Subgraphs in light theme
-  .cluster rect {
-    fill: #f8fafc !important;
-    stroke: #94a3b8 !important;
-    stroke-width: 1.5px !important;
-    rx: 8px;
-    ry: 8px;
-  }
-
-  .node.groupTitle .nodeLabel,
-  .node.groupTitle span,
-  .node.groupTitle text {
-    fill: #b45309 !important;
-    color: #b45309 !important;
-  }
-
-  // Links and arrows: High contrast deep amber
-  .edgePath .path,
-  .flowchart-link {
-    stroke: #b45309 !important;
-    stroke-width: 2px !important;
-  }
-
-  .marker {
-    fill: #b45309 !important;
-    stroke: #b45309 !important;
-  }
-
-  // Edge text labels
   .edgeLabel,
   .edgeLabel text,
-  .edgeLabel span {
-    fill: #0f172a !important;
-    color: #0f172a !important;
+  .edgeLabel span,
+  .edgeLabel p,
+  .edgeLabel div,
+  .edgeLabel foreignObject div,
+  .edgeLabel foreignObject span,
+  .labelBkg,
+  .labelBkg span,
+  .labelBkg p {
+    fill: var(--mm-text) !important;
+    color: var(--mm-text) !important;
     font-weight: 600 !important;
     font-size: 12px !important;
   }
 
-  .edgeLabel rect {
-    fill: #ffffff !important;
-    stroke: #cbd5e1 !important;
+  .labelBkg,
+  span.edgeLabel,
+  .edgeLabel p {
+    background: var(--mm-edge-label-bg) !important;
+    background-color: var(--mm-edge-label-bg) !important;
+  }
+
+  .edgeLabel rect,
+  .edgeLabel > g > rect {
+    fill: var(--mm-edge-label-bg) !important;
+    stroke: var(--mm-cluster-border) !important;
     stroke-width: 1px !important;
     rx: 4px;
     ry: 4px;
-    opacity: 0.98 !important;
+    opacity: 1 !important;
   }
 
-  // Sequence Diagrams in Light Theme
+  .node .label p,
+  .node .nodeLabel p,
+  .node foreignObject p,
+  .node foreignObject div {
+    color: inherit !important;
+  }
+
+  // Sequence diagrams
   .actor {
-    fill: #ffffff !important;
-    stroke: #b45309 !important;
+    fill: var(--mm-actor-bg) !important;
+    stroke: var(--mm-actor-border) !important;
     stroke-width: 2px !important;
   }
 
   text.actor,
-  .actor text {
-    fill: #0f172a !important;
+  .actor text,
+  text.actor tspan {
+    fill: var(--mm-actor-text) !important;
+    color: var(--mm-actor-text) !important;
     font-weight: 700 !important;
   }
 
   .actor-line {
-    stroke: #94a3b8 !important;
+    stroke: var(--mm-actor-line) !important;
     stroke-width: 1.5px !important;
-    stroke-dasharray: 4 !important;
   }
 
   .messageLine0,
   .messageLine1 {
-    stroke: #b45309 !important;
+    stroke: var(--mm-line) !important;
     stroke-width: 2px !important;
   }
 
   .messageText {
-    fill: #0f172a !important;
+    fill: var(--mm-text) !important;
     font-weight: 600 !important;
     font-size: 13px !important;
   }
 
   .note {
-    fill: #fef9c3 !important;
-    stroke: #ca8a04 !important;
+    fill: var(--mm-note-bg) !important;
+    stroke: var(--mm-note-border) !important;
     stroke-width: 1.5px !important;
   }
 
   .noteText {
-    fill: #713f12 !important;
+    fill: var(--mm-note-text) !important;
     font-weight: 600 !important;
   }
 
-  // Semantic class styling for light theme
+  // Semantic flowchart classes (classDef only sets stroke-width; colors live here)
+  // Subgraphs also receive classDef names (e.g. class Host devBox).
+  .cluster.trad > rect,
+  .cluster.blind > rect,
+  .cluster.danger > rect,
   .node.trad rect,
   .node.blind rect,
   .node.danger rect {
-    fill: #fef2f2 !important;
-    stroke: #dc2626 !important;
+    fill: var(--mm-danger-bg) !important;
+    stroke: var(--mm-danger-border) !important;
   }
+
+  .node.trad .nodeLabel,
+  .node.blind .nodeLabel,
+  .node.danger .nodeLabel,
   .node.trad text,
   .node.blind text,
-  .node.danger text {
-    fill: #991b1b !important;
-    color: #991b1b !important;
+  .node.danger text,
+  .node.trad span,
+  .node.blind span,
+  .node.danger span {
+    fill: var(--mm-danger-text) !important;
+    color: var(--mm-danger-text) !important;
   }
 
+  .cluster.k8sBox > rect,
+  .cluster.remote > rect,
+  .cluster.clusterBox > rect,
+  .cluster.runBox > rect,
   .node.k8sBox rect,
   .node.remote rect,
-  .node.clusterBox rect {
-    fill: #f0fdf4 !important;
-    stroke: #16a34a !important;
-  }
-  .node.k8sBox text,
-  .node.remote text,
-  .node.clusterBox text {
-    fill: #14532d !important;
-    color: #14532d !important;
+  .node.clusterBox rect,
+  .node.runBox rect {
+    fill: var(--mm-remote-bg) !important;
+    stroke: var(--mm-remote-border) !important;
   }
 
+  .node.k8sBox .nodeLabel,
+  .node.remote .nodeLabel,
+  .node.clusterBox .nodeLabel,
+  .node.runBox .nodeLabel,
+  .node.k8sBox text,
+  .node.remote text,
+  .node.clusterBox text,
+  .node.runBox text,
+  .node.k8sBox span,
+  .node.remote span,
+  .node.clusterBox span,
+  .node.runBox span {
+    fill: var(--mm-remote-text) !important;
+    color: var(--mm-remote-text) !important;
+  }
+
+  .cluster.teamAlice > rect,
+  .cluster.devBox > rect,
+  .cluster.gefyra > rect,
+  .cluster.safe > rect,
+  .cluster.grounded > rect,
+  .cluster.overlay > rect,
+  .cluster.bridgeBox > rect,
+  .cluster.agentBox > rect,
+  .cluster.tunnelBox > rect,
   .node.teamAlice rect,
   .node.devBox rect,
   .node.gefyra rect,
-  .node.safe rect {
-    fill: #fffbeb !important;
-    stroke: #b45309 !important;
+  .node.safe rect,
+  .node.grounded rect,
+  .node.overlay rect,
+  .node.bridgeBox rect,
+  .node.agentBox rect,
+  .node.tunnelBox rect {
+    fill: var(--mm-brand-bg) !important;
+    stroke: var(--mm-brand-border) !important;
   }
+
+  .node.teamAlice .nodeLabel,
+  .node.devBox .nodeLabel,
+  .node.gefyra .nodeLabel,
+  .node.safe .nodeLabel,
+  .node.grounded .nodeLabel,
+  .node.overlay .nodeLabel,
+  .node.bridgeBox .nodeLabel,
+  .node.agentBox .nodeLabel,
+  .node.tunnelBox .nodeLabel,
   .node.teamAlice text,
   .node.devBox text,
   .node.gefyra text,
-  .node.safe text {
-    fill: #78350f !important;
-    color: #78350f !important;
-  }
-
-  .node.teamBob rect,
-  .node.tunnelBox rect,
-  .node.hook rect {
-    fill: #f0f9ff !important;
-    stroke: #0284c7 !important;
-  }
-  .node.teamBob text,
+  .node.safe text,
+  .node.grounded text,
+  .node.overlay text,
+  .node.bridgeBox text,
+  .node.agentBox text,
   .node.tunnelBox text,
-  .node.hook text {
-    fill: #0c4a6e !important;
-    color: #0c4a6e !important;
-  }
-}
-
-// Dark Theme Mermaid Styling
-html.dark .mermaid svg {
-  .node:not([class*='class-']) rect,
-  .node:not([class*='class-']) polygon,
-  .node:not([class*='class-']) circle,
-  .node:not([class*='class-']) path {
-    fill: var(--gefyra-slate-900) !important;
-    stroke: var(--gefyra-gold) !important;
+  .node.teamAlice span,
+  .node.devBox span,
+  .node.gefyra span,
+  .node.safe span,
+  .node.grounded span,
+  .node.overlay span,
+  .node.bridgeBox span,
+  .node.agentBox span,
+  .node.tunnelBox span {
+    fill: var(--mm-brand-text) !important;
+    color: var(--mm-brand-text) !important;
   }
 
-  .label text,
-  .node text,
-  .nodeLabel,
-  .label,
-  span.nodeLabel,
-  div.nodeLabel,
-  text {
-    fill: #f9fafb !important;
-    color: #f9fafb !important;
-  }
-
-  .cluster rect {
-    fill: rgba(29, 42, 47, 0.75) !important;
-    stroke: var(--gefyra-slate-600) !important;
-    rx: 8px;
-    ry: 8px;
-  }
-
-  .node.groupTitle .nodeLabel,
-  .node.groupTitle span,
-  .node.groupTitle text {
-    fill: var(--gefyra-gold) !important;
-    color: var(--gefyra-gold) !important;
-  }
-
-  .edgePath .path,
-  .flowchart-link {
-    stroke: var(--gefyra-gold) !important;
-    stroke-width: 2px !important;
-  }
-
-  .marker {
-    fill: var(--gefyra-gold) !important;
-    stroke: var(--gefyra-gold) !important;
-  }
-
-  .edgeLabel,
-  .edgeLabel text,
-  .edgeLabel span {
-    fill: #f9fafb !important;
-    color: #f9fafb !important;
-    font-weight: 600 !important;
-    font-size: 12px !important;
-  }
-
-  .edgeLabel rect {
-    fill: var(--gefyra-slate-950) !important;
-    stroke: var(--gefyra-slate-600) !important;
-    stroke-width: 1px !important;
-    opacity: 0.95 !important;
-  }
-
-  .actor {
-    fill: var(--gefyra-slate-900) !important;
-    stroke: var(--gefyra-gold) !important;
-  }
-
-  text.actor,
-  .actor text {
-    fill: #f9fafb !important;
-    font-weight: 700 !important;
-  }
-
-  .actor-line {
-    stroke: var(--gefyra-slate-600) !important;
-  }
-
-  .messageLine0,
-  .messageLine1 {
-    stroke: var(--gefyra-gold) !important;
-  }
-
-  .messageText {
-    fill: #f9fafb !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-  }
-
-  .note {
-    fill: var(--gefyra-gold) !important;
-    stroke: var(--gefyra-gold-dark) !important;
-  }
-
-  .noteText {
-    fill: var(--gefyra-slate-950) !important;
-    font-weight: 700 !important;
-  }
-
-  // Semantic class styling for dark theme
-  .node.trad rect,
-  .node.blind rect,
-  .node.danger rect {
-    fill: #451a1a !important;
-    stroke: #ef4444 !important;
-  }
-  .node.trad text,
-  .node.blind text,
-  .node.danger text {
-    fill: #fee2e2 !important;
-    color: #fee2e2 !important;
-  }
-
-  .node.k8sBox rect,
-  .node.remote rect,
-  .node.clusterBox rect {
-    fill: #064e3b !important;
-    stroke: #10b981 !important;
-  }
-  .node.k8sBox text,
-  .node.remote text,
-  .node.clusterBox text {
-    fill: #ecfdf5 !important;
-    color: #ecfdf5 !important;
-  }
-
-  .node.teamAlice rect,
-  .node.devBox rect,
-  .node.gefyra rect,
-  .node.safe rect {
-    fill: #2d3b41 !important;
-    stroke: var(--gefyra-gold) !important;
-  }
-  .node.teamAlice text,
-  .node.devBox text,
-  .node.gefyra text,
-  .node.safe text {
-    fill: var(--gefyra-gold) !important;
-    color: var(--gefyra-gold) !important;
-  }
-
+  .cluster.teamBob > rect,
+  .cluster.hook > rect,
   .node.teamBob rect,
-  .node.tunnelBox rect,
   .node.hook rect {
-    fill: #164e63 !important;
-    stroke: #38bdf8 !important;
+    fill: var(--mm-alt-bg) !important;
+    stroke: var(--mm-alt-border) !important;
   }
+
+  .node.teamBob .nodeLabel,
+  .node.hook .nodeLabel,
   .node.teamBob text,
-  .node.tunnelBox text,
-  .node.hook text {
-    fill: #f0f9ff !important;
-    color: #f0f9ff !important;
+  .node.hook text,
+  .node.teamBob span,
+  .node.hook span {
+    fill: var(--mm-alt-text) !important;
+    color: var(--mm-alt-text) !important;
   }
 }
 
