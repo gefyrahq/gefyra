@@ -276,7 +276,7 @@ jobs:
       - build_operator
       - build_carrier
       - build_stowaway
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
@@ -301,7 +301,7 @@ jobs:
         working-directory: ./client
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
-        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.9.0 bash
       - name: Download cargo artifact
         uses: actions/download-artifact@v8
         with:
@@ -392,7 +392,7 @@ jobs:
         working-directory: ./carrier2
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
-        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.9.0 bash
       - name: Download carrier artifact
         uses: actions/download-artifact@v8
         with:
@@ -553,7 +553,7 @@ jobs:
         working-directory: ./operator
         run: poetry install --with dev --no-interaction --no-root
       - name: Install k3d
-        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.8.3 bash
+        run: curl --silent --fail https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | TAG=v5.9.0 bash
       - name: Setup k3d
         working-directory: ./operator
         run: k3d cluster create --config tests/k3d_cluster.yaml && k3d kubeconfig get gefyra > mycluster.yaml

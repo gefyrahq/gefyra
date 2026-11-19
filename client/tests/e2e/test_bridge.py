@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from pytest_kubernetes.providers import AClusterManager
 
@@ -8,11 +10,10 @@ LOCAL_CONTAINER_NAME = "gefyra-new-backend"
 
 @pytest.fixture(scope="class", autouse=True)
 def workloads_for_bridgetests(operator):
-    operator.apply("tests/fixtures/nginx_exposed.yaml")
+    fixture_path = Path(__file__).parent.parent / "fixtures/nginx_exposed.yaml"
+    operator.apply(fixture_path)
     yield
-    operator.kubectl(
-        ["delete", "-f", "tests/fixtures/nginx_exposed.yaml"], as_dict=False
-    )
+    operator.kubectl(["delete", "-f", str(fixture_path)], as_dict=False)
     try:
         operator.kubectl(["delete", "deploy", "nginx-deployment-gefyra"], as_dict=False)
     except RuntimeError:
