@@ -30,9 +30,9 @@ flowchart TD
         Stowaway --> Operator["Operator"]
         Operator --> Pods["Pods"]
     end
-    classDef groupTitle fill:transparent,stroke:none,color:#f6bc00;
-    classDef devBox fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#f8fafc;
-    classDef k8sBox fill:#1d2a2f,stroke:#6b9ba5,stroke-width:2px,color:#f8fafc;
+    classDef groupTitle fill:transparent,stroke:none;
+    classDef devBox stroke-width:2px;
+    classDef k8sBox stroke-width:2px;
     class HostTitle,ClusterTitle groupTitle;
     class Host devBox;
     class Cluster k8sBox;`,
@@ -67,9 +67,9 @@ flowchart LR
 
     DevA <==>|Bridge A| CarrierA
     DevB <==>|Bridge B| CarrierB
-    classDef groupTitle fill:transparent,stroke:none,color:#f6bc00;
-    classDef teamAlice fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
-    classDef teamBob fill:#2d3b41,stroke:#6b9ba5,stroke-width:2px,color:#e0eced;
+    classDef groupTitle fill:transparent,stroke:none;
+    classDef teamAlice stroke-width:2px;
+    classDef teamBob stroke-width:2px;
     class TeamTitle,ClusterTitle,BillingTitle,AuthTitle groupTitle;
     class NSA,DevA teamAlice;
     class NSB,DevB teamBob;`,
@@ -108,7 +108,7 @@ flowchart TD
     Dev["1. Developer"] -->|"Hit Save"| Local["2. Local Container"]
     Local <==>|"Live Overlay"| K8sPod["3. Staging Pod"]
     K8sPod -->|"Verified"| Client["4. Browser / API"]
-    classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
+    classDef gefyra stroke-width:2px;
     class Dev,Local,K8sPod,Client gefyra;`,
   },
   {
@@ -133,9 +133,9 @@ flowchart TD
     end
 
     LiveDB -.->|"Feedback"| AIAgent
-    classDef groupTitle fill:transparent,stroke:none,color:#f6bc00;
-    classDef agentBox fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
-    classDef clusterBox fill:#1d2a2f,stroke:#6b9ba5,stroke-width:2px,color:#f8fafc;
+    classDef groupTitle fill:transparent,stroke:none;
+    classDef agentBox stroke-width:2px;
+    classDef clusterBox stroke-width:2px;
     class LocalTitle,RemoteTitle groupTitle;
     class LocalMachine agentBox;
     class RemoteK8s clusterBox;`,
