@@ -1,6 +1,12 @@
 export default defineNuxtConfig({
   modules: ['@nuxtjs/i18n', '@nuxt/eslint', '@nuxt/scripts', '@barzhsieh/nuxt-content-mermaid'],
 
+  site: {
+    name: 'Gefyra',
+    url: 'https://gefyra.dev',
+    description: 'Bridge local containers and AI coding agents into live Kubernetes clusters — instant hot-reload, zero image builds. 100% open source.',
+  },
+
   devServer: {
     host: 'localhost',
     port: 3000,
@@ -137,11 +143,11 @@ export default defineNuxtConfig({
 
   llms: {
     domain: 'https://gefyra.dev/',
-    title: 'Gefyra Documentation',
-    description: 'Gefyra - Kubernetes Development Environment',
+    title: 'Gefyra — Kubernetes Local Development',
+    description: 'Docs for Gefyra: bridge local Docker/Podman containers and AI coding agents into live Kubernetes clusters with instant hot-reload. No image builds, no CI waiting loops.',
     full: {
       title: 'Gefyra Documentation',
-      description: 'Gefyra - Kubernetes Development Environment',
+      description: 'Complete Gefyra documentation: quickstart, AI agent workflows, developer bridges, shared staging clusters, cloud guides (GKE, EKS), architecture, and CLI reference.',
     },
   },
 

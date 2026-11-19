@@ -1,5 +1,6 @@
 {
   "name": "gefyra-docs",
+  "description": "Gefyra documentation — bridge local containers and AI agents into live Kubernetes clusters with instant hot-reload.",
   "type": "module",
   "private": true,
   "scripts": {
