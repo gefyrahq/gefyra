@@ -158,7 +158,7 @@ export default defineNuxtConfig({
   },
 
   llms: {
-    domain: 'https://gefyra.dev/',
+    domain: 'https://gefyra.dev',
     title: 'Gefyra — Kubernetes Local Development',
     description: 'Docs for Gefyra: bridge local Docker/Podman containers and AI coding agents into live Kubernetes clusters with instant hot-reload. No image builds, no CI waiting loops.',
     full: {
