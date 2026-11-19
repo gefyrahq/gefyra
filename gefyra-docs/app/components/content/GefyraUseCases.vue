@@ -17,21 +17,23 @@ const useCases: UseCase[] = [
     managerValue: 'Full alignment with Zero-Trust and RBAC policies; eliminates third-party container licensing friction.',
     developerValue: 'Native Linux and Podman support without clunky VM workarounds or permission headaches.',
     icon: 'i-lucide-shield-check',
-    mermaid: `%%{init: {'themeVariables': { 'fontSize': '16px' }}}%%
+    mermaid: `%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 28, 'rankSpacing': 40, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart TD
-    subgraph Host["Developer Workstation (Linux / macOS)"]
-        direction LR
-        User["Non-Root Developer"] -->|Runs without sudo| Podman["Podman / Docker Engine"]
-        Podman --> Cargo["Gefyra Cargo Sidecar"]
+    subgraph Host
+        HostTitle[["Local Workstation"]] ~~~ User["Non-Root Dev"]
+        User --> Podman["Podman"]
+        Podman --> Cargo["Gefyra Cargo"]
     end
-    Cargo <==>|"Encrypted WireGuard Link (UDP 31820)"| Stowaway
-    subgraph Cluster["Enterprise Kubernetes Staging Cluster"]
-        direction LR
-        Stowaway["Gefyra Stowaway"] --> Operator["Gefyra Operator"]
-        Operator --> Pods["Staging Pods & Services"]
+    Cargo <==>|"WireGuard"| Stowaway
+    subgraph Cluster
+        ClusterTitle[["K8s Staging"]] ~~~ Stowaway["Stowaway"]
+        Stowaway --> Operator["Operator"]
+        Operator --> Pods["Pods"]
     end
+    classDef groupTitle fill:transparent,stroke:none,color:#f6bc00;
     classDef devBox fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#f8fafc;
     classDef k8sBox fill:#1d2a2f,stroke:#6b9ba5,stroke-width:2px,color:#f8fafc;
+    class HostTitle,ClusterTitle groupTitle;
     class Host devBox;
     class Cluster k8sBox;`,
   },
@@ -42,27 +44,33 @@ flowchart TD
     managerValue: 'Cuts cloud staging infrastructure costs by up to 70% while supporting unlimited team scaling.',
     developerValue: 'Isolated sandbox testing inside real, high-performance shared clusters with zero risk of interfering with teammates.',
     icon: 'i-lucide-users',
-    mermaid: `flowchart LR
-    subgraph Developers["Engineering Team"]
-        DevA["Developer Alice"]
-        DevB["Developer Bob"]
+    mermaid: `%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 28, 'rankSpacing': 36, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+    subgraph Developers
+        TeamTitle[["Engineering Team"]] ~~~ DevA["Alice"]
+        TeamTitle ~~~ DevB["Bob"]
     end
 
-    subgraph Cluster["Shared Staging Cluster (Zero Collisions)"]
-        subgraph NSA["Namespace: team-billing"]
-            CarrierA["Carrier2 (Alice's Bridge)"]
-            BillingSvc["Billing Service"]
+    subgraph Cluster
+        ClusterTitle[["Shared Staging"]]
+        subgraph NSA
+            BillingTitle[["billing ns"]] ~~~ CarrierA["Carrier A"]
+            CarrierA --- BillingSvc["Billing"]
         end
-        subgraph NSB["Namespace: team-auth"]
-            CarrierB["Carrier2 (Bob's Bridge)"]
-            AuthSvc["Auth Service"]
+        subgraph NSB
+            AuthTitle[["auth ns"]] ~~~ CarrierB["Carrier B"]
+            CarrierB --- AuthSvc["Auth"]
         end
+        ClusterTitle ~~~ BillingTitle
+        ClusterTitle ~~~ AuthTitle
     end
 
-    DevA <==>|Isolated Bridge A| CarrierA
-    DevB <==>|Isolated Bridge B| CarrierB
+    DevA <==>|Bridge A| CarrierA
+    DevB <==>|Bridge B| CarrierB
+    classDef groupTitle fill:transparent,stroke:none,color:#f6bc00;
     classDef teamAlice fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
     classDef teamBob fill:#2d3b41,stroke:#6b9ba5,stroke-width:2px,color:#e0eced;
+    class TeamTitle,ClusterTitle,BillingTitle,AuthTitle groupTitle;
     class NSA,DevA teamAlice;
     class NSB,DevB teamBob;`,
   },
@@ -73,20 +81,20 @@ flowchart TD
     managerValue: 'Drastically reduces "works on my machine" bugs leaking into staging or production.',
     developerValue: 'Step-through debugging against real cloud databases, microservices, and live environment states.',
     icon: 'i-lucide-bug',
-    mermaid: `%%{init: {'themeVariables': { 'fontSize': '18px', 'actorFontSize': '18px', 'messageFontSize': '17px', 'noteFontSize': '16px' }}}%%
+    mermaid: `%%{init: {'sequence': {'diagramMarginX': 20, 'diagramMarginY': 20, 'actorMargin': 50, 'messageMargin': 40, 'boxMargin': 12, 'noteMargin': 12, 'width': 140, 'height': 50}, 'themeVariables': { 'fontSize': '14px', 'actorFontSize': '14px', 'messageFontSize': '13px', 'noteFontSize': '13px' }}}%%
 sequenceDiagram
     participant Ingress as K8s Ingress
-    participant Carrier as Carrier2 Proxy
+    participant Carrier as Carrier2
     participant IDE as Local IDE
-    participant DB as Remote Cluster DB
+    participant DB as Cluster DB
 
-    Ingress->>Carrier: Incoming User Request
-    Carrier->>IDE: Intercept & tunnel to local container
-    Note over IDE: Breakpoint triggers in local editor
-    IDE->>DB: Query remote Postgres / Redis
-    DB-->>IDE: Live cluster dataset returned
-    IDE-->>Carrier: Return response from local code
-    Carrier-->>Ingress: Forward HTTP 200 to client`,
+    Ingress->>Carrier: Incoming request
+    Carrier->>IDE: Tunnel to local
+    Note over IDE: Breakpoint hits
+    IDE->>DB: Query Postgres
+    DB-->>IDE: Live dataset
+    IDE-->>Carrier: Local response
+    Carrier-->>Ingress: HTTP 200`,
   },
   {
     title: 'Instant Feedback Loops (Save & See)',
@@ -95,11 +103,11 @@ sequenceDiagram
     managerValue: 'Maximizes engineering velocity, developer throughput, and time-to-market.',
     developerValue: 'Immediate feedback on every code change; zero context switching while waiting for pipelines.',
     icon: 'i-lucide-zap',
-    mermaid: `%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
+    mermaid: `%%{init: {'flowchart': {'padding': 24, 'nodeSpacing': 36, 'rankSpacing': 44, 'diagramPadding': 16}, 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart TD
-    Dev["1. Developer (Editor)"] -->|"Hit Save (0.1s)"| Local["2. Local Container (Hot-Reload)"]
-    Local <==>|"Live Container Overlay"| K8sPod["3. Staging K8s Pod"]
-    K8sPod -->|"Instant Verified Response"| Client["4. Browser / Client API"]
+    Dev["1. Developer"] -->|"Hit Save"| Local["2. Local Container"]
+    Local <==>|"Live Overlay"| K8sPod["3. Staging Pod"]
+    K8sPod -->|"Verified"| Client["4. Browser / API"]
     classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
     class Dev,Local,K8sPod,Client gefyra;`,
   },
@@ -110,23 +118,25 @@ flowchart TD
     managerValue: 'Drastically reduces LLM execution costs and token usage by shrinking the AI feedback loop from 15-minute CI/CD pipelines to milliseconds. Accelerates time-to-market for AI features with guaranteed production compatibility.',
     developerValue: 'Instant validation of AI-generated code against real cluster dependencies; zero context switching while waiting for builds, with full IDE debugging capabilities for local agent pipelines.',
     icon: 'i-lucide-brain',
-    mermaid: `%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
+    mermaid: `%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 28, 'rankSpacing': 40, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart TD
-    subgraph LocalMachine["Local Workspace (AI Agent)"]
-        direction LR
-        AIAgent["AI Agent<br/>(Cursor / Claude)"] -->|"Writes code & runs tests"| Container["Local Container<br/>(IDE / Dev)"]
+    subgraph LocalMachine
+        LocalTitle[["AI Workspace"]] ~~~ AIAgent["AI Agent"]
+        AIAgent --> Container["Container"]
     end
 
-    Container <==>|"Gefyra WireGuard Tunnel"| Staging
+    Container <==>|"WireGuard"| Staging
 
-    subgraph RemoteK8s["Remote Cluster Ground Truth"]
-        direction LR
-        Staging["Staging Pod"] --> LiveDB[("Live Staging DB / APIs")]
+    subgraph RemoteK8s
+        RemoteTitle[["Cluster Ground Truth"]] ~~~ Staging["Staging Pod"]
+        Staging --> LiveDB[("Live DB")]
     end
 
-    LiveDB -.->|"Live feedback & real runtime errors"| AIAgent
+    LiveDB -.->|"Feedback"| AIAgent
+    classDef groupTitle fill:transparent,stroke:none,color:#f6bc00;
     classDef agentBox fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
     classDef clusterBox fill:#1d2a2f,stroke:#6b9ba5,stroke-width:2px,color:#f8fafc;
+    class LocalTitle,RemoteTitle groupTitle;
     class LocalMachine agentBox;
     class RemoteK8s clusterBox;`,
   },
@@ -191,7 +201,7 @@ flowchart TD
           </div>
         </div>
 
-        <div class="w-full flex-1 overflow-hidden rounded-xl border border-default/20 bg-muted/10 p-2 sm:p-4 lg:max-w-1/2">
+        <div class="use-case-mermaid w-full flex-1 rounded-xl border border-default/20 bg-muted/10 p-4 sm:p-6 lg:max-w-1/2">
           <Mermaid :code="encodeURIComponent(useCase.mermaid)" />
         </div>
       </article>

@@ -74,12 +74,15 @@
   border: none !important;
   background-color: transparent !important;
   box-shadow: none !important;
-  margin: 0.5rem 0 !important;
+  margin: 0.75rem 0 !important;
+  overflow: visible !important;
 }
 
 .mermaid-wrapper {
-  padding: 0.5rem 0 !important;
+  padding: 1rem 0.75rem !important;
   background: transparent !important;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 // Gefyra Mermaid Brand Theme
@@ -98,13 +101,29 @@
   --gefyra-slate-50: #f3f8f8;
 
   svg {
-    font-family: var(--font-sans, 'Public Sans', sans-serif) !important;
-    font-size: 16px !important;
+    // Do not override font-family here — Mermaid sizes boxes with its
+    // default metrics; a wider CSS font clips subgraph titles and nodes.
+    // Keep font sizes at/below Mermaid's layout fontSize.
+    font-size: 14px !important;
+    max-width: 100%;
+    height: auto;
+    overflow: visible;
+
+    .cluster {
+      overflow: visible;
+    }
+
+    // Mermaid subgraph titles are measured with the wrong font metrics and
+    // sit on the cluster stroke — they clip ("Loca", "Cluste") and are hard
+    // to read. Hide them; diagrams use regular header nodes instead.
+    .cluster-label {
+      display: none !important;
+    }
 
     text,
     .label,
     .nodeLabel {
-      font-size: 16px !important;
+      font-size: 14px !important;
       font-weight: 500 !important;
     }
 
@@ -112,18 +131,12 @@
     text.actor,
     .messageText,
     .noteText {
-      font-size: 16px !important;
+      font-size: 14px !important;
       font-weight: 600 !important;
     }
 
     .edgeLabel {
-      font-size: 14px !important;
-    }
-
-    .cluster .nodeLabel,
-    .cluster text {
-      font-size: 17px !important;
-      font-weight: 700 !important;
+      font-size: 12px !important;
     }
 
     .edgePath .path,
@@ -143,43 +156,148 @@
       rx: 8px;
       ry: 8px;
     }
+
+    // Header nodes used instead of subgraph titles
+    .node.groupTitle rect,
+    .node.groupTitle polygon {
+      fill: transparent !important;
+      stroke: transparent !important;
+    }
+
+    .node.groupTitle .nodeLabel,
+    .node.groupTitle span,
+    .node.groupTitle text {
+      font-weight: 700 !important;
+      font-size: 14px !important;
+    }
   }
 }
 
-// Inner-Loop Velocity Gap diagram typography boost
+// Inner-Loop Velocity Gap — titled cards with controlled padding
 .inner-loop-section {
+  .inner-loop-card {
+    border-radius: 0.875rem;
+    border: 2px solid;
+    margin: 1.5rem auto;
+    max-width: 1100px;
+    // Keep overflow visible on the card; scroll lives on .mermaid-wrapper.
+    // (overflow-x:auto forces overflow-y to auto too and clips SVG bottoms)
+    overflow: visible;
+    padding: 1.35rem 1.5rem 1.5rem;
+
+    > p,
+    > strong,
+    > :where(p, h3, h4) {
+      color: #f9fafb;
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.35;
+      margin: 0 0 0.75rem;
+      text-align: center;
+    }
+  }
+
+  .inner-loop-trad {
+    border-color: #ef4444;
+
+    > p,
+    > strong,
+    > :where(p, h3, h4) {
+      color: #fecaca;
+    }
+  }
+
+  .inner-loop-gefyra {
+    border-color: #f6bc00;
+
+    > p,
+    > strong,
+    > :where(p, h3, h4) {
+      color: #facc15;
+    }
+  }
+
   .mermaid-block {
-    margin: 2rem 0 !important;
+    margin: 0 !important;
+    padding: 0;
+    overflow: visible !important;
   }
 
   .mermaid-wrapper {
-    max-width: 1050px;
     margin: 0 auto;
+    padding: 0.5rem 0.5rem !important;
     overflow-x: auto;
+    overflow-y: visible;
   }
 
   .mermaid svg {
-    min-width: 780px;
-    font-size: 17px !important;
+    display: block;
+    margin: 0 auto;
+    min-width: 640px;
+    max-width: none;
+    font-size: 14px !important;
+    overflow: visible;
 
     text,
     .label,
     .nodeLabel {
-      font-size: 17px !important;
+      font-size: 14px !important;
       font-weight: 600 !important;
       line-height: 1.4 !important;
     }
 
     .edgeLabel {
-      font-size: 15px !important;
+      font-size: 12px !important;
       font-weight: 700 !important;
     }
+  }
+}
 
-    .cluster .nodeLabel,
-    .cluster text {
-      font-size: 19px !important;
-      font-weight: 800 !important;
-    }
+html:not(.dark) .inner-loop-section,
+html.light .inner-loop-section {
+  .inner-loop-card > p,
+  .inner-loop-card > strong,
+  .inner-loop-card > :where(p, h3, h4) {
+    color: #111827;
+  }
+
+  .inner-loop-trad > p,
+  .inner-loop-trad > strong,
+  .inner-loop-trad > :where(p, h3, h4) {
+    color: #991b1b;
+  }
+
+  .inner-loop-gefyra > p,
+  .inner-loop-gefyra > strong,
+  .inner-loop-gefyra > :where(p, h3, h4) {
+    color: #92400e;
+  }
+}
+
+// Use-case Mermaid cards: avoid clipping subgraph titles / edges
+.use-case-mermaid {
+  overflow: visible;
+
+  .mermaid-block {
+    overflow: visible !important;
+  }
+
+  .mermaid-wrapper {
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 1.25rem 1rem !important;
+  }
+
+  .mermaid svg {
+    display: block;
+    margin: 0 auto;
+    overflow: visible;
+    // Extra CSS padding compensates for Mermaid cluster titles
+    // that sit on/above the top border of subgraph rects.
+    padding: 0.75rem 0.5rem;
+    min-width: 260px;
+    max-width: 100%;
+    height: auto;
   }
 }
 
@@ -301,13 +419,11 @@ html.light .mermaid svg {
     ry: 8px;
   }
 
-  .cluster .nodeLabel,
-  .cluster text,
-  .cluster span {
-    fill: #0f172a !important;
-    color: #0f172a !important;
-    font-weight: 700 !important;
-    font-size: 17px !important;
+  .node.groupTitle .nodeLabel,
+  .node.groupTitle span,
+  .node.groupTitle text {
+    fill: #b45309 !important;
+    color: #b45309 !important;
   }
 
   // Links and arrows: High contrast deep amber
@@ -329,7 +445,7 @@ html.light .mermaid svg {
     fill: #0f172a !important;
     color: #0f172a !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
+    font-size: 12px !important;
   }
 
   .edgeLabel rect {
@@ -369,7 +485,7 @@ html.light .mermaid svg {
   .messageText {
     fill: #0f172a !important;
     font-weight: 600 !important;
-    font-size: 15px !important;
+    font-size: 13px !important;
   }
 
   .note {
@@ -467,13 +583,11 @@ html.dark .mermaid svg {
     ry: 8px;
   }
 
-  .cluster .nodeLabel,
-  .cluster text,
-  .cluster span {
+  .node.groupTitle .nodeLabel,
+  .node.groupTitle span,
+  .node.groupTitle text {
     fill: var(--gefyra-gold) !important;
     color: var(--gefyra-gold) !important;
-    font-weight: 700 !important;
-    font-size: 17px !important;
   }
 
   .edgePath .path,
@@ -493,7 +607,7 @@ html.dark .mermaid svg {
     fill: #f9fafb !important;
     color: #f9fafb !important;
     font-weight: 600 !important;
-    font-size: 14px !important;
+    font-size: 12px !important;
   }
 
   .edgeLabel rect {
@@ -526,7 +640,7 @@ html.dark .mermaid svg {
   .messageText {
     fill: #f9fafb !important;
     font-weight: 600 !important;
-    font-size: 15px !important;
+    font-size: 13px !important;
   }
 
   .note {

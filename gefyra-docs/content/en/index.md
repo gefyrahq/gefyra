@@ -153,27 +153,29 @@ The Inner-Loop Velocity Gap
 See the difference between the traditional development loop and Gefyra.
 
 #default
-```mermaid
-%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
-flowchart LR
-    subgraph Traditional["Traditional Kubernetes Loop: 15 to 25 Minutes per change"]
-        direction LR
-        T1["1. Code<br/>Change"] --> T2["2. Docker Build<br/>(3 mins)"] --> T3["3. Registry Push<br/>(2 mins)"] --> T4["4. Deploy K8s<br/>(1 min)"] --> T5["5. Pull & Schedule<br/>(2 mins)"] --> T6["6. Verification<br/>(10 mins)"]
-    end
-    classDef trad fill:#2d3b41,stroke:#ef4444,stroke-width:2px,color:#fee2e2;
-    class Traditional trad;
-```
+:::div{.inner-loop-card.inner-loop-trad}
+**Traditional Kubernetes Loop — 15 to 25 minutes per change**
 
 ```mermaid
-%%{init: {'themeVariables': { 'fontSize': '18px' }}}%%
+%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 36, 'rankSpacing': 48, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
 flowchart LR
-    subgraph GefyraLoop["Gefyra Loop: 3 Seconds per change"]
-        direction LR
-        G1["1. Code<br/>Change"] -->|Hit Save| G2["2. Instant Hot-Reload<br/>(1 second)"] -->|Live WireGuard Link| G3["3. Live Cluster Verification<br/>(3 seconds)"]
-    end
-    classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
-    class GefyraLoop gefyra;
+    T1["1. Code<br/>Change"] --> T2["2. Docker Build<br/>(3 mins)"] --> T3["3. Registry Push<br/>(2 mins)"] --> T4["4. Deploy K8s<br/>(1 min)"] --> T5["5. Pull & Schedule<br/>(2 mins)"] --> T6["6. Verification<br/>(10 mins)"]
+    classDef trad fill:#2d3b41,stroke:#ef4444,stroke-width:2px,color:#fee2e2;
+    class T1,T2,T3,T4,T5,T6 trad;
 ```
+:::
+
+:::div{.inner-loop-card.inner-loop-gefyra}
+**Gefyra Loop — 3 seconds per change**
+
+```mermaid
+%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 52, 'rankSpacing': 56, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
+flowchart LR
+    G1["1. Code<br/>Change"] -->|Hit Save| G2["2. Instant Hot-Reload<br/>(1 second)"] -->|WireGuard Link| G3["3. Live Verification<br/>(3 seconds)"]
+    classDef gefyra fill:#1d2a2f,stroke:#f6bc00,stroke-width:2px,color:#facc15;
+    class G1,G2,G3 gefyra;
+```
+:::
 ::
 
 :gefyra-use-cases
@@ -217,51 +219,51 @@ The Blueshoe Cloud & Kubernetes Ecosystem
 Building and scaling cloud-native workloads? Discover other developer tools and consulting services created by the team at [Blueshoe](https://www.blueshoe.io){target="_blank" rel="noopener noreferrer"}:
 
 #default
-:::ecosystem-cards
-  ::::ecosystem-card
-  ---
-  title: Django Hurricane
-  tag: Django App
-  logo: /img/ecosystem/hurricane.png
-  url: https://django-hurricane.io
-  linkText: Explore Hurricane →
-  ---
-  **The Kubernetes-native application server for Django.** Achieve 2x throughput, eliminate 404 scanning attacks, and synchronize database migrations directly with Kubernetes startup and readiness probes.
-  ::::
+  :::ecosystem-cards
+    ::::ecosystem-card
+    ---
+    title: Django Hurricane
+    tag: Django App
+    logo: /img/ecosystem/hurricane.png
+    url: https://django-hurricane.io
+    linkText: Explore Hurricane →
+    ---
+    **The Kubernetes-native application server for Django.** Achieve 2x throughput, eliminate 404 scanning attacks, and synchronize database migrations directly with Kubernetes startup and readiness probes.
+    ::::
 
-  ::::ecosystem-card
-  ---
-  title: pytest-kubernetes
-  tag: Testing & CI
-  logo: /img/ecosystem/pytest-kubernetes.svg
-  url: https://github.com/Blueshoe/pytest-kubernetes
-  linkText: View on GitHub →
-  ---
-  **Stop mocking Kubernetes. Test against the real thing.** A lightweight pytest plugin that orchestrates authentic local clusters (k3d, kind, minikube) with a single fixture—applying manifests, port-forwarding, and cleaning up automatically.
-  ::::
+    ::::ecosystem-card
+    ---
+    title: pytest-kubernetes
+    tag: Testing & CI
+    logo: /img/ecosystem/pytest-kubernetes.svg
+    url: https://github.com/Blueshoe/pytest-kubernetes
+    linkText: View on GitHub →
+    ---
+    **Stop mocking Kubernetes. Test against the real thing.** A lightweight pytest plugin that orchestrates authentic local clusters (k3d, kind, minikube) with a single fixture—applying manifests, port-forwarding, and cleaning up automatically.
+    ::::
 
-  ::::ecosystem-card
-  ---
-  title: Kennel
-  tag: Container Security
-  logo: /img/ecosystem/kennel.webp
-  url: https://kennel.blueshoe.io
-  linkText: Explore Kennel →
-  ---
-  **Guard your containers. Instant clarity in one click.** On-demand container image security platform providing SBOM generation, OSV vulnerability scans, layer reconstruction, and end-of-life checks with zero pipeline setup.
-  ::::
+    ::::ecosystem-card
+    ---
+    title: Kennel
+    tag: Container Security
+    logo: /img/ecosystem/kennel.webp
+    url: https://kennel.blueshoe.io
+    linkText: Explore Kennel →
+    ---
+    **Guard your containers. Instant clarity in one click.** On-demand container image security platform providing SBOM generation, OSV vulnerability scans, layer reconstruction, and end-of-life checks with zero pipeline setup.
+    ::::
 
-  ::::ecosystem-card
-  ---
-  title: Blueshoe Cloud Consulting
-  tag: Architecture & Services
-  logo: /img/ecosystem/blueshoe.svg
-  url: https://www.blueshoe.io
-  linkText: Cloud Native Services →
-  ---
-  **Enterprise Kubernetes Architecture & Platform Modernization.** Partner with the creators of Gefyra and Hurricane. We help teams architect, migrate, and scale mission-critical cloud-native platforms with zero downtime.
-  ::::
-:::
+    ::::ecosystem-card
+    ---
+    title: Blueshoe Cloud Consulting
+    tag: Architecture & Services
+    logo: /img/ecosystem/blueshoe.svg
+    url: https://www.blueshoe.io
+    linkText: Cloud Native Services →
+    ---
+    **Enterprise Kubernetes Architecture & Platform Modernization.** Partner with the creators of Gefyra and Hurricane. We help teams architect, migrate, and scale mission-critical cloud-native platforms with zero downtime.
+    ::::
+  :::
 ::
 
 ::u-page-section

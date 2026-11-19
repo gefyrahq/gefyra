@@ -10,8 +10,27 @@ export default defineNuxtConfig({
     loader: {
       init: {
         theme: 'base',
+        flowchart: {
+          padding: 28,
+          nodeSpacing: 45,
+          rankSpacing: 55,
+          diagramPadding: 20,
+          htmlLabels: true,
+          useMaxWidth: true,
+        },
+        sequence: {
+          diagramMarginX: 24,
+          diagramMarginY: 24,
+          actorMargin: 56,
+          width: 170,
+          height: 55,
+          boxMargin: 16,
+          messageMargin: 42,
+          noteMargin: 14,
+          useMaxWidth: true,
+        },
         themeVariables: {
-          fontSize: '16px',
+          fontSize: '14px',
           primaryColor: '#f6bc00',
           primaryTextColor: '#1d2a2f',
           primaryBorderColor: '#bb6b02',
