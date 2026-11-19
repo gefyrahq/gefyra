@@ -7,6 +7,22 @@ export default defineNuxtConfig({
     description: 'Bridge local containers and AI coding agents into live Kubernetes clusters — instant hot-reload, zero image builds. 100% open source.',
   },
 
+  // Docus pages use `[[lang]]` while Docus also forces i18n `strategy: 'prefix'`.
+  // That yields `/en/:lang?` (landing) and `/en/:lang?/:slug(.*)*` (docs), so
+  // `/en/quickstart` is stolen by landing and 404s. Strip the redundant param.
+  hooks: {
+    'pages:resolved': function (pages) {
+      for (const page of pages) {
+        if (page.path === '/:lang?' || /^\/[a-z]{2}\/:lang\?$/.test(page.path)) {
+          page.path = page.path.replace(/\/:lang\?$/, '') || '/'
+        }
+        else if (page.path.includes('/:lang?/:slug')) {
+          page.path = page.path.replace('/:lang?/:slug', '/:slug')
+        }
+      }
+    },
+  },
+
   devServer: {
     host: 'localhost',
     port: 3000,
