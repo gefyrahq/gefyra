@@ -115,6 +115,18 @@ export default defineNuxtConfig({
     },
   },
 
+  // Drop Cloudflare Content-Signal (unknown to Google's robots.txt parser / Lighthouse SEO).
+  agentDiscovery: {
+    robots: {
+      contentSignal: false,
+    },
+  },
+
+  image: {
+    quality: 80,
+    format: ['webp'],
+  },
+
   $development: {
     vite: {
       optimizeDeps: {
