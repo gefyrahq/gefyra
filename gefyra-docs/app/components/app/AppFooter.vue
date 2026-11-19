@@ -132,6 +132,7 @@
 
 <style scoped lang="scss">
 .hurricane-footer {
+  background-color: #f3f4f6;
   border-top: 1px solid rgba(156, 163, 175, 0.25);
   display: flex;
   min-height: 5.5rem;
@@ -140,6 +141,7 @@
 }
 
 :is(.dark) .hurricane-footer {
+  background-color: transparent;
   border-top-color: rgba(75, 85, 99, 0.4);
 }
 
@@ -194,7 +196,7 @@
 }
 
 .brand-copy {
-  color: #6b7280;
+  color: #4b5563;
   font-size: 0.75rem;
   font-weight: 500;
   margin: 0;
@@ -206,7 +208,7 @@
 
 .footer-badge {
   align-items: center;
-  color: #ca8a04;
+  color: #92400e;
   display: inline-flex;
   font-size: 0.68rem;
   font-weight: 700;
@@ -252,7 +254,7 @@
 }
 
 .text-link {
-  color: #6b7280;
+  color: #4b5563;
   font-size: 0.875rem;
   font-weight: 500;
   padding: 0.4rem 0.55rem;
@@ -260,7 +262,7 @@
   transition: color 0.15s ease;
 
   &:hover {
-    color: #ca8a04;
+    color: #92400e;
   }
 }
 
@@ -286,13 +288,13 @@
 }
 
 .icon-link {
-  color: #6b7280;
+  color: #4b5563;
   display: flex;
   padding: 0.75rem;
   transition: color 0.15s ease;
 
   &:hover {
-    color: #ca8a04;
+    color: #92400e;
   }
 }
 

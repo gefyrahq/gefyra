@@ -3,7 +3,8 @@
  * and !important. Page CSS cannot override those. Inject matching #svgId rules
  * that resolve --mm-* tokens, appended AFTER Mermaid's own <style> so we win.
  */
-const THEME_STYLE = (id: string) => `
+function THEME_STYLE(id: string) {
+  return `
 #${id} .node rect,
 #${id} .node polygon,
 #${id} .node circle,
@@ -157,6 +158,7 @@ const THEME_STYLE = (id: string) => `
   color: var(--mm-alt-text) !important;
 }
 `
+}
 
 function applyMermaidThemeOverrides(root: ParentNode = document) {
   root.querySelectorAll<SVGElement>('.mermaid svg[id]').forEach((svg) => {

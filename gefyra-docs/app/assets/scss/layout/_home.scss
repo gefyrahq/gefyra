@@ -1,5 +1,22 @@
-// Override Nuxt Icon default size utilities (e.g. size-4) so the hero logo
-// is the intended LCP visual without a network round-trip (inline SVG).
+// Light-mode accents must pass WCAG AA on white/gray (~4.5:1).
+// #ca8a04 / Nuxt yellow primary only reach ~2.9:1 on white.
+:root {
+  --gefyra-accent: #92400e;
+  --gefyra-accent-hover: #78350f;
+  --gefyra-surface: #f3f4f6;
+  --gefyra-card: #ffffff;
+  // #6b7280 fails AA on the gray surface (4.39:1); gray-600 clears it.
+  --gefyra-muted: #4b5563;
+}
+
+:is(.dark) {
+  --gefyra-accent: #f6bc00;
+  --gefyra-accent-hover: #facc15;
+  --gefyra-surface: rgba(29, 42, 47, 0.55);
+  --gefyra-card: rgba(29, 42, 47, 0.55);
+  --gefyra-muted: #d1d5db;
+}
+
 .home-icon,
 .home-icon svg {
   width: min(327px, 70vw) !important;
@@ -7,6 +24,52 @@
   aspect-ratio: 327 / 350;
   display: block;
   margin: 0 auto;
+}
+
+// Accessible brand accent (replaces text-primary on marketing copy)
+.use-case-accent {
+  color: var(--gefyra-accent);
+}
+
+.use-case-index {
+  background: rgba(146, 64, 14, 0.12);
+}
+
+:is(.dark) .use-case-index {
+  background: rgba(246, 188, 0, 0.15);
+}
+
+html:not(.dark) main {
+  --ui-bg: var(--gefyra-surface);
+  background-color: var(--gefyra-surface);
+}
+
+html:not(.dark) .gefyra-stage {
+  --ui-bg: #fff;
+  background-color: #fff;
+}
+
+// Nuxt UI utilities — scope strictly so light overrides never leak into dark mode
+html:not(.dark) {
+  --ui-text-muted: #4b5563;
+
+  .text-muted {
+    color: #4b5563 !important;
+  }
+
+  // Brand yellow primary fails AA as body/link text on light backgrounds
+  a.text-primary,
+  .text-primary:not([class*='bg-']):not(button):not([type='button']) {
+    color: var(--gefyra-accent) !important;
+  }
+}
+
+html.dark {
+  --ui-text-muted: #d1d5db;
+
+  .text-muted {
+    color: #d1d5db !important;
+  }
 }
 
 .run-icon {
@@ -382,9 +445,10 @@ html.light .inner-loop-section {
 }
 
 .docs-path-card {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(234, 179, 8, 0.2);
+  background: var(--gefyra-card);
+  border: 1px solid rgba(156, 163, 175, 0.35);
   border-radius: 0.875rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -396,14 +460,13 @@ html.light .inner-loop-section {
     box-shadow 0.15s ease;
 
   &:hover {
-    border-color: #f6bc00;
-    box-shadow: 0 10px 20px -12px rgba(246, 188, 0, 0.35);
+    border-color: var(--gefyra-accent);
+    box-shadow: 0 10px 20px -12px rgba(146, 64, 14, 0.25);
     transform: translateY(-2px);
   }
 }
 
 :is(.dark) .docs-path-card {
-  background: rgba(29, 42, 47, 0.55);
   border-color: rgba(75, 85, 99, 0.35);
 
   &:hover {
@@ -413,14 +476,10 @@ html.light .inner-loop-section {
 }
 
 .docs-path-step {
-  color: #ca8a04;
+  color: var(--gefyra-accent);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
-}
-
-:is(.dark) .docs-path-step {
-  color: #f6bc00;
 }
 
 .docs-path-title {
@@ -435,37 +494,25 @@ html.light .inner-loop-section {
 }
 
 .docs-path-desc {
-  color: #6b7280;
+  color: var(--gefyra-muted);
   flex: 1;
   font-size: 0.875rem;
   line-height: 1.55;
   margin: 0;
 }
 
-:is(.dark) .docs-path-desc {
-  color: #9ca3af;
-}
-
 .docs-path-cta {
-  color: #ca8a04;
+  color: var(--gefyra-accent);
   font-size: 0.825rem;
   font-weight: 700;
   margin-top: 0.35rem;
 }
 
-:is(.dark) .docs-path-cta {
-  color: #f6bc00;
-}
-
 .community-link-icon {
-  color: #ca8a04;
+  color: var(--gefyra-accent);
   height: 1.35rem;
   margin-bottom: 0.15rem;
   width: 1.35rem;
-}
-
-:is(.dark) .community-link-icon {
-  color: #f6bc00;
 }
 
 // Mermaid structural + semantic overrides (colors via --mm-* tokens)
@@ -725,13 +772,9 @@ html.light .inner-loop-section {
 }
 
 .gefyra-feature-icon {
-  color: #ca8a04;
+  color: var(--gefyra-accent);
   height: 1.75rem;
   width: 1.75rem;
-}
-
-:is(.dark) .gefyra-feature-icon {
-  color: #f6bc00;
 }
 
 .gefyra-feature-title {
@@ -747,14 +790,10 @@ html.light .inner-loop-section {
 }
 
 .gefyra-feature-description {
-  color: var(--ui-text-muted, #6b7280);
+  color: var(--gefyra-muted);
   font-size: 0.95rem;
   line-height: 1.6;
   margin: 0;
-}
-
-:is(.dark) .gefyra-feature-description {
-  color: #9ca3af;
 }
 
 // How it works — static steps (no UStepper hydration / a11y noise)
@@ -775,9 +814,10 @@ html.light .inner-loop-section {
 }
 
 .how-it-works-step {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(156, 163, 175, 0.25);
+  background: var(--gefyra-card);
+  border: 1px solid rgba(156, 163, 175, 0.35);
   border-radius: 0.875rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -785,12 +825,11 @@ html.light .inner-loop-section {
   transition: border-color 0.15s ease;
 
   &.is-active {
-    border-color: #f6bc00;
+    border-color: var(--gefyra-accent);
   }
 }
 
 :is(.dark) .how-it-works-step {
-  background: rgba(29, 42, 47, 0.55);
   border-color: rgba(75, 85, 99, 0.35);
 
   &.is-active {
@@ -800,9 +839,9 @@ html.light .inner-loop-section {
 
 .how-it-works-index {
   align-items: center;
-  background: rgba(246, 188, 0, 0.15);
+  background: rgba(146, 64, 14, 0.12);
   border-radius: 9999px;
-  color: #ca8a04;
+  color: var(--gefyra-accent);
   display: inline-flex;
   font-size: 0.85rem;
   font-weight: 700;
@@ -812,7 +851,7 @@ html.light .inner-loop-section {
 }
 
 :is(.dark) .how-it-works-index {
-  color: #f6bc00;
+  background: rgba(246, 188, 0, 0.15);
 }
 
 .how-it-works-title {
@@ -827,14 +866,10 @@ html.light .inner-loop-section {
 }
 
 .how-it-works-description {
-  color: var(--ui-text-muted, #6b7280);
+  color: var(--gefyra-muted);
   font-size: 0.875rem;
   line-height: 1.55;
   margin: 0;
-}
-
-:is(.dark) .how-it-works-description {
-  color: #9ca3af;
 }
 
 .deferred-mermaid-placeholder {
@@ -859,8 +894,8 @@ html.light .inner-loop-section {
 }
 
 .ecosystem-card {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(156, 163, 175, 0.25);
+  background: var(--gefyra-card);
+  border: 1px solid rgba(156, 163, 175, 0.35);
   border-radius: 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   color: inherit;
@@ -873,8 +908,8 @@ html.light .inner-loop-section {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    border-color: #eab308;
-    box-shadow: 0 12px 24px -4px rgba(234, 179, 8, 0.2);
+    border-color: var(--gefyra-accent);
+    box-shadow: 0 12px 24px -4px rgba(146, 64, 14, 0.2);
     transform: translateY(-4px);
   }
 }
@@ -905,9 +940,9 @@ html.light .inner-loop-section {
 }
 
 .ecosystem-tag {
-  background-color: rgba(234, 179, 8, 0.15);
+  background-color: rgba(146, 64, 14, 0.1);
   border-radius: 9999px;
-  color: #ca8a04;
+  color: var(--gefyra-accent);
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -950,15 +985,11 @@ html.light .inner-loop-section {
 
 .ecosystem-link {
   align-items: center;
-  color: #ca8a04;
+  color: var(--gefyra-accent);
   display: inline-flex;
   font-size: 0.875rem;
   font-weight: 600;
   transition: transform 0.2s ease;
-}
-
-:is(.dark) .ecosystem-link {
-  color: #facc15;
 }
 
 .ecosystem-card:hover .ecosystem-link {

@@ -163,13 +163,13 @@ flowchart TD
         <div class="flex flex-1 flex-col gap-4 lg:max-w-1/2">
           <div class="flex items-center gap-3">
             <span
-              class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary"
+              class="use-case-accent use-case-index inline-flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold"
             >
               {{ index + 1 }}
             </span>
             <UIcon
               :name="useCase.icon"
-              class="size-5 shrink-0 text-primary"
+              class="use-case-accent size-5 shrink-0"
             />
           </div>
 
@@ -177,7 +177,7 @@ flowchart TD
             {{ useCase.title }}
           </ProseH2>
 
-          <p class="text-base font-semibold text-primary text-pretty sm:text-lg">
+          <p class="use-case-accent text-base font-semibold text-pretty sm:text-lg">
             {{ useCase.subHeader }}
           </p>
 

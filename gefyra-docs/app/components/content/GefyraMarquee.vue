@@ -9,7 +9,7 @@
     </ProseP>
 
     <ClientOnly>
-      <UMarquee>
+      <UMarquee class="gefyra-marquee bg-transparent">
         <UIcon
           name="i-mdi-apple"
           class="size-10 shrink-0"
