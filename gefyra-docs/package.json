@@ -1,8 +1,8 @@
 {
   "name": "gefyra-docs",
-  "description": "Gefyra documentation — bridge local containers and AI agents into live Kubernetes clusters with instant hot-reload.",
   "type": "module",
   "private": true,
+  "description": "Gefyra documentation — bridge local containers and AI agents into live Kubernetes clusters with instant hot-reload.",
   "scripts": {
     "dev": "nuxt dev --extends docus",
     "build": "nuxt build --extends docus",

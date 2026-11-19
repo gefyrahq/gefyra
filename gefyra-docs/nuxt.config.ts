@@ -1,5 +1,10 @@
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/i18n', '@nuxt/eslint', '@nuxt/scripts', '@barzhsieh/nuxt-content-mermaid'],
+  modules: [
+    '@nuxtjs/i18n',
+    '@nuxt/eslint',
+    '@nuxt/scripts',
+    '@barzhsieh/nuxt-content-mermaid',
+  ],
 
   site: {
     name: 'Gefyra',
@@ -139,10 +144,12 @@ export default defineNuxtConfig({
     defaultLocale: 'en',
     baseUrl: 'https://gefyra.dev',
     strategy: 'prefix_except_default',
-    locales: [{
-      code: 'en',
-      name: 'English',
-    }],
+    locales: [
+      {
+        code: 'en',
+        name: 'English',
+      },
+    ],
   },
 
   fonts: {
@@ -151,10 +158,12 @@ export default defineNuxtConfig({
 
   icon: {
     provider: 'server',
-    customCollections: [{
-      prefix: 'gefyra',
-      dir: './app/assets/icons',
-    }],
+    customCollections: [
+      {
+        prefix: 'gefyra',
+        dir: './app/assets/icons',
+      },
+    ],
   },
 
   llms: {
@@ -171,7 +180,25 @@ export default defineNuxtConfig({
     build: {
       markdown: {
         highlight: {
-          langs: ['js', 'jsx', 'json', 'ts', 'tsx', 'vue', 'css', 'html', 'vue', 'bash', 'md', 'mdc', 'yaml', 'dockerfile', 'py', 'mermaid', 'diff'],
+          langs: [
+            'js',
+            'jsx',
+            'json',
+            'ts',
+            'tsx',
+            'vue',
+            'css',
+            'html',
+            'vue',
+            'bash',
+            'md',
+            'mdc',
+            'yaml',
+            'dockerfile',
+            'py',
+            'mermaid',
+            'diff',
+          ],
         },
       },
     },

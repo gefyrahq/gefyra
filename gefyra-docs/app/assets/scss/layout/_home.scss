@@ -42,7 +42,7 @@
   }
 
   // Elevate container content above the texture
-  > [data-slot="container"] {
+  > [data-slot='container'] {
     position: relative;
     z-index: 2;
   }
@@ -321,7 +321,10 @@ html.light .inner-loop-section {
   gap: 0.5rem;
   padding: 1.25rem 1.35rem;
   text-decoration: none;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 
   &:hover {
     border-color: #f6bc00;
@@ -388,10 +391,10 @@ html.light .inner-loop-section {
 // Light / Bright Theme Mermaid Styling
 html:not(.dark) .mermaid svg,
 html.light .mermaid svg {
-  .node:not([class*="class-"]) rect,
-  .node:not([class*="class-"]) polygon,
-  .node:not([class*="class-"]) circle,
-  .node:not([class*="class-"]) path {
+  .node:not([class*='class-']) rect,
+  .node:not([class*='class-']) polygon,
+  .node:not([class*='class-']) circle,
+  .node:not([class*='class-']) path {
     fill: #ffffff !important;
     stroke: #b45309 !important;
     stroke-width: 2px !important;
@@ -557,10 +560,10 @@ html.light .mermaid svg {
 
 // Dark Theme Mermaid Styling
 html.dark .mermaid svg {
-  .node:not([class*="class-"]) rect,
-  .node:not([class*="class-"]) polygon,
-  .node:not([class*="class-"]) circle,
-  .node:not([class*="class-"]) path {
+  .node:not([class*='class-']) rect,
+  .node:not([class*='class-']) polygon,
+  .node:not([class*='class-']) circle,
+  .node:not([class*='class-']) path {
     fill: var(--gefyra-slate-900) !important;
     stroke: var(--gefyra-gold) !important;
   }
@@ -831,4 +834,3 @@ html.dark .mermaid svg {
 .ecosystem-card:hover .ecosystem-link {
   transform: translateX(4px);
 }
-
