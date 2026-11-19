@@ -21,10 +21,16 @@ defineProps<{
         :src="logo"
         :alt="title"
         class="ecosystem-logo"
+        width="144"
+        height="44"
+        loading="lazy"
+        decoding="async"
       >
       <span class="ecosystem-tag">{{ tag }}</span>
     </div>
-    <h3 class="ecosystem-title">{{ title }}</h3>
+    <h3 class="ecosystem-title">
+      {{ title }}
+    </h3>
     <div class="ecosystem-body">
       <slot />
     </div>

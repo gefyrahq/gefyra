@@ -1,6 +1,11 @@
-.home-icon {
-  width: 327px;
-  height: 350px;
+// Override Nuxt Icon default size utilities (e.g. size-4) so the hero logo
+// is the intended LCP visual without a network round-trip (inline SVG).
+.home-icon,
+.home-icon svg {
+  width: min(327px, 70vw) !important;
+  height: auto !important;
+  aspect-ratio: 327 / 350;
+  display: block;
   margin: 0 auto;
 }
 
@@ -693,6 +698,148 @@ html.light .inner-loop-section {
     fill: var(--mm-alt-text) !important;
     color: var(--mm-alt-text) !important;
   }
+}
+
+// Why Gefyra — semantic feature list (replaces UPageSection #features <ul>/<div> mismatch)
+.gefyra-features {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+
+  @media (min-width: 640px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.gefyra-feature {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.gefyra-feature-icon {
+  color: #ca8a04;
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+:is(.dark) .gefyra-feature-icon {
+  color: #f6bc00;
+}
+
+.gefyra-feature-title {
+  color: var(--ui-text-highlighted, #111827);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+:is(.dark) .gefyra-feature-title {
+  color: #f9fafb;
+}
+
+.gefyra-feature-description {
+  color: var(--ui-text-muted, #6b7280);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+:is(.dark) .gefyra-feature-description {
+  color: #9ca3af;
+}
+
+// How it works — static steps (no UStepper hydration / a11y noise)
+.how-it-works {
+  display: grid;
+  gap: 1.25rem;
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1280px) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.how-it-works-step {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(156, 163, 175, 0.25);
+  border-radius: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.25rem 1.35rem;
+  transition: border-color 0.15s ease;
+
+  &.is-active {
+    border-color: #f6bc00;
+  }
+}
+
+:is(.dark) .how-it-works-step {
+  background: rgba(29, 42, 47, 0.55);
+  border-color: rgba(75, 85, 99, 0.35);
+
+  &.is-active {
+    border-color: #f6bc00;
+  }
+}
+
+.how-it-works-index {
+  align-items: center;
+  background: rgba(246, 188, 0, 0.15);
+  border-radius: 9999px;
+  color: #ca8a04;
+  display: inline-flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+:is(.dark) .how-it-works-index {
+  color: #f6bc00;
+}
+
+.how-it-works-title {
+  color: var(--ui-text-highlighted, #111827);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+:is(.dark) .how-it-works-title {
+  color: #f9fafb;
+}
+
+.how-it-works-description {
+  color: var(--ui-text-muted, #6b7280);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+:is(.dark) .how-it-works-description {
+  color: #9ca3af;
+}
+
+.deferred-mermaid-placeholder {
+  min-height: 12rem;
+  width: 100%;
 }
 
 // Ecosystem Cards Grid

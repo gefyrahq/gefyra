@@ -202,7 +202,7 @@ flowchart TD
         </div>
 
         <div class="use-case-mermaid w-full flex-1 rounded-xl border border-default/20 bg-muted/10 p-4 sm:p-6 lg:max-w-1/2">
-          <Mermaid :code="encodeURIComponent(useCase.mermaid)" />
+          <DeferredMermaid :code="useCase.mermaid" />
         </div>
       </article>
     </div>

@@ -20,7 +20,7 @@ links:
     trailing-icon: i-lucide-bot
 ---
 #headline
-:icon{name="i-gefyra-logo-vertical" mode="svg" class="home-icon"}
+:home-hero-logo
 
 #title
 Ship verified Kubernetes features. No image builds. No CI waiting loops.
@@ -58,73 +58,9 @@ Why Gefyra?
 #description
 A non-invasive, open-source approach engineered for secure enterprise environments and agile teams.
 
-#features
-  :::u-page-feature
-  ---
-  icon: i-lucide-zap
-  ---
-  #title
-  Supercharge Development Speed
+#default
+:gefyra-features
 
-  #description
-  Zero-Build Live Development. Gefyra temporarily intercepts cluster pods and transparently routes the traffic to your local container runtime. This cuts down feedback loops by 90% and allows engineers to spot and fix environment bugs in seconds.
-  :::
-
-  :::u-page-feature
-  ---
-  icon: i-lucide-container
-  ---
-  #title
-  Native Podman & Docker Support
-
-  #description
-  Daemonless Container Engine Compatibility. Gefyra runs flawlessly on Docker Desktop, Rancher Desktop, and native **Podman** environments. It seamlessly aligns with strict corporate security policies by allowing developers to work rootless under Linux.
-  :::
-
-  :::u-page-feature
-  ---
-  icon: i-lucide-users
-  ---
-  #title
-  Shared Staging Clusters at Enterprise Scale
-
-  #description
-  User Specific Bridges. Gefyra’s operator architecture isolates network bridges per individual developer. No matter how large your engineering team is or grows, **every single developer can safely test and debug inside the exact same shared staging cluster simultaneously** — each working securely within their own assigned namespace, with zero traffic collisions.
-  :::
-
-  :::u-page-feature
-  ---
-  icon: i-lucide-shield-check
-  ---
-  #title
-  Secure Namespace & RBAC Isolation
-
-  #description
-  Granular Kubernetes Enclosure. Gefyra restricts all local connections tightly within the developer's pre-assigned Kubernetes namespaces. Platform teams can confidently greenlight the tool because it fully respects existing RBAC policies without requiring global cluster-admin rights.
-  :::
-
-  :::u-page-feature
-  ---
-  icon: i-lucide-bug
-  ---
-  #title
-  Fight Environment Bugs
-
-  #description
-  Shared Kubernetes-based Resources. Your local code execution interacts natively with internal cluster databases, private APIs, and cloud microservices. This eliminates the need for fragile local mocks and guarantees testing under real production-like dependencies from day one.
-  :::
-
-  :::u-page-feature
-  ---
-  icon: i-lucide-laptop
-  ---
-  #title
-  Flexible Workflows
-  #description
-  Direct IDE & Debugger Integration. Connect live remote cluster traffic seamlessly to local breakpoints in VS Code, IntelliJ, or PyCharm. Developers can diagnose heavy cloud bugs using the powerful, familiar desktop tools they love instead of digging through chaotic log files.
-  :::
-
-#footer
 :gefyra-marquee
 ::
 
@@ -153,29 +89,7 @@ The Inner-Loop Velocity Gap
 See the difference between the traditional development loop and Gefyra.
 
 #default
-  :::div{.inner-loop-card.inner-loop-trad}
-  **Traditional Kubernetes Loop — 15 to 25 minutes per change**
-
-  ```mermaid
-  %%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 36, 'rankSpacing': 48, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
-  flowchart LR
-      T1["1. Code<br/>Change"] --> T2["2. Docker Build<br/>(3 mins)"] --> T3["3. Registry Push<br/>(2 mins)"] --> T4["4. Deploy K8s<br/>(1 min)"] --> T5["5. Pull & Schedule<br/>(2 mins)"] --> T6["6. Verification<br/>(10 mins)"]
-      classDef trad stroke-width:2px;
-      class T1,T2,T3,T4,T5,T6 trad;
-  ```
-  :::
-
-  :::div{.inner-loop-card.inner-loop-gefyra}
-  **Gefyra Loop — 3 seconds per change**
-
-  ```mermaid
-  %%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 52, 'rankSpacing': 56, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
-  flowchart LR
-      G1["1. Code<br/>Change"] -->|Hit Save| G2["2. Instant Hot-Reload<br/>(1 second)"] -->|WireGuard Link| G3["3. Live Verification<br/>(3 seconds)"]
-      classDef gefyra stroke-width:2px;
-      class G1,G2,G3 gefyra;
-  ```
-  :::
+:gefyra-inner-loop
 ::
 
 :gefyra-use-cases
@@ -190,22 +104,8 @@ How it works
 #description
 Gefyra acts as a lightweight user-space application and requires **zero permanent modifications** to your production Kubernetes manifests.
 
-  :::u-stepper
-  ---
-  defaultValue: 2
-  disabled: true
-  size: lg
-  items:
-    - title: gefyra up
-      description: Prepares your local engine environment and establishes an encrypted WireGuard tunnel directly to your target cluster.
-    - title: gefyra run
-      description: Starts your local Docker/Podman container directly inside the cluster network with internal DNS and database access.
-    - title: gefyra mount & bridge create
-      description: Mounts the cluster workload and routes live ingress/HTTP traffic into your local container based on path or header rules.
-    - title: gefyra down
-      description: Clean exit. Removes active bridges, unmounts workloads, and restores original cluster state with zero leftover footprints.
-  ---
-  :::
+#default
+:gefyra-how-it-works
 ::
 
 ::u-page-section
@@ -224,7 +124,7 @@ Building and scaling cloud-native workloads? Discover other developer tools and 
     ---
     title: Django Hurricane
     tag: Django App
-    logo: /img/ecosystem/hurricane.png
+    logo: /img/ecosystem/hurricane.webp
     url: https://django-hurricane.io
     linkText: Explore Hurricane →
     ---

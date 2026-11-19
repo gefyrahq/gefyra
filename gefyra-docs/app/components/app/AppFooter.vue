@@ -11,18 +11,20 @@
         >
           <img
             class="blueshoe-logo light-only"
-            src="/brand/blueshoe-logo-horizontal.png"
+            src="/brand/blueshoe-logo-horizontal.webp"
             alt="Blueshoe"
             width="152"
             height="45"
+            loading="lazy"
             decoding="async"
           >
           <img
             class="blueshoe-logo dark-only"
-            src="/brand/blueshoe-logo-horizontal-white.png"
+            src="/brand/blueshoe-logo-horizontal-white.webp"
             alt="Blueshoe"
             width="152"
             height="45"
+            loading="lazy"
             decoding="async"
           >
         </a>
