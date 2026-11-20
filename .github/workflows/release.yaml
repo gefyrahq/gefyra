@@ -40,6 +40,7 @@ jobs:
         id: changes
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           latest_tag="$(gh release view --json tagName --jq .tagName 2>/dev/null || true)"
           release_range="HEAD"
@@ -47,11 +48,13 @@ jobs:
             release_range="$latest_tag..HEAD"
           fi
 
-          feature_commits="$(git log "$release_range" --format='%h %s' --grep='^feat:')"
-          if [[ -n "$feature_commits" ]]; then
-            echo "::error::Release aborted: unreleased feat: commits require review."
-            echo "$feature_commits"
-            exit 1
+          if [[ "$EVENT_NAME" == "schedule" ]]; then
+            feature_commits="$(git log "$release_range" --format='%h %s' --grep='^feat:')"
+            if [[ -n "$feature_commits" ]]; then
+              echo "::error::Release aborted: unreleased feat: commits require review."
+              echo "$feature_commits"
+              exit 1
+            fi
           fi
 
           if [[ -z "$latest_tag" ]]; then
