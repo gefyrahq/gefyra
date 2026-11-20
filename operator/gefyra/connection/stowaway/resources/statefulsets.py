@@ -93,7 +93,7 @@ def create_stowaway_statefulset(
                 metadata=k8s.client.V1ObjectMeta(name="stowaway-config"),
                 spec=k8s.client.V1PersistentVolumeClaimSpec(
                     access_modes=["ReadWriteOnce"],
-                    resources=k8s.client.V1ResourceRequirements(
+                    resources=k8s.client.V1VolumeResourceRequirements(
                         requests={"storage": f"{configuration.STOWAWAY_STORAGE}Mi"}
                     ),
                 ),
