@@ -9,7 +9,7 @@ ports:
         - agent:0
   - port: 8080:80
     nodeFilters:
-        - agent:0
+        - loadbalancer
 options:
   kubeconfig:
     updateDefaultKubeconfig: false 

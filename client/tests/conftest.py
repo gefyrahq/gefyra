@@ -42,7 +42,7 @@ def k3d(k8s_manager):
             options=[
                 '--port="31820:31820/UDP@agent:0"',
                 "-p",
-                "8080:80@agent:0",
+                "8080:80@loadbalancer",
                 "--agents=1",
             ],
         )
