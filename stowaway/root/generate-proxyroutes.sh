@@ -6,7 +6,9 @@ set -e
 DEFAULT_CONF_FILE="/etc/nginx/nginx.conf"
 INPUT_DIRECTORY=$1
 
-echo "worker_processes  auto;
+echo "include /etc/nginx/modules/*.conf;
+
+worker_processes  auto;
 
 error_log  /var/log/nginx/error.log notice;
 pid        /tmp/nginx.pid;
