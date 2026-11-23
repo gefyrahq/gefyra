@@ -340,7 +340,6 @@ jobs:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
           CARGO_IN_CACHE: true
-          STOWAWAY_IN_CACHE: true
       - name: Run Gefyra Client E2E Test
         working-directory: ./client
         run: poetry run coverage run --append -m pytest --retries 5 -x tests/e2e
@@ -348,7 +347,6 @@ jobs:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
           CARGO_IN_CACHE: true
-          STOWAWAY_IN_CACHE: true
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./client
@@ -597,7 +595,6 @@ jobs:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
           CARGO_IN_CACHE: true
-          STOWAWAY_IN_CACHE: true
       - name: Run Gefyra Operator Integration Tests
         working-directory: ./operator
         run: poetry run coverage run --append -m pytest --k8s-kubeconfig-override mycluster.yaml --k8s-cluster-name gefyra --k8s-provider k3d -x --retries 5 tests/integration
@@ -606,7 +603,6 @@ jobs:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
           CARGO_IN_CACHE: true
-          STOWAWAY_IN_CACHE: true
       - name: Run Gefyra Operator E2E Tests
         working-directory: ./operator
         run: poetry run coverage run --append -m pytest --k8s-kubeconfig-override mycluster.yaml --k8s-cluster-name gefyra --k8s-provider k3d -x --retries 5 tests/e2e
@@ -615,7 +611,6 @@ jobs:
           CARRIER_IN_CACHE: true
           OPERATOR_IN_CACHE: true
           CARGO_IN_CACHE: true
-          STOWAWAY_IN_CACHE: true
       - name: Upload coverage data to coveralls.io
         if: github.repository == 'gefyrahq/gefyra'
         working-directory: ./operator
