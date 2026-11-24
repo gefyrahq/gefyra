@@ -20,12 +20,15 @@ RUN git clone https://git.zx2c4.com/wireguard-tools && \
     cd wireguard-tools && \
     git checkout $wg_tools_tag && \
     cd src && \
+    sed -i 's@^\([[:space:]]*\)\[\[ \$UID == 0 \]\] || exec sudo.*@\1:@' wg-quick/linux.bash && \
     make && \
     make install
 
 FROM ghcr.io/linuxserver/baseimage-alpine:3.20
 COPY --from=builder /usr/bin/wireguard-go /usr/bin/wg* /usr/bin/
 COPY --from=builder /usr/bin/wg-quick /usr/bin/wg-gefyra
+
+ENV S6_YES_I_WANT_A_WORLD_WRITABLE_RUN_BECAUSE_KUBERNETES=1
 
 # set version label
 ARG BUILD_DATE
@@ -68,6 +71,13 @@ RUN \
     tzdata && \
   ln -sf /dev/stdout /var/log/nginx/access.log && \
   ln -sf /dev/stderr /var/log/nginx/error.log && \
+  chmod 0777 /run && \
+  chmod a+rx /var/lib/nginx && \
+  setcap cap_net_admin,cap_net_raw+ep /sbin/ip && \
+  setcap cap_net_admin,cap_net_raw+ep /sbin/xtables-nft-multi && \
+  setcap cap_net_admin+ep /usr/bin/wg && \
+  setcap cap_net_admin+ep /usr/bin/wireguard-go && \
+  setcap cap_net_admin+ep /sbin/sysctl && \
   mkdir -p /docker-entrypoint.d && \
   echo "**** clean up ****" && \
   apk del --no-network build-dependencies && \

@@ -3,7 +3,7 @@
 
 set -e
 
-DEFAULT_CONF_FILE="/etc/nginx/nginx.conf"
+DEFAULT_CONF_FILE="/tmp/nginx.conf"
 INPUT_DIRECTORY=$1
 
 echo "include /etc/nginx/modules/*.conf;
@@ -38,4 +38,4 @@ do
 done
 echo "}" >> $DEFAULT_CONF_FILE
 
-nginx -s reload
+nginx -e stderr -p /usr/lib/nginx/ -c "$DEFAULT_CONF_FILE" -s reload

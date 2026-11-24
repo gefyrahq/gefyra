@@ -2,10 +2,6 @@
 # shellcheck shell=bash
 # shellcheck disable=SC2016,SC1091,SC2183
 
-# prepare symlinks
-rm -rf /etc/wireguard
-mkdir -p /etc/wireguard
-ln -s /config/wg0.conf /etc/wireguard/wg0.conf
 # prepare templates
 if [[ ! -f /config/templates/server.conf ]]; then
     cp /defaults/server.conf /config/templates/server.conf
@@ -186,5 +182,7 @@ if [[ ! -f /config/coredns/Corefile ]]; then
 fi
 
 # permissions
-lsiown -R abc:abc \
-    /config
+if [[ "$(id -u)" == "0" ]]; then
+    lsiown -R abc:abc \
+        /config
+fi
