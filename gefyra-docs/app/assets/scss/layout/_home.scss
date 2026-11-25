@@ -129,12 +129,9 @@ html.dark {
   }
 }
 
-// Hide Mermaid interactive controls and header entirely so diagrams appear as clean images
 .mermaid-toolbar,
-.ncm-zoom-toolbar,
 .ncm-toolbar,
-.ncm-toolbar-wrapper,
-.ncm-expand-overlay {
+.ncm-toolbar-wrapper {
   display: none !important;
 }
 
@@ -154,8 +151,10 @@ html.dark {
 }
 
 // Gefyra Mermaid Brand Theme
+// .ncm-expand-modal: SVG is teleported to body, so tokens must resolve there too
 .mermaid,
-.mermaid-wrapper {
+.mermaid-wrapper,
+.ncm-expand-modal {
   --gefyra-gold: #f6bc00;
   --gefyra-gold-hover: #e29700;
   --gefyra-gold-dark: #bb6b02;
@@ -275,7 +274,8 @@ html.dark {
 
 // Dark mode Mermaid tokens
 html.dark .mermaid,
-html.dark .mermaid-wrapper {
+html.dark .mermaid-wrapper,
+html.dark .ncm-expand-modal {
   --mm-text: #f9fafb;
   --mm-title: #f6bc00;
   --mm-line: #f6bc00;

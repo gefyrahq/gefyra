@@ -95,10 +95,10 @@ export default defineNuxtConfig({
       buttons: {
         copy: false,
         fullscreen: false,
-        expand: false,
+        expand: true,
       },
     },
-    expand: false,
+    expand: true,
   },
 
   css: ['~/assets/scss/main.scss'],
