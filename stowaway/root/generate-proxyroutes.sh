@@ -3,10 +3,12 @@
 
 set -e
 
-DEFAULT_CONF_FILE="/etc/nginx/nginx.conf"
+DEFAULT_CONF_FILE="/tmp/nginx.conf"
 INPUT_DIRECTORY=$1
 
-echo "worker_processes  auto;
+echo "include /etc/nginx/modules/*.conf;
+
+worker_processes  auto;
 
 error_log  /var/log/nginx/error.log notice;
 pid        /tmp/nginx.pid;
@@ -36,4 +38,4 @@ do
 done
 echo "}" >> $DEFAULT_CONF_FILE
 
-nginx -s reload
+nginx -e stderr -p /usr/lib/nginx/ -c "$DEFAULT_CONF_FILE" -s reload

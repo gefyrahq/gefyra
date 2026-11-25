@@ -1,4 +1,7 @@
 #!/usr/bin/with-contenv bash
 
+NGINX_CONFIG=/tmp/nginx.conf
+
 s6-echo "Starting Nginx service"
-nginx -g "daemon off;"
+cp /etc/nginx/nginx.conf "$NGINX_CONFIG"
+nginx -e stderr -p /usr/lib/nginx/ -c "$NGINX_CONFIG" -g "daemon off;"

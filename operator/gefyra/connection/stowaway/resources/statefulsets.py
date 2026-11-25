@@ -65,6 +65,10 @@ def create_stowaway_statefulset(
         metadata=k8s.client.V1ObjectMeta(labels=labels),
         spec=k8s.client.V1PodSpec(
             service_account_name="gefyra-stowaway",
+            security_context=k8s.client.V1PodSecurityContext(
+                fs_group=int(configuration.STOWAWAY_PGID),
+                fs_group_change_policy="OnRootMismatch",
+            ),
             containers=[container],
             volumes=[
                 k8s.client.V1Volume(
