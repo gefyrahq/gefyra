@@ -17,15 +17,16 @@ const useCases: UseCase[] = [
     managerValue: 'Full alignment with Zero-Trust and RBAC policies; eliminates third-party container licensing friction.',
     developerValue: 'Native Linux and Podman support without clunky VM workarounds or permission headaches.',
     icon: 'i-lucide-shield-check',
-    mermaid: `%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 28, 'rankSpacing': 40, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
-flowchart TD
+    mermaid: `flowchart TB
     subgraph Host
+        direction TB
         HostTitle[["Local Workstation"]] ~~~ User["Non-Root Dev"]
         User --> Podman["Podman"]
         Podman --> Cargo["Gefyra Cargo"]
     end
-    Cargo <==>|"WireGuard"| Stowaway
+    Cargo <==>|WireGuard| Stowaway
     subgraph Cluster
+        direction TB
         ClusterTitle[["K8s Staging"]] ~~~ Stowaway["Stowaway"]
         Stowaway --> Operator["Operator"]
         Operator --> Pods["Pods"]
@@ -44,29 +45,32 @@ flowchart TD
     managerValue: 'Cuts cloud staging infrastructure costs by up to 70% while supporting unlimited team scaling.',
     developerValue: 'Isolated sandbox testing inside real, high-performance shared clusters with zero risk of interfering with teammates.',
     icon: 'i-lucide-users',
-    mermaid: `%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 28, 'rankSpacing': 36, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
-flowchart LR
+    mermaid: `flowchart TB
     subgraph Developers
+        direction TB
         TeamTitle[["Engineering Team"]] ~~~ DevA["Alice"]
         TeamTitle ~~~ DevB["Bob"]
     end
 
+    DevA <==>|Bridge A| CarrierA
+    DevB <==>|Bridge B| CarrierB
+
     subgraph Cluster
-        ClusterTitle[["Shared Staging"]]
+        direction TB
+        ClusterTitle[["Shared Staging"]] ~~~ NSA
+        ClusterTitle ~~~ NSB
         subgraph NSA
+            direction TB
             BillingTitle[["billing ns"]] ~~~ CarrierA["Carrier A"]
             CarrierA --- BillingSvc["Billing"]
         end
         subgraph NSB
+            direction TB
             AuthTitle[["auth ns"]] ~~~ CarrierB["Carrier B"]
             CarrierB --- AuthSvc["Auth"]
         end
-        ClusterTitle ~~~ BillingTitle
-        ClusterTitle ~~~ AuthTitle
     end
 
-    DevA <==>|Bridge A| CarrierA
-    DevB <==>|Bridge B| CarrierB
     classDef groupTitle fill:transparent,stroke:none;
     classDef teamAlice stroke-width:2px;
     classDef teamBob stroke-width:2px;
@@ -81,19 +85,18 @@ flowchart LR
     managerValue: 'Drastically reduces "works on my machine" bugs leaking into staging or production.',
     developerValue: 'Step-through debugging against real cloud databases, microservices, and live environment states.',
     icon: 'i-lucide-bug',
-    mermaid: `%%{init: {'sequence': {'diagramMarginX': 20, 'diagramMarginY': 20, 'actorMargin': 50, 'messageMargin': 40, 'boxMargin': 12, 'noteMargin': 12, 'width': 140, 'height': 50}, 'themeVariables': { 'fontSize': '14px', 'actorFontSize': '14px', 'messageFontSize': '13px', 'noteFontSize': '13px' }}}%%
-sequenceDiagram
-    participant Ingress as K8s Ingress
+    mermaid: `sequenceDiagram
+    participant Ingress as Ingress
     participant Carrier as Carrier2
     participant IDE as Local IDE
-    participant DB as Cluster DB
+    participant DB as Staging DB
 
     Ingress->>Carrier: Incoming request
     Carrier->>IDE: Tunnel to local
-    Note over IDE: Breakpoint hits
+    Note over IDE: Breakpoint
     IDE->>DB: Query Postgres
-    DB-->>IDE: Live dataset
-    IDE-->>Carrier: Local response
+    DB-->>IDE: Live data
+    IDE-->>Carrier: Response
     Carrier-->>Ingress: HTTP 200`,
   },
   {
@@ -103,11 +106,10 @@ sequenceDiagram
     managerValue: 'Maximizes engineering velocity, developer throughput, and time-to-market.',
     developerValue: 'Immediate feedback on every code change; zero context switching while waiting for pipelines.',
     icon: 'i-lucide-zap',
-    mermaid: `%%{init: {'flowchart': {'padding': 24, 'nodeSpacing': 36, 'rankSpacing': 44, 'diagramPadding': 16}, 'themeVariables': { 'fontSize': '14px' }}}%%
-flowchart TD
-    Dev["1. Developer"] -->|"Hit Save"| Local["2. Local Container"]
-    Local <==>|"Live Overlay"| K8sPod["3. Staging Pod"]
-    K8sPod -->|"Verified"| Client["4. Browser / API"]
+    mermaid: `flowchart TB
+    Dev["1. Developer"] -->|Hit Save| Local["2. Local Container"]
+    Local <==>|Live Overlay| K8sPod["3. Staging Pod"]
+    K8sPod -->|Verified| Client["4. Browser / API"]
     classDef gefyra stroke-width:2px;
     class Dev,Local,K8sPod,Client gefyra;`,
   },
@@ -118,21 +120,22 @@ flowchart TD
     managerValue: 'Drastically reduces LLM execution costs and token usage by shrinking the AI feedback loop from 15-minute CI/CD pipelines to milliseconds. Accelerates time-to-market for AI features with guaranteed production compatibility.',
     developerValue: 'Instant validation of AI-generated code against real cluster dependencies; zero context switching while waiting for builds, with full IDE debugging capabilities for local agent pipelines.',
     icon: 'i-lucide-brain',
-    mermaid: `%%{init: {'flowchart': {'padding': 28, 'nodeSpacing': 28, 'rankSpacing': 40, 'diagramPadding': 20}, 'themeVariables': { 'fontSize': '14px' }}}%%
-flowchart TD
+    mermaid: `flowchart TB
     subgraph LocalMachine
+        direction TB
         LocalTitle[["AI Workspace"]] ~~~ AIAgent["AI Agent"]
         AIAgent --> Container["Container"]
     end
 
-    Container <==>|"WireGuard"| Staging
+    Container <==>|WireGuard| Staging
 
     subgraph RemoteK8s
+        direction TB
         RemoteTitle[["Cluster Ground Truth"]] ~~~ Staging["Staging Pod"]
         Staging --> LiveDB[("Live DB")]
     end
 
-    LiveDB -.->|"Feedback"| AIAgent
+    LiveDB -.->|Feedback| AIAgent
     classDef groupTitle fill:transparent,stroke:none;
     classDef agentBox stroke-width:2px;
     classDef clusterBox stroke-width:2px;

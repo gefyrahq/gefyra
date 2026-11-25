@@ -197,10 +197,9 @@ html.dark {
   --mm-danger-text: #991b1b;
 
   svg {
-    // Do not override font-family here — Mermaid sizes boxes with its
-    // default metrics; a wider CSS font clips subgraph titles and nodes.
-    // Keep font sizes at/below Mermaid's layout fontSize.
-    font-size: 14px !important;
+    // Match Mermaid layout fontSize (nuxt.config themeVariables.fontSize).
+    // Larger CSS than layout metrics clips node labels.
+    font-size: 16px !important;
     max-width: 100%;
     height: auto;
     overflow: visible;
@@ -219,7 +218,7 @@ html.dark {
     text,
     .label,
     .nodeLabel {
-      font-size: 14px !important;
+      font-size: 16px !important;
       font-weight: 500 !important;
     }
 
@@ -227,12 +226,12 @@ html.dark {
     text.actor,
     .messageText,
     .noteText {
-      font-size: 14px !important;
+      font-size: 16px !important;
       font-weight: 600 !important;
     }
 
     .edgeLabel {
-      font-size: 12px !important;
+      font-size: 13px !important;
     }
 
     .edgePath .path,
@@ -267,7 +266,7 @@ html.dark {
       fill: var(--mm-title) !important;
       color: var(--mm-title) !important;
       font-weight: 700 !important;
-      font-size: 14px !important;
+      font-size: 16px !important;
     }
   }
 }
@@ -356,30 +355,31 @@ html.dark .ncm-expand-modal {
   }
 
   .mermaid-wrapper {
+    display: flex;
+    justify-content: center;
     margin: 0 auto;
     padding: 0.5rem 0.5rem !important;
     overflow-x: auto;
     overflow-y: visible;
   }
 
+  // TB chains are naturally narrow (~230px); scale them up in the card
+  // so 16px layout fonts read closer to body text size.
   .mermaid svg {
     display: block;
-    margin: 0 auto;
-    min-width: 640px;
-    max-width: none;
-    font-size: 14px !important;
+    width: min(100%, 22rem) !important;
+    max-width: 22rem !important;
+    height: auto !important;
     overflow: visible;
 
     text,
     .label,
     .nodeLabel {
-      font-size: 14px !important;
       font-weight: 600 !important;
       line-height: 1.4 !important;
     }
 
     .edgeLabel {
-      font-size: 12px !important;
       font-weight: 700 !important;
     }
   }
