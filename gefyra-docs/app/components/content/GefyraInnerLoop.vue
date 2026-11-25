@@ -16,17 +16,17 @@ const gefyra = `flowchart TB
 </script>
 
 <template>
-  <div>
+  <div class="inner-loop-grid">
     <div class="inner-loop-card inner-loop-trad">
       <p>
-        <strong>Traditional Kubernetes Loop — 15 to 25 minutes per change</strong>
+        <strong>Traditional Loop — 15–25 min</strong>
       </p>
       <DeferredMermaid :code="traditional" />
     </div>
 
     <div class="inner-loop-card inner-loop-gefyra">
       <p>
-        <strong>Gefyra Loop — 3 seconds per change</strong>
+        <strong>Gefyra Loop — 3 seconds</strong>
       </p>
       <DeferredMermaid :code="gefyra" />
     </div>

@@ -306,21 +306,33 @@ html.dark .ncm-expand-modal {
 
 // Inner-Loop Velocity Gap — titled cards with controlled padding
 .inner-loop-section {
+  .inner-loop-grid {
+    display: grid;
+    gap: 1.25rem;
+    margin: 1.5rem auto;
+    max-width: 1100px;
+
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      gap: 1.5rem;
+    }
+  }
+
   .inner-loop-card {
     border-radius: 0.875rem;
     border: 2px solid;
-    margin: 1.5rem auto;
-    max-width: 1100px;
+    margin: 0;
     // Keep overflow visible on the card; scroll lives on .mermaid-wrapper.
     // (overflow-x:auto forces overflow-y to auto too and clips SVG bottoms)
     overflow: visible;
-    padding: 1.35rem 1.5rem 1.5rem;
+    padding: 1.25rem 1rem 1.35rem;
 
     > p,
     > strong,
     > :where(p, h3, h4) {
       color: #f9fafb;
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       line-height: 1.35;
       margin: 0 0 0.75rem;
@@ -363,12 +375,11 @@ html.dark .ncm-expand-modal {
     overflow-y: visible;
   }
 
-  // TB chains are naturally narrow (~230px); scale them up in the card
-  // so 16px layout fonts read closer to body text size.
+  // TB chains are naturally narrow; scale to the card column width.
   .mermaid svg {
     display: block;
-    width: min(100%, 22rem) !important;
-    max-width: 22rem !important;
+    width: min(100%, 18rem) !important;
+    max-width: 18rem !important;
     height: auto !important;
     overflow: visible;
 
