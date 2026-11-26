@@ -129,12 +129,9 @@ html.dark {
   }
 }
 
-// Hide Mermaid interactive controls and header entirely so diagrams appear as clean images
 .mermaid-toolbar,
-.ncm-zoom-toolbar,
 .ncm-toolbar,
-.ncm-toolbar-wrapper,
-.ncm-expand-overlay {
+.ncm-toolbar-wrapper {
   display: none !important;
 }
 
@@ -154,8 +151,10 @@ html.dark {
 }
 
 // Gefyra Mermaid Brand Theme
+// .ncm-expand-modal: SVG is teleported to body, so tokens must resolve there too
 .mermaid,
-.mermaid-wrapper {
+.mermaid-wrapper,
+.ncm-expand-modal {
   --gefyra-gold: #f6bc00;
   --gefyra-gold-hover: #e29700;
   --gefyra-gold-dark: #bb6b02;
@@ -198,10 +197,9 @@ html.dark {
   --mm-danger-text: #991b1b;
 
   svg {
-    // Do not override font-family here — Mermaid sizes boxes with its
-    // default metrics; a wider CSS font clips subgraph titles and nodes.
-    // Keep font sizes at/below Mermaid's layout fontSize.
-    font-size: 14px !important;
+    // Match Mermaid layout fontSize (nuxt.config themeVariables.fontSize).
+    // Larger CSS than layout metrics clips node labels.
+    font-size: 16px !important;
     max-width: 100%;
     height: auto;
     overflow: visible;
@@ -220,7 +218,7 @@ html.dark {
     text,
     .label,
     .nodeLabel {
-      font-size: 14px !important;
+      font-size: 16px !important;
       font-weight: 500 !important;
     }
 
@@ -228,12 +226,12 @@ html.dark {
     text.actor,
     .messageText,
     .noteText {
-      font-size: 14px !important;
+      font-size: 16px !important;
       font-weight: 600 !important;
     }
 
     .edgeLabel {
-      font-size: 12px !important;
+      font-size: 13px !important;
     }
 
     .edgePath .path,
@@ -268,14 +266,15 @@ html.dark {
       fill: var(--mm-title) !important;
       color: var(--mm-title) !important;
       font-weight: 700 !important;
-      font-size: 14px !important;
+      font-size: 16px !important;
     }
   }
 }
 
 // Dark mode Mermaid tokens
 html.dark .mermaid,
-html.dark .mermaid-wrapper {
+html.dark .mermaid-wrapper,
+html.dark .ncm-expand-modal {
   --mm-text: #f9fafb;
   --mm-title: #f6bc00;
   --mm-line: #f6bc00;
@@ -307,21 +306,33 @@ html.dark .mermaid-wrapper {
 
 // Inner-Loop Velocity Gap — titled cards with controlled padding
 .inner-loop-section {
+  .inner-loop-grid {
+    display: grid;
+    gap: 1.25rem;
+    margin: 1.5rem auto;
+    max-width: 1100px;
+
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+      gap: 1.5rem;
+    }
+  }
+
   .inner-loop-card {
     border-radius: 0.875rem;
     border: 2px solid;
-    margin: 1.5rem auto;
-    max-width: 1100px;
+    margin: 0;
     // Keep overflow visible on the card; scroll lives on .mermaid-wrapper.
     // (overflow-x:auto forces overflow-y to auto too and clips SVG bottoms)
     overflow: visible;
-    padding: 1.35rem 1.5rem 1.5rem;
+    padding: 1.25rem 1rem 1.35rem;
 
     > p,
     > strong,
     > :where(p, h3, h4) {
       color: #f9fafb;
-      font-size: 1.05rem;
+      font-size: 1rem;
       font-weight: 700;
       line-height: 1.35;
       margin: 0 0 0.75rem;
@@ -356,30 +367,30 @@ html.dark .mermaid-wrapper {
   }
 
   .mermaid-wrapper {
+    display: flex;
+    justify-content: center;
     margin: 0 auto;
     padding: 0.5rem 0.5rem !important;
     overflow-x: auto;
     overflow-y: visible;
   }
 
+  // TB chains are naturally narrow; scale to the card column width.
   .mermaid svg {
     display: block;
-    margin: 0 auto;
-    min-width: 640px;
-    max-width: none;
-    font-size: 14px !important;
+    width: min(100%, 18rem) !important;
+    max-width: 18rem !important;
+    height: auto !important;
     overflow: visible;
 
     text,
     .label,
     .nodeLabel {
-      font-size: 14px !important;
       font-weight: 600 !important;
       line-height: 1.4 !important;
     }
 
     .edgeLabel {
-      font-size: 12px !important;
       font-weight: 700 !important;
     }
   }
