@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("gefyra")
 
-__VERSION__ = "2.5.9"
+__VERSION__ = "2.5.10"
 USER_HOME = os.path.expanduser("~")
 
 
