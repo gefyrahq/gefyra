@@ -59,6 +59,7 @@ async def test_remove_peer_retries_runtime_cleanup_without_declaration(
         )
     )
     provider._restart_stowaway = AsyncMock()
+    provider._peer_runtime_exists = AsyncMock(return_value=True)
     error = module.k8s.client.ApiException(status=0, reason="exec failed")
     exec_command = Mock(side_effect=[error, ""])
     monkeypatch.setattr(module, "exec_command_pod", exec_command)
