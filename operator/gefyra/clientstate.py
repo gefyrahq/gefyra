@@ -64,7 +64,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
     disable = active.to(disabling) | error.to(disabling)
     impair = error.from_(requested, creating, waiting, active, error)
     terminate = terminating.from_(
-        requested, creating, waiting, active, error, terminating
+        requested, creating, waiting, enabling, active, disabling, error, terminating
     )
 
     def __init__(
@@ -205,7 +205,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
             message=f"GefyraClient '{self.object_name}' is being enabled",
         )
 
-    async def on_activate(self):
+    async def after_activate(self):
         await self.post_event(
             reason="GefyraClient state change",
             message=f"GefyraClient '{self.object_name}' is active",
@@ -231,20 +231,20 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
                 reason="GefyraClient state change",
                 message=f"GefyraClient '{self.object_name}' is being terminated",
             )
-            if await self.connection_provider.peer_exists(self.object_name):
-                self.logger.warning(
-                    f"Removing GefyraClient '{self.object_name}' from connection provider"
-                )
-                await self.connection_provider.remove_peer(self.object_name)
+            # A previous attempt may have removed the declaration before runtime
+            # cleanup failed. Always retry the provider's idempotent removal.
+            await self.connection_provider.remove_peer(self.object_name)
 
             sa_name = f"gefyra-client-{self.object_name}"
             await handle_delete_gefyraclient_serviceaccount(
                 self.logger, sa_name, self.namespace
             )
             await self.cleanup_all_bridges()
-        except Exception as e:
-            self.logger.warning(f"Error during termination of GefyraClient: {e}")
-            pass
+        except Exception:
+            self.logger.exception(
+                f"Error during termination of GefyraClient '{self.object_name}'"
+            )
+            raise
 
     async def can_add_client(self):
         if await self.connection_provider.peer_exists(self.object_name):
@@ -271,7 +271,7 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
             )
             raise kopf.TemporaryError(
                 f"Cannot read connection data from provider: {e}", delay=1
-            )
+            ) from e
         try:
             await self._patch_object({"providerConfig": conn_data})
             await self.post_event(
@@ -287,21 +287,19 @@ class GefyraClient(StateChart, StateControllerMixin):  # Reverted to StateMachin
                 )
                 raise kopf.TemporaryError(
                     f"Cannot enable connection: {e.reason}", delay=1
-                )
+                ) from e
+            raise
 
     async def disable_connection(self):
         try:
-            if not await self.connection_provider.peer_exists(self.object_name):
-                self.logger.warning(
-                    f"Client '{self.object_name}' does not exist, noting to disable."
-                )
-                return
+            # The declaration may be gone while runtime cleanup still needs a retry.
             await self.connection_provider.remove_peer(self.object_name)
         except k8s.client.rest.ApiException as e:
             if e.status == 500:
                 raise kopf.TemporaryError(
                     f"Cannot disable connection: {e.reason}", delay=1
-                )
+                ) from e
+            raise
         await self._patch_object({"providerConfig": None})
 
     async def cleanup_all_bridges(self) -> None:

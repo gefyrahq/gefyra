@@ -152,8 +152,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
             await asyncio.sleep(1)
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
-                f"Error adding peer {peer_id} to stowaway: Status {e.status} Reason {e.reason} Body {e.body}"
+                f"Error adding peer {peer_id} to stowaway (status {e.status})"
             )
+            raise
 
     async def remove_peer(self, peer_id: str):
         self.logger.info(f"Removing peer {peer_id} from stowaway")
@@ -175,9 +176,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
             return True
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
-                f"Error removing peer {peer_id} from stowaway: Status {e.status} Reason {e.reason} Body {e.body}"
+                f"Error removing peer {peer_id} from stowaway (status {e.status})"
             )
-            return False
+            raise
 
     async def peer_exists(self, peer_id: str) -> bool:
         _config = create_stowaway_configmap()
@@ -193,9 +194,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 return False
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
-                f"Error looking up peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
+                f"Error looking up peer {peer_id} (status {e.status})"
             )
-            return False
+            raise
 
     async def get_peer_config(self, peer_id: str) -> dict[str, str]:
         if await self.peer_exists(peer_id):
@@ -341,9 +342,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
                 f"Error looking up destination {destination_ip}:{destination_port} for"
-                f" peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
+                f" peer {peer_id} (status {e.status})"
             )
-            return False
+            raise
 
     async def validate(self, gclient: dict, hints: Dict[Any, Any] = {}):
         if wireguard_parameter := gclient.get("providerParameter"):

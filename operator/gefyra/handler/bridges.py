@@ -83,13 +83,9 @@ async def bridge_reconcile(body, logger, **kwargs):
             if bridge.error.is_active:
                 await bridge.restore()
             if bridge.active.is_active:
-                is_intact = True
-                try:
-                    is_intact = await bridge.is_intact
-                except Exception as e:
-                    logger.error(f"Error probing this GefyraBridge: {e}")
-                    # GefryaBridge not intact -> restoring
-                    await bridge.send("restore")
+                # A failed probe does not establish that a destination is absent.
+                # Let the next reconciliation retry without disrupting the bridge.
+                is_intact = await bridge.is_intact
                 if not is_intact:
                     logger.error("GefyraBridge not intact")
                     await bridge.send("restore")

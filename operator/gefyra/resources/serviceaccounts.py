@@ -136,23 +136,25 @@ async def handle_delete_gefyraclient_serviceaccount(
         e: Exception if the service account could not be deleted and the status code is not 404
     """
     try:
-        sa = await asyncio.to_thread(
-            core_v1_api.read_namespaced_service_account, name=name, namespace=namespace
-        )
         await asyncio.to_thread(
             rbac_v1_api.delete_cluster_role_binding,
-            name=f"gefyra-rolebinding-{sa.metadata.name}",
+            name=f"gefyra-rolebinding-{name}",
         )
+    except k8s.client.exceptions.ApiException as e:
+        if e.status != 404:
+            raise
+    # Each resource can already be absent after a partially completed attempt.
+    try:
         await asyncio.to_thread(
             core_v1_api.delete_namespaced_service_account,
             name=name,
             namespace=namespace,
         )
-        logger.info(f"Deleted serviceaccount and permissions for GefyraClient: {name}")
     except k8s.client.exceptions.ApiException as e:
         logger.warning(f"Could not delete serviceaccount {name}: {e}")
         if e.status != 404:
             raise e
+    logger.info(f"Deleted serviceaccount and permissions for GefyraClient: {name}")
 
 
 async def get_serviceaccount_data(name: str, namespace: str) -> dict[str, str]:
