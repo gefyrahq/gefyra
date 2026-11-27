@@ -152,32 +152,85 @@ class Stowaway(AbstractGefyraConnectionProvider):
             await asyncio.sleep(1)
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
-                f"Error adding peer {peer_id} to stowaway: Status {e.status} Reason {e.reason} Body {e.body}"
+                f"Error adding peer {peer_id} to stowaway (status {e.status})"
             )
+            raise
 
     async def remove_peer(self, peer_id: str):
         self.logger.info(f"Removing peer {peer_id} from stowaway")
         try:
+            declared = await self.peer_exists(peer_id)
             await self._edit_peer_configmap(remove=peer_id)
             pod = await self._get_stowaway_pod()
             if pod is None:
                 raise RuntimeError("No Stowaway Pod found for peer removal")
+            if not declared and not await self._peer_runtime_exists(peer_id, pod):
+                return True
             await asyncio.to_thread(
                 exec_command_pod,
                 core_v1_api,
                 pod.metadata.name,
                 pod.metadata.namespace,
                 "stowaway",
-                ["rm", "-rf", f"/config/peer_{self._translate_peer_name(peer_id)}"],
+                ["rm", "-rf", f"/config/{self._peer_directory_name(peer_id)}"],
             )
             await self._restart_stowaway()
             await asyncio.sleep(1)
             return True
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
-                f"Error removing peer {peer_id} from stowaway: Status {e.status} Reason {e.reason} Body {e.body}"
+                f"Error removing peer {peer_id} from stowaway (status {e.status})"
             )
+            raise
+
+    async def _peer_runtime_exists(self, peer_id: str, pod: k8s.client.V1Pod) -> bool:
+        # Keep keys inside the pod. A server-config entry survives directory removal
+        # until restart, so it also identifies cleanup interrupted before restart.
+        script = """
+set -eu
+peer="$1"
+config="$2"
+test -r "$config/wg0.conf"
+live_peers="$(wg show wg0 peers)"
+if [ -e "$config/$peer" ] || grep -Fxq -- "# $peer" "$config/wg0.conf"; then
+    printf 'present'
+    exit 0
+fi
+configured_peers="$(awk '$1 == "PublicKey" && $2 == "=" {print $3}' "$config/wg0.conf")"
+for key in $live_peers; do
+    if ! printf '%s\\n' "$configured_peers" | grep -Fxq -- "$key"; then
+        printf 'unknown'
+        exit 0
+    fi
+done
+printf 'absent'
+"""
+        result = await asyncio.to_thread(
+            exec_command_pod,
+            core_v1_api,
+            pod.metadata.name,
+            pod.metadata.namespace,
+            "stowaway",
+            [
+                "/bin/bash",
+                "-c",
+                script,
+                "peer-runtime-check",
+                self._peer_directory_name(peer_id),
+                "/config",
+            ],
+        )
+        if result == "present":
+            return True
+        if result == "absent":
             return False
+        # Do not treat a failed/truncated exec or unidentified live peers as absence.
+        raise RuntimeError(f"Cannot establish runtime peer state for {peer_id}")
+
+    def _peer_directory_name(self, peer_id: str) -> str:
+        name = self._translate_peer_name(peer_id)
+        # Match Stowaway's generate_confs naming for numeric and named peers.
+        return f"peer{name}" if name.isdigit() else f"peer_{name}"
 
     async def peer_exists(self, peer_id: str) -> bool:
         _config = create_stowaway_configmap()
@@ -193,9 +246,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
                 return False
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
-                f"Error looking up peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
+                f"Error looking up peer {peer_id} (status {e.status})"
             )
-            return False
+            raise
 
     async def get_peer_config(self, peer_id: str) -> dict[str, str]:
         if await self.peer_exists(peer_id):
@@ -341,9 +394,9 @@ class Stowaway(AbstractGefyraConnectionProvider):
         except k8s.client.exceptions.ApiException as e:
             self.logger.error(
                 f"Error looking up destination {destination_ip}:{destination_port} for"
-                f" peer {peer_id}: Status {e.status} Reason {e.reason} Body {e.body}"
+                f" peer {peer_id} (status {e.status})"
             )
-            return False
+            raise
 
     async def validate(self, gclient: dict, hints: Dict[Any, Any] = {}):
         if wireguard_parameter := gclient.get("providerParameter"):

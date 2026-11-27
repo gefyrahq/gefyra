@@ -62,7 +62,8 @@ async def client_connection_changed(new, body, logger, **kwargs):
                     raise kopf.TemporaryError(
                         f"Could not activate connection: {e}, \nClient is {client.current_state}",
                         delay=1,
-                    )
+                    ) from e
+                raise
         else:
             # deactivate this connection
             if client.active.is_active or client.error.is_active:

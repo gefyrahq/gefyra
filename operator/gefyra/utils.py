@@ -130,18 +130,25 @@ def exec_command_pod(
     :param command: command as List[str]
     :return: the result output as str
     """
-    resp = k8s.stream.stream(
-        api_instance.connect_get_namespaced_pod_exec,
-        pod_name,
-        namespace,
-        container=container_name,
-        command=command,
-        stderr=True,
-        stdin=False,
-        stdout=True,
-        tty=False,
-    )
-    return resp
+    # stream() temporarily replaces api_client.request with a WebSocket transport.
+    # Each exec needs its own client, including when other execs run concurrently.
+    with k8s.client.ApiClient(
+        configuration=api_instance.api_client.configuration
+    ) as exec_client:
+        exec_client.default_headers.update(api_instance.api_client.default_headers)
+        exec_client.cookie = api_instance.api_client.cookie
+        exec_api = k8s.client.CoreV1Api(exec_client)
+        return k8s.stream.stream(
+            exec_api.connect_get_namespaced_pod_exec,
+            pod_name,
+            namespace,
+            container=container_name,
+            command=command,
+            stderr=True,
+            stdin=False,
+            stdout=True,
+            tty=False,
+        )
 
 
 def wait_until_condition(
